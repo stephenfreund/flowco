@@ -1,0 +1,1243 @@
+system-prompt: |
+    You are an assistant to take a data science computation dataflow diagram 
+    and generate code. 
+
+    You may only import matplotlib, seaborn, numpy, sklearn, and pandas.  
+
+semantic-diff: |
+    Here are the old and new values for parts of a computation step:
+    
+    The old components:
+    ```
+    {old}
+    ```
+    
+    The new components:
+    ```
+    {new}
+    ```
+
+    Describe any semantic changes between the old and new values.  Each element
+    in the response lists should describe on difference between the old and new.  Be as concise and 
+    specific as possible.
+
+semantic-diff-string: |
+    Here are the old and new values for the {key} for a computation step:
+    
+    The old:
+    ```
+    {old}
+    ```
+    
+    The new:
+    ```
+    {new}
+    ```
+
+    Describe any semantic changes between the old and new.  Each element
+    in the response lists should describe on difference between the old and new.  Be as concise and 
+    specific as possible.
+
+
+change_command: |
+    Here is the current label, requirements, algorithm, and code for a computation step:
+    ```
+    {current}
+    ```
+    You will modify it to do the following:
+    ```
+    {command}
+    ```
+      
+    Proceed as follows. Ask questions to clarify any ambiguities or inconsistencies.
+
+    1. Describe the differences in the label, requirements, algorithm, and code between the current
+       and the changed node.
+    2. Take the current label and make any necessary changes to the label to reflect the changes from step 1.
+    3. Take the current requirements and function_return_type 
+       and make any necessary changes to those fields to reflect the changes from step 1.
+    4. Take the current algorithm and make any necessary changes to the algorithm to reflect the changes from step 1.
+    5. Take the current code and make any necessary changes to the code to reflect the changes from step 1.
+
+lift_up_changes_from_code: |
+    You will be given the old and new descriptions of a computation step.  
+
+    Proceed as follows. Ask questions to clarify any ambiguities or inconsistencies.
+
+    1. Describe any semantic changes between the old and new code, or say "no changes".
+        Here are the old:
+        ```
+        {old_code}
+        ```
+        Here are the new:
+        ```
+        {new_code}
+        ```
+    2. Take the new algorithm:
+       ```
+       {new_algorithm}
+       ```
+       and make any necessary changes to reflect the changes from step 1.
+    3. Describe any semantic changes between the old algorithm and that from step 2, or say "no changes".
+        Here are is old algorithm:
+        ```
+        {old_algorithm}
+        ```
+    4. Take the new requirements:
+       ```
+       {new_requirements}
+       ```
+       and make any necessary changes to reflect the changes from step 3.
+    5. Describe any semantic changes between the old requirements and those from step 4, or say "no changes".
+        Here are the old:
+        ```
+        {old_requirements}
+        ```
+    6. Take the new label:
+       ```
+       {new_label}
+       ```
+       and make any necessary changes to reflect the changes from step 3.
+
+
+lift_up_changes_from_editing: |
+    You will be given the old and new descriptions of a computation step.  
+
+    Proceed as follows.
+
+    0. Revise the new code to address any problems in it.
+    1. Describe any semantic changes between the old and the code from step 0, or say "no changes".
+        Here are the old:
+        ```
+        {old_code}
+        ```
+        Here are the new:
+        ```
+        {new_code}
+        ```
+    2. Take the new algorithm:
+       ```
+       {new_algorithm}
+       ```
+       and make any necessary changes to reflect the changes from step 1.
+    3. Describe any semantic changes between the old algorithm and that from step 2, or say "no changes".
+        Here are is old algorithm:
+        ```
+        {old_algorithm}
+        ```
+    4. Take the new requirements:
+       ```
+       {new_requirements}
+       ```
+       and make any necessary changes to reflect the changes from step 3.
+    5. Describe any semantic changes between the old requirements and those from step 4, or say "no changes".
+        Here are the old:
+        ```
+        {old_requirements}
+        ```
+    6. Take the new label:
+       ```
+       {new_label}
+       ```
+       and make any necessary changes to reflect the changes from step 3.
+
+
+
+
+lift_up_changes_from_algorithm: |
+    You will be given the old and new descriptions of a computation step.  
+
+    Proceed as follows. Ask questions to clarify any ambiguities or inconsistencies.
+
+    1. Describe any semantic changes between the old and new algorithm, or say "no changes".
+        Here are the old:
+        ```
+        {old_algorithm}
+        ```
+        Here are the new:
+        ```
+        {new_algorithm}
+        ```
+    2. Take the new requirements:
+       ```
+       {new_requirements}
+       ```
+       and make any necessary changes to reflect the changes from step 1.
+    3. Describe any semantic changes between the old requirements those from step 2, or say "no changes".
+        Here are the old:
+        ```
+        {old_requirements}
+        ```
+    4. Take the new label:
+       ```
+       {new_label}
+       ```
+       and make any necessary changes to reflect the changes from step 3.
+
+
+
+lift_up_changes_from_requirements: |
+    You will be given the old and new descriptions of a computation step.  
+
+    Proceed as follows. Ask questions to clarify any ambiguities or inconsistencies.
+
+    1. Describe any semantic changes between the old and new requirements, or say "no changes".
+        Here are the old:
+        ```
+        {old_requirements}
+        ```
+        Here are the new:
+        ```
+        {new_requirements}
+        ```
+    2. Take the new label:
+       ```
+       {new_label}
+       ```
+       and make any necessary changes to reflect the changes from step 1.
+
+
+
+postconditions: |
+    Here are the preconditions for a set of variables used by 
+    a computation:
+    ```
+    {preconditions}
+    ```
+
+    Complete the following steps:
+
+    1. *Postconditions*
+    
+    Start with the label
+    ```
+    {label}
+    ```
+    and create a list of postconditions that will hold for the 
+    computed value `{function_return_var}`.
+
+    The postconditions should refer to the output as `{function_return_var}` and 
+    the inputs by name.  Not all inputs may be used.
+
+    Create a return type for the function that meets the postconditions.  The 
+    return type must be an extended type except Any.
+
+    The return type's specification
+    should be detailed enough that users of the function can understand what
+    the function returns.  Do not include a specificaiton if the return
+    type is None.
+    
+    The type should reflect what is described in the specification.
+    The return type for functions generating plots should be None.
+
+    Assume the client has no other information about the function.
+    
+    If this function returns data from a file, use the column labels 
+    and types found in that file.
+
+    The postconditions you create should be detailed enough that the 
+    code for that step can be written later using only the preconditions 
+    and postconditions.  Avoid contradictions or redundancies in the postconditions.
+
+    {diff}
+
+    Leave unchanged any postconditions that are correct as written.
+
+    2. *Description*
+
+    Write a 3-5 sentence description of what this computation step does.
+
+    3. *Return Description*
+
+    Write a one sentence description of the value returned by
+    this function.  Be detailed enough that users of the function can understand
+    what the function returns without reading the source code.
+
+
+postconditions-for-sink: |
+    Here are the preconditions for a set of variables used by 
+    a computation:
+    ```
+    {preconditions}
+    ```
+
+    Complete the following steps:
+
+    1. *Posconditions*
+
+    Choose a specific output format.
+
+    Start with the label
+    ```
+    {label}
+    ```
+    and create a list of postconditions.
+
+    The postconditions should refer to the inputs by name.  Not all inputs may be used.
+
+    The postconditions you create should be detailed enough that the 
+    code for that step can be written later using only the preconditions 
+    and postconditions.  Avoid contradictions or redundancies in the postconditions.
+        
+    {diff}
+
+    Ask questions to resolve any ambiguities you encounter.
+
+    2. *Description*
+
+    Write a 3-5 sentence description of what this computation step does.
+
+    3. *Return Type*
+
+    The return type should be `None` if the function generates a plot.  Otherwise,
+    create a return type for the function that meets the postconditions.
+
+    4 * Return Description*
+
+    The computed valued description should be "None" if the function generates a plot.  Otherwise,
+    write a one sentence description of the value returned by this function.
+
+
+
+postconditions-no-descriptions: |
+    Here are the preconditions for a set of variables used by 
+    a computation:
+    ```
+    {preconditions}
+    ```
+
+    Complete the following steps:
+
+    1. *Postconditions*
+    
+    Start with the label
+    ```
+    {label}
+    ```
+    and create a list of postconditions that will hold for the 
+    computed value `{function_return_var}`.
+
+    The postconditions should refer to the output as `{function_return_var}` and 
+    the inputs by name.  Not all inputs may be used.
+
+    Create a return type for the function that meets the postconditions.  The 
+    return type must be an extended type except Any.
+
+    The return type's specification
+    should be detailed enough that users of the function can understand what
+    the function returns.  Do not include a specificaiton if the return
+    type is None.
+    
+    The type should reflect what is described in the specification.
+    The return type for functions generating plots should be None.
+
+    Assume the client has no other information about the function.
+    
+    If this function returns data from a file, use the column labels 
+    and types found in that file.
+
+    The postconditions you create should be detailed enough that the 
+    code for that step can be written later using only the preconditions 
+    and postconditions.  Avoid contradictions or redundancies in the postconditions.
+
+    {diff}
+
+postconditions-for-sink-no-descriptions: |
+    Here are the preconditions for a set of variables used by 
+    a computation:
+    ```
+    {preconditions}
+    ```
+
+    Complete the following steps:
+
+    1. *Posconditions*
+
+    Choose a specific output format.
+
+    Start with the label
+    ```
+    {label}
+    ```
+    and create a list of postconditions.
+
+    The postconditions should refer to the inputs by name.  Not all inputs may be used.
+
+    The postconditions you create should be detailed enough that the 
+    code for that step can be written later using only the preconditions 
+    and postconditions.  Avoid contradictions or redundancies in the postconditions.
+        
+    {diff}
+
+    Ask questions to resolve any ambiguities you encounter.
+
+    2. *Return Type*
+
+    The return type should be `None` if the function generates a plot.  Otherwise,
+    create a return type for the function that meets the postconditions.
+
+
+# inconsistent-requirements: |
+#     Examine these postconditions for a computation:
+
+#     ```
+#     {requirements}
+#     ```
+    
+#     Explain any contradictions you identify in the postconditions.  Do not
+#     report redundancies or missing conditions.  
+#     If there are no contradictions, provide an empty list.
+
+inconsistent-preconditions: |
+    Examine these preconditions for a computation:
+
+    ```
+    {preconditions}
+    ```
+    
+    Explain any contradictions.  Do not
+    report redundancies or missing conditions.  
+    If there are no contradictions, provide an empty list.
+
+precondition-checks: |
+    1. These are the new preconditions for a computation step:
+
+    ```
+    {preconditions}
+    ```
+    
+    Explain any inconsistencies.  Do not
+    report redundancies or missing conditions.  
+    If there are no inconsistencies, provide an empty list.
+
+    2. These are the old preconditions for a computation step:
+
+    ```
+    {old_preconditions}
+    ```
+
+    Do the new preconditions semantically imply the old preconditions?
+    If they do not, explain how they do not.  If they do, provide an empty list.
+
+    3. Here are the postconditions for the computation step:
+
+    ```
+    {postconditions}
+    ```
+
+    Do the changes in the preconditions affect the postconditions?  If so, explain how.
+    If the changes do not affect the requirements, provide an empty list.
+
+
+algorithm: |
+    Write prose pseudocode for a function implementing this step's algorithm in 
+    markdown.
+
+    The pseudocode should be detailed enough that a function for that step can 
+    be written later using only the preconditions, postconditions, and pseudocode.
+
+    Here are the preconditions for the variables you may use:
+    ```
+    {preconditions}
+    ```
+    You may assume that those conditions are met.
+
+    Here are the postconditions that the algorithm should establish:
+    ```
+    {postconditions}
+    ```
+
+    If the step already has an algorithm, remove any steps that are not
+    necessary or incorrect according to the design of the computation, 
+    and add any steps that are missing.
+
+    {diff}
+
+    Your response should be an list of strings, each of which is one step in the algorithm.  
+    Steps should begin with "*".
+    A step may have substeps that begin with "  -".  Do not use any markdown headers.
+
+
+
+# assess: |
+#     Here are the preconditions for a set of variables, and a post-condition:
+#     ```
+#     {requirements}
+#     ```
+#     And an algorithm:
+#     ```
+#     {algorithm}
+#     ```
+#     Assume an expert data scientist will write code for this algorithm using Python and the standard
+#     numpy, pandas, matplotlib, seaborn, scipy, and sklearn libraries.  
+#     The expert has no other information about the function but can make reasonable choices about 
+#     how to implement parts of it.
+
+#     I want you to assess the algorithm.  Here are the criteria:
+#     * Are the postconditions unambiguous in their meaning?
+#     * Does the algorithm meet the post-conditions if the preconditions are all satisfied?
+#     * Is it a meaningful algorithm?
+#     * Are the results easy to interpret?
+
+#     Answer, `Good`, `Bad`, or `More Information Needed`. 
+    
+#     If your answer is `Bad`, provide a reason why the algorithm does not meet the post-condition.
+    
+#     If your answer is `More Information Needed`, provide the most important question that would help you make a decision:
+#     * If additional data is needed to perform the computation, ask for that data.
+#     * If more information about the algorithm is needed, ask the most important question related to that algorithm.
+
+
+# return-type: |
+#     Here are the pre and post conditions for a function
+#     ```
+#     {requirements}
+#     ```
+#     Create a return type for the function that meets the postconditions.
+    
+#     The return type's specification
+#     should be detailed enough that users of the function can understand what
+#     the function returns.  Do not include a specificaiton if the return
+#     type is None.
+    
+#     Assume the client has no other information about the function.
+    
+#     If this function returns data from a file, use the column labels 
+#     and types found in that file.
+
+#     The type should reflect what is described in the specification.
+#     The return type for functions generating plots should be None.
+
+# return-description: |
+#     Here are the pre and post conditions for a function
+#     ```
+#     {requirements}
+#     ```
+#     Give a one sentence description of the value returned by
+#     this function.
+
+# description: |
+#     Here are the preconditions for a set of variables used by 
+#     a computation:
+#     ```
+#     {preconditions}
+#     ```
+#     Here are the requirements for the return value `{function_return_var}`:
+#     ```
+#     {requirements}
+#     ```
+
+#     Create a prose description for this step of the computation.
+
+# parameters: |
+#     Identify the function_return_vars from all direct and indirect 
+#     predecessors that will be necessary to compute the results of this stage.
+
+#     Your answer should be a list of variables drawn from this list:
+#     ```
+#     {result_vars}
+#     ``` 
+
+
+# signatures: |
+#     Create a Python function signature for this step of the computation.
+
+#     The signature should include the function name, the parameters, and the return
+#     type for this step.  
+
+#     The function name should capture the intent of this step computation.
+    
+#     There is one parameter for each predecessor node.  For this node, 
+#     there are `{n_predecessors}` predecessors.  They are:
+#     ```
+#     {predecessors}
+#     ```
+
+#     The parameter types should match the return values for 
+#     the predecessors' functions.
+    
+#     The return type should be described with its type and any
+#     requirements for the value.  If a stage has no outgoing edges.
+
+#     Assume that the following modules have been imported:
+#     ```
+#     import pandas as pd
+#     import numpy as np
+#     import seaborn as sns
+#     import matplotlib.pyplot as plt
+#     ```
+
+compile: |
+    Write the code for this step as a single function.  It must match the following.
+    ```
+    # put all imports here
+    def {signature}:
+        ...
+    ```
+
+    The parameters have the following types:
+    ```
+    {parameter_types}
+    ```
+
+    Write the code for this step as a single function with the given
+    name, parameters, and return type.  
+    
+    The code should:
+
+    * Implement the requirements as a pure function.
+    * Include types for parameters and return values.  
+    * Return a value consistent with the return type.
+    * Have no side effects.
+    * Be optimized for readability, clarity, and simplicity.
+    
+    You may only import matplotlib, seaborn, numpy, sklearn, and pandas.  Uses seaborn for all plots, with
+    no changes to the base style.  Do not call `plt.close()` and *do not* save them to disk.
+
+    Do not include other functions.
+
+    The function should return a value of the appropriate type, or None if the function displays a plot.
+
+    If the step already has code, fix it to implement the requirements and nothing more.
+
+    {diff}
+
+
+compile-assertions: |
+    You have written code for this step.  Modify the code to include assertions that
+    check the requirements.  Check both conditions on the return value
+    and on any intermediate values or steps.
+
+    If the function returns a value, add assertions for all of the requirements to the code.  If the function
+    displays a plot, do not include assertions for the requirements related to visual elements.
+
+    Do not add assertions for preconditions.  Assume that the preconditions
+    are met.
+
+    If function already has code with assertions, fix it to implement exactly
+    the requirements and nothing more.
+
+    {diff}
+
+
+
+
+# sanity-checks: |
+#     Write black-box unit test functions to test the 
+#     function for this step.  The function will
+#     already be imported.
+
+#     Assume the preconditions will be met.
+
+#     Your test suite should verify that:
+#     * the types of any return values match the specification.
+#     * the function does not modify its inputs.
+#     * the function does not have side effects.
+
+#     Use this template for each unit test function definition:
+#     ```
+#     import seaborn as sns
+#     import pandas as pd
+#     import numpy as np
+#     import matplotlib.pyplot as plt
+#     def test():
+#         """
+#         Describe what the test is doing and what the expected behavior is.
+#         """
+#         ...
+#     ```
+
+#     Use this template for each unit test function call:
+#     ```
+#     test()
+#     ```
+
+sanity-checks: |
+    Write one or more unit test functions to test that the
+    function for this step does not modify its inputs.
+
+    Use this template:
+    ```
+    import seaborn as sns
+    import pandas as pd
+    import numpy as np
+    import matplotlib.pyplot as plt
+    def test():
+        """
+        Describe what the test is doing and what the expected behavior is.
+        """
+        ...
+    ```
+
+    Use this template for the unit test function call:
+    ```
+    test()
+    ```
+
+
+unit-tests: |
+    Write a list of inputs/expected output for testing this function.
+    For each test case:
+
+    * For each input, write a Python expression to produce a value for that input.
+      Pandas has been imported as `pd`, and numpy as `np`.  Use those libraries as
+      needed.
+
+    * The inputs should be small enough that the correct result can be
+      computed by hand.  
+
+    * The function will already be imported.
+
+    * Ensure your inputs meet the preconditions.
+
+    * Do not call any helper functions in the sample inputs or output.
+
+    * Some tests may already be present -- complement those with additional tests.
+
+    * Cover all postconditions in your tests and look for boundary cases 
+    or unusual inputs that might cause the function to fail.
+
+    * Write Code tests for conditions that can be tested automatically.  Otherwise, write Inspect tests.
+
+
+unit-test-input: |
+    You will help me create input values for a unit test.  The input type is:
+    ```
+    {type}
+    ```
+    The requirements on that input are:
+    ```
+    {preconditions}
+    ```
+    Write the body of a Python function called `create_input` 
+    that evaluates to a value of type 
+    ```
+    {type}
+    ```
+    that meets those requirements and is small enough that the correct 
+    result can be computed by hand.
+
+    Use this template for your response:
+    ```
+    def create_input():
+        # any necessary imports
+        ...
+        return ...
+    ```
+
+unit-test-inputs: |
+    You will help me create input values for a unit test.  The 
+    goal is to test this condition:
+    ```
+    {goal}
+    ```
+    Here is a specification of the inputs:
+    ```
+    {requirements}
+    ```
+    Write the body of a Python function called `create_input` 
+    that returns a dictionary mapping input names to 
+    values that meet the requirements and are small enough that the correct
+    result can be computed by hand.
+
+    Use this template for your response:
+    ```
+    def create_input():
+        # any necessary imports
+        ...
+        return ...
+    ```
+
+inspect-outputs:
+    You will help me check whether the output of a function in a datascience
+    computation meets an expected condition.  Indicate whether the condition
+    holds or not, and explain why.
+
+report: |
+    Generate a detailed report on a data science computation project. The report should be structured into the following sections: 
+        1. **Title**: Provide a concise and descriptive title for the report. 
+        2. **Introduction**: 
+            * **Background**: Give an overview of the problem or question addressed in the project. 
+            * **Objectives**: Clearly state the objectives of the computation or analysis. 
+        3. **Data Sources**: 
+            * **Description of Data**: Describe the data sources used, including the type of data, how it was collected, and its relevance to the project. 
+            * **Data Preparation**: Explain any preprocessing steps taken to clean or transform the data. 
+        4. **Methodology**: 
+            * **Outline of Work**: Detail the steps taken in the computation, including any algorithms, models, or analytical techniques used. 
+            * **Assumptions**: List and justify any assumptions made during the analysis. 
+        5. **Statistical Analysis**: 
+            * **Exploratory Data Analysis**: Summarize key findings from the initial exploration of the data. 
+            * **Modeling and Evaluation**: Describe the modeling techniques used, how models were evaluated, and the metrics for evaluation. 
+        6. **Results**: 
+            * **Statistical Conclusions**: Present the main statistical findings and interpretations. Include any visualizations or tables that were created or that support the conclusions.
+        7. **Discussion**:
+            * **Insights**: Discuss the insights gained from the analysis and their implications.
+            * **Limitations**: Identify any limitations or potential biases in the analysis. 
+        8. **Conclusions**: 
+            * **Summary**: Provide a summary of the main findings and their significance. 
+            * **Recommendations**: Offer recommendations based on the findings of the project. 
+            * **Future Work**: Suggest areas for further research or improvements to the analysis.
+
+
+classify_ama_prompt : |
+    You are an expert in data science.  You are helping a user create work with data science computation diagram for a task. 
+    The user has asked you a question. Classify whether the question is asking for information about the computation graph, dataset, 
+    or conclusions that can be drawn from them, or whether the question is asking for a modification to the dataflow graph.
+    ```
+
+ama_general: |
+    You are an expert at statistical analysis and data science.  Help the
+    user with their question.  Explain your reasoning and provide a clear
+    and concise answer.  Refer to nodes by their pills in text you write.
+    Refer to ndoes by ids in function calls.  
+
+ama_explain: |
+    Answer the following question about the computation graph, dataset, and conclusions that can be drawn from them.
+
+    You should:
+    1. Restate the hypothesis or question in your own words.
+    2. Explain how you will approach the question.
+    3. Explain each step of your analysis.  Make function calls to help answer the question.
+    4. Provide a recommendation or a conclusion based on the results of your analysis.
+
+ama_modify: |
+    Modify the dataflow graph according to the following request.  You may add or remove nodes, 
+    or change the connections between nodes.  Nodes should be connected in a way that makes sense for the
+    dataflow computation.  Transitive edges are implied and do not need to be explicitly added.
+    Each node will be implemented as a single function that takes the incoming data and returns the outgoing data.
+    Do not write code.  Only modify the graph.
+
+    You should:
+    1. Restate the request in your own words.  Break down tasks into smaller steps.
+    2. Identify the necessary changes to the dataflow graph for those steps.
+    3. For each change, explain the rationale behind it to the user and use a function call to make the change.
+
+add-bugs: |
+    You are an assistant to take the code for a data science data flow computation
+    and add bugs to the code.
+
+    Intentionally include a programming bug to the code part of each node
+    that would cause the tests for that node to fail.  
+    
+    Describe those bugs in comments in the code.
+
+    Preserve the structure of the functions and their names and the tests parts.
+
+repair-system: |
+    You are an assistant to take a dataflow graph and generate code.  Your job
+    is to help repair an error in the Python implementation of the dataflow graph.
+
+    Always provide an explanation in yor response that describes the error and how to fix it.
+
+    Provide the minimal change to fix the error.
+
+repair-syntax: |
+    The code for a dataflow node cannot be parsed or has an error in its signature.  
+    Fix it.  This is the node:
+    ```
+    {node}
+    ```
+    This is the error:
+    ```
+    {error}
+    ```
+
+# repair-test-syntax: |
+#     The code for a dataflow node test cannot be parsed.  Fix it.  This is the test:
+#     ```
+#     {test}
+#     ```
+#     This is the error:
+#     ```
+#     {error}
+#     ```
+
+# repair-test: | 
+#     The code for a dataflow node failed its tests.  Fix it.  This is the node:
+#     ```
+#     {node}
+#     ```
+#     This is the error:
+#     ```
+#     {error}
+#     ```
+
+#     If the error is an assertion error, provide the minimal change to that node's code to fix the error.
+
+#     If the error appears in the text code and is not an assertion error, it is likely an error with the test code.
+
+# repair-run: | 
+#     The dataflow graph failed to run.  Fix it. 
+#     This is the error:
+#     ```
+#     {error}
+#     ```
+
+repair-node-run: | 
+    The dataflow graph failed to run.  Fix the node that caused the error.
+    This is the error:
+    ```
+    {error}
+    ```
+
+# repair-one-test: | 
+#     The code for a dataflow node failed a test.  Fix it.  
+    
+#     This is the node:
+#     ```
+#     {node}
+#     ```
+#     This is the error:
+#     ```
+#     {error}
+#     ```
+
+#     If the error is an assertion error, provide the minimal change to that node's code to fix the error.
+
+#     If the error appears in the test code and is not an assertion error, it is likely an error with the test code.
+
+# repair-one-test-followup: | 
+#     The code is still not passing the test.
+
+#     This is the new error:
+#     ```
+#     {error}
+#     ```
+
+#     Fix either the code, the test, or both.
+
+
+
+# # These are used by the UI
+
+# gen-node-description: |
+#     The current description for node with id `{node_id}` is:
+#     ```
+#     {current}
+#     ``` 
+    
+#     The description should:
+
+#     * Include any requirements on inputs. Include the type for each input, any 
+#     required column labels for tables, expectations on the rows for tables, and 
+#     expected input values.
+#     * Include a description of what the computation returns.
+#     * Be detailed enough that code for that step can be written using only the
+#     description.
+#     * Be detailed enough that tests for that step can be written using only the
+#     description.
+
+#     Use the following format in your answer:
+#     ```
+#     # Description
+#     ...
+
+#     # Input requirements
+#     ...
+
+#     # Output
+#     ...
+
+#     # Assumptions
+#     ...
+#     ```
+
+# gen-diagram-description: |
+#     The current description for diagram is:
+#     ```
+#     {current}
+#     ``` 
+    
+#     The description should:
+
+#     * Include any requirements on inputs. Include the type for each input, any 
+#     required column labels for tables, expectations on the rows for tables, and 
+#     expected input values.
+#     * Include a description of what the diagram computes.
+#     * Be detailed enough that code for the diagram can be written using only the
+#     description.
+
+#     Your response should be only the description, with no other text or ```s.
+
+# page-suggestions: |
+#     You are an assistant helping a user create a dataflow computation diagram
+#     for a data science task.  Create a list of PageSuggestion steps to help the user.
+#     Use as many steps as necessary.  Each step should be a single text chunk or operation.
+
+
+
+
+# edit_node: |
+#     Here is a dataflow graph for a data science computation.  
+#     ```
+#     {graph}
+#     ```
+    
+#     You need to edit this node:
+#     ```
+#     {old}
+#     ```
+
+#     * The label describes the function at the highest level.
+#     * The requirements describe the postconditions on the function and must conform
+#         to the label.
+#     * The algorithm describes the steps of the function and must conform to the requirements.
+#     * The code describes the implementation of the function and must conform to the algorithm.
+    
+#     These new components were created by the user to describe the behavior of the function:
+#     ```
+#     {new}
+#     ```
+
+#     Your task is to compare the old and new components, identify any differences, propagate
+#     the differences through the components, and provide revised components that are consistent
+#     with the differences.
+
+#     {update}
+
+#     Proceed as follows:
+    
+#     * Describe any semantic changes between the old and new label.  Ask questions to clarify and 
+#         inconsistencies or ambiguities.
+
+#     * Create a revised label that includes any semantic changes between the old and new.
+
+#     * Describe any semantic changes between the old and new requirements and how to adjust them
+#     to accomodate the revised label.  Ask questions to clarify and 
+#         inconsistencies or ambiguities.
+
+#     * Create revised requirements that are consistent with the revised label and carry forward any semantic
+#     changes to the label and requirements.
+
+#     * Describe any semantic changes between the old and new algorithm and how to adjust them to accomodate
+#     the revised requirements.  Ask questions to clarify and 
+#         inconsistencies or ambiguities.
+
+#     * Create a revised algorithm that refines and is consistent with the revised requirements and reflects any semantic changes to the requirements.
+
+#     * Describe any semantic changes between the old and new code.  Ask questions to clarify and 
+#         inconsistencies or ambiguities.
+
+#     * Create revised code that refines and is consistent with the revised algorithm and reflects any semantic
+#     changes to the algorithm.
+
+#     The revised components should be as clear and concise as possible.
+
+
+
+# edit_node_label: |
+#     Here is a dataflow graph for a data science computation.  
+#     ```
+#     {graph}
+#     ```
+    
+#     You need to edit this node:
+#     ```
+#     {old}
+#     ```
+
+#     * The label describes the function at the highest level.
+#     * The requirements describe the postconditions on the function and must conform
+#         to the label.
+#     * The algorithm describes the steps of the function and must conform to the requirements.
+#     * The code describes the implementation of the function and must conform to the algorithm.
+    
+#     These new components were created by the user to describe the behavior of the function:
+#     ```
+#     {new}
+#     ```
+
+#     Your task is to compare the old and new components, identify any differences, propagate
+#     the differences through the components, and provide revised components that are consistent
+#     with the differences.
+
+#     {update}
+
+#     The revised components should be as clear and concise as possible.
+
+#     Proceed as follows:
+    
+#     * Describe any semantic changes between the old and new label.  Ask questions to clarify and 
+#         inconsistencies or ambiguities.
+
+#     * Create a revised label that includes any semantic changes between the old and new.
+
+# edit_node_requirements: |
+#     Proceed as follows:
+
+#     * Describe any semantic changes between the old and new requirements and how to adjust them
+#     to accomodate the revised label.  Ask questions to clarify and inconsistencies or ambiguities.
+
+#     * Create revised requirements that are consistent with the revised label and carry forward any semantic
+#     changes to the label and requirements.
+
+# edit_node_algorithm: |
+#     * Describe any semantic changes between the old and new algorithm and how to adjust them to accomodate
+#     the revised requirements.  Ask questions to clarify and 
+#         inconsistencies or ambiguities.
+
+#     * Create a revised algorithm that refines and is consistent with the revised requirements and reflects any semantic changes to the requirements.
+
+# edit_node_code: |
+#     * Describe any semantic changes between the old and new code.  Ask questions to clarify and 
+#         inconsistencies or ambiguities.
+
+#     * Create revised code that refines and is consistent with the revised algorithm and reflects any semantic
+#     changes to the algorithm.
+
+
+
+
+full-compile: |
+    Here are the preconditions for a set of variables used by 
+    a computation:
+    ```
+    {preconditions}
+    ```
+
+    Complete the following steps:
+
+    1. *Postconditions*
+    
+    Start with the label
+    ```
+    {label}
+    ```
+    and create a list of postconditions that will hold for the 
+    computed value `{function_return_var}`.
+
+    The postconditions should refer to the output as `{function_return_var}` and 
+    the inputs by name.  Not all inputs may be used.
+
+    Create a return type for the function that meets the postconditions.  The 
+    return type must be an extended type except Any.
+
+    The return type's specification
+    should be detailed enough that users of the function can understand what
+    the function returns.  Do not include a specificaiton if the return
+    type is None.
+    
+    The type should reflect what is described in the specification.
+    The return type for functions generating plots should be None.
+
+    Assume the client has no other information about the function.
+    
+    If this function returns data from a file, use the column labels 
+    and types found in that file.
+
+    The postconditions you create should be detailed enough that the 
+    code for that step can be written later using only the preconditions 
+    and postconditions.  Avoid contradictions or redundancies in the postconditions.
+
+    Ask questions to resolve any ambiguities you encounter.
+
+    {diff_req}
+
+    2. *Description*
+
+    Write a 3-5 sentence description of what this computation step does.
+
+    3. *Return Description*
+
+    Write a one sentence description of the value returned by
+    this function.  Be detailed enough that users of the function can understand
+    what the function returns without reading the source code.
+
+
+
+full-compile-sink: |
+    Here are the preconditions for a set of variables used by 
+    a computation:
+    ```
+    {preconditions}
+    ```
+
+    Complete the following steps:
+
+    1. *Posconditions*
+
+    Choose a specific output format.
+
+    Start with the label
+    ```
+    {label}
+    ```
+    and create a list of postconditions.
+
+    The postconditions should refer to the inputs by name.  Not all inputs may be used.
+
+    The postconditions you create should be detailed enough that the 
+    code for that step can be written later using only the preconditions 
+    and postconditions.  Avoid contradictions or redundancies in the postconditions.
+
+    The return type should be `None` if the function generates a plot.  Otherwise,
+    create a return type for the function that meets the postconditions.
+
+    {diff_req}
+
+    2. *Description*
+
+    Write a 3-5 sentence description of what this computation step does.
+
+    3 * Return Description*
+
+    The computed valued description should be "None" if the function generates a plot.  Otherwise,
+    write a one sentence description of the value returned by this function.
+
+
+full-compile-algorithm: |
+    4. *Algorithm*
+
+    Write prose pseudocode for a function implementing this step's algorithm in 
+    markdown.
+
+    The pseudocode should be detailed enough that a function for that step can 
+    be written later using only the preconditions, postconditions, and pseudocode.
+
+    If the step already has an algorithm, remove any steps that are not
+    necessary or incorrect according to the design of the computation, 
+    and add any steps that are missing.
+
+    Your response should be an list of strings, each of which is one step in the algorithm.  
+    Steps should begin with "*".
+    A step may have substeps that begin with "  -".  Do not use any markdown headers.
+
+    {diff_alg}
+
+full-compile-code: |
+
+    5. *Code*
+
+    Write the code for this step as a single function.  It must match the following.
+    ```
+    # put all imports here
+    def {signature}:
+        ...
+    ```
+
+    The parameters have the following types:
+    ```
+    {parameter_types}
+    ```
+
+    Write the code for this step as a single function with the given
+    name, parameters, and return type.  
+    
+    The code should:
+
+    * Implement the requirements as a pure function.
+    * Include types for parameters and return values.  
+    * Return a value consistent with the return type.
+    * Have no side effects.
+    * Be optimized for readability, clarity, and simplicity.
+    
+    You may only import matplotlib, seaborn, numpy, sklearn, and pandas.  Uses seaborn for all plots, with
+    no changes to the base style.  Do not call `plt.close()` and *do not* save them to disk.
+
+    Do not include other functions.
+
+    The function should return a value of the appropriate type, or None if the function displays a plot.
+
+    If the step already has code, fix it to implement the requirements and nothing more.
+
+    {diff_code}

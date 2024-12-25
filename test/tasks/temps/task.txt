@@ -1,0 +1,4 @@
+
+plot the average January and August temperatures in Farhenheit.
+Include regression lines.
+Which month has fast rising temperatures?

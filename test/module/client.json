@@ -1,0 +1,758 @@
+{
+  "file_name": "client.py",
+  "api": {
+    "imported_pages": [
+      "bootstrap.json"
+    ],
+    "inputs": [
+      {
+        "description": "The file name of the beaks data file. The default is finch_beaks_1975.csv",
+        "name": "beaks_data_file_name",
+        "extended_type": {
+          "type": "str"
+        },
+        "default_value_expression": "'finch_beaks_1975.csv'",
+        "default_value": "'finch_beaks_1975.csv'"
+      }
+    ],
+    "output_node_id": null
+  },
+  "dfg": {
+    "description": "",
+    "nodes": [
+      {
+        "id": "f20d8288-0b63-4598-b15e-f11d6b75aff1",
+        "pill": "Beak-Data",
+        "label": "Load the beak data",
+        "function_name": "compute_beak_data",
+        "function_result_var": "beak_data_result",
+        "predecessors": [],
+        "phase": 4,
+        "build_cache": {
+          "requirements": {
+            "in_": {
+              "function_parameters": [],
+              "preconditions": {}
+            },
+            "out_requirements": [
+              "beak_data_result is a pandas DataFrame.",
+              "beak_data_result contains columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+              "beak_data_result has no missing or obviously bad values.",
+              "beak_data_result has more than 5 rows."
+            ],
+            "out_function_parameters": [],
+            "out_function_return_type": {
+              "type": "pd.DataFrame['species': str, 'Beak length, mm': float, 'Beak depth, mm': float]"
+            },
+            "out_function_computed_value": "The function returns a cleaned pandas DataFrame containing more than 5 rows with columns 'species', 'Beak length, mm', and 'Beak depth, mm', and no missing or obviously bad values.",
+            "out_description": "This stage loads the beak data from the file 'finch_beaks_1975.csv'. It reads the CSV file into a pandas DataFrame, removes any rows with missing or obviously bad values, and ensures the data types are appropriate for further analysis.",
+            "valid": true
+          },
+          "algorithm": {
+            "in_": {
+              "requirements": [
+                "beak_data_result is a pandas DataFrame.",
+                "beak_data_result contains columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+                "beak_data_result has no missing or obviously bad values.",
+                "beak_data_result has more than 5 rows."
+              ],
+              "preconditions": {}
+            },
+            "out_algorithm": "1. Import the necessary libraries: pandas.\n2. Load the data from 'finch_beaks_1975.csv' into a pandas DataFrame.\n3. Remove any rows with missing values in the columns 'species', 'Beak length, mm', and 'Beak depth, mm'.\n4. Remove any rows with obviously bad values (e.g., negative values for beak length or depth).\n5. Ensure the data types of the columns are appropriate: 'species' should be a string, 'Beak length, mm' and 'Beak depth, mm' should be floats.\n6. Verify that the DataFrame has more than 5 rows.\n7. Return the cleaned DataFrame as 'beak_data_result'.",
+            "valid": true
+          },
+          "compile": {
+            "in_": {
+              "signature": "compute_beak_data() -> pd.DataFrame",
+              "parameter_types": {},
+              "requirements": [
+                "beak_data_result is a pandas DataFrame.",
+                "beak_data_result contains columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+                "beak_data_result has no missing or obviously bad values.",
+                "beak_data_result has more than 5 rows."
+              ],
+              "algorithm": "1. Import the necessary libraries: pandas.\n2. Load the data from 'finch_beaks_1975.csv' into a pandas DataFrame.\n3. Remove any rows with missing values in the columns 'species', 'Beak length, mm', and 'Beak depth, mm'.\n4. Remove any rows with obviously bad values (e.g., negative values for beak length or depth).\n5. Ensure the data types of the columns are appropriate: 'species' should be a string, 'Beak length, mm' and 'Beak depth, mm' should be floats.\n6. Verify that the DataFrame has more than 5 rows.\n7. Return the cleaned DataFrame as 'beak_data_result'."
+            },
+            "out_code": [
+              "import pandas as pd",
+              "import numpy as np",
+              "",
+              "def compute_beak_data() -> pd.DataFrame:",
+              "    # Load the data from the CSV file",
+              "    df = pd.read_csv(beaks_data_file_name)",
+              "",
+              "    # Remove rows with missing values",
+              "    df.dropna(subset=['species', 'Beak length, mm', 'Beak depth, mm'], inplace=True)",
+              "",
+              "    # Remove rows with obviously bad values (e.g., negative values for beak length or depth)",
+              "    df = df[(df['Beak length, mm'] > 0) & (df['Beak depth, mm'] > 0)]",
+              "",
+              "    # Ensure the data types are appropriate",
+              "    df['species'] = df['species'].astype(str)",
+              "    df['Beak length, mm'] = df['Beak length, mm'].astype(float)",
+              "    df['Beak depth, mm'] = df['Beak depth, mm'].astype(float)",
+              "",
+              "    # Verify that the DataFrame has more than 5 rows",
+              "    if len(df) <= 5:",
+              "        raise ValueError('DataFrame does not have more than 5 rows after cleaning.')",
+              "",
+              "    return df"
+            ],
+            "valid": true
+          },
+          "sanity_checks": null,
+          "unit_tests": null
+        },
+        "description": "This stage loads the beak data from the file 'finch_beaks_1975.csv'. It reads the CSV file into a pandas DataFrame, removes any rows with missing or obviously bad values, and ensures the data types are appropriate for further analysis.",
+        "requirements": [
+          "beak_data_result is a pandas DataFrame.",
+          "beak_data_result contains columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+          "beak_data_result has no missing or obviously bad values.",
+          "beak_data_result has more than 5 rows."
+        ],
+        "algorithm": "1. Import the necessary libraries: pandas.\n2. Load the data from 'finch_beaks_1975.csv' into a pandas DataFrame.\n3. Remove any rows with missing values in the columns 'species', 'Beak length, mm', and 'Beak depth, mm'.\n4. Remove any rows with obviously bad values (e.g., negative values for beak length or depth).\n5. Ensure the data types of the columns are appropriate: 'species' should be a string, 'Beak length, mm' and 'Beak depth, mm' should be floats.\n6. Verify that the DataFrame has more than 5 rows.\n7. Return the cleaned DataFrame as 'beak_data_result'.",
+        "function_parameters": [],
+        "function_return_type": {
+          "type": "pd.DataFrame['species': str, 'Beak length, mm': float, 'Beak depth, mm': float]"
+        },
+        "function_computed_value": "The function returns a cleaned pandas DataFrame containing more than 5 rows with columns 'species', 'Beak length, mm', and 'Beak depth, mm', and no missing or obviously bad values.",
+        "code": [
+          "import pandas as pd",
+          "import numpy as np",
+          "",
+          "def compute_beak_data() -> pd.DataFrame:",
+          "    # Load the data from the CSV file",
+          "    df = pd.read_csv(beaks_data_file_name)",
+          "",
+          "    # Remove rows with missing values",
+          "    df.dropna(subset=['species', 'Beak length, mm', 'Beak depth, mm'], inplace=True)",
+          "",
+          "    # Remove rows with obviously bad values (e.g., negative values for beak length or depth)",
+          "    df = df[(df['Beak length, mm'] > 0) & (df['Beak depth, mm'] > 0)]",
+          "",
+          "    # Ensure the data types are appropriate",
+          "    df['species'] = df['species'].astype(str)",
+          "    df['Beak length, mm'] = df['Beak length, mm'].astype(float)",
+          "    df['Beak depth, mm'] = df['Beak depth, mm'].astype(float)",
+          "",
+          "    # Verify that the DataFrame has more than 5 rows",
+          "    if len(df) <= 5:",
+          "        raise ValueError('DataFrame does not have more than 5 rows after cleaning.')",
+          "",
+          "    return df"
+        ],
+        "sanity_checks": null,
+        "unit_tests": null,
+        "sanity_check_results": {},
+        "unit_test_results": {},
+        "warnings": null
+      },
+      {
+        "id": "Step-1",
+        "pill": "Fortis-Birds",
+        "label": "Select the Fortis birds",
+        "function_name": "compute_fortis_birds",
+        "function_result_var": "fortis_birds_result",
+        "predecessors": [
+          "f20d8288-0b63-4598-b15e-f11d6b75aff1"
+        ],
+        "phase": 4,
+        "build_cache": {
+          "requirements": {
+            "in_": {
+              "function_parameters": [
+                {
+                  "name": "beak_data_result",
+                  "type": {
+                    "type": "pd.DataFrame['species': str, 'Beak length, mm': float, 'Beak depth, mm': float]"
+                  }
+                }
+              ],
+              "preconditions": {
+                "beak_data_result": [
+                  "beak_data_result is a pandas DataFrame.",
+                  "beak_data_result contains columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+                  "beak_data_result has no missing or obviously bad values.",
+                  "beak_data_result has more than 5 rows."
+                ]
+              }
+            },
+            "out_requirements": [
+              "fortis_birds_result is a pandas DataFrame.",
+              "fortis_birds_result contains columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+              "fortis_birds_result has no missing or obviously bad values.",
+              "fortis_birds_result has more than 5 rows.",
+              "fortis_birds_result contains only rows where the 'species' column is 'fortis'."
+            ],
+            "out_function_parameters": [
+              {
+                "name": "beak_data_result",
+                "type": {
+                  "type": "pd.DataFrame['species': str, 'Beak length, mm': float, 'Beak depth, mm': float]"
+                }
+              }
+            ],
+            "out_function_return_type": {
+              "type": "pd.DataFrame['species': str, 'Beak length, mm': float, 'Beak depth, mm': float]"
+            },
+            "out_function_computed_value": "The function returns a pandas DataFrame containing cleaned and filtered data of the 'fortis' species, with columns for 'Beak length, mm' and 'Beak depth, mm', ensuring no missing or obviously bad values and having more than 5 rows.",
+            "out_description": "This stage filters the beak data to select only the rows where the species is 'fortis'. The resulting DataFrame will contain only the Fortis birds.",
+            "valid": true
+          },
+          "algorithm": {
+            "in_": {
+              "requirements": [
+                "fortis_birds_result is a pandas DataFrame.",
+                "fortis_birds_result contains columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+                "fortis_birds_result has no missing or obviously bad values.",
+                "fortis_birds_result has more than 5 rows.",
+                "fortis_birds_result contains only rows where the 'species' column is 'fortis'."
+              ],
+              "preconditions": {
+                "beak_data_result": [
+                  "beak_data_result is a pandas DataFrame.",
+                  "beak_data_result contains columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+                  "beak_data_result has no missing or obviously bad values.",
+                  "beak_data_result has more than 5 rows."
+                ]
+              }
+            },
+            "out_algorithm": "### Algorithm: Select the Fortis birds\n\n1. **Input**: `beak_data_result` (pandas DataFrame)\n2. **Filter Data**: Select rows from `beak_data_result` where the 'species' column is 'fortis'.\n3. **Assign Result**: Store the filtered DataFrame in `fortis_birds_result`.\n4. **Output**: `fortis_birds_result` (pandas DataFrame) containing only rows where the 'species' column is 'fortis'.\n\n### Pseudocode\n\n```python\n# Step 1: Input\nbeak_data_result = <input DataFrame>\n\n# Step 2: Filter Data\nfortis_birds_result = beak_data_result[beak_data_result['species'] == 'fortis']\n\n# Step 3: Assign Result\n# fortis_birds_result is already assigned in the previous step\n\n# Step 4: Output\nreturn fortis_birds_result\n```",
+            "valid": true
+          },
+          "compile": {
+            "in_": {
+              "signature": "compute_fortis_birds(beak_data_result: pd.DataFrame) -> pd.DataFrame",
+              "parameter_types": {
+                "beak_data_result": {
+                  "type": "pd.DataFrame['species': str, 'Beak length, mm': float, 'Beak depth, mm': float]"
+                }
+              },
+              "requirements": [
+                "fortis_birds_result is a pandas DataFrame.",
+                "fortis_birds_result contains columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+                "fortis_birds_result has no missing or obviously bad values.",
+                "fortis_birds_result has more than 5 rows.",
+                "fortis_birds_result contains only rows where the 'species' column is 'fortis'."
+              ],
+              "algorithm": "### Algorithm: Select the Fortis birds\n\n1. **Input**: `beak_data_result` (pandas DataFrame)\n2. **Filter Data**: Select rows from `beak_data_result` where the 'species' column is 'fortis'.\n3. **Assign Result**: Store the filtered DataFrame in `fortis_birds_result`.\n4. **Output**: `fortis_birds_result` (pandas DataFrame) containing only rows where the 'species' column is 'fortis'.\n\n### Pseudocode\n\n```python\n# Step 1: Input\nbeak_data_result = <input DataFrame>\n\n# Step 2: Filter Data\nfortis_birds_result = beak_data_result[beak_data_result['species'] == 'fortis']\n\n# Step 3: Assign Result\n# fortis_birds_result is already assigned in the previous step\n\n# Step 4: Output\nreturn fortis_birds_result\n```"
+            },
+            "out_code": [
+              "import pandas as pd",
+              "def compute_fortis_birds(beak_data_result: pd.DataFrame) -> pd.DataFrame:",
+              "    # Filter rows where species is 'fortis'",
+              "    fortis_birds_result = beak_data_result[beak_data_result['species'] == 'fortis']",
+              "    # Drop rows with any missing or obviously bad values",
+              "    fortis_birds_result = fortis_birds_result.dropna()",
+              "    # Ensure there are more than 5 rows",
+              "    if len(fortis_birds_result) <= 5:",
+              "        raise ValueError('The resulting DataFrame has 5 or fewer rows.')",
+              "    return fortis_birds_result"
+            ],
+            "valid": true
+          },
+          "sanity_checks": null,
+          "unit_tests": null
+        },
+        "description": "This stage filters the beak data to select only the rows where the species is 'fortis'. The resulting DataFrame will contain only the Fortis birds.",
+        "requirements": [
+          "fortis_birds_result is a pandas DataFrame.",
+          "fortis_birds_result contains columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+          "fortis_birds_result has no missing or obviously bad values.",
+          "fortis_birds_result has more than 5 rows.",
+          "fortis_birds_result contains only rows where the 'species' column is 'fortis'."
+        ],
+        "algorithm": "### Algorithm: Select the Fortis birds\n\n1. **Input**: `beak_data_result` (pandas DataFrame)\n2. **Filter Data**: Select rows from `beak_data_result` where the 'species' column is 'fortis'.\n3. **Assign Result**: Store the filtered DataFrame in `fortis_birds_result`.\n4. **Output**: `fortis_birds_result` (pandas DataFrame) containing only rows where the 'species' column is 'fortis'.\n\n### Pseudocode\n\n```python\n# Step 1: Input\nbeak_data_result = <input DataFrame>\n\n# Step 2: Filter Data\nfortis_birds_result = beak_data_result[beak_data_result['species'] == 'fortis']\n\n# Step 3: Assign Result\n# fortis_birds_result is already assigned in the previous step\n\n# Step 4: Output\nreturn fortis_birds_result\n```",
+        "function_parameters": [
+          {
+            "name": "beak_data_result",
+            "type": {
+              "type": "pd.DataFrame['species': str, 'Beak length, mm': float, 'Beak depth, mm': float]"
+            }
+          }
+        ],
+        "function_return_type": {
+          "type": "pd.DataFrame['species': str, 'Beak length, mm': float, 'Beak depth, mm': float]"
+        },
+        "function_computed_value": "The function returns a pandas DataFrame containing cleaned and filtered data of the 'fortis' species, with columns for 'Beak length, mm' and 'Beak depth, mm', ensuring no missing or obviously bad values and having more than 5 rows.",
+        "code": [
+          "import pandas as pd",
+          "def compute_fortis_birds(beak_data_result: pd.DataFrame) -> pd.DataFrame:",
+          "    # Filter rows where species is 'fortis'",
+          "    fortis_birds_result = beak_data_result[beak_data_result['species'] == 'fortis']",
+          "    # Drop rows with any missing or obviously bad values",
+          "    fortis_birds_result = fortis_birds_result.dropna()",
+          "    # Ensure there are more than 5 rows",
+          "    if len(fortis_birds_result) <= 5:",
+          "        raise ValueError('The resulting DataFrame has 5 or fewer rows.')",
+          "    return fortis_birds_result"
+        ],
+        "sanity_checks": null,
+        "unit_tests": null,
+        "sanity_check_results": {},
+        "unit_test_results": {},
+        "warnings": null
+      },
+      {
+        "id": "Step-2",
+        "pill": "Length-Analysis",
+        "label": "Compute 95% CI for mean lengths",
+        "function_name": "compute_length_analysis",
+        "function_result_var": "length_analysis_result",
+        "predecessors": [
+          "f20d8288-0b63-4598-b15e-f11d6b75aff1",
+          "Step-1"
+        ],
+        "phase": 4,
+        "build_cache": {
+          "requirements": {
+            "in_": {
+              "function_parameters": [
+                {
+                  "name": "beak_data_result",
+                  "type": {
+                    "type": "pd.DataFrame['species': str, 'Beak length, mm': float, 'Beak depth, mm': float]"
+                  }
+                },
+                {
+                  "name": "fortis_birds_result",
+                  "type": {
+                    "type": "pd.DataFrame['species': str, 'Beak length, mm': float, 'Beak depth, mm': float]"
+                  }
+                }
+              ],
+              "preconditions": {
+                "beak_data_result": [
+                  "beak_data_result is a pandas DataFrame.",
+                  "beak_data_result contains columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+                  "beak_data_result has no missing or obviously bad values.",
+                  "beak_data_result has more than 5 rows."
+                ],
+                "fortis_birds_result": [
+                  "fortis_birds_result is a pandas DataFrame.",
+                  "fortis_birds_result contains columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+                  "fortis_birds_result has no missing or obviously bad values.",
+                  "fortis_birds_result has more than 5 rows.",
+                  "fortis_birds_result contains only rows where the 'species' column is 'fortis'."
+                ]
+              }
+            },
+            "out_requirements": [
+              "The input 'beak_data_result' is a pandas DataFrame containing columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+              "The input 'fortis_birds_result' is a pandas DataFrame containing only rows where the 'species' column is 'fortis'.",
+              "The output is a tuple containing the lower and upper bounds of the 95% confidence interval for the mean beak length of the Fortis species."
+            ],
+            "out_function_parameters": [
+              {
+                "name": "beak_data_result",
+                "type": {
+                  "type": "pd.DataFrame['species': str, 'Beak length, mm': float, 'Beak depth, mm': float]"
+                }
+              },
+              {
+                "name": "fortis_birds_result",
+                "type": {
+                  "type": "pd.DataFrame['species': str, 'Beak length, mm': float, 'Beak depth, mm': float]"
+                }
+              }
+            ],
+            "out_function_return_type": {
+              "type": "Tuple[float, float]"
+            },
+            "out_function_computed_value": "The function returns a tuple representing the lower and upper bounds of the 95% confidence interval for the mean beak length of the Fortis species.",
+            "out_description": "This stage computes the 95% confidence interval for the mean beak length of the Fortis species. It uses the cleaned and filtered data from the previous steps to perform a bootstrap analysis, which involves resampling the data with replacement and calculating the mean beak length for each sample. The confidence interval is then derived from the distribution of these means.",
+            "valid": true
+          },
+          "algorithm": {
+            "in_": {
+              "requirements": [
+                "The input 'beak_data_result' is a pandas DataFrame containing columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+                "The input 'fortis_birds_result' is a pandas DataFrame containing only rows where the 'species' column is 'fortis'.",
+                "The output is a tuple containing the lower and upper bounds of the 95% confidence interval for the mean beak length of the Fortis species."
+              ],
+              "preconditions": {
+                "beak_data_result": [
+                  "beak_data_result is a pandas DataFrame.",
+                  "beak_data_result contains columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+                  "beak_data_result has no missing or obviously bad values.",
+                  "beak_data_result has more than 5 rows."
+                ],
+                "fortis_birds_result": [
+                  "fortis_birds_result is a pandas DataFrame.",
+                  "fortis_birds_result contains columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+                  "fortis_birds_result has no missing or obviously bad values.",
+                  "fortis_birds_result has more than 5 rows.",
+                  "fortis_birds_result contains only rows where the 'species' column is 'fortis'."
+                ]
+              }
+            },
+            "out_algorithm": "1. **Extract Beak Lengths for Fortis Species**\n    - Extract the 'Beak length, mm' column from the 'fortis_birds_result' DataFrame.\n\n2. **Define Bootstrap Function**\n    - Define a function `bootstrap_mean` that takes a sample array and returns the mean of the sample.\n\n3. **Call Bootstrap Function**\n    - Use the `call_bootstrap` function with the extracted beak lengths, a confidence interval size of 0.95, and the `bootstrap_mean` function to compute the 95% confidence interval for the mean beak length.\n\n4. **Return Result**\n    - Return the lower and upper bounds of the 95% confidence interval as a tuple.",
+            "valid": true
+          },
+          "compile": {
+            "in_": {
+              "signature": "compute_length_analysis(beak_data_result: pd.DataFrame, fortis_birds_result: pd.DataFrame) -> Tuple[float, float]",
+              "parameter_types": {
+                "beak_data_result": {
+                  "type": "pd.DataFrame['species': str, 'Beak length, mm': float, 'Beak depth, mm': float]"
+                },
+                "fortis_birds_result": {
+                  "type": "pd.DataFrame['species': str, 'Beak length, mm': float, 'Beak depth, mm': float]"
+                }
+              },
+              "requirements": [
+                "The input 'beak_data_result' is a pandas DataFrame containing columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+                "The input 'fortis_birds_result' is a pandas DataFrame containing only rows where the 'species' column is 'fortis'.",
+                "The output is a tuple containing the lower and upper bounds of the 95% confidence interval for the mean beak length of the Fortis species."
+              ],
+              "algorithm": "1. **Extract Beak Lengths for Fortis Species**\n    - Extract the 'Beak length, mm' column from the 'fortis_birds_result' DataFrame.\n\n2. **Define Bootstrap Function**\n    - Define a function `bootstrap_mean` that takes a sample array and returns the mean of the sample.\n\n3. **Call Bootstrap Function**\n    - Use the `call_bootstrap` function with the extracted beak lengths, a confidence interval size of 0.95, and the `bootstrap_mean` function to compute the 95% confidence interval for the mean beak length.\n\n4. **Return Result**\n    - Return the lower and upper bounds of the 95% confidence interval as a tuple."
+            },
+            "out_code": [
+              "import pandas as pd",
+              "from typing import Tuple",
+              "import numpy as np",
+              "",
+              "def compute_length_analysis(beak_data_result: pd.DataFrame, fortis_birds_result: pd.DataFrame) -> Tuple[float, float]:",
+              "    # Step 1: Extract Beak Lengths for Fortis Species",
+              "    fortis_beak_lengths = fortis_birds_result['Beak length, mm'].dropna()",
+              "",
+              "    # Step 2: Define Bootstrap Function",
+              "    def bootstrap_mean(sample: np.ndarray) -> float:",
+              "        return np.mean(sample)",
+              "",
+              "    # Step 3: Call Bootstrap Function",
+              "    confidence_interval_size = 0.95",
+              "    lower_bound, upper_bound = call_bootstrap(bootstrap_sample=fortis_beak_lengths.values,",
+              "                                             confidence_interval_size=confidence_interval_size,",
+              "                                             statistic_function=bootstrap_mean)",
+              "",
+              "    # Step 4: Return Result",
+              "    return lower_bound, upper_bound"
+            ],
+            "valid": true
+          },
+          "sanity_checks": null,
+          "unit_tests": null
+        },
+        "description": "This stage computes the 95% confidence interval for the mean beak length of the Fortis species. It uses the cleaned and filtered data from the previous steps to perform a bootstrap analysis, which involves resampling the data with replacement and calculating the mean beak length for each sample. The confidence interval is then derived from the distribution of these means.",
+        "requirements": [
+          "The input 'beak_data_result' is a pandas DataFrame containing columns 'species', 'Beak length, mm', and 'Beak depth, mm'.",
+          "The input 'fortis_birds_result' is a pandas DataFrame containing only rows where the 'species' column is 'fortis'.",
+          "The output is a tuple containing the lower and upper bounds of the 95% confidence interval for the mean beak length of the Fortis species."
+        ],
+        "algorithm": "1. **Extract Beak Lengths for Fortis Species**\n    - Extract the 'Beak length, mm' column from the 'fortis_birds_result' DataFrame.\n\n2. **Define Bootstrap Function**\n    - Define a function `bootstrap_mean` that takes a sample array and returns the mean of the sample.\n\n3. **Call Bootstrap Function**\n    - Use the `call_bootstrap` function with the extracted beak lengths, a confidence interval size of 0.95, and the `bootstrap_mean` function to compute the 95% confidence interval for the mean beak length.\n\n4. **Return Result**\n    - Return the lower and upper bounds of the 95% confidence interval as a tuple.",
+        "function_parameters": [
+          {
+            "name": "beak_data_result",
+            "type": {
+              "type": "pd.DataFrame['species': str, 'Beak length, mm': float, 'Beak depth, mm': float]"
+            }
+          },
+          {
+            "name": "fortis_birds_result",
+            "type": {
+              "type": "pd.DataFrame['species': str, 'Beak length, mm': float, 'Beak depth, mm': float]"
+            }
+          }
+        ],
+        "function_return_type": {
+          "type": "Tuple[float, float]"
+        },
+        "function_computed_value": "The function returns a tuple representing the lower and upper bounds of the 95% confidence interval for the mean beak length of the Fortis species.",
+        "code": [
+          "import pandas as pd",
+          "from typing import Tuple",
+          "import numpy as np",
+          "",
+          "def compute_length_analysis(beak_data_result: pd.DataFrame, fortis_birds_result: pd.DataFrame) -> Tuple[float, float]:",
+          "    # Step 1: Extract Beak Lengths for Fortis Species",
+          "    fortis_beak_lengths = fortis_birds_result['Beak length, mm'].dropna()",
+          "",
+          "    # Step 2: Define Bootstrap Function",
+          "    def bootstrap_mean(sample: np.ndarray) -> float:",
+          "        return np.mean(sample)",
+          "",
+          "    # Step 3: Call Bootstrap Function",
+          "    confidence_interval_size = 0.95",
+          "    lower_bound, upper_bound = call_bootstrap(bootstrap_sample=fortis_beak_lengths.values,",
+          "                                             confidence_interval_size=confidence_interval_size,",
+          "                                             statistic_function=bootstrap_mean)",
+          "",
+          "    # Step 4: Return Result",
+          "    return lower_bound, upper_bound"
+        ],
+        "sanity_checks": null,
+        "unit_tests": null,
+        "sanity_check_results": {},
+        "unit_test_results": {},
+        "warnings": null
+      }
+    ],
+    "edges": [
+      {
+        "id": "2",
+        "src": "f20d8288-0b63-4598-b15e-f11d6b75aff1",
+        "dst": "Step-1"
+      },
+      {
+        "id": "3",
+        "src": "Step-1",
+        "dst": "Step-2"
+      }
+    ]
+  },
+  "outputs": {
+    "outputs": {
+      "f20d8288-0b63-4598-b15e-f11d6b75aff1": {
+        "outputs": [],
+        "results": []
+      },
+      "Step-1": {
+        "outputs": [],
+        "results": []
+      },
+      "Step-2": {
+        "outputs": [],
+        "results": []
+      }
+    }
+  },
+  "spec": {
+    "finch_beaks_1975.csv": "9b1305c32ee4baa9e5a596a092f1b3a00ad77e248729b0513f9bdb81139b619d"
+  },
+  "diagram": {
+    "nodes": {
+      "f20d8288-0b63-4598-b15e-f11d6b75aff1": {
+        "id": "f20d8288-0b63-4598-b15e-f11d6b75aff1",
+        "pill": "Beak-Data",
+        "label": "Load the beak data",
+        "geometry": {
+          "x": 340.0,
+          "y": 250.0,
+          "width": 160.0,
+          "height": 80.0
+        },
+        "output_geometry": null
+      },
+      "Step-1": {
+        "id": "Step-1",
+        "pill": "Fortis-Birds",
+        "label": "Select the Fortis birds",
+        "geometry": {
+          "x": 340.0,
+          "y": 500.0,
+          "width": 160.0,
+          "height": 80.0
+        },
+        "output_geometry": null
+      },
+      "Step-2": {
+        "id": "Step-2",
+        "pill": "Length-Analysis",
+        "label": "Compute 95% CI for mean lengths",
+        "geometry": {
+          "x": 530.0,
+          "y": 670.0,
+          "width": 160.0,
+          "height": 80.0
+        },
+        "output_geometry": null
+      }
+    },
+    "edges": {
+      "2": {
+        "pill": "beak_data_result",
+        "id": "2",
+        "src": "f20d8288-0b63-4598-b15e-f11d6b75aff1",
+        "dst": "Step-1"
+      },
+      "3": {
+        "pill": "fortis_birds_result",
+        "id": "3",
+        "src": "Step-1",
+        "dst": "Step-2"
+      }
+    },
+    "image": null
+  },
+  "diagram_file": null,
+  "versions": [
+    {
+      "file_name": "client.py",
+      "api": {
+        "imported_pages": [],
+        "inputs": [],
+        "output_node_id": null
+      },
+      "dfg": {
+        "description": "",
+        "nodes": [
+          {
+            "id": "f20d8288-0b63-4598-b15e-f11d6b75aff1",
+            "pill": "Beak-Data",
+            "label": "Load the beak data",
+            "function_name": "compute_beak_data",
+            "function_result_var": "beak_data_result",
+            "predecessors": [],
+            "phase": 0,
+            "build_cache": {
+              "requirements": null,
+              "algorithm": null,
+              "compile": null,
+              "sanity_checks": null,
+              "unit_tests": null
+            },
+            "description": null,
+            "requirements": null,
+            "algorithm": null,
+            "function_parameters": null,
+            "function_return_type": null,
+            "function_computed_value": null,
+            "code": null,
+            "sanity_checks": null,
+            "unit_tests": null,
+            "sanity_check_results": {},
+            "unit_test_results": {},
+            "warnings": null
+          },
+          {
+            "id": "Step-1",
+            "pill": "Fortis-Birds",
+            "label": "Select the Fortis birds",
+            "function_name": "compute_fortis_birds",
+            "function_result_var": "fortis_birds_result",
+            "predecessors": [
+              "f20d8288-0b63-4598-b15e-f11d6b75aff1"
+            ],
+            "phase": 0,
+            "build_cache": {
+              "requirements": null,
+              "algorithm": null,
+              "compile": null,
+              "sanity_checks": null,
+              "unit_tests": null
+            },
+            "description": null,
+            "requirements": null,
+            "algorithm": null,
+            "function_parameters": null,
+            "function_return_type": null,
+            "function_computed_value": null,
+            "code": null,
+            "sanity_checks": null,
+            "unit_tests": null,
+            "sanity_check_results": {},
+            "unit_test_results": {},
+            "warnings": null
+          },
+          {
+            "id": "Step-2",
+            "pill": "Length-Analysis",
+            "label": "Compute 95% CI for mean lengths",
+            "function_name": "compute_length_analysis",
+            "function_result_var": "length_analysis_result",
+            "predecessors": [
+              "f20d8288-0b63-4598-b15e-f11d6b75aff1",
+              "Step-1"
+            ],
+            "phase": 0,
+            "build_cache": {
+              "requirements": null,
+              "algorithm": null,
+              "compile": null,
+              "sanity_checks": null,
+              "unit_tests": null
+            },
+            "description": null,
+            "requirements": [],
+            "algorithm": null,
+            "function_parameters": null,
+            "function_return_type": null,
+            "function_computed_value": null,
+            "code": null,
+            "sanity_checks": null,
+            "unit_tests": null,
+            "sanity_check_results": {},
+            "unit_test_results": {},
+            "warnings": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "2",
+            "src": "f20d8288-0b63-4598-b15e-f11d6b75aff1",
+            "dst": "Step-1"
+          },
+          {
+            "id": "3",
+            "src": "Step-1",
+            "dst": "Step-2"
+          }
+        ]
+      },
+      "outputs": {
+        "outputs": {}
+      },
+      "spec": {
+        "finch_beaks_1975.csv": "9b1305c32ee4baa9e5a596a092f1b3a00ad77e248729b0513f9bdb81139b619d"
+      },
+      "diagram": {
+        "nodes": {
+          "f20d8288-0b63-4598-b15e-f11d6b75aff1": {
+            "id": "f20d8288-0b63-4598-b15e-f11d6b75aff1",
+            "pill": "Beak-Data",
+            "label": "Load the beak data",
+            "geometry": {
+              "x": 340.0,
+              "y": 250.0,
+              "width": 160.0,
+              "height": 80.0
+            },
+            "output_geometry": null
+          },
+          "Step-1": {
+            "id": "Step-1",
+            "pill": "Fortis-Birds",
+            "label": "Select the Fortis birds",
+            "geometry": {
+              "x": 340.0,
+              "y": 500.0,
+              "width": 160.0,
+              "height": 80.0
+            },
+            "output_geometry": null
+          },
+          "Step-2": {
+            "id": "Step-2",
+            "pill": "Length-Analysis",
+            "label": "Compute 95% CI for mean lengths",
+            "geometry": {
+              "x": 530.0,
+              "y": 670.0,
+              "width": 160.0,
+              "height": 80.0
+            },
+            "output_geometry": null
+          }
+        },
+        "edges": {
+          "2": {
+            "pill": "beak_data_result",
+            "id": "2",
+            "src": "f20d8288-0b63-4598-b15e-f11d6b75aff1",
+            "dst": "Step-1"
+          },
+          "3": {
+            "pill": "fortis_birds_result",
+            "id": "3",
+            "src": "Step-1",
+            "dst": "Step-2"
+          }
+        },
+        "image": null
+      },
+      "diagram_file": null,
+      "versions": []
+    }
+  ]
+}

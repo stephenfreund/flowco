@@ -1,0 +1,11 @@
+
+Build and run the sketch.
+
+Change it to filter for Scandens birds rather than Fortis.
+
+Change the histogram to be green and purple in color.
+
+Make a plot showing the CI for different numbers of bootstrap trials, eg: 10, 20,30,40,50,60,70,80,90,100.
+  (Not the most meaningful, but okay for a test.)
+
+

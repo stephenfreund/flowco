@@ -1,0 +1,107 @@
+{
+  "file_name": "finch-small.flowco",
+  "dfg": {
+    "version": 0,
+    "description": "",
+    "nodes": [
+      {
+        "id": "Step-1",
+        "pill": "Remove-All",
+        "label": "Remove all bad values, including negatives from Finch table",
+        "geometry": {
+          "x": 210.0,
+          "y": 220.0,
+          "width": 160.0,
+          "height": 80.0
+        },
+        "output_geometry": {
+          "x": 540.0,
+          "y": 200.0,
+          "width": 400.0,
+          "height": 300.0
+        },
+        "function_name": "compute_remove_all",
+        "function_result_var": "remove_all_result",
+        "predecessors": [],
+        "phase": 0,
+        "cache": {
+          "caches": {}
+        },
+        "function_parameters": null,
+        "preconditions": null,
+        "requirements": null,
+        "description": null,
+        "function_return_type": null,
+        "function_computed_value": null,
+        "algorithm": null,
+        "code": null,
+        "result": null,
+        "sanity_checks": null,
+        "unit_tests": null,
+        "sanity_check_results": {},
+        "unit_test_results": {},
+        "messages": [],
+        "questions": null,
+        "build_status": null
+      },
+      {
+        "id": "Step-2",
+        "pill": "Plot-Histogram",
+        "label": "Plot histogram of beak lengths",
+        "geometry": {
+          "x": 600.0,
+          "y": 200.0,
+          "width": 160.0,
+          "height": 80.0
+        },
+        "output_geometry": {
+          "x": 860.0,
+          "y": 240.0,
+          "width": 400.0,
+          "height": 300.0
+        },
+        "function_name": "compute_plot_histogram",
+        "function_result_var": "plot_histogram_result",
+        "predecessors": [
+          "Step-1"
+        ],
+        "phase": 0,
+        "cache": {
+          "caches": {}
+        },
+        "function_parameters": null,
+        "preconditions": null,
+        "requirements": null,
+        "description": null,
+        "function_return_type": null,
+        "function_computed_value": null,
+        "algorithm": null,
+        "code": null,
+        "result": null,
+        "sanity_checks": null,
+        "unit_tests": null,
+        "sanity_check_results": {},
+        "unit_test_results": {},
+        "messages": [],
+        "questions": null,
+        "build_status": null
+      }
+    ],
+    "edges": [
+      {
+        "id": "2",
+        "src": "Step-1",
+        "dst": "Step-2"
+      }
+    ],
+    "image": null
+  },
+  "tables": {
+    "tables": {
+      "finch_beaks_1975.csv": {
+        "file_path": "finch_beaks_1975.csv"
+      }
+    }
+  },
+  "versions": []
+}

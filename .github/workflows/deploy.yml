@@ -1,0 +1,73 @@
+name: Deploy to AWS ECS
+
+on:
+  push:
+    branches:
+      - aws  # Trigger deployment on push to the aws branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest  # Use the latest Ubuntu runner
+
+    steps:
+      # 1. Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v3  # Use the latest version of the checkout action
+
+      # 2. Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2  # Use version 2 of the action
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}  # AWS Access Key ID stored in GitHub Secrets
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  # AWS Secret Access Key stored in GitHub Secrets
+          aws-region: us-east-1  # Replace with your AWS region if different
+
+      # 3. Decode and write secrets.toml
+      - name: Decode and write secrets.toml
+        run: |
+          mkdir -p .streamlit
+          echo "${{ secrets.SECRETS_TOML_BASE64 }}" | base64 --decode > .streamlit/secrets.toml
+
+      # 4. Log in to Amazon ECR
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2  # Use version 2 of the ECR login action
+
+      # 5. Build, tag, and push Docker image to ECR
+      - name: Build, tag, and push Docker image
+        env:
+          ECR_REGISTRY: 925527669208.dkr.ecr.us-east-1.amazonaws.com  # Your AWS Account ID and region
+          ECR_REPOSITORY: flowco-app  # Your ECR repository name
+          IMAGE_TAG: ${{ github.sha }}  # Use the commit SHA as image tag for uniqueness
+        run: |
+          BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")  # Generate the build date in UTC
+
+          # Build the Docker image targeting the amd64 architecture for AWS Fargate compatibility
+          docker build --platform linux/amd64 \
+            --build-arg COMMIT_SHA=${{ github.sha }} \
+            --build-arg BUILD_DATE=$BUILD_DATE \
+            -t $ECR_REPOSITORY:$IMAGE_TAG .
+          
+          # Tag the Docker image with the ECR registry URI
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          
+          # Push the Docker image to the ECR repository
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      # 6. Register a new ECS Task Definition
+      - name: Register ECS Task Definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: .github/ecs/flowco-task.json  # Path to your task definition file
+          container-name: flowco-container  # Your ECS Container name within the task definition
+          image: 925527669208.dkr.ecr.us-east-1.amazonaws.com/flowco-app:${{ github.sha }}  # Full ECR image URI with tag
+
+      # 7. Deploy the new Task Definition to ECS
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}  # Reference the rendered task definition
+          service: flowco-service  # Your ECS Service name
+          cluster: flowco-cluster  # Your ECS Cluster name
+          wait-for-service-stability: true  # Wait until the service is stable before completing the job

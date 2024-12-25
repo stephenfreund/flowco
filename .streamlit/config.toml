@@ -1,0 +1,5 @@
+[logger]
+messageFormat = "%(message)s"
+
+[client]
+toolbarMode = "developer"

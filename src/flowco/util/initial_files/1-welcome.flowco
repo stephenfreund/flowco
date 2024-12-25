@@ -1,0 +1,103 @@
+{
+  "file_name": "welcome.flowco",
+  "dfg": {
+    "version": 20,
+    "description": "1. Click run -- did it work?\n2. Hover over \"Create-1000\" node.  Drag from the (+) to create a new node.  Label it \"Compute Mean\".\n3. Run it again.  Is the mean what you'd expect?\n4. Add another node the same way.  Label it -- \"Is this distribution normal?\"  Run it again.\n",
+    "nodes": [
+      {
+        "id": "Step-1",
+        "pill": "Create-1000",
+        "label": "Create 1000 values drawn for a normal distribution",
+        "geometry": {
+          "x": 40.0,
+          "y": 70.0,
+          "width": 160.0,
+          "height": 80.0
+        },
+        "output_geometry": {
+          "x": 340.0,
+          "y": 140.0,
+          "width": 400.0,
+          "height": 300.0
+        },
+        "function_name": "compute_create_1000",
+        "function_result_var": "create_1000_result",
+        "predecessors": [],
+        "phase": 0,
+        "cache": {
+          "caches": {}
+        },
+        "function_parameters": null,
+        "preconditions": null,
+        "requirements": null,
+        "description": null,
+        "function_return_type": null,
+        "function_computed_value": null,
+        "algorithm": null,
+        "code": null,
+        "result": null,
+        "sanity_checks": null,
+        "unit_tests": null,
+        "sanity_check_results": {},
+        "unit_test_results": {},
+        "messages": [],
+        "questions": null,
+        "build_status": null
+      },
+      {
+        "id": "Step-2",
+        "pill": "Plot-Histogram",
+        "label": "Plot histogram",
+        "geometry": {
+          "x": 40.0,
+          "y": 190.0,
+          "width": 160.0,
+          "height": 80.0
+        },
+        "output_geometry": {
+          "x": 200.0,
+          "y": 370.0,
+          "width": 400.0,
+          "height": 300.0
+        },
+        "function_name": "compute_plot_histogram",
+        "function_result_var": "plot_histogram_result",
+        "predecessors": [
+          "Step-1"
+        ],
+        "phase": 0,
+        "cache": {
+          "caches": {}
+        },
+        "function_parameters": null,
+        "preconditions": null,
+        "requirements": null,
+        "description": null,
+        "function_return_type": null,
+        "function_computed_value": null,
+        "algorithm": null,
+        "code": null,
+        "result": null,
+        "sanity_checks": null,
+        "unit_tests": null,
+        "sanity_check_results": {},
+        "unit_test_results": {},
+        "messages": [],
+        "questions": null,
+        "build_status": null
+      }
+    ],
+    "edges": [
+      {
+        "id": "2",
+        "src": "Step-1",
+        "dst": "Step-2"
+      }
+    ],
+    "image": null
+  },
+  "tables": {
+    "tables": [
+    ]
+  }
+}

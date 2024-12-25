@@ -1,0 +1,104 @@
+{
+  "file_name": "geyser-tutorial.flowco",
+  "dfg": {
+    "version": 166,
+    "description": "0. Run the code.\n1. Verify the scatter plot is reasonable.  There should be two clusters of points corresponding to short and long eruptions.\n2. Connect the \"Clean-Data\" node to a new node that plots a regression line for the full data set.\n3. Add another node from \"Clean-Data\" the divides the data into separate pieces for the two clusters.\n4. Add two new nodes from that node for computing the regression line for the short eruptions and long eruptions.\n5. Connect both of those nodes to a new node that plots both data sets and regression lines, in different colors.\n",
+    "nodes": [
+      {
+        "id": "Step-1",
+        "pill": "Clean-Data",
+        "label": "Clean the data",
+        "geometry": {
+          "x": 30.0,
+          "y": 70.0,
+          "width": 160.0,
+          "height": 80.0
+        },
+        "output_geometry": {
+          "x": 550.0,
+          "y": 170.0,
+          "width": 200.0,
+          "height": 150.0
+        },
+        "function_name": "compute_clean_data",
+        "function_result_var": "clean_data_result",
+        "predecessors": [],
+        "phase": 0,
+        "cache": {
+          "caches": {}
+        },
+        "function_parameters": null,
+        "preconditions": null,
+        "requirements": null,
+        "description": null,
+        "function_return_type": null,
+        "function_computed_value": null,
+        "algorithm": null,
+        "code": null,
+        "result": null,
+        "sanity_checks": null,
+        "unit_tests": null,
+        "sanity_check_results": {},
+        "unit_test_results": {},
+        "messages": [],
+        "questions": null,
+        "build_status": null
+      },
+      {
+        "id": "Step-7",
+        "pill": "Scatter-Plot",
+        "label": "Scatter plot",
+        "geometry": {
+          "x": 310.0,
+          "y": 180.0,
+          "width": 160.0,
+          "height": 80.0
+        },
+        "output_geometry": {
+          "x": 550.0,
+          "y": 90.0,
+          "width": 280.0,
+          "height": 210.0
+        },
+        "function_name": "compute_scatter_plot",
+        "function_result_var": "scatter_plot_result",
+        "predecessors": [
+          "Step-1"
+        ],
+        "phase": 0,
+        "cache": {
+          "caches": {}
+        },
+        "function_parameters": null,
+        "preconditions": null,
+        "requirements": null,
+        "description": null,
+        "function_return_type": null,
+        "function_computed_value": null,
+        "algorithm": null,
+        "code": null,
+        "result": null,
+        "sanity_checks": null,
+        "unit_tests": null,
+        "sanity_check_results": {},
+        "unit_test_results": {},
+        "messages": [],
+        "questions": null,
+        "build_status": null
+      }
+    ],
+    "edges": [
+      {
+        "id": "7",
+        "src": "Step-1",
+        "dst": "Step-7"
+      }
+    ],
+    "image": null
+  },
+  "tables": {
+    "tables": [
+      "old_faithful.csv"
+    ]
+  }
+}

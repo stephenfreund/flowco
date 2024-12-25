@@ -1,0 +1,149 @@
+{
+  "file_name": "simple.flowco",
+  "dfg": {
+    "description": "",
+    "nodes": [
+      {
+        "id": "Step-1",
+        "pill": "Make-Array",
+        "label": "Make array of 1000 random numbers",
+        "geometry": {
+          "x": 220.0,
+          "y": 280.0,
+          "width": 160.0,
+          "height": 80.0
+        },
+        "output_geometry": {
+          "x": 420.0,
+          "y": 190.0,
+          "width": 400.0,
+          "height": 300.0
+        },
+        "function_name": "compute_make_array",
+        "function_result_var": "make_array_result",
+        "predecessors": [],
+        "phase": 0,
+        "cache": {
+          "caches": {}
+        },
+        "function_parameters": null,
+        "preconditions": null,
+        "requirements": null,
+        "description": null,
+        "function_return_type": null,
+        "function_computed_value": null,
+        "algorithm": null,
+        "code": null,
+        "result": null,
+        "sanity_checks": null,
+        "unit_tests": null,
+        "sanity_check_results": {},
+        "unit_test_results": {},
+        "messages": [],
+        "questions": null,
+        "build_status": null
+      },
+      {
+        "id": "Step-2",
+        "pill": "Show-Histogram",
+        "label": "Show histogram",
+        "geometry": {
+          "x": 470.0,
+          "y": 280.0,
+          "width": 160.0,
+          "height": 80.0
+        },
+        "output_geometry": {
+          "x": 680.0,
+          "y": 280.0,
+          "width": 400.0,
+          "height": 300.0
+        },
+        "function_name": "compute_show_histogram",
+        "function_result_var": "show_histogram_result",
+        "predecessors": [
+          "Step-1"
+        ],
+        "phase": 0,
+        "cache": {
+          "caches": {}
+        },
+        "function_parameters": null,
+        "preconditions": null,
+        "requirements": null,
+        "description": null,
+        "function_return_type": null,
+        "function_computed_value": null,
+        "algorithm": null,
+        "code": null,
+        "result": null,
+        "sanity_checks": null,
+        "unit_tests": null,
+        "sanity_check_results": {},
+        "unit_test_results": {},
+        "messages": [],
+        "questions": null,
+        "build_status": null
+      },
+      {
+        "id": "Step-3",
+        "pill": "Compute-Max",
+        "label": "compute max",
+        "geometry": {
+          "x": 430.0,
+          "y": 560.0,
+          "width": 160.0,
+          "height": 80.0
+        },
+        "output_geometry": {
+          "x": 630.0,
+          "y": 670.0,
+          "width": 200.0,
+          "height": 110.0
+        },
+        "function_name": "compute_compute_max",
+        "function_result_var": "compute_max_result",
+        "predecessors": [
+          "Step-1"
+        ],
+        "phase": 0,
+        "cache": {
+          "caches": {}
+        },
+        "function_parameters": null,
+        "preconditions": null,
+        "requirements": null,
+        "description": null,
+        "function_return_type": null,
+        "function_computed_value": null,
+        "algorithm": null,
+        "code": null,
+        "result": null,
+        "sanity_checks": null,
+        "unit_tests": null,
+        "sanity_check_results": {},
+        "unit_test_results": {},
+        "messages": [],
+        "questions": null,
+        "build_status": null
+      }
+    ],
+    "edges": [
+      {
+        "id": "2",
+        "src": "Step-1",
+        "dst": "Step-2"
+      },
+      {
+        "id": "5",
+        "src": "Step-1",
+        "dst": "Step-3"
+      }
+    ],
+    "image": null
+  },
+  "tables": {
+    "tables": {}
+  },
+  "versions": []
+}
