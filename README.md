@@ -4,7 +4,7 @@ Flowco needs a better description.
 
 ## Web
 
-![go-flow.co](https://go-flow.co)
+[https://go-flow.co](https://go-flow.co)
 
 Log in with Google credentials.  All files are stored on AWS S3 partition.  This uses my own OpenAI key for now...
 
