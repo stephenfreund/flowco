@@ -1,16 +1,10 @@
 from __future__ import annotations
 
-from cmath import phase
 from collections import deque
 from dataclasses import dataclass
-import json
 import os
-import tempfile
 import textwrap
-from tkinter import font
-from turtle import width
 from typing import Any, Dict, List, Literal, Optional, Set, Union
-from flask import cli
 from graphviz import Digraph
 from pydantic import BaseModel, Field
 
@@ -18,7 +12,6 @@ import base64
 
 import openai
 
-from flowco.assistant.openai import OpenAIAssistant
 from flowco.builder.cache import BuildCache
 from flowco.dataflow.extended_type import ExtendedType
 from flowco.dataflow.function_call import FunctionCall

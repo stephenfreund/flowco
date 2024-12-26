@@ -1,8 +1,9 @@
 
 all:
 	pip3 install -e .
-	cd mxgraph_component; make 
-	pip3 install --force-reinstall ./mxgraph_component/dist/mxgraph_component-0.0.1-py3-none-any.whl
+	cd mxgraph_component; make
+	pip3 uninstall mxgraph_component -y
+	pip3 install ./mxgraph_component/dist/mxgraph_component-0.0.1-py3-none-any.whl
 	echo ""
 	echo "Make sure dot is installed on your system"
 	echo "If not, install it using 'sudo apt-get install graphviz' or similar"

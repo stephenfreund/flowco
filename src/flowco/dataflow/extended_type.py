@@ -23,7 +23,12 @@ class BaseType(BaseModel):
 
 
 class IntType(BaseType):
-    type: Literal["int"] = "int"
+    type: Literal["int"] #= "int"
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "int"
+        super().__init__(**data)
 
     def to_python_type(self) -> str:
         return "int"
@@ -42,7 +47,12 @@ class IntType(BaseType):
 
 
 class BoolType(BaseType):
-    type: Literal["bool"] = "bool"
+    type: Literal["bool"] #= "bool"
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "bool"
+        super().__init__(**data)
 
     def to_python_type(self) -> str:
         return "bool"
@@ -59,7 +69,12 @@ class BoolType(BaseType):
 
 
 class StrType(BaseType):
-    type: Literal["str"] = "str"
+    type: Literal["str"] #= "str"
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "str"
+        super().__init__(**data)
 
     def to_python_type(self) -> str:
         return "str"
@@ -76,7 +91,12 @@ class StrType(BaseType):
 
 
 class AnyType(BaseType):
-    type: Literal["Any"] = "Any"
+    type: Literal["Any"] #= "Any"
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "Any"
+        super().__init__(**data)
 
     def to_python_type(self) -> str:
         return "Any"
@@ -93,7 +113,12 @@ class AnyType(BaseType):
 
 
 class NoneType(BaseType):
-    type: Literal["None"] = "None"
+    type: Literal["None"] #= "None"
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "None"
+        super().__init__(**data)
 
     def to_python_type(self) -> str:
         return "None"
@@ -110,7 +135,12 @@ class NoneType(BaseType):
 
 
 class FloatType(BaseType):
-    type: Literal["float"] = "float"
+    type: Literal["float"] #= "float"
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "float"
+        super().__init__(**data)
 
     def to_python_type(self) -> str:
         return "float"
@@ -127,8 +157,13 @@ class FloatType(BaseType):
 
 
 class OptionalType(BaseType):
-    type: Literal["Optional"] = "Optional"
+    type: Literal["Optional"] #= "Optional"
     wrapped_type: "TypeRepresentation"
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "Optional"
+        super().__init__(**data)
 
     def to_python_type(self) -> str:
         return f"Optional[{self.wrapped_type.to_python_type()}]"
@@ -174,11 +209,16 @@ class KeyType(BaseModel):
 
 
 class ListType(BaseType):
-    type: Literal["List"] = "List"
+    type: Literal["List"] #= "List"
     element_type: "TypeRepresentation"
     length: int | None = Field(
         description="The expected length of the list. If None, the length can be arbitrary."
     )
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "List"
+        super().__init__(**data)
 
     def to_python_type(self) -> str:
         return f"List[{self.element_type.to_python_type()}]"
@@ -202,7 +242,7 @@ class ListType(BaseType):
 
 
 class TypedDictType(BaseType):
-    type: Literal["TypedDict"] = "TypedDict"
+    type: Literal["TypedDict"] #= "TypedDict"
     name: str = Field(
         description="A unique name for the dictionary type. This is used to generate a unique TypedDict name."
     )
@@ -211,9 +251,9 @@ class TypedDictType(BaseType):
     )
 
     def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "TypedDict"
         super().__init__(**data)
-        # Ensure the items are sorted by key
-        self.items = sorted(self.items, key=lambda x: x.key)
 
     def to_python_type(self) -> str:
         elems = [f"'{item.key}': {item.type.to_python_type()}" for item in self.items]
@@ -246,8 +286,13 @@ class TypedDictType(BaseType):
 
 
 class TupleType(BaseType):
-    type: Literal["Tuple"] = "Tuple"
+    type: Literal["Tuple"] #= "Tuple"
     elements: List["TypeRepresentation"]
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "Tuple"
+        super().__init__(**data)
 
     def to_python_type(self) -> str:
         elements_str = ", ".join([elem.to_python_type() for elem in self.elements])
@@ -273,8 +318,13 @@ class TupleType(BaseType):
 
 
 class SetType(BaseType):
-    type: Literal["Set"] = "Set"
+    type: Literal["Set"] #= "Set"
     element_type: "TypeRepresentation"
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "Set"
+        super().__init__(**data)
 
     def to_python_type(self) -> str:
         return f"Set[{self.element_type.to_python_type()}]"
@@ -296,10 +346,15 @@ class SetType(BaseType):
 
 
 class PDDataFrameType(BaseType):
-    type: Literal["pd.DataFrame"] = "pd.DataFrame"
+    type: Literal["pd.DataFrame"] #= "pd.DataFrame"
     columns: List[KeyType] = Field(
         description="A list of key-value pairs where the key is the column name and the value is the type of the column."
     )
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "pd.DataFrame"
+        super().__init__(**data)
 
     def to_python_type(self) -> str:
         return "pd.DataFrame"
@@ -329,8 +384,13 @@ class PDDataFrameType(BaseType):
 
 
 class PDSeriesType(BaseType):
-    type: Literal["pd.Series"] = "pd.Series"
+    type: Literal["pd.Series"] #= "pd.Series"
     element_type: "TypeRepresentation"
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "pd.Series"
+        super().__init__(**data)
 
     def to_python_type(self) -> str:
         return "pd.Series"
@@ -355,11 +415,16 @@ class PDSeriesType(BaseType):
 
 
 class NumpyNdarrayType(BaseType):
-    type: Literal["np.ndarray"] = "np.ndarray"
+    type: Literal["np.ndarray"] # = "np.ndarray"
     element_type: "TypeRepresentation"
     length: int | None = Field(
         description="The expected length of the list. If None, the length can be arbitrary."
     )
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "np.ndarray"
+        super().__init__(**data)
 
     def to_python_type(self) -> str:
         return "np.ndarray"
@@ -454,7 +519,7 @@ class ExtendedType(BaseModel):
             elif isinstance(val, list):
                 try:
                     element_type = infer_type_of_elements(val)
-                    return ListType(element_type=element_type)
+                    return ListType(element_type=element_type,length=len(val))
                 except AnyType:
                     return AnyType()
             elif isinstance(val, set):
@@ -490,7 +555,7 @@ class ExtendedType(BaseModel):
                     element = AnyType()
                 else:
                     element = infer_type(val.flat[0])
-                return NumpyNdarrayType(element_type=element)
+                return NumpyNdarrayType(element_type=element, length=val.size)
             return AnyType()
 
         return cls(
@@ -585,7 +650,7 @@ if __name__ == "__main__":
 
     for p in prompts:
         completion = client.beta.chat.completions.parse(
-            model="gpt-4o",
+            model="gpt-4o-2024-11-20",
             response_format=ExtendedType,
             messages=[{"role": "system", "content": p}],
         )

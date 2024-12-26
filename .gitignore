@@ -1,4 +1,9 @@
-**/secrets.toml
+secrets.toml
+secrets.toml.b64
+logging.txt
+node_modules/
+package-lock.json
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

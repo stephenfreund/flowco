@@ -341,9 +341,9 @@ class Page(BaseModel, extra="allow"):
     ) -> Iterable[BuildUpdate]:
 
         self.check_up_to_date()
-        session.get("shells", PythonShells).preload_shells(
-            self.tables, self.dfg.node_ids()
-        )
+        # session.get("shells", PythonShells).preload_shells(
+        #     self.tables, self.dfg.node_ids()
+        # )
 
         build_config = self.base_build_config(repair=repair)
 

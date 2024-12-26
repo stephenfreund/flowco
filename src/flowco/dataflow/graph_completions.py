@@ -55,8 +55,9 @@ def node_completion_model(
             Field(description="Explanation of the completion."),
         )
 
-    model = create_model("NodeCompletion", **kwargs)  # type: ignore
+    model : BaseModel = create_model("NodeCompletion", **kwargs)  # type: ignore
     model.model_rebuild()
+    print(model.model_json_schema())
     return model
 
 
