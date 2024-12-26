@@ -14,8 +14,8 @@ from flowco.session.session import session
 class PythonShells:
     def __init__(self, num_shells : int = 8, restart_threadhold: int = 100):
         self.queue = queue.Queue()
-        self._preload_shells(num_shells)
         self.restart_threadhold = restart_threadhold
+        self._preload_shells(num_shells)
 
     def _preload_shells(self, num_shells) -> None:
         def init_worker(session_data):
