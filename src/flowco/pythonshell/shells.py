@@ -53,6 +53,9 @@ class PythonShells:
         else:
             self.queue.put(shell)
 
+
+    # These must be thread safe entry points:
+
     def run(self, code: str) -> EvalResult:
         shell = self._get_shell()
         try:

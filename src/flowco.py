@@ -28,6 +28,9 @@ def parse_args():
     args = parser.parse_args(sys.argv[1:])
     return args
 
+@st.cache_resource
+def python_shells():
+    return PythonShells()
 
 if "user_email" not in st.session_state:
     st.session_state.args = parse_args()
@@ -45,7 +48,7 @@ def init_service():
             output=Output(prefix=key),
             costs=CostTracker(),
             stopper=Stopper(),
-            shells=PythonShells(),
+            shells=python_shells(),
             filesystem=SessionFileSystem(
                 f"s3://go-flowco/{st.session_state.user_email}"
             ),
