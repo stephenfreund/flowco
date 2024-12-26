@@ -23,7 +23,7 @@ class BaseType(BaseModel):
 
 
 class IntType(BaseType):
-    type: Literal["int"] #= "int"
+    type: Literal["int"]  # = "int"
 
     def __init__(self, **data):
         if "type" not in data:
@@ -47,7 +47,7 @@ class IntType(BaseType):
 
 
 class BoolType(BaseType):
-    type: Literal["bool"] #= "bool"
+    type: Literal["bool"]  # = "bool"
 
     def __init__(self, **data):
         if "type" not in data:
@@ -69,7 +69,7 @@ class BoolType(BaseType):
 
 
 class StrType(BaseType):
-    type: Literal["str"] #= "str"
+    type: Literal["str"]  # = "str"
 
     def __init__(self, **data):
         if "type" not in data:
@@ -91,7 +91,7 @@ class StrType(BaseType):
 
 
 class AnyType(BaseType):
-    type: Literal["Any"] #= "Any"
+    type: Literal["Any"]  # = "Any"
 
     def __init__(self, **data):
         if "type" not in data:
@@ -113,7 +113,7 @@ class AnyType(BaseType):
 
 
 class NoneType(BaseType):
-    type: Literal["None"] #= "None"
+    type: Literal["None"]  # = "None"
 
     def __init__(self, **data):
         if "type" not in data:
@@ -135,7 +135,7 @@ class NoneType(BaseType):
 
 
 class FloatType(BaseType):
-    type: Literal["float"] #= "float"
+    type: Literal["float"]  # = "float"
 
     def __init__(self, **data):
         if "type" not in data:
@@ -157,7 +157,7 @@ class FloatType(BaseType):
 
 
 class OptionalType(BaseType):
-    type: Literal["Optional"] #= "Optional"
+    type: Literal["Optional"]  # = "Optional"
     wrapped_type: "TypeRepresentation"
 
     def __init__(self, **data):
@@ -209,7 +209,7 @@ class KeyType(BaseModel):
 
 
 class ListType(BaseType):
-    type: Literal["List"] #= "List"
+    type: Literal["List"]  # = "List"
     element_type: "TypeRepresentation"
     length: int | None = Field(
         description="The expected length of the list. If None, the length can be arbitrary."
@@ -242,7 +242,7 @@ class ListType(BaseType):
 
 
 class TypedDictType(BaseType):
-    type: Literal["TypedDict"] #= "TypedDict"
+    type: Literal["TypedDict"]  # = "TypedDict"
     name: str = Field(
         description="A unique name for the dictionary type. This is used to generate a unique TypedDict name."
     )
@@ -286,7 +286,7 @@ class TypedDictType(BaseType):
 
 
 class TupleType(BaseType):
-    type: Literal["Tuple"] #= "Tuple"
+    type: Literal["Tuple"]  # = "Tuple"
     elements: List["TypeRepresentation"]
 
     def __init__(self, **data):
@@ -318,7 +318,7 @@ class TupleType(BaseType):
 
 
 class SetType(BaseType):
-    type: Literal["Set"] #= "Set"
+    type: Literal["Set"]  # = "Set"
     element_type: "TypeRepresentation"
 
     def __init__(self, **data):
@@ -346,7 +346,7 @@ class SetType(BaseType):
 
 
 class PDDataFrameType(BaseType):
-    type: Literal["pd.DataFrame"] #= "pd.DataFrame"
+    type: Literal["pd.DataFrame"]  # = "pd.DataFrame"
     columns: List[KeyType] = Field(
         description="A list of key-value pairs where the key is the column name and the value is the type of the column."
     )
@@ -384,7 +384,7 @@ class PDDataFrameType(BaseType):
 
 
 class PDSeriesType(BaseType):
-    type: Literal["pd.Series"] #= "pd.Series"
+    type: Literal["pd.Series"]  # = "pd.Series"
     element_type: "TypeRepresentation"
 
     def __init__(self, **data):
@@ -415,7 +415,7 @@ class PDSeriesType(BaseType):
 
 
 class NumpyNdarrayType(BaseType):
-    type: Literal["np.ndarray"] # = "np.ndarray"
+    type: Literal["np.ndarray"]  # = "np.ndarray"
     element_type: "TypeRepresentation"
     length: int | None = Field(
         description="The expected length of the list. If None, the length can be arbitrary."
@@ -519,7 +519,7 @@ class ExtendedType(BaseModel):
             elif isinstance(val, list):
                 try:
                     element_type = infer_type_of_elements(val)
-                    return ListType(element_type=element_type,length=len(val))
+                    return ListType(element_type=element_type, length=len(val))
                 except AnyType:
                     return AnyType()
             elif isinstance(val, set):

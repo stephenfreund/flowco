@@ -95,7 +95,6 @@ class PythonShell:
         encode_src = inspect.getsource(encode)
         self._run_cell(encode_src)
 
-
     def run(self, code: str) -> EvalResult:
         execution_result = self._run_cell(code)
         stdout = ""
@@ -179,7 +178,9 @@ class PythonShell:
             error(f"Unexpected error executing cell {index}: {e}")
             raise e
 
-    def run_node(self, tables: GlobalTables, dfg: DataFlowGraph, node: Node) -> NodeResult:
+    def run_node(
+        self, tables: GlobalTables, dfg: DataFlowGraph, node: Node
+    ) -> NodeResult:
         """
         Evaluate a Node object and capture outputs.
 
@@ -203,7 +204,9 @@ class PythonShell:
                     predecessor = dfg[predecessor_id]
                     with logger(f"Retrieving predecessor result for {predecessor_id}"):
                         repr_val, _ = predecessor.result.result.to_repr()
-                        self._run_cell(f"{predecessor.function_result_var} = {repr_val}")
+                        self._run_cell(
+                            f"{predecessor.function_result_var} = {repr_val}"
+                        )
                         arguments.append(predecessor.function_result_var)
 
                 # Execute the node's code
@@ -237,7 +240,7 @@ class PythonShell:
         return len(self.nb.cells)
 
     async def restart(self):
-        self.nb.cells = [] 
+        self.nb.cells = []
         await self.client.km.restart_kernel(now=True)
         self._init()
 

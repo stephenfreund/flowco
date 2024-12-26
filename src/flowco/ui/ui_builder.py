@@ -36,6 +36,7 @@ def run(
                     queue.join()
         log("Done building.")
 
+
 class Builder:
 
     def __init__(

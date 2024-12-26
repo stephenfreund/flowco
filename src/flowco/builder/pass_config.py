@@ -6,4 +6,3 @@ from flowco.page.tables import GlobalTables
 class PassConfig:
     max_retries: int
     tables: GlobalTables
-

@@ -210,7 +210,7 @@ class Page(BaseModel, extra="allow"):
                 error("Doing hard reset.")
 
                 if "dfg" not in data or data["dfg"] is None:
-                    data['dfg'] = DataFlowGraph(version=0)
+                    data["dfg"] = DataFlowGraph(version=0)
                 else:
                     data["dfg"] = DataFlowGraph.hard_reset(data["dfg"])
 

@@ -214,7 +214,9 @@ class HtmlCommand(Command):
             ],
         )
 
-        with open(os.path.join(os.path.dirname(__file__), "util/template.html"), "r") as f:
+        with open(
+            os.path.join(os.path.dirname(__file__), "util/template.html"), "r"
+        ) as f:
             html = f.read()
 
         full_html = html.format(content=html_content, title=page.file_name)

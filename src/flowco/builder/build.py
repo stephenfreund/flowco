@@ -476,8 +476,6 @@ class BuildEngine:
                 max_workers=16,
                 initializer=init_worker,
                 initargs=(session.get_session(),),
-
-
             ) as executor:
 
                 new_graph = graph
