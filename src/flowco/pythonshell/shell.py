@@ -39,10 +39,9 @@ class EvalResult(BaseModel):
 
 
 class PythonShell:
-    def __init__(self, tables: GlobalTables):
+    def __init__(self):
         self.sandbox = Sandbox()
         self.sandbox_dir = self.sandbox.get_sandbox_path()
-        self.tables = tables
         self.nb = nbf.v4.new_notebook()
 
         self.client = NotebookClient(
@@ -52,57 +51,11 @@ class PythonShell:
             kernel_manager_kwargs={"path": self.sandbox_dir},
         )
 
-        # log(f"Initializing NotebookClient with sandbox directory: {self.sandbox_dir}")
-
         try:
             self.client.create_kernel_manager()
             self.client.start_new_kernel()
             self.client.start_new_kernel_client()
-
-            try:
-                # Retrieve the source code of the 'encode' function
-                encode_src = inspect.getsource(encode)
-            except Exception as e:
-                error(f"Error retrieving source of 'encode': {e}")
-                encode_src = ""
-
-            # Define the import statements to be executed once
-            import_code = textwrap.dedent(
-                """\
-                import pandas as pd
-                import numpy as np
-                import matplotlib.pyplot as plt
-                import seaborn as sns
-                import sklearn
-                import scipy
-                import pickle
-                import base64
-                from io import StringIO                          
-                from typing import *
-                
-                import warnings
-                warnings.simplefilter('ignore')
-
-                import logging
-                logging.disable(logging.ERROR)
-                
-                %matplotlib inline
-            """
-            )
-
-            # Execute the import statements
-            self.run_cell(import_code)
-            # log("Imported necessary libraries.")
-
-            for table_def in self.tables.function_defs():
-                self.run_cell(table_def)
-            # log("Loaded tables into the kernel.")
-
-            # Execute the encode function source code
-            if encode_src:
-                self.run_cell(encode_src)
-                # log("Defined 'encode' function in the kernel.")
-
+            self._init()
         except nb_exceptions.CellExecutionError as cee:
             error(f"Cell execution error during kernel setup: {cee}")
             self.close()
@@ -112,8 +65,39 @@ class PythonShell:
             self.close()
             raise
 
-    def eval_code(self, code: str) -> EvalResult:
-        execution_result = self.run_cell(code)
+    def _init(self):
+        # Define the import statements to be executed once
+        import_code = textwrap.dedent(
+            """\
+            import pandas as pd
+            import numpy as np
+            import matplotlib.pyplot as plt
+            import seaborn as sns
+            import sklearn
+            import scipy
+            import pickle
+            import base64
+            from io import StringIO                          
+            from typing import *
+            
+            import warnings
+            warnings.simplefilter('ignore')
+
+            import logging
+            logging.disable(logging.ERROR)
+            
+            %matplotlib inline
+        """
+        )
+        self._run_cell(import_code)
+
+        # Execute the encode function source code
+        encode_src = inspect.getsource(encode)
+        self._run_cell(encode_src)
+
+
+    def run(self, code: str) -> EvalResult:
+        execution_result = self._run_cell(code)
         stdout = ""
         outputs = []
         images = []
@@ -121,7 +105,10 @@ class PythonShell:
         for msg in execution_result.get("outputs", []):
             msg_type = msg.get("output_type", "")
 
-            if msg_type == "execute_result":
+            if msg_type == "error":
+                raise ValueError(f"Could not evaluate {code}")
+
+            elif msg_type == "execute_result":
                 data = msg.get("data", {})
                 if "text/plain" in data:
                     text = data["text/plain"]
@@ -173,7 +160,7 @@ class PythonShell:
 
         return EvalResult(stdout=stdout, outputs=outputs, plot=plot)
 
-    def run_cell(self, code: str) -> nbf.NotebookNode:
+    def _run_cell(self, code: str) -> nbf.NotebookNode:
         """
         Run code as a cell in the existing NotebookClient.
         """
@@ -192,7 +179,7 @@ class PythonShell:
             error(f"Unexpected error executing cell {index}: {e}")
             raise e
 
-    def eval_node(self, dfg: DataFlowGraph, node: Node) -> NodeResult:
+    def run_node(self, tables: GlobalTables, dfg: DataFlowGraph, node: Node) -> NodeResult:
         """
         Evaluate a Node object and capture outputs.
 
@@ -203,27 +190,32 @@ class PythonShell:
         Returns:
             NodeResult: The result of evaluating the node.
         """
+
         with logger(f"Evaluating node '{node.id}'"):
             try:
+                # Load table functions
+                for table_def in tables.function_defs():
+                    self._run_cell(table_def)
+
                 # Prepare arguments from predecessor nodes
                 arguments = []
                 for predecessor_id in node.predecessors:
                     predecessor = dfg[predecessor_id]
                     with logger(f"Retrieving predecessor result for {predecessor_id}"):
                         repr_val, _ = predecessor.result.result.to_repr()
-                        self.run_cell(f"{predecessor.function_result_var} = {repr_val}")
+                        self._run_cell(f"{predecessor.function_result_var} = {repr_val}")
                         arguments.append(predecessor.function_result_var)
 
                 # Execute the node's code
-                self.run_cell("\n".join(node.code))
+                self._run_cell("\n".join(node.code))
 
                 # Construct and execute the function call
                 code = f"{node.function_result_var} = {node.function_name}({', '.join(arguments)})"
-                result = self.eval_code(code)
+                result = self.run(code)
 
                 # Retrieve the string representation and encoded pickle of the result
-                text = self.eval_code(f"print(str({node.function_result_var}))").stdout
-                pickle_result = self.eval_code(
+                text = self.run(f"print(str({node.function_result_var}))").stdout
+                pickle_result = self.run(
                     f"print(encode({node.function_result_var}))"
                 ).stdout
 
@@ -237,6 +229,17 @@ class PythonShell:
                 error(f"Error evaluating node '{node.id}': {e}")
                 error(traceback.format_exc())
                 raise (e)
+
+    def run_count(self):
+        """
+        Return the number of cells executed in the current NotebookClient.
+        """
+        return len(self.nb.cells)
+
+    async def restart(self):
+        self.nb.cells = [] 
+        await self.client.km.restart_kernel(now=True)
+        self._init()
 
     def close(self):
         """

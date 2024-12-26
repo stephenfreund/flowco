@@ -258,6 +258,7 @@ def main(argv: List[str] = sys.argv[1:]):
         output=Output(),
         costs=CostTracker(),
         stopper=Stopper(),
+        shells=PythonShells(),
         filesystem=SessionFileSystem(f"file://{os.getcwd()}"),
     )
 

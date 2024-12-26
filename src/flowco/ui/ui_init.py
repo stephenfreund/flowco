@@ -71,7 +71,6 @@ def set_ui_page(ui_page: UIPage):
     if "ui_page" in st.session_state and st.session_state.ui_page is not None:
         with logger("closing current page"):
             page = st.session_state.ui_page.page()
-            page.close()
     st.session_state.ui_page = ui_page
 
 

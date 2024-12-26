@@ -15,8 +15,6 @@ from flowco.dataflow.phase import Phase
 from flowco.dataflow.dfg import DataFlowGraph
 from flowco.builder.build import BuildEngine, BuildUpdate, PassConfig
 from flowco.page.tables import GlobalTables
-from flowco.pythonshell.shell import PythonShell
-from flowco.pythonshell.shells import PythonShells
 from flowco.session.session import session
 from flowco.session.session_file_system import fs_exists, fs_read, fs_write
 from flowco.util.config import AbstractionLevel, config
@@ -114,11 +112,9 @@ class Page(BaseModel, extra="allow"):
     # listeners for changes
     _listeners: List[PageListener] = PrivateAttr(default=[])
     _undo_stack: UndoStack = PrivateAttr(default_factory=UndoStack)
-    _shells: PythonShells = PrivateAttr(default_factory=PythonShells)
 
     def __init__(self, **data):
         super().__init__(**data)
-        self._shells.preload_shells(self.tables, self.dfg.node_ids())
 
     def __setattr__(self, name, value):
         current = self.__getattribute__(name)
@@ -127,12 +123,6 @@ class Page(BaseModel, extra="allow"):
 
         if name in ["dfg", "tables"] and current is not value:
             self.save()
-
-    def get_shell_for_node(self, node_id: str) -> PythonShell:
-        return self._shells.get_shell_for_node(self.tables, node_id)
-
-    def close(self):
-        self._shells.close_all()
 
     def atomic(self):
         return self
@@ -328,7 +318,6 @@ class Page(BaseModel, extra="allow"):
         return PassConfig(
             tables=self.tables,
             max_retries=config.retries if repair else 0,
-            shells=self._shells,
         )
 
     @atomic_method

@@ -35,6 +35,7 @@ def init_service():
             output=Output(),
             costs=CostTracker(),
             stopper=Stopper(),
+            shells=PythonShells(),
             filesystem=SessionFileSystem(f"file://{page_path}"),
         )
         setup_flowco_files()

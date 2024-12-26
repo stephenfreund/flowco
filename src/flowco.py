@@ -45,6 +45,7 @@ def init_service():
             output=Output(prefix=key),
             costs=CostTracker(),
             stopper=Stopper(),
+            shells=PythonShells(),
             filesystem=SessionFileSystem(
                 f"s3://go-flowco/{st.session_state.user_email}"
             ),

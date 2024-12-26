@@ -25,7 +25,8 @@ from flowco.dataflow.graph_completions import (
     node_like_model,
 )
 from flowco.page.error_messages import error_message
-from flowco.session import session
+from flowco.pythonshell.shells import PythonShells
+from flowco.session.session import session
 from flowco.util.config import config
 from flowco.util.errors import FlowcoError
 from flowco.util.output import logger, message, warn, log
@@ -493,8 +494,9 @@ def _repair_run(
 
     while True:
         try:
-            shell = pass_config.get_shell_for_node(node.id)
-            result = shell.eval_node(graph, node)
+            result = session.get("shells", PythonShells).run_node(
+                pass_config.tables, graph, node
+            )
             return node.update(result=result)
         except Exception as e:
             if retries == 0:

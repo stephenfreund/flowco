@@ -65,8 +65,19 @@ class AskMeAnything:
             }
         }
         """
-        assert self.shell is not None
-        result = self.shell.eval_code(code)
+        init_code = ""
+        for node in self.page.dfg.nodes:
+            result = node.result
+            if (
+                result is not None
+                and result.result is not None
+                and node.function_return_type is not None
+                and not node.function_return_type.is_None_type()
+            ):
+                value, _ = result.result.to_repr()
+                init_code += f"{node.function_result_var} = {value}\n"
+
+        result = session.get("shells", PythonShells).run(init_code + "\n" + code)
         result_output = result.as_result_output()
         return "Running code", result_output.to_prompt()
 
@@ -633,8 +644,6 @@ class AskMeAnything:
 
         self.assistant.set_functions(functions)
 
-        self.shell = self.page.get_shell_for_node("$ama")
-
         if (
             self.completion_dfg is None
             or self.completion_dfg.nodes != self.page.dfg.nodes
@@ -652,16 +661,6 @@ class AskMeAnything:
                     and node.function_return_type is not None
                     and not node.function_return_type.is_None_type()
                 ):
-                    value, _ = result.result.to_repr()
-                    code = f"{node.function_result_var} = {value}"
-                    result = self.shell.run_cell(code)
-                    if (
-                        hasattr(result, "outputs")
-                        and len(result.outputs) > 0
-                        and result.outputs[0].output_type == "error"
-                    ):
-                        raise ValueError(f"Could not evaluate {code}")
-
                     # type_description = node.function_return_type.type_description()
                     locals += f"`{node.function_result_var} : {node.function_return_type.to_python_type()}` is {node.function_return_type.description}\n\n"
 
@@ -684,9 +683,6 @@ class AskMeAnything:
             )
             add_graph_to_assistant(self.assistant, self.page.dfg, graph_view)
             self.assistant.add_message("user", locals)
-            # self.assistant.add_message(
-            #     "user", "Use those variables in any code you'd like to run."
-            # )
 
         if selected_node is not None:
             self.assistant.add_message(
