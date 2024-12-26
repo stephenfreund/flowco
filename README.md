@@ -69,11 +69,11 @@ This installs a bunch of normal packages through a hatchling `pyproject.toml`, a
     You will get a few new demo files in that directory.  They have some simple how-to instructions that may help you
     get started.
 
-### "Sketchy" Behavior or Bugs?
+## "Sketchy" Behavior or Bugs?
 
 If you see a bug -- hahaha, **when** you see a bug -- please send me the Flowco file and the `logging.txt` file from the working directory, or upload to a github issue...
 
-### Known Issues
+## Known Issues
 
 * So many I can't even begin to list them...
 
