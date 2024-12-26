@@ -220,7 +220,7 @@ class Page(BaseModel, extra="allow"):
                 if "dfg" not in data or data["dfg"] is None:
                     data['dfg'] = DataFlowGraph(version=0)
                 else:
-                    data["dfg"] = DataFlowGraph.hard_reset(data["dfg"])
+                    data["dfg"] = DataFlowGraph.hard_reset(**data["dfg"])
 
                 page = Page(
                     file_name=data["file_name"],
