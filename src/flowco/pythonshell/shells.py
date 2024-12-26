@@ -1,8 +1,6 @@
 import asyncio
 import queue
 import threading
-import trace
-import traceback
 from flowco.dataflow.dfg import DataFlowGraph, Node
 from flowco.page.output import NodeResult
 from flowco.page.tables import GlobalTables
@@ -30,7 +28,6 @@ class PythonShells:
             initargs=(session.get_session(),),
         )
 
-        traceback.print_stack()
         print(f"[Preloading {num_shells} PythonShells in background.  restart_threadhold={self.restart_threadhold}]")
         for _ in range(num_shells):
             preloader.submit(load_shell)

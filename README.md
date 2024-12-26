@@ -2,11 +2,20 @@
 
 Flowco needs a better description.
 
-## Conda or other virtual env
+## Web
 
-Definitely use a conda virtual environment or some other virtual environment, and Python 3.11.  Should work with other versions, but that matches what I'm using on all my machines.
+![go-flow.co](https://go-flow.co)
 
-## Installation
+Log in with Google credentials.  All files are stored on AWS S3 partition.  This uses my own OpenAI key for now...
+
+## Local
+
+### Conda or other virtual env
+
+Definitely use a conda virtual environment or some other virtual environment, and Python 3.11.  
+Should work with other versions, but that matches the web service environtment.
+
+### Installation
 
 > [!IMPORTANT]
 >
@@ -24,49 +33,47 @@ Clone the repo and install with `make`:
 make
 ```
 
-(Using `make` because I need to install a bunch of normal packages through a hatchling `pyproject.toml`, and then also a local wheel, which is not supporting in hatchling...)
+This installs a bunch of normal packages through a hatchling `pyproject.toml`, and then also a local wheel for the MXGraph component.
 
-
-### GUI:
+### Command line:
 
 * Make a copy of the `test` directory so you don't inadvertently 
   commit changes to the examples.
-
-* Assuming you copied the whole thing to `/tmp`:
     ```bash
-    cd /tmp/tests/finch
-    flowco-ui --model=gpt-4o finch-demo.flowco
+    cp -r test /tmp/test
     ```
 
-* Click "Run"
+* Run `flowco` from the directory containing the `.flowco` file:
+    ```bash
+    cd /tmp/test/finch
+    flowco finch-small.flowco build run
+    ```
 
-* Click the buttons for abstraction level while selecting different nodes.
+* View the output:
+    ```bash
+    flowco finch-small.flowco html
+    ```
 
-* Same with output and description buttons
+* Reset the file:
+    ```bash
+    flowco finch-small.flowco reset
+    ```
 
-* Click "Run"
+### GUI
 
-* Just use Ctrl-C in the terminal to exit the program.
+* From the root of the flowco repository, run this command with the directory if the flowco files you want to use:
+    ```bash
+    flowco-ui /tmp/test/finch
+    ```
 
-### More Tasks
-
-* Three initial tasks to try.  `They are in test/tasks`.  See the `task.txt` 
-file in each directory:
-
-* finch: Yep, birds again.  An existing sketch, with a task of making several edits.
-* temps: Greenland temperature data, with a plotting / linear regression question
-* nivea : The first user study task from one of the MSR papers.  Basic data cleaning and wranging.
-
-Run as flowco-ui <name>.flowco.
-
-
+    You will get a few new demo files in that directory.  They have some simple how-to instructions that may help you
+    get started.
 
 ### "Sketchy" Behavior or Bugs?
 
-If you see a bug -- hahaha, **when** you see a bug -- please send me the JSON file and the `logging.txt` file from the working directory, or upload to a github issue...
+If you see a bug -- hahaha, **when** you see a bug -- please send me the Flowco file and the `logging.txt` file from the working directory, or upload to a github issue...
 
 ### Known Issues
 
-* Close old browser windows -- Streamlit has some wonky behavior if you leave old instances of the gui open.  Most notably, it may hang while building.
 * So many I can't even begin to list them...
 
