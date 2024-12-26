@@ -3,15 +3,13 @@ import importlib
 import inspect
 import pprint
 import queue
-import sys
 from threading import current_thread
 import traceback
-from turtle import up
 from flowco.builder.pass_config import PassConfig
 from flowco.dataflow.phase import Phase
 from flowco.session.session import session
 from flowco.util.output import error, log, warn, logger
-from flowco.util.stoppable import Stoppable
+from flowco.util.stopper import Stopper
 from typing import (
     Callable,
     Dict,
@@ -20,7 +18,7 @@ from typing import (
 )
 import concurrent.futures
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from flowco.dataflow.dfg import (
     DataFlowGraph,
     Node,
@@ -232,7 +230,7 @@ class BuildEngine:
 
                 with logger(f"{node_id}:{node.pill}"):
 
-                    if Stoppable.should_stop():
+                    if session.get("stopper", Stopper).should_stop():
                         return NodeResult(work_item, node, node, "Stopped")
 
                     node.build_status = phase_to_message.get(
@@ -381,7 +379,7 @@ class BuildEngine:
 
                 with buffer_output(f"{node.pill}") as buffer:
                     with logger(f"Starting"):
-                        if Stoppable.should_stop():
+                        if session.get("stopper", Stopper).should_stop():
                             result_queue.put(
                                 NodeResult(work_item, node, node, "Stopped")
                             )
@@ -478,6 +476,8 @@ class BuildEngine:
                 max_workers=16,
                 initializer=init_worker,
                 initargs=(session.get_session(),),
+
+
             ) as executor:
 
                 new_graph = graph
@@ -503,11 +503,14 @@ class BuildEngine:
                 current_worklist = submit_items(worklist)
 
                 with logger("Running worklist"):
-                    while not Stoppable.should_stop() and len(done) < len(worklist):
+                    while len(done) < len(worklist):
                         try:
+                            if session.get("stopper", Stopper).should_stop():
+                                log(f"Stopping!")
+                                executor.shutdown(wait=False, cancel_futures=True)
+                                break
                             log(f"Remaining: {len(worklist.keys()) - len(done)} steps")
                             result = result_queue.get()
-                            # log("Got result for", result.item)
                             result_queue.task_done()
                             item = result.item
                             done |= {item}

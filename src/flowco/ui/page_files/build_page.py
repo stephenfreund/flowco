@@ -1,6 +1,7 @@
 import dis
 from typing import List
 import streamlit as st
+from flowco.builder import build
 from flowco.dataflow.dfg import Geometry
 from flowco.ui.dialogs.edit_node import edit_node
 from flowco.ui.dialogs.data_files import data_files_dialog
@@ -38,7 +39,7 @@ class BuildPage(FlowcoPage):
                     " Run " if st.session_state.builder is None else "Stop",
                     on_click=lambda: set_session_state(
                         "trigger_build_toggle",
-                        "Run" if st.session_state.builder is None else None,
+                        "Run" if st.session_state.builder is None else "Stop",
                     ),
                     disabled=st.session_state.ama_responding,
                 )
@@ -107,11 +108,12 @@ class BuildPage(FlowcoPage):
 
     def toggle_building(self, force=True):
         ui_page: UIPage = st.session_state.ui_page
-        if st.session_state.builder is None:
+        builder: Builder = st.session_state.builder
+        if builder is None:
             st.session_state.builder = Builder(ui_page.page(), None, force=force)
             st.session_state.builder_progress = 0
         else:
-            st.session_state.builder.stop()
+            builder.stop()
 
     def get_builder_updates(self):
         builder: Builder = st.session_state.builder

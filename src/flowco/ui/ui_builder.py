@@ -7,8 +7,8 @@ from flowco.dataflow.phase import Phase
 from flowco.page.page import Page
 from flowco.pythonshell.shells import PythonShells
 from flowco.session.session import session
-from flowco.util.output import logger
-from flowco.util.stoppable import Stoppable
+from flowco.util.output import log, logger
+from flowco.util.stopper import Stopper
 
 
 def run(
@@ -23,14 +23,18 @@ def run(
     # Todo: Need a way to signal a stop so the worklist stops.
     # Get rid ot todo crap and just pass in a callback.
 
-    with Stoppable():
+    with session.get("stopper", Stopper):
         with page:
             for build_updated in engine.build_with_worklist(
                 build_config, page.dfg, target_phase, node_ids
             ):
                 queue.put(build_updated)
-            queue.join()
-
+            if session.get("stopper", Stopper).should_stop():
+                log("Stopping build early.")
+            else:
+                with logger("Waiting for update queue to drain."):
+                    queue.join()
+        log("Done building.")
 
 class Builder:
 
@@ -91,4 +95,6 @@ class Builder:
         return not self.done and self.thread.is_alive()
 
     def stop(self) -> None:
-        self.done = True
+        with logger("Stopping builder"):
+            self.done = True
+            session.get("stopper", Stopper).stop()

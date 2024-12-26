@@ -25,10 +25,11 @@ from flowco.dataflow.graph_completions import (
     node_like_model,
 )
 from flowco.page.error_messages import error_message
+from flowco.session import session
 from flowco.util.config import config
 from flowco.util.errors import FlowcoError
 from flowco.util.output import logger, message, warn, log
-from flowco.util.stoppable import Stoppable
+from flowco.util.stopper import Stopper
 from flowco.util.text import strip_ansi
 
 
@@ -408,7 +409,7 @@ def _repair_test_syntax(test: SanityCheck, max_retries: int) -> Optional[SanityC
 
     retries = 0
     while True:
-        if Stoppable.should_stop():
+        if session.get("stopper", Stopper).should_stop():
             return None
         try:
             _check_test_syntax(test)

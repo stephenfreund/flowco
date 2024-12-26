@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 import inspect
 import textwrap
 import io
@@ -9,15 +8,12 @@ from PIL import Image
 import nbformat as nbf
 from nbclient import NotebookClient, exceptions as nb_exceptions
 
-from flowco.builder import type_ops
 from flowco.builder.type_ops import encode
 from flowco.dataflow.dfg import Node, DataFlowGraph
-from flowco.dataflow.extended_type import ExtendedType
 from flowco.page.output import NodeResult, OutputType, ResultOutput, ResultValue
 from flowco.page.tables import GlobalTables
 from flowco.pythonshell.sandbox import Sandbox
-from flowco.util.output import debug, log, error, logger, warn
-import os
+from flowco.util.output import debug, error, logger
 from pydantic import BaseModel
 
 
@@ -188,27 +184,13 @@ class PythonShell:
             debug(f"Executing cell {index}")
             debug(f"Cell code: {code}")
             result = self.client.execute_cell(cell, index, store_history=False)
-            # log(f"Executed cell {index} successfully.")
             return result
         except nb_exceptions.CellExecutionError as cee:
             error(f"Error executing cell {index}: {cee}")
             raise cee
-            return nbf.NotebookNode(
-                outputs=[
-                    {
-                        "output_type": "error",
-                        "ename": type(cee).__name__,
-                        "evalue": str(cee),
-                        "traceback": cee.traceback,
-                    }
-                ]
-            )
         except Exception as e:
             error(f"Unexpected error executing cell {index}: {e}")
             raise e
-            return nbf.NotebookNode(
-                outputs=[{"output_type": "error", "evalue": str(e)}]
-            )
 
     def eval_node(self, dfg: DataFlowGraph, node: Node) -> NodeResult:
         """
@@ -230,27 +212,20 @@ class PythonShell:
                     with logger(f"Retrieving predecessor result for {predecessor_id}"):
                         repr_val, _ = predecessor.result.result.to_repr()
                         self.run_cell(f"{predecessor.function_result_var} = {repr_val}")
-                        # log(f"Set variable '{predecessor.function_result_var}' for node '{node.id}'.")
                         arguments.append(predecessor.function_result_var)
 
                 # Execute the node's code
                 self.run_cell("\n".join(node.code))
-                # log(f"Executed code for node '{node.id}'.")
 
                 # Construct and execute the function call
                 code = f"{node.function_result_var} = {node.function_name}({', '.join(arguments)})"
                 result = self.eval_code(code)
-                # log(f"Executed function call for node '{node.id}' with result: {result}")
 
                 # Retrieve the string representation and encoded pickle of the result
                 text = self.eval_code(f"print(str({node.function_result_var}))").stdout
                 pickle_result = self.eval_code(
                     f"print(encode({node.function_result_var}))"
                 ).stdout
-                # log(f"Retrieved outputs for node '{node.id}'.")
-
-                # if not node.function_return_type.matches_value(type_ops.decode(pickle_result)):
-                #     raise ValueError(f"Function return type mismatch for node '{node.id}'  The return value \n```\n{text}\n```\n does not have type `{node.function_return_type}`.")
 
                 output = result.as_result_output()
 
@@ -262,9 +237,6 @@ class PythonShell:
                 error(f"Error evaluating node '{node.id}': {e}")
                 error(traceback.format_exc())
                 raise (e)
-                # return NodeResult(
-                #     result=ResultValue(text=str(e), pickle=None), output=None
-                # )
 
     def close(self):
         """
@@ -273,8 +245,6 @@ class PythonShell:
         try:
             if self.client is not None:
                 self.client.kc.shutdown()
-                # Unsure what to do for km here...
-                # self.client.km.shutdown_kernel(now=True)
             if self.sandbox is not None:
                 self.sandbox.cleanup()
         except Exception as e:

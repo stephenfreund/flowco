@@ -5,7 +5,7 @@ import sys
 import streamlit as st
 from flowco.pythonshell.shells import PythonShells
 from flowco.session.session_file_system import SessionFileSystem
-from flowco.ui.ui_init import st_init
+from flowco.ui.ui_init import set_ui_page, st_init
 from flowco.ui.authenticate import authenticate
 from flowco.ui.ui_page import UIPage
 from flowco.ui.ui_st_pages import st_pages
@@ -14,6 +14,7 @@ from flowco.util.config import config
 from flowco.util.costs import CostTracker
 from flowco.util.files import get_flowco_files, setup_flowco_files
 from flowco.util.output import Output, log
+from flowco.util.stopper import Stopper
 
 
 @st.cache_data
@@ -43,6 +44,7 @@ def init_service():
         session.set(
             output=Output(prefix=key),
             costs=CostTracker(),
+            stopper=Stopper(),
             filesystem=SessionFileSystem(
                 f"s3://go-flowco/{st.session_state.user_email}"
             ),

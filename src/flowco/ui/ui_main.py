@@ -12,6 +12,7 @@ from flowco.util.costs import CostTracker
 from flowco.util.output import Output
 
 from flowco.session.session import StreamlitSession, session
+from flowco.util.stopper import Stopper
 
 
 def init_service():
@@ -33,6 +34,7 @@ def init_service():
         session.set(
             output=Output(),
             costs=CostTracker(),
+            stopper=Stopper(),
             filesystem=SessionFileSystem(f"file://{page_path}"),
         )
         setup_flowco_files()

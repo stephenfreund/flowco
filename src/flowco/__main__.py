@@ -22,7 +22,7 @@ from flowco.util.costs import CostTracker, call_count, total_cost
 from flowco.util.output import Output, error, log, message, logger
 
 from flowco.util.errors import FlowcoError
-from flowco.util.stoppable import Stoppable
+from flowco.util.stopper import Stopper
 
 ### Base
 
@@ -326,11 +326,12 @@ def main(page: Optional[Page] = None, argv: List[str] = sys.argv[1:]):
     session.set(
         output=Output(),
         costs=CostTracker(),
+        stopper=Stopper(),
         filesystem=SessionFileSystem(f"file://{os.getcwd()}"),
     )
 
     try:
-        with Stoppable():
+        with session.get("stopper", Stopper):
             main_core(page=page, argv=argv)
     except FlowcoError as e:
         error(f"Error: {e}")
