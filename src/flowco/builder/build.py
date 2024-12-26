@@ -229,7 +229,6 @@ class BuildEngine:
                 node = graph[node_id]
 
                 with logger(f"{node_id}:{node.pill}"):
-
                     if session.get("stopper", Stopper).should_stop():
                         return NodeResult(work_item, node, node, "Stopped")
 
@@ -316,7 +315,8 @@ class BuildEngine:
             current_worklist = submit_items(worklist)
 
             with logger("Running worklist"):
-                while len(done) < len(worklist):
+                stopper = session.get("stopper", Stopper)
+                while len(done) < len(worklist) and not stopper.should_stop():
                     try:
                         log(f"Building: {len(worklist.keys()) - len(done)} steps")
                         item = in_flight.pop(0)
@@ -347,6 +347,16 @@ class BuildEngine:
                     except Exception as e:
                         error(e)
                         raise e
+
+                new_graph = new_graph.update(
+                    nodes=[x.update(build_status=None) for x in new_graph.nodes]
+                )                
+                yield BuildUpdate(
+                    steps_remaining=len(worklist.keys()) - len(done),
+                    steps_total=len(worklist.keys()),
+                    new_graph=new_graph,
+                    updated_node=None,
+                )                    
                 log("Worklist done")
 
     def build_with_worklist_parallel(
@@ -501,12 +511,9 @@ class BuildEngine:
                 current_worklist = submit_items(worklist)
 
                 with logger("Running worklist"):
-                    while len(done) < len(worklist):
+                    stopper = session.get("stopper", Stopper)
+                    while len(done) < len(worklist) and not stopper.should_stop():
                         try:
-                            if session.get("stopper", Stopper).should_stop():
-                                log(f"Stopping!")
-                                executor.shutdown(wait=False, cancel_futures=True)
-                                break
                             log(f"Remaining: {len(worklist.keys()) - len(done)} steps")
                             result = result_queue.get()
                             result_queue.task_done()
@@ -537,7 +544,19 @@ class BuildEngine:
                         except Exception as e:
                             error(e)
                             raise e
+                    if stopper.should_stop():
+                        executor.shutdown(wait=False, cancel_futures=True)
+                        log(f"Stopping!")
 
+                    new_graph = new_graph.update(
+                        nodes=[x.update(build_status=None) for x in new_graph.nodes]
+                    )                
+                    yield BuildUpdate(
+                        steps_remaining=len(worklist.keys()) - len(done),
+                        steps_total=len(worklist.keys()),
+                        new_graph=new_graph,
+                        updated_node=None,
+                    )
                     log("Worklist done")
 
     @staticmethod

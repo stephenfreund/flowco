@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from token import OP
 from typing import Iterable, List, Literal, Tuple
 from flowco.assistant.assistant import Assistant
+from flowco.assistant.openai import OpenAIAssistant
 from flowco.assistant.stream import StreamingAssistantWithFunctionCalls
 from flowco.builder.passes import GraphView, add_graph_to_assistant
 from flowco.dataflow.dfg import Geometry
@@ -595,11 +597,11 @@ class AskMeAnything:
         return (f"Removed edge from {edge_to_remove.src} to {edge_to_remove.dst}", None)
 
     def classify_question(self, question: str) -> str:
-        assistant = Assistant("classify_ama_prompt")
+        assistant : OpenAIAssistant = OpenAIAssistant(model="gpt-4o-mini", interactive=False, system_prompt_key="classify_ama_prompt")
         for message in self.visible_messages[-4:]:
             assistant.add_message(message.role, message.content)
         assistant.add_message("user", f"Classify this prompt:\n```\n{question}\n```\n")
-        return str(assistant.model_completion(QuestionKind, "gpt-4o-mini").kind)
+        return str(assistant.completion(QuestionKind, "gpt-4o-mini").kind)
 
     def complete(self, prompt: str, selected_node: str | None = None) -> Iterable[str]:
         try:

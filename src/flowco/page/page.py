@@ -56,36 +56,44 @@ class UndoStack:
                 not self.undo_stack or not dfg.semantically_eq(self.undo_stack[-1])
             ):
                 with logger("Pushing to undo stack"):
-                    # if not self.undo_stack:
-                    #     log("First push")
-                    # else:
-                    #     log(f"{self.undo_stack[-1].diff(dfg)}")
+                    if not self.undo_stack:
+                        log("First push")
+                    else:
+                        log(f"{self.undo_stack[-1].diff(dfg)}")
                     self.undo_stack.append(dfg)
                     self.redo_stack.clear()
 
+    # Only possible if atomic_depth == 0, but we don't check that here
+    # so the UI can refresh properly even when atomic_depth > 0
     def can_undo(self) -> bool:
         with self.lock:
-            return self.atomic_depth == 0 and len(self.undo_stack) > 0
+            return len(self.undo_stack) > 0
 
+    # Only possible if atomic_depth == 0, but we don't check that here
+    # so the UI can refresh properly even when atomic_depth > 0
     def can_redo(self) -> bool:
         with self.lock:
-            return self.atomic_depth == 0 and len(self.redo_stack) > 0
+            return len(self.redo_stack) > 0
 
+    # No op if in atomic operation.
     def undo(self, current: DataFlowGraph):
         with self.lock:
-            dfg = self.undo_stack.pop()
-            dfg = dfg.update(
-                nodes=[node.update(build_status=None) for node in dfg.nodes],
-                version=dfg.version + 1,
-            )
-            self.redo_stack.append(current)
+            if self.atomic_depth == 0:
+                dfg = self.undo_stack.pop()
+                dfg = dfg.update(
+                    nodes=[node.update(build_status=None) for node in dfg.nodes],
+                    version=dfg.version + 1,
+                )
+                self.redo_stack.append(current)
             return dfg
 
+    # No op if in atomic operation.
     def redo(self, current: DataFlowGraph):
         with self.lock:
-            dfg = self.redo_stack.pop()
-            dfg = dfg.update(version=dfg.version + 1)
-            self.undo_stack.append(current)
+            if self.atomic_depth == 0:
+                dfg = self.redo_stack.pop()
+                dfg = dfg.update(version=dfg.version + 1)
+                self.undo_stack.append(current)
             return dfg
 
     def inc(self, current: DataFlowGraph):
@@ -210,7 +218,7 @@ class Page(BaseModel, extra="allow"):
                 error("Doing hard reset.")
 
                 if "dfg" not in data or data["dfg"] is None:
-                    data["dfg"] = DataFlowGraph(version=0)
+                    data['dfg'] = DataFlowGraph(version=0)
                 else:
                     data["dfg"] = DataFlowGraph.hard_reset(data["dfg"])
 
@@ -330,9 +338,6 @@ class Page(BaseModel, extra="allow"):
     ) -> Iterable[BuildUpdate]:
 
         self.check_up_to_date()
-        # session.get("shells", PythonShells).preload_shells(
-        #     self.tables, self.dfg.node_ids()
-        # )
 
         build_config = self.base_build_config(repair=repair)
 

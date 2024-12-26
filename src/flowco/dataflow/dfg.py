@@ -265,6 +265,7 @@ class Node(NodeLike, BaseModel):
             and self.function_return_type == other.function_return_type
             and self.algorithm == other.algorithm
             and self.code == other.code
+            and self.result == other.result
             and self.sanity_check_results == other.sanity_check_results
             and self.unit_test_results == other.unit_test_results
         )

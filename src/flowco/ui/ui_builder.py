@@ -29,11 +29,8 @@ def run(
                 build_config, page.dfg, target_phase, node_ids
             ):
                 queue.put(build_updated)
-            if session.get("stopper", Stopper).should_stop():
-                log("Stopping build early.")
-            else:
-                with logger("Waiting for update queue to drain."):
-                    queue.join()
+            queue.join()
+
         log("Done building.")
 
 
@@ -72,30 +69,23 @@ class Builder:
             args=(builder, page, build_config, node_ids, target_phase, self.queue),
         )
         setattr(self.thread, "flowco_session", session.get_session())
-        self.done = False
         self.thread.start()
 
     def get_message(self):
         return self.message
 
     def empty(self) -> bool:
-        if self.done:
-            return True
-        else:
-            return self.queue.empty()
+        return self.queue.empty()
 
     def get(self) -> BuildUpdate:
-        if self.done:
-            raise Empty
-        else:
-            item = self.queue.get(timeout=0.1)
-            self.queue.task_done()
-            return item
+        return self.queue.get(timeout=0.1)
+        
+    def update_done(self) -> None:
+        self.queue.task_done()
 
     def is_alive(self) -> bool:
-        return not self.done and self.thread.is_alive()
+        return self.thread.is_alive()
 
     def stop(self) -> None:
         with logger("Stopping builder"):
-            self.done = True
             session.get("stopper", Stopper).stop()

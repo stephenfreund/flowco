@@ -127,6 +127,7 @@ class BuildPage(FlowcoPage):
                     )
                     dfg = build_update.new_graph
                     ui_page.update_dfg(dfg)
+                    builder.update_done()
                     # st.session_state.force_update = True
                 except queue.Empty:
                     continue
@@ -164,21 +165,14 @@ class BuildPage(FlowcoPage):
         debug(f"Builder is alive: {builder is not None and builder.is_alive()}")
         if builder is not None:
             if not builder.is_alive():
-                ui_page: UIPage = st.session_state.ui_page
 
                 self.get_builder_updates()
-
-                # forced stop possible, so clear out all statuses.
-                dfg = ui_page.dfg()
-                dfg = dfg.update(nodes=[x.update(build_status=None) for x in dfg.nodes])
-                ui_page.update_dfg(dfg)
 
                 st.session_state.force_update = True
                 st.session_state.builder = None
                 st.rerun()
             else:
                 time.sleep(0.25)
-                # st.session_state.force_update = True
                 st.rerun()
 
     @st.dialog("Edit Description", width="wide")
