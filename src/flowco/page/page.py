@@ -10,7 +10,7 @@ import markdown
 from pydantic import BaseModel, Field, PrivateAttr
 from pydantic_core import ValidationError
 
-from flowco.dataflow.editor import EditableDataFlowGraph
+from flowco.dataflow.editor import FlowthonGraph
 from flowco.dataflow.phase import Phase
 from flowco.dataflow.dfg import DataFlowGraph
 from flowco.builder.build import BuildEngine, BuildUpdate, PassConfig
@@ -371,7 +371,7 @@ class Page(BaseModel, extra="allow"):
 
     @atomic_method
     def to_flowthon(self, level: AbstractionLevel, file_name: str) -> None:
-        dfg, editable = EditableDataFlowGraph.from_dfg(self.dfg)
+        dfg, editable = FlowthonGraph.from_dfg(self.dfg)
         self.update_dfg(dfg)
 
         # make file name by replacing the extension .flowco, with .flowthon
@@ -394,7 +394,7 @@ class Page(BaseModel, extra="allow"):
 
             rep = json.loads(new_json)
             self.tables = GlobalTables(**rep["tables"])
-            new_editable = EditableDataFlowGraph.from_json(rep["graph"])
+            new_editable = FlowthonGraph.from_json(rep["graph"])
             build_config = self.base_build_config(repair=True)
             new_dfg = new_editable.merge(
                 build_config, self.dfg, interactive=interactive

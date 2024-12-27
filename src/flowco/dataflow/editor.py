@@ -1,30 +1,22 @@
 import difflib
-import json
 import textwrap
 from typing import Any, Dict, List, Optional, Tuple
 
-import attr
-import yaml
-from flowco.assistant.openai import OpenAIAssistant
-from flowco.builder import new_passes, passes
-from flowco.builder.build import BuildEngine, node_pass
-from flowco.builder.cache import BuildCache
+from flowco.builder.build import BuildEngine
 from flowco.builder.pass_config import PassConfig
 from flowco.dataflow.dfg import DataFlowGraph, Edge, Geometry, Node
 from flowco.dataflow.phase import Phase
-from flowco.pythonshell.shells import PythonShells
-from flowco.session.session import session
 from flowco.util.config import AbstractionLevel
 
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, Field
 
 from flowco.util.errors import FlowcoError
-from flowco.util.output import log, logger, message, warn
+from flowco.util.output import logger, message
 from flowco.util.text import pill_to_python_name
 from flowco.util.yes_no import YesNoPrompt
 
 
-class EditableNode(BaseModel):
+class FlowthonNode(BaseModel):
     pill: str
     uses: List[str]
     label: str
@@ -49,7 +41,7 @@ class EditableNode(BaseModel):
         return map
 
     @classmethod
-    def from_json(cls, pill: str, node_data: dict) -> "EditableNode":
+    def from_json(cls, pill: str, node_data: dict) -> "FlowthonNode":
         assert isinstance(pill, str), f"Expected str, got {type(pill)}"
         assert isinstance(node_data, dict), f"Expected dict, got {type(node_data)}"
         assert all(
@@ -105,8 +97,8 @@ class EditableNode(BaseModel):
         )
 
 
-class EditableDataFlowGraph(BaseModel):
-    nodes: Dict[str, EditableNode] = Field(
+class FlowthonGraph(BaseModel):
+    nodes: Dict[str, FlowthonNode] = Field(
         description="List of nodes in the graph.",
     )
 
@@ -119,9 +111,7 @@ class EditableDataFlowGraph(BaseModel):
                 assert use in self.nodes
 
     @classmethod
-    def from_dfg(
-        cls, dfg: DataFlowGraph
-    ) -> Tuple[DataFlowGraph, "EditableDataFlowGraph"]:
+    def from_dfg(cls, dfg: DataFlowGraph) -> Tuple[DataFlowGraph, "FlowthonGraph"]:
 
         dfg = dfg.normalize_ids_to_pills()
 
@@ -141,7 +131,7 @@ class EditableDataFlowGraph(BaseModel):
         for node_id in dfg.topological_sort():
             node = dfg[node_id]
             predecessors = [dfg[n].pill for n in node.predecessors]
-            nodes[node.pill] = EditableNode(
+            nodes[node.pill] = FlowthonNode(
                 pill=node.pill,
                 uses=predecessors,
                 label=node.label,
@@ -151,7 +141,7 @@ class EditableDataFlowGraph(BaseModel):
             )
         return dfg, cls(nodes=nodes)
 
-    def update(self, *nodes) -> "EditableDataFlowGraph":
+    def update(self, *nodes) -> "FlowthonGraph":
         """
         Functional update
         """
@@ -286,17 +276,6 @@ class EditableDataFlowGraph(BaseModel):
 
         with logger("Making build engine"):
             engine = BuildEngine.get_builder()
-            log(engine)
-
-            # builder_passes = [
-            #     new_passes.requirements,
-            #     new_passes.algorithm,
-            #     new_passes.compile,
-            #     passes.check_node_syntax,
-            #     passes.check_run,
-            # ]
-            # for f in builder_passes:
-            #     engine.add_pass(f)
 
             attributes = {
                 Phase.requirements: "requirements",
@@ -350,101 +329,14 @@ class EditableDataFlowGraph(BaseModel):
 
             return new_dfg
 
-    # def lift(
-    #     self, pass_config: PassConfig, graph: DataFlowGraph, node: Node, edited: EditableNode
-    # ) -> Node:
-    #     """
-    #     Move edits to label, requirements, alg, code from new_node to node, and lift them up
-    #     through requirements and label as necessary.
-    #     The end result should be a node in requirements phase with the changes lifted up.
-    #     """
-
-    #     substitutions = {
-    #         "new_label": edited.label,
-    #     }
-    #     substitutions["old_code"] = json.dumps(node.code or [], indent=2)
-    #     substitutions["new_code"] = json.dumps(edited.code or [], indent=2)
-    #     substitutions["old_algorithm"] = json.dumps(node.algorithm or [], indent=2)
-    #     substitutions["new_algorithm"] = json.dumps(edited.algorithm or [], indent=2)
-    #     substitutions["old_requirements"] = json.dumps(node.requirements or [], indent=2)
-    #     substitutions["new_requirements"] = json.dumps(edited.requirements or [], indent=2)
-
-    #     assistant = OpenAIAssistant(config.model,
-    #         interactive=False,
-    #         system_prompt_key=["system-prompt", "lift_up_changes_from_editing"],
-    #         **substitutions
-    #     )
-
-    #     model = create_model(
-    #         "LiftUpModel",
-    #         code=(List[str], Field(description="Updated Code")),
-    #         code_differences=(str, Field(description="Code Differences")),
-    #         algorithm_differences=(
-    #             str,
-    #             Field(description="Algorithm Differences"),
-    #         ),
-    #         algorithm=(List[str], Field(description="Updated Algorithm")),
-    #         requirements_differences=(
-    #             str,
-    #             Field(description="Requirements Differences"),
-    #         ),
-    #         requirements=(List[str], Field(description="Updated Requirements")),
-    #         label=(str, Field(description="Updated Label")),
-    #     )
-
-    #     completion = assistant.completion(model)
-    #     # print(completion)
-
-    #     new_node = new_passes.update_node_with_completion(node, completion)
-    #     updates = new_node.model_dump(include=["code", "algorithm", "requirements", "label"])
-    #     new_node = node.update(**updates, phase=Phase.clean)
-    #     new_node = new_node.update(cache=new_node.cache.update(Phase.requirements, new_node))
-    #     return new_node
-
-    # def lift_up_edits(self, pass_config: PassConfig, dfg: DataFlowGraph, edits: List[Node]) -> DataFlowGraph:
-
-    #     @node_pass(
-    #         required_phase=Phase.clean,
-    #         target_phase=Phase.requirements,
-    #         pred_required_phase=Phase.requirements,
-    #     )
-    #     def requirements(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
-    #         with logger("Requirements, dude!"):
-    #             if node.id not in [ x.pill for x in edits ] or not node.requirements:
-    #                 return new_passes.requirements(pass_config, graph, node)
-    #             else:
-    #                 with logger("Lifting Up Edits"):
-    #                     return self.lift(pass_config, graph, node, self.nodes[node.id])
-
-    #     log("Edited nodes: ", [x.pill for x in edits])
-    #     with logger("Making build engine"):
-    #         engine = BuildEngine()
-    #         builder_passes = [
-    #             requirements,
-    #             new_passes.algorithm,
-    #             new_passes.compile,
-    #             passes.check_node_syntax,
-    #             passes.check_run,
-    #         ]
-    #         for f in builder_passes:
-    #             engine.add_pass(f)
-
-    #         with logger("Building"):
-    #             for build_updated in engine.build_with_worklist(
-    #                 pass_config, dfg, Phase.requirements, None
-    #             ):
-    #                 dfg = build_updated.new_graph
-
-    #         return dfg
-
     def to_json(self, level: AbstractionLevel) -> Dict[str, Any]:
         return {pill: node.to_json(level) for pill, node in self.nodes.items()}
 
     @classmethod
-    def from_json(cls, data: dict) -> "EditableDataFlowGraph":
+    def from_json(cls, data: dict) -> "FlowthonGraph":
         return cls(
             nodes={
-                pill: EditableNode.from_json(pill, node_data)
+                pill: FlowthonNode.from_json(pill, node_data)
                 for pill, node_data in data.items()
             }
         )
