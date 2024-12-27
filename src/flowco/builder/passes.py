@@ -499,6 +499,16 @@ def _repair_run(
             result = session.get("shells", PythonShells).run_node(
                 pass_config.tables, graph, node
             )
+
+            with logger("Typechecking result"):
+                if result.result is not Node:
+                    return_value = result.result.to_value()
+                    return_type = node.function_return_type
+                    if not return_type.matches_value(return_value):
+                        raise FlowcoError(
+                            f"Return value {return_value} does not match expected type {return_type}."
+                        )
+
             return node.update(result=result)
         except Exception as e:
             if retries == 0:

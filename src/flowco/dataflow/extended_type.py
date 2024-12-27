@@ -17,7 +17,7 @@ class BaseType(BaseModel):
         raise NotImplementedError("__str__ method not implemented.")
 
     @abstractmethod
-    def validate(self, value: Any) -> bool:
+    def matches_value(self, value: Any) -> bool:
         """Validate whether the given value conforms to the type."""
         pass
 
@@ -40,7 +40,7 @@ class IntType(BaseType):
     def __str__(self) -> str:
         return "int"
 
-    def validate(self, value: Any) -> bool:
+    def matches_value(self, value: Any) -> bool:
         return isinstance(value, int) and not isinstance(
             value, bool
         )  # bool is subclass of int
@@ -64,7 +64,7 @@ class BoolType(BaseType):
     def __str__(self) -> str:
         return "bool"
 
-    def validate(self, value: Any) -> bool:
+    def matches_value(self, value: Any) -> bool:
         return isinstance(value, bool)
 
 
@@ -86,7 +86,7 @@ class StrType(BaseType):
     def __str__(self) -> str:
         return "str"
 
-    def validate(self, value: Any) -> bool:
+    def matches_value(self, value: Any) -> bool:
         return isinstance(value, str)
 
 
@@ -108,7 +108,7 @@ class AnyType(BaseType):
     def __str__(self) -> str:
         return "Any"
 
-    def validate(self, value: Any) -> bool:
+    def matches_value(self, value: Any) -> bool:
         return True
 
 
@@ -130,7 +130,7 @@ class NoneType(BaseType):
     def __str__(self) -> str:
         return "None"
 
-    def validate(self, value: Any) -> bool:
+    def matches_value(self, value: Any) -> bool:
         return value is None
 
 
@@ -152,7 +152,7 @@ class FloatType(BaseType):
     def __str__(self) -> str:
         return "float"
 
-    def validate(self, value: Any) -> bool:
+    def matches_value(self, value: Any) -> bool:
         return isinstance(value, float)
 
 
@@ -178,10 +178,10 @@ class OptionalType(BaseType):
     def __str__(self) -> str:
         return f"Optional[{self.wrapped_type}]"
 
-    def validate(self, value: Any) -> bool:
+    def matches_value(self, value: Any) -> bool:
         if value is None:
             return True
-        return self.wrapped_type.validate(value)
+        return self.wrapped_type.matches_value(value)
 
 
 class KeyType(BaseModel):
@@ -204,8 +204,8 @@ class KeyType(BaseModel):
     def __str__(self) -> str:
         return f"{self.key}: {self.type}"
 
-    def validate(self, value: Any) -> bool:
-        return self.type.validate(value)
+    def matches_value(self, value: Any) -> bool:
+        return self.type.matches_value(value)
 
 
 class ListType(BaseType):
@@ -233,12 +233,12 @@ class ListType(BaseType):
     def __str__(self) -> str:
         return f"List[{self.element_type}]"
 
-    def validate(self, value: Any) -> bool:
+    def matches_value(self, value: Any) -> bool:
         if not isinstance(value, list):
             return False
         if self.length is not None and len(value) != self.length:
             return False
-        return all(self.element_type.validate(elem) for elem in value)
+        return all(self.element_type.matches_value(elem) for elem in value)
 
 
 class TypedDictType(BaseType):
@@ -274,13 +274,13 @@ class TypedDictType(BaseType):
         map = ", ".join(elems)
         return f"TypedDict('{self.name}', {{{map}}})"
 
-    def validate(self, value: Any) -> bool:
+    def matches_value(self, value: Any) -> bool:
         if not isinstance(value, dict):
             return False
         for item in self.items:
             if item.key not in value:
                 return False
-            if not item.type.validate(value[item.key]):
+            if not item.type.matches_value(value[item.key]):
                 return False
         return True
 
@@ -309,12 +309,12 @@ class TupleType(BaseType):
         elements_str = ", ".join([str(elem) for elem in self.elements])
         return f"Tuple[{elements_str}]"
 
-    def validate(self, value: Any) -> bool:
+    def matches_value(self, value: Any) -> bool:
         if not isinstance(value, tuple):
             return False
         if len(value) != len(self.elements):
             return False
-        return all(elem_type.validate(v) for elem_type, v in zip(self.elements, value))
+        return all(elem_type.matches_value(v) for elem_type, v in zip(self.elements, value))
 
 
 class SetType(BaseType):
@@ -339,10 +339,10 @@ class SetType(BaseType):
     def __str__(self) -> str:
         return f"Set[{self.element_type}]"
 
-    def validate(self, value: Any) -> bool:
+    def matches_value(self, value: Any) -> bool:
         if not isinstance(value, set):
             return False
-        return all(self.element_type.validate(elem) for elem in value)
+        return all(self.element_type.matches_value(elem) for elem in value)
 
 
 class PDDataFrameType(BaseType):
@@ -370,7 +370,7 @@ class PDDataFrameType(BaseType):
         column_types = ", ".join([f"{col}" for col in self.columns])
         return f"pd.DataFrame[{column_types}]"
 
-    def validate(self, value: Any) -> bool:
+    def matches_value(self, value: Any) -> bool:
         if not isinstance(value, pd.DataFrame):
             return False
         for col in self.columns:
@@ -378,7 +378,7 @@ class PDDataFrameType(BaseType):
                 return False
             # Check each element in the column
             for item in value[col.key]:
-                if not col.type.validate(item):
+                if not col.type.matches_value(item):
                     return False
         return True
 
@@ -405,11 +405,11 @@ class PDSeriesType(BaseType):
     def __str__(self) -> str:
         return f"pd.Series[{self.element_type}]"
 
-    def validate(self, value: Any) -> bool:
+    def matches_value(self, value: Any) -> bool:
         if not isinstance(value, pd.Series):
             return False
         for item in value:
-            if not self.element_type.validate(item):
+            if not self.element_type.matches_value(item):
                 return False
         return True
 
@@ -439,12 +439,12 @@ class NumpyNdarrayType(BaseType):
     def __str__(self) -> str:
         return f"np.ndarray[{self.element_type}]"
 
-    def validate(self, value: Any) -> bool:
+    def matches_value(self, value: Any) -> bool:
         if not isinstance(value, np.ndarray):
             return False
         if self.length is not None and value.size != self.length:
             return False
-        return all(self.element_type.validate(elem) for elem in value.flat)
+        return all(self.element_type.matches_value(elem) for elem in value.flat)
 
 
 # Update TypeRepresentation to use the updated classes
@@ -567,7 +567,7 @@ class ExtendedType(BaseModel):
         """
         Determines whether the given value conforms to the current type.
         """
-        return self.the_type.validate(value)
+        return self.the_type.matches_value(value)
 
 
 # -----------------------
