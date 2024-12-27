@@ -75,10 +75,10 @@ class UndoStack:
         with self.lock:
             return len(self.redo_stack) > 0
 
-    # No op if in atomic operation.
+    # No op if in atomic operation or nothing left
     def undo(self, current: DataFlowGraph):
         with self.lock:
-            if self.atomic_depth == 0:
+            if self.atomic_depth == 0 and self.undo_stack:
                 dfg = self.undo_stack.pop()
                 dfg = dfg.update(
                     nodes=[node.update(build_status=None) for node in dfg.nodes],
@@ -87,10 +87,10 @@ class UndoStack:
                 self.redo_stack.append(current)
             return dfg
 
-    # No op if in atomic operation.
+    # No op if in atomic operation or nothing left
     def redo(self, current: DataFlowGraph):
         with self.lock:
-            if self.atomic_depth == 0:
+            if self.atomic_depth == 0 and self.redo_stack:
                 dfg = self.redo_stack.pop()
                 dfg = dfg.update(version=dfg.version + 1)
                 self.undo_stack.append(current)
@@ -279,8 +279,8 @@ class Page(BaseModel, extra="allow"):
             self.dfg = dfg
 
     @atomic_method
-    def reset(self):
-        self.update_dfg(self.dfg.reset())
+    def reset(self, reset_requirements: bool = False):
+        self.update_dfg(self.dfg.reset(reset_requirements=reset_requirements))
         self._undo_stack.clear()
 
     @atomic_method

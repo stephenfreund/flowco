@@ -117,7 +117,7 @@ class mxIconSet {
       // Add event listeners for Delete Icon
       mx.mxEvent.addListener(deleteImg, 'click', mx.mxUtils.bind(this, (evt: MouseEvent) => {
         // eslint-disable-next-line no-restricted-globals
-        if (evt.shiftKey || confirm("Delete Node?")) {
+        if (can_edit && (evt.shiftKey || confirm("Delete Node?"))) {
           graph.removeCells([this.state.cell], true);
 
           // remove the output node for the cell too
@@ -161,7 +161,7 @@ class mxIconSet {
       // Add event listeners for Delete Icon
       mx.mxEvent.addListener(deleteImg, 'click', mx.mxUtils.bind(this, (evt: MouseEvent) => {
         // eslint-disable-next-line no-restricted-globals
-        if (evt.shiftKey || confirm("Delete Edge?")) {
+        if (can_edit && (evt.shiftKey || confirm("Delete Edge?"))) {
           graph.removeCells([state.cell], false);
         }
         mx.mxEvent.consume(evt);
@@ -622,7 +622,7 @@ function addListeners() {
     mouseUp: (sender, evt) => {
       mouseDown = false;
       const me = evt.getEvent();
-      if (me.shiftKey && !mouseMoved) {
+      if (can_edit && (me.shiftKey && !mouseMoved)) {
         const userLabel = prompt("Describe this step", "...");
         if (userLabel != null) {
           const pt = graph.getPointForEvent(me, false);

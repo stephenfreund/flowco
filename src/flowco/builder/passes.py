@@ -301,6 +301,8 @@ def _check_node_syntax(node: Node) -> None:
 def _repair_node_syntax(node: Node, max_retries: int) -> Optional[Node]:
     assistant = Assistant("repair-system")
 
+    original = node.model_copy()
+
     retries = 0
     while True:
         try:
@@ -323,14 +325,14 @@ def _repair_node_syntax(node: Node, max_retries: int) -> Optional[Node]:
                         )
                     )
 
-                assistant.add_message(
-                    "user",
-                    "The attempted repairs are not working.  Explain to the user what the problem is, and ask the user a question to help you understand and fix the problem.  Do not refer to the code directly, but only to what property of the code you are trying to check with the failing test.",
-                )
-                m = assistant.str_completion()
-                message(f"A Question: {m}")
+                # assistant.add_message(
+                #     "user",
+                #     "The attempted repairs are not working.  Explain to the user what the problem is, and ask the user a question to help you understand and fix the problem.  Do not refer to the code directly, but only to what property of the code you are trying to check with the failing test.",
+                # )
+                # m = assistant.str_completion()
+                # message(f"A Question: {m}")
 
-                return None
+                return original.error(Phase.code, message=f"Too many failed attempts to write code.  Please refine requirements or try again!\n\n{e}")
 
             message(f"Repair attempt {retries} of {config.retries}")
 

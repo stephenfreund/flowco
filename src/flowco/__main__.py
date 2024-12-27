@@ -2,11 +2,13 @@ import argparse
 from genericpath import exists
 import inspect
 import os
+from pathlib import Path
 import re
 import sys
 import textwrap
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
+import webbrowser
 
 import markdown
 
@@ -100,9 +102,12 @@ class ResetCommand(Command):
     def __init__(self, subparsers):
         super().__init__(subparsers)
         self.parser = subparsers.add_parser("reset", help="Hard reset of page")
+        self.parser.add_argument(
+            "--reset_requirements", help="Clears requirements too", action="store_true"
+        )
 
     def run(self, page, args):
-        page.reset()
+        page.reset(reset_requirements=args.reset_requirements)
         page.save()
 
 
@@ -224,7 +229,10 @@ class HtmlCommand(Command):
         with open(page.file_name + ".html", "w") as f:
             f.write(full_html)
             message(f"Wrote HTML to {page.file_name}.html")
-            os.system(f"open {page.file_name}.html")
+        
+        path = Path(page.file_name + ".html")
+        file_url = path.absolute().as_uri()
+        webbrowser.open(file_url)
 
 
 class BuildCommand(Command):

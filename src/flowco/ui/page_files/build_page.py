@@ -36,46 +36,49 @@ class BuildPage(FlowcoPage):
             cols = st.columns(8)
             with cols[0]:
                 st.button(
-                    " Run " if st.session_state.builder is None else "Stop",
+                    "Run All" if st.session_state.builder is None else " Stop ",
                     on_click=lambda: set_session_state(
                         "trigger_build_toggle",
                         "Run" if st.session_state.builder is None else "Stop",
                     ),
                     disabled=st.session_state.ama_responding,
+                    help="Build and run the whole diagram" if st.session_state.builder is None else "Stop building",
                 )
             with cols[2]:
                 st.button(
-                    "Update",
+                    "Run",
                     on_click=lambda: set_session_state(
                         "trigger_build_toggle", "Update"
                     ),
-                    disabled=(
-                        st.session_state.builder is not None
-                        or st.session_state.ama_responding
-                    ),
+                    disabled=not self.graph_is_editable(),
+                    help="Build and run any nodes that have changed since the last Run",
                 )
             with cols[4]:
                 st.button(
                     ":material/undo:",
                     disabled=(
-                        st.session_state.builder is not None
-                        or st.session_state.ama_responding
+                        not self.graph_is_editable()
                         or not st.session_state.ui_page.can_undo()
                     ),
                     on_click=lambda: st.session_state.ui_page.undo(),
+                    help="Undo the last change",
                 )
             with cols[5]:
                 st.button(
                     ":material/redo:",
                     disabled=(
-                        st.session_state.builder is not None
-                        or st.session_state.ama_responding
+                        not self.graph_is_editable()
                         or not st.session_state.ui_page.can_redo()
                     ),
                     on_click=lambda: st.session_state.ui_page.redo(),
+                    help="Redo the last change",
                 )
             with cols[6]:
-                if st.button(":material/network_node:", help="Layout nodes"):
+                if st.button(
+                    ":material/network_node:",
+                    help="Layout the diagram",
+                    disabled=not self.graph_is_editable(),
+                ):
                     ui_page = st.session_state.ui_page
                     dfg = ui_page.dfg()
                     dfg = dfg.update(
@@ -128,7 +131,6 @@ class BuildPage(FlowcoPage):
                     dfg = build_update.new_graph
                     ui_page.update_dfg(dfg)
                     builder.update_done()
-                    # st.session_state.force_update = True
                 except queue.Empty:
                     continue
 
@@ -208,9 +210,9 @@ class BuildPage(FlowcoPage):
         with st.container(key="page_controls"):
             cols = st.columns(2)
             with cols[0]:
-                if st.button("Edit Description"):
+                if st.button("Edit Description", disabled=not self.graph_is_editable(), help="Edit the description of the diagram"):
                     self.edit_description()
 
             with cols[1]:
-                if st.button("Data Files"):
+                if st.button("Data Files", disabled=not self.graph_is_editable(), help="Manage data files for the diagram"):
                     data_files_dialog()

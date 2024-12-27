@@ -54,7 +54,7 @@ This installs a bunch of normal packages through a hatchling `pyproject.toml`, a
     flowco finch-small.flowco html
     ```
 
-* Reset the file:
+* Reset the file to clear out all generated node components:
     ```bash
     flowco finch-small.flowco reset
     ```

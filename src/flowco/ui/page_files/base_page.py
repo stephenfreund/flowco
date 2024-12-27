@@ -1,10 +1,7 @@
-import dis
-import deepdiff
+import time
 from openai import OpenAI
-from typing import Dict
 import uuid
 
-from flowco.dataflow import dfg
 from flowco.page.ama import AskMeAnything
 from flowco.ui.authenticate import sign_out
 from flowco.ui.dialogs.edit_node import edit_node
@@ -13,7 +10,7 @@ import pandas as pd
 
 
 from flowco.dataflow import dfg_update
-from flowco.dataflow.dfg import Geometry, Node
+from flowco.dataflow.dfg import Node
 from flowco.dataflow.phase import Phase
 from flowco.page.output import OutputType
 from flowco.ui.ui_dialogs import settings
@@ -33,8 +30,6 @@ from flowco.ui.ui_page import UIPage
 from flowco.util.config import config
 from flowco.util.costs import total_cost
 from flowco.util.config import AbstractionLevel
-from flowco.util.output import log
-from flowco.util.text import diff
 
 
 class FlowcoPage:
@@ -72,6 +67,7 @@ class FlowcoPage:
                     AbstractionLevel,
                     key="abstraction_level",
                     on_change=fix,
+                    disabled=not self.graph_is_editable(),
                 )
             with c[1]:
                 st.pills(
@@ -84,10 +80,10 @@ class FlowcoPage:
                     + (["AMA"] if st.session_state.show_ama else []),
                     selection_mode="multi",
                     key="show_pills",
+                    disabled=not self.graph_is_editable()
                 )
 
-        if "AMA" in st.session_state.show_pills:
-            self.show_ama(node)
+        self.show_ama(node)
 
         if node is not None:
             self.node_sidebar(node)
@@ -101,7 +97,6 @@ class FlowcoPage:
             st.caption(f"Total cost: {total_cost():.2f} USD")
         else:
             st.title(node.pill)
-            # st.write(f"**{node.label}**")
             st.caption(f"Status: {node.phase}")
 
     def show_messages(self, node: Node):
@@ -127,23 +122,30 @@ class FlowcoPage:
             st.session_state.ama = AskMeAnything(page)
 
         with st.container():
-            container = st.container(height=400, border=True, key="chat_container")
+            height = 400 if "AMA" in st.session_state.show_pills or st.session_state.ama_responding else 1
+            container = st.container(height=height, border=True, key="chat_container")
             with container:
                 for message in st.session_state.ama.messages():
                     with st.chat_message(message.role):
                         st.markdown(message.content, unsafe_allow_html=True)
 
-            st.audio_input(
-                "Record a voice message",
-                label_visibility="collapsed",
-                key="voice_input",
-                on_change=lambda: self.ama_voice_input(container),
-                disabled=not self.graph_is_editable(),
-            )
+            if "AMA" in st.session_state.show_pills:
+                st.audio_input(
+                    "Record a voice message",
+                    label_visibility="collapsed",
+                    key="voice_input",
+                    on_change=lambda: self.ama_voice_input(container),
+                    disabled=not self.graph_is_editable(),
+                )
+
+            if len(st.session_state.ama) > 0 and "AMA" not in st.session_state.show_pills:
+                ama_prompt = "Ask Me Anything!  Click AMA to see our conversation."
+            else:
+                ama_prompt = "Ask Me Anything!"
 
             with st.container(key="ama_columns"):
                 if prompt := st.chat_input(
-                    "Ask Me Anything!",
+                    ama_prompt,
                     key="ama_input",
                     on_submit=lambda: toggle("ama_responding"),
                     disabled=not self.graph_is_editable(),
@@ -186,6 +188,7 @@ class FlowcoPage:
                 st.error(f"An error occurred in AMA: {e}")
                 st.stop()
         finally:
+            time.sleep(1)
             st.session_state.ama_responding = False
             if dfg != page.dfg:
                 st.session_state.force_update = True
@@ -200,7 +203,13 @@ class FlowcoPage:
             with st.container(key="node_output"):
                 if "Output" in st.session_state.show_pills and node is not None:
                     st.write("#### Output")
-                    # if st.session_state.show_output:
+                    if (
+                        node.function_return_type is not None
+                        and not node.function_return_type.is_None_type()
+                    ):
+                        st.caption(
+                            f"{node.function_return_type.description}"
+                        )
                     self.show_output(node)
 
             with st.container(key="node_description"):
@@ -208,7 +217,6 @@ class FlowcoPage:
                     if show_code():
                         st.write(f"**Return Type:** `{node.function_return_type}`")
 
-                    # if st.session_state.show_description and node is not None:
                     st.write("#### Description")
                     description = (
                         node.description if node.description is not None else ""
@@ -274,30 +282,15 @@ class FlowcoPage:
         ui_page: UIPage = st.session_state.ui_page
         with st.container(key="bottom_bar"):
             cols = st.columns(4)
-            # with cols[0]:
             with cols[0]:
-                if st.button(":material/settings:", help="Change settings"):
+                if st.button(":material/settings:", help="Change settings", 
+                                                 disabled=not self.graph_is_editable()
+):
                     settings(ui_page)
             with cols[3]:
                 if st.button("Logout"):
                     sign_out()
                     st.rerun()
-
-            # with flex_columns():
-            #     cols = st.columns([1, 1, 1, 1, 1])
-            #     with cols[0]:
-            #         if st.button(
-            #             ":material/summarize: Report",
-            #             help="Generate a report of the current dataflow graph",
-            #         ):
-            #             run_report()
-
-            #     with cols[3]:
-            #         if st.button(":material/settings:", help="Change settings"):
-            #             settings(ui_page)
-            #     with cols[4]:
-            #         if st.button(":material/help:", help="Show help"):
-            #             help_dialog()
 
     def button_bar(self):
         pass
@@ -335,55 +328,7 @@ class FlowcoPage:
         else:
             return Phase.run_checked
 
-    # def gen_pill(self, dfg: DataFlowGraph, node: Node) -> str:
-    #     current_pills = {node.pill for node in dfg.nodes}
-    #     prompt = f"""
-    #         Summarize the following text with two words:
-    #         ```
-    #         {node.label}
-    #         ```
-    #         Capitalize each word and hyphenate them.
-    #         Do not include any other text in your response.
-    #         Do not use any of the following: {current_pills}
-    #         """
-    #     print(node.pill, prompt)
-    #     try:
-    #         completion = openai.chat.completions.create(
-    #             model="gpt-4o-mini",
-    #             messages=[
-    #                 {"role": "system", "content": "You are a helpful assistant."},
-    #                 {
-    #                     "role": "user",
-    #                     "content": prompt
-    #                 }
-    #             ],
-    #             max_tokens=150
-    #         )
-    #         log(f"{node.id} -> {completion.choices[0].message.content}")
-    #         # Extract the generated text
-    #         generated_text = completion.choices[0].message.content
-    #         return generated_text
-    #     except Exception as e:
-    #         error(e)
-    #         return node.id
 
-    # def patch_pills(self):
-    #     # iterate over nodes in graph. If a node has a pill that is '', generate a new one
-    #     ui_page: UIPage = st.session_state.ui_page
-    #     dfg : DataFlowGraph = ui_page.dfg()
-    #     changed = False
-    #     for node in dfg.nodes:
-    #         if node.pill == node.id:
-    #             dfg = dfg.update_node(node.id, pill=self.gen_pill(dfg, node))
-    #             changed = True
-
-    #     if changed:
-    #         current_pills = {node.pill for node in dfg.nodes}
-    #         print(current_pills)
-
-    #         ui_page.update_dfg(dfg)
-    #         st.session_state.force_update = True
-    #         # st.rerun()
 
     def main(self):
 
@@ -426,40 +371,3 @@ class FlowcoPage:
             self.bottom_bar()
 
         self.fini()
-
-
-# edit_node = result.get("edit_node", None)
-# if edit_node is not None:
-#     beep()
-#     log(f"Editing node {edit_node}")
-
-# delete_node = result.get('delete_node', None)
-# if delete_node is not None:
-#     log(f"Deleting node {delete_node}")
-#     # ui_page.page().user_delete_node(delete_node)
-#     st.rerun()
-
-
-# # with cols[1]:
-# #     m = st.container(border=True, height=400)
-# #     if "messages" not in st.session_state:
-# #         st.session_state.messages = []
-
-# #     with m:
-# #         for message in st.session_state.messages:
-# #             with st.chat_message(message["role"]):
-# #                 st.markdown(message["content"])
-
-# #     if prompt := st.chat_input("What is up?"):
-# #         st.session_state.messages.append({"role": "user", "content": prompt})
-
-# #         with m:
-# #             with st.chat_message("user"):
-# #                 st.markdown(prompt)
-
-# #             with st.chat_message("assistant"):
-# #                 stream = StreamingTextAssistant("system-prompt")
-# #                 for m in st.session_state.messages:
-# #                     stream.add_message(m["role"], m["content"])
-# #                 response = st.write_stream(stream)
-# #             st.session_state.messages.append({"role": "assistant", "content": response})

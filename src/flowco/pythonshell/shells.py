@@ -10,7 +10,7 @@ from flowco.session.session import session
 
 
 class PythonShells:
-    def __init__(self, num_shells: int = 8, restart_threadhold: int = 100):
+    def __init__(self, num_shells: int = 4, restart_threadhold: int = 100):
         self.queue = queue.Queue()
         self.restart_threadhold = restart_threadhold
         self._preload_shells(num_shells)
@@ -20,7 +20,10 @@ class PythonShells:
             setattr(threading.current_thread(), "flowco_session", session_data)
 
         def load_shell() -> None:
-            self.queue.put(PythonShell())
+            try:
+                self.queue.put(PythonShell())
+            except Exception as e:
+                print(f"Error loading PythonShell: {e}")
 
         preloader = ThreadPoolExecutor(
             max_workers=4,

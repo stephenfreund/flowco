@@ -44,32 +44,24 @@ class MxDiagram(BaseModel):
 def get_output(node: Node) -> Optional[DiagramOutput]:
     if node.result is not None:
         if (
-            node.result.result is not None
-            and node.function_return_type is not None
+            node.function_return_type is not None
             and not node.function_return_type.is_None_type()
         ):
-            clipped, _ = node.result.result.to_repr(clip_size=10)
+            text = node.result.pp_result_text(clip = 15)
+            if text is not None:
+                clipped = f"<pre>{text}</pre>"
+                return DiagramOutput(output_type="text", data=clipped)
+
+        text = node.result.pp_output_text(clip = 15)
+        if text is not None:
+            clipped = f"<pre>{text}</pre>"
             return DiagramOutput(output_type="text", data=clipped)
-        elif node.result.output is not None:
-            output = node.result.output
-            if output is not None:
-                if output.output_type == OutputType.text:
-                    lines = str(output.data).splitlines()
-                    if lines and len(lines) > 10:
-                        data = (
-                            "\n".join(lines[0:10])
-                            + f"\n... ({len(lines) - 10} more lines)"
-                        )
-                    else:
-                        data = "\n".join(lines[0:10])
-                    return DiagramOutput(output_type="text", data=data)
-                elif output.output_type == OutputType.image:
-                    url = (output.data).replace(
-                        "data:image/png;base64,", "data:image/png,"
-                    )
-                    return DiagramOutput(output_type="image", data=url)
-    else:
-        return None
+        
+        image_url = node.result.output_image()
+        if image_url is not None:
+            return DiagramOutput(output_type="image", data=image_url)
+        
+    return None
 
 
 @staticmethod

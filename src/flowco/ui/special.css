@@ -91,6 +91,7 @@ header {
 /* When .st-key-chat_container is a grandchild */
 div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_container) {
     background-color: white;
+    padding: 0rem;
 }
 
 .st-key-button_bar .stColumn {

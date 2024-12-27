@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from token import OP
 from typing import Iterable, List, Literal, Tuple
-from flowco.assistant.assistant import Assistant
 from flowco.assistant.openai import OpenAIAssistant
 from flowco.assistant.stream import StreamingAssistantWithFunctionCalls
 from flowco.builder.passes import GraphView, add_graph_to_assistant
@@ -713,6 +711,9 @@ class AskMeAnything:
 
     def last_message(self) -> VisibleMessage:
         return self.visible_messages[-1]
+
+    def __len__(self) -> int:
+        return len(self.visible_messages)
 
     def messages(self) -> Iterable[VisibleMessage]:
         for message in self.visible_messages:

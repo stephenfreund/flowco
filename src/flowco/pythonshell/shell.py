@@ -79,6 +79,7 @@ class PythonShell:
             import base64
             from io import StringIO                          
             from typing import *
+            import pprint
             
             import warnings
             warnings.simplefilter('ignore')
@@ -217,7 +218,7 @@ class PythonShell:
                 result = self.run(code)
 
                 # Retrieve the string representation and encoded pickle of the result
-                text = self.run(f"print(str({node.function_result_var}))").stdout
+                text = self.run(f"pprint.pp({node.function_result_var})").stdout
                 pickle_result = self.run(
                     f"print(encode({node.function_result_var}))"
                 ).stdout

@@ -379,8 +379,12 @@ class Node(NodeLike, BaseModel):
     # def ask(self, phase: Phase, assistant: OpenAIAssistant) -> Node:
     #     return self.update(questions=NodeQuestions(phase=phase, assistant=assistant))
 
-    def reset(self) -> Node:
-        return self.update(
+    def reset(self, reset_requirements=False) -> Node:
+        if reset_requirements:
+            node = self.update(requirements=None)
+        else:
+            node = self
+        return node.update(
             phase=Phase.clean,
             cache=BuildCache(),
             function_parameters=None,
@@ -909,8 +913,8 @@ class DataFlowGraph(GraphLike, BaseModel):
             ]
             return self.update(nodes=new_nodes)
 
-    def reset(self) -> "DataFlowGraph":
-        new_nodes = [node.reset() for node in self.nodes]
+    def reset(self, reset_requirements=False) -> "DataFlowGraph":
+        new_nodes = [node.reset(reset_requirements) for node in self.nodes]
         return self.update(nodes=new_nodes, version=self.version + 1)
 
     def make_driver(self):
@@ -1097,7 +1101,7 @@ class DataFlowGraph(GraphLike, BaseModel):
         if self.image is not None:
             md += f"![Data Flow Graph Image](data:image/png;base64,{self.image})\n\n"
 
-        md += f"**Description:** {self.description}\n\n"
+        md += f"**Description:**\n\n{self.description}\n\n"
 
         # Nodes Section
         for node in self.nodes:
@@ -1109,7 +1113,7 @@ class DataFlowGraph(GraphLike, BaseModel):
 
             requirements = "\n".join([f"* {x}" for x in node.requirements])
             md += f"**Requirements:**\n\n{requirements}\n\n"
-            md += f"**Description:** {node.description}\n\n"
+            md += f"**Description:**\n\n{node.description}\n\n"
             md += f"**Function Return Type:** `{node.function_return_type}`\n\n"
             # md += f"**Function Computed Value:** {node.function_computed_value}\n\n"
             algorithm = "\n".join(node.algorithm or [])
@@ -1119,45 +1123,28 @@ class DataFlowGraph(GraphLike, BaseModel):
 
             if node.result is not None:
                 if (
-                    node.result.result is not None
-                    and node.function_return_type is not None
+                    node.function_return_type is not None
                     and not node.function_return_type.is_None_type()
                 ):
-                    value = node.result.result.to_value()
-                    md += f"**Result:** \n```\n{value}\n```\n\n"
-                elif node.result.output is not None:
-                    output = node.result.output
-                    if output is not None:
-                        if output.output_type == OutputType.text:
-                            md += f"**Result:** \n\n```\n{output.data}\n```\n\n"
-                        elif output.output_type == OutputType.image:
-                            base64encoded = output.data.split(",", maxsplit=1)
-                            image_data = (
-                                base64encoded[0] + ";base64," + base64encoded[1]
-                            )
-                            md += f"**Result:** \n\n![{node.pill}]({image_data})\n\n"
-
-        # # Edges Section
-        # md += "## Edges\n\n"
-        # if self.edges:
-        #     md += "| ID | Source | Destination |\n"
-        #     md += "|----|--------|-------------|\n"
-        #     for edge in self.edges:
-        #         md += f"| {edge.id} | {edge.src} | {edge.dst} |\n"
-        #     md += "\n"
-        # else:
-        #     md += "No edges available.\n\n"
-
-        # # Node Results Section
-        # md += "## Node Results\n\n"
-        # results_found = False
-        # for node in self.nodes:
-        #     if node.result:
-        #         results_found = True
-        #         md += f"### Node ID: {node.id}\n\n"
-        #         md += f"**Result:** {node.result}\n\n"
-        # if not results_found:
-        #     md += "No results available.\n\n"
+                    text = node.result.pp_result_text()
+                    if text is not None:
+                        clipped = f"<pre>{text}</pre>"
+ 
+                if not clipped:
+                    text = node.result.pp_output_text()
+                    if text is not None:
+                        clipped = f"<pre>{text}</pre>"
+                
+                if not clipped:
+                    image_url = node.result.output_image()
+                    if image_url is not None:
+                        base64encoded = image_url.split(",", maxsplit=1)
+                        image_data = (
+                            base64encoded[0] + ";base64," + base64encoded[1]
+                        )
+                        clipped = f"![{node.pill}]({image_data})"
+                
+                md += f"**Result:** \n\n{clipped}\n\n"
 
         return md
 
@@ -1206,60 +1193,51 @@ def dataflow_graph_to_image(dfg: DataFlowGraph) -> str:
     # with tempfile.TemporaryDirectory() as temp_dir:
     for node in dfg.nodes:
         # Check if the node has no incoming edges
-        if True or not any(edge.src == node.id for edge in dfg.edges):
-            if node.result is not None:
-                if (
-                    node.result.result is not None
-                    and node.function_return_type is not None
-                    and not node.function_return_type.is_None_type()
-                ):
-                    # Handle non-image output types
-                    value, _ = node.result.result.to_repr(clip_size=10)
-                    value = value.replace(", ", ",\n")
+        if node.result is not None:
+            if (
+                node.function_return_type is not None
+                and not node.function_return_type.is_None_type()
+            ):
+                if (text := node.result.pp_result_text(clip = 15)) is not None: 
                     dot.node(
                         node.id + "-output",
-                        label=f"{value}",
+                        label=f"{text}",
                         shape="none",
                         fontsize="8pt",
                     )
-                elif node.result.output is not None:
-                    output = node.result.output
-                    if output is not None:
-                        if output.output_type == OutputType.text:
-                            value, _ = node.result.output.to_repr(clip_size=10)
-                            value = value.replace(", ", ",\n")
-                            dot.node(
-                                node.id + "-output",
-                                label=f"{value}",
-                                shape="none",
-                                fontsize="8pt",
-                            )
-                        elif output.output_type == OutputType.image:
-                            base64encoded = output.data
-                            image_data = base64.b64decode(
-                                base64encoded.split(",", 1)[1]
-                            )
+            elif (text := node.result.pp_output_text(clip = 15)) is not None:
+                    dot.node(
+                        node.id + "-output",
+                        label=f"{text}",
+                        shape="none",
+                        fontsize="8pt",
+                    )
+            elif (image_url := node.result.output_image()) is not None:
+                base64encoded = image_url.split(",", maxsplit=1)[1]
+                image_data = base64.b64decode(
+                    base64encoded
+                )
 
-                            image_filename = f"{node.id}-output.png"
-                            image_path = (
-                                image_filename  # os.path.join(temp_dir, image_filename)
-                            )
+                image_filename = f"{node.id}-output.png"
+                image_path = (
+                    image_filename  # os.path.join(temp_dir, image_filename)
+                )
 
-                            log(f"Saving image to {image_path}")
-                            with open(image_path, "wb") as image_file:
-                                image_file.write(image_data)
-                            temp_files.append(image_path)
+                log(f"Saving image to {image_path}")
+                with open(image_path, "wb") as image_file:
+                    image_file.write(image_data)
+                temp_files.append(image_path)
 
-                            dot.node(
-                                node.id + "-output",
-                                label="",
-                                image=image_path,
-                                width="3",
-                                height="3",
-                                imagescale="true",
-                                fixedsize="true",
-                                shape="none",
-                            )
+                dot.node(
+                    node.id + "-output",
+                    label="",
+                    image=image_path,
+                    width="3",
+                    height="3",
+                    imagescale="true",
+                    fixedsize="true",
+                    shape="none",
+                )
 
             with dot.subgraph() as s:
                 s.attr(rank="same")  # Ensure nodes are on the same horizontal level

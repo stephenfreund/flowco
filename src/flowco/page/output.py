@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, Field, PrivateAttr
+import pprint
 
 from flowco.builder import type_ops
 from flowco.dataflow import extended_type
@@ -298,3 +299,37 @@ class NodeResult(BaseModel):
         if self.output:
             messages.append(self.output.to_prompt())
         return messages
+
+    def _clip(self, text, clip : int | None = None) -> str:
+        text = text.splitlines()
+        if text and clip and len(text) > clip:
+            clipped = text[0:clip] + [f"... ({len(text) - 15} more lines)"]
+        else:
+            clipped = text
+        return "\n".join(clipped)
+
+    def pp_result_text(self, clip: int | None = None) -> str | None:
+        if not self.result or not self.result.text:
+            return None
+        
+        return self._clip(self.result.text, clip)
+
+    def pp_output_text(self, clip: int | None = None) -> str | None:
+        if not self.output or not self.output.data:
+            return None
+        
+        if self.output.output_type == OutputType.text:
+            return self._clip(self.output.data, clip)
+        else:
+            return None
+    
+    def output_image(self) -> str | None:
+        if not self.output or not self.output.data:
+            return None
+        
+        if self.output.output_type == OutputType.image:
+            return self.output.data.replace(
+                "data:image/png;base64,", "data:image/png,"
+            )
+        else:
+            return None

@@ -33,7 +33,7 @@ def st_pages():
         st.session_state.selected_node = "<<<<<"
         ProjectsPage().main()
 
-    if st.session_state.builder is None:
+    if st.session_state.builder is None and not st.session_state.ama_responding:
         pages = [
             st.Page(
                 projects_main, title="Browse", default=st.session_state.ui_page is None

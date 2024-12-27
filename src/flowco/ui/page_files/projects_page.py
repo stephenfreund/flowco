@@ -111,17 +111,14 @@ class ProjectsPage(FlowcoPage):
 
             st.success("Select **Edit** above to modify or run the diagram.")
 
-            ui_page = st.session_state.ui_page
-            st.write(ui_page.dfg().description)
-
             with st.container(key="page_controls"):
                 cols = st.columns(4)
                 with cols[0]:
                     st.button(
                         ":material/clear_all:",
-                        help="Reset project",
+                        help="Reset all generated content from each node",
                         on_click=lambda: confirm(
-                            f"Are you sure you want to reset {current}?",
+                            f"Are you sure you want to reset {current}?  This will clear all generated content from each node.",
                             self.reset_project,
                         ),
                     )
@@ -147,6 +144,9 @@ class ProjectsPage(FlowcoPage):
                         ),
                         disabled=len(self.get_project_names()) <= 1,
                     )
+
+            ui_page = st.session_state.ui_page
+            st.write(ui_page.dfg().description)
 
     def get_project_names(self):
         flowco_files = fs_glob("", "*.flowco")

@@ -52,7 +52,7 @@ def st_init():
 
         st.session_state.show_description = False
         st.session_state.show_output = True
-        st.session_state.show_ama = True
+        st.session_state.show_ama = False
 
         st.session_state.current_page = None
 
