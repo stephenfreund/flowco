@@ -125,9 +125,10 @@ class BuildPage(FlowcoPage):
             while not builder.empty():
                 try:
                     build_update = builder.get()
-                    st.session_state.builder_progress = (
-                        1 - build_update.steps_remaining / build_update.steps_total
-                    )
+                    if build_update.steps_total > 0:
+                        st.session_state.builder_progress = (
+                            1 - build_update.steps_remaining / build_update.steps_total
+                        )
                     dfg = build_update.new_graph
                     ui_page.update_dfg(dfg)
                     builder.update_done()
