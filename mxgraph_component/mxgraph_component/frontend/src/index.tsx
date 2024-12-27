@@ -429,16 +429,29 @@ function handleHover(isEntering: boolean): void {
   if (isEntering && currentlyHoveredCell) {
     node = currentlyHoveredCell?.id;
     graph.toggleCellStyle("shadow", false, currentlyHoveredCell);
+
+    // const outputCell = graph.getModel().getCell(`output-${node}`);
+    // if (outputCell) {
+    //   graph.toggleCells(true, [outputCell], true);
+    // }
   } else {
     if (currentlyHoveredCell) {
       graph.toggleCellStyle("shadow", true, currentlyHoveredCell);
-      // graph.setCellStyle(node_style, [currentlyHoveredCell]);
+
+      // // if currentyHoveredCell has more than one child, hode the output node.
+      // if (currentlyHoveredCell.getChildCount() > 1) {
+      //   const outputCell = graph.getModel().getCell(`output-${node}`);
+      //   if (outputCell) {
+      //     graph.toggleCells(false, [outputCell], true);
+      //   }
+      // }
     }
     const cells = graph.getSelectionCells();
     const selectedIds = cells.map(cell => cell.id);
     node = selectedIds.length === 0 ? null : selectedIds[0];
   }
   console.log("Hovering: ", currentlyHoveredCell, node)
+  
   const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, currentDiagram!.version));
   Streamlit.setComponentValue({
     command: "update",

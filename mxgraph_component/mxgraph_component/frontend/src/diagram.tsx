@@ -325,6 +325,7 @@ function process_output_node(graph: mxGraph, node: DiagramNode, show: boolean): 
         } else {
             make_output_node(graph, node);
         }
+        // alt: graph.toggleCells(show, [cell], true);
     } else {
         const cell = graph.getModel().getCell(`output-${node.id}`);
         if (cell) {
