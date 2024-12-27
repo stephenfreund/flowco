@@ -595,7 +595,11 @@ class AskMeAnything:
         return (f"Removed edge from {edge_to_remove.src} to {edge_to_remove.dst}", None)
 
     def classify_question(self, question: str) -> str:
-        assistant : OpenAIAssistant = OpenAIAssistant(model="gpt-4o-mini", interactive=False, system_prompt_key="classify_ama_prompt")
+        assistant: OpenAIAssistant = OpenAIAssistant(
+            model="gpt-4o-mini",
+            interactive=False,
+            system_prompt_key="classify_ama_prompt",
+        )
         for message in self.visible_messages[-4:]:
             assistant.add_message(message.role, message.content)
         assistant.add_message("user", f"Classify this prompt:\n```\n{question}\n```\n")

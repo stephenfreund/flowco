@@ -1129,21 +1129,19 @@ class DataFlowGraph(GraphLike, BaseModel):
                     text = node.result.pp_result_text()
                     if text is not None:
                         clipped = f"<pre>{text}</pre>"
- 
+
                 if not clipped:
                     text = node.result.pp_output_text()
                     if text is not None:
                         clipped = f"<pre>{text}</pre>"
-                
+
                 if not clipped:
                     image_url = node.result.output_image()
                     if image_url is not None:
                         base64encoded = image_url.split(",", maxsplit=1)
-                        image_data = (
-                            base64encoded[0] + ";base64," + base64encoded[1]
-                        )
+                        image_data = base64encoded[0] + ";base64," + base64encoded[1]
                         clipped = f"![{node.pill}]({image_data})"
-                
+
                 md += f"**Result:** \n\n{clipped}\n\n"
 
         return md
@@ -1198,30 +1196,26 @@ def dataflow_graph_to_image(dfg: DataFlowGraph) -> str:
                 node.function_return_type is not None
                 and not node.function_return_type.is_None_type()
             ):
-                if (text := node.result.pp_result_text(clip = 15)) is not None: 
+                if (text := node.result.pp_result_text(clip=15)) is not None:
                     dot.node(
                         node.id + "-output",
                         label=f"{text}",
                         shape="none",
                         fontsize="8pt",
                     )
-            elif (text := node.result.pp_output_text(clip = 15)) is not None:
-                    dot.node(
-                        node.id + "-output",
-                        label=f"{text}",
-                        shape="none",
-                        fontsize="8pt",
-                    )
+            elif (text := node.result.pp_output_text(clip=15)) is not None:
+                dot.node(
+                    node.id + "-output",
+                    label=f"{text}",
+                    shape="none",
+                    fontsize="8pt",
+                )
             elif (image_url := node.result.output_image()) is not None:
                 base64encoded = image_url.split(",", maxsplit=1)[1]
-                image_data = base64.b64decode(
-                    base64encoded
-                )
+                image_data = base64.b64decode(base64encoded)
 
                 image_filename = f"{node.id}-output.png"
-                image_path = (
-                    image_filename  # os.path.join(temp_dir, image_filename)
-                )
+                image_path = image_filename  # os.path.join(temp_dir, image_filename)
 
                 log(f"Saving image to {image_path}")
                 with open(image_path, "wb") as image_file:

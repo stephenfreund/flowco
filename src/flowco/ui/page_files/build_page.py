@@ -42,7 +42,11 @@ class BuildPage(FlowcoPage):
                         "Run" if st.session_state.builder is None else "Stop",
                     ),
                     disabled=st.session_state.ama_responding,
-                    help="Build and run the whole diagram" if st.session_state.builder is None else "Stop building",
+                    help=(
+                        "Build and run the whole diagram"
+                        if st.session_state.builder is None
+                        else "Stop building"
+                    ),
                 )
             with cols[2]:
                 st.button(
@@ -211,9 +215,17 @@ class BuildPage(FlowcoPage):
         with st.container(key="page_controls"):
             cols = st.columns(2)
             with cols[0]:
-                if st.button("Edit Description", disabled=not self.graph_is_editable(), help="Edit the description of the diagram"):
+                if st.button(
+                    "Edit Description",
+                    disabled=not self.graph_is_editable(),
+                    help="Edit the description of the diagram",
+                ):
                     self.edit_description()
 
             with cols[1]:
-                if st.button("Data Files", disabled=not self.graph_is_editable(), help="Manage data files for the diagram"):
+                if st.button(
+                    "Data Files",
+                    disabled=not self.graph_is_editable(),
+                    help="Manage data files for the diagram",
+                ):
                     data_files_dialog()

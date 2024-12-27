@@ -79,7 +79,7 @@ class Builder:
 
     def get(self) -> BuildUpdate:
         return self.queue.get(timeout=0.1)
-        
+
     def update_done(self) -> None:
         self.queue.task_done()
 

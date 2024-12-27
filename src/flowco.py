@@ -28,9 +28,11 @@ def parse_args():
     args = parser.parse_args(sys.argv[1:])
     return args
 
+
 @st.cache_resource
 def python_shells():
     return PythonShells()
+
 
 if "user_email" not in st.session_state:
     st.session_state.args = parse_args()

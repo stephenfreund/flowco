@@ -80,7 +80,7 @@ class FlowcoPage:
                     + (["AMA"] if st.session_state.show_ama else []),
                     selection_mode="multi",
                     key="show_pills",
-                    disabled=not self.graph_is_editable()
+                    disabled=not self.graph_is_editable(),
                 )
 
         self.show_ama(node)
@@ -122,7 +122,12 @@ class FlowcoPage:
             st.session_state.ama = AskMeAnything(page)
 
         with st.container():
-            height = 400 if "AMA" in st.session_state.show_pills or st.session_state.ama_responding else 1
+            height = (
+                400
+                if "AMA" in st.session_state.show_pills
+                or st.session_state.ama_responding
+                else 1
+            )
             container = st.container(height=height, border=True, key="chat_container")
             with container:
                 for message in st.session_state.ama.messages():
@@ -138,7 +143,10 @@ class FlowcoPage:
                     disabled=not self.graph_is_editable(),
                 )
 
-            if len(st.session_state.ama) > 0 and "AMA" not in st.session_state.show_pills:
+            if (
+                len(st.session_state.ama) > 0
+                and "AMA" not in st.session_state.show_pills
+            ):
                 ama_prompt = "Ask Me Anything!  Click AMA to see our conversation."
             else:
                 ama_prompt = "Ask Me Anything!"
@@ -207,9 +215,7 @@ class FlowcoPage:
                         node.function_return_type is not None
                         and not node.function_return_type.is_None_type()
                     ):
-                        st.caption(
-                            f"{node.function_return_type.description}"
-                        )
+                        st.caption(f"{node.function_return_type.description}")
                     self.show_output(node)
 
             with st.container(key="node_description"):
@@ -283,9 +289,11 @@ class FlowcoPage:
         with st.container(key="bottom_bar"):
             cols = st.columns(4)
             with cols[0]:
-                if st.button(":material/settings:", help="Change settings", 
-                                                 disabled=not self.graph_is_editable()
-):
+                if st.button(
+                    ":material/settings:",
+                    help="Change settings",
+                    disabled=not self.graph_is_editable(),
+                ):
                     settings(ui_page)
             with cols[3]:
                 if st.button("Logout"):
@@ -327,8 +335,6 @@ class FlowcoPage:
             return Phase.code
         else:
             return Phase.run_checked
-
-
 
     def main(self):
 

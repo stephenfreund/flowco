@@ -314,7 +314,9 @@ class TupleType(BaseType):
             return False
         if len(value) != len(self.elements):
             return False
-        return all(elem_type.matches_value(v) for elem_type, v in zip(self.elements, value))
+        return all(
+            elem_type.matches_value(v) for elem_type, v in zip(self.elements, value)
+        )
 
 
 class SetType(BaseType):

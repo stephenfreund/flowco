@@ -350,13 +350,13 @@ class BuildEngine:
 
                 new_graph = new_graph.update(
                     nodes=[x.update(build_status=None) for x in new_graph.nodes]
-                )                
+                )
                 yield BuildUpdate(
                     steps_remaining=len(worklist.keys()) - len(done),
                     steps_total=len(worklist.keys()),
                     new_graph=new_graph,
                     updated_node=None,
-                )                    
+                )
                 log("Worklist done")
 
     def build_with_worklist_parallel(
@@ -550,7 +550,7 @@ class BuildEngine:
 
                     new_graph = new_graph.update(
                         nodes=[x.update(build_status=None) for x in new_graph.nodes]
-                    )                
+                    )
                     yield BuildUpdate(
                         steps_remaining=len(worklist.keys()) - len(done),
                         steps_total=len(worklist.keys()),

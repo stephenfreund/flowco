@@ -47,20 +47,20 @@ def get_output(node: Node) -> Optional[DiagramOutput]:
             node.function_return_type is not None
             and not node.function_return_type.is_None_type()
         ):
-            text = node.result.pp_result_text(clip = 15)
+            text = node.result.pp_result_text(clip=15)
             if text is not None:
                 clipped = f"<pre>{text}</pre>"
                 return DiagramOutput(output_type="text", data=clipped)
 
-        text = node.result.pp_output_text(clip = 15)
+        text = node.result.pp_output_text(clip=15)
         if text is not None:
             clipped = f"<pre>{text}</pre>"
             return DiagramOutput(output_type="text", data=clipped)
-        
+
         image_url = node.result.output_image()
         if image_url is not None:
             return DiagramOutput(output_type="image", data=image_url)
-        
+
     return None
 
 

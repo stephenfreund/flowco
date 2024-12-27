@@ -229,7 +229,7 @@ class HtmlCommand(Command):
         with open(page.file_name + ".html", "w") as f:
             f.write(full_html)
             message(f"Wrote HTML to {page.file_name}.html")
-        
+
         path = Path(page.file_name + ".html")
         file_url = path.absolute().as_uri()
         webbrowser.open(file_url)

@@ -332,7 +332,10 @@ def _repair_node_syntax(node: Node, max_retries: int) -> Optional[Node]:
                 # m = assistant.str_completion()
                 # message(f"A Question: {m}")
 
-                return original.error(Phase.code, message=f"Too many failed attempts to write code.  Please refine requirements or try again!\n\n{e}")
+                return original.error(
+                    Phase.code,
+                    message=f"Too many failed attempts to write code.  Please refine requirements or try again!\n\n{e}",
+                )
 
             message(f"Repair attempt {retries} of {config.retries}")
 

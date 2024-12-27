@@ -729,25 +729,37 @@ def edit_node(node_id: str, edits: Optional[Node] = None):
                     st.chat_input("Let me make your changes!", key="chat_command")
                     c = st.columns(2)
                     with c[0]:
-                        st.button("Validate", key="generate", help="Ensure the changes are consistent.")
+                        st.button(
+                            "Validate",
+                            key="generate",
+                            help="Ensure the changes are consistent.",
+                        )
 
                     with c[1]:
                         with st.container(key="edit_node_commands"):
                             d = st.columns(6)
                             with d[0]:
-                                st.button("< Edit Validated", key="copy_generated", help="Continue to edit the validated changes.")
+                                st.button(
+                                    "< Edit Validated",
+                                    key="copy_generated",
+                                    help="Continue to edit the validated changes.",
+                                )
                             with d[1]:
-                                if st.button("Save Validated", help="Save the validated changes to the node."):
+                                if st.button(
+                                    "Save Validated",
+                                    help="Save the validated changes to the node.",
+                                ):
                                     apply_edit_to_dfg(edit_state)
                                     st.session_state.force_update = True
                                     st.rerun(scope="app")
                             with d[5]:
-                                if st.button(":material/clear_all: Clear Contents", help="Clear all generated content from the node (except requirements)."):
+                                if st.button(
+                                    ":material/clear_all: Clear Contents",
+                                    help="Clear all generated content from the node (except requirements).",
+                                ):
                                     reset()
                                     st.session_state.force_update = True
                                     st.rerun(scope="app")
-
-
 
     def reset():
         ui_page: UIPage = st.session_state.ui_page
@@ -757,8 +769,6 @@ def edit_node(node_id: str, edits: Optional[Node] = None):
         new_node = node.reset(reset_requirements=False)  # keep requirements...
         dfg = dfg.with_node(new_node)
         ui_page.update_dfg(dfg)
-
-
 
     def apply_edit_to_dfg(edit_state):
         ui_page: UIPage = st.session_state.ui_page
