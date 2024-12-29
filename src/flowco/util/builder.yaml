@@ -1,14 +1,23 @@
 node-passes:
-    - flowco.builder.new_passes.requirements
-    - flowco.builder.new_passes.algorithm
-    - flowco.builder.new_passes.compile
-    - flowco.builder.passes.check_node_syntax
-    - flowco.builder.passes.check_run
+    - flowco.builder.synthesize.requirements
+    - flowco.builder.synthesize.algorithm
+    - flowco.builder.synthesize.compile
+    - flowco.builder.check_syntax.check_syntax
+    - flowco.builder.check_run.check_run
 
 full-passes:
     - flowco.builder.new_passes.full_pass
     - flowco.builder.passes.check_node_syntax
     - flowco.builder.passes.check_run
+
+assertion-passes:
+    - flowco.builder.synthesize.requirements
+    - flowco.builder.synthesize.algorithm
+    - flowco.builder.synthesize.compile
+    - flowco.builder.check_syntax.check_syntax
+    - flowco.builder.check_run.check_run
+    - flowco.builder.assertions.compile_assertions  
+    - flowco.builder.assertions.check_assertions  
 
 
 # node-passes:

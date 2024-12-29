@@ -10,7 +10,7 @@ import markdown
 from pydantic import BaseModel, Field, PrivateAttr
 from pydantic_core import ValidationError
 
-from flowco.dataflow.editor import FlowthonGraph
+from flowthon.flowthon_graph import FlowthonGraph
 from flowco.dataflow.phase import Phase
 from flowco.dataflow.dfg import DataFlowGraph
 from flowco.builder.build import BuildEngine, BuildUpdate, PassConfig
@@ -59,7 +59,7 @@ class UndoStack:
                     if not self.undo_stack:
                         log("First push")
                     else:
-                        log(f"{self.undo_stack[-1].diff(dfg)}")
+                        log(f"Changes: {self.undo_stack[-1].diff(dfg).affected_paths}")
                     self.undo_stack.append(dfg)
                     self.redo_stack.clear()
 
@@ -383,8 +383,6 @@ class Page(BaseModel, extra="allow"):
             json_str = json.dumps(rep, indent=2)
             f.write(json_str)
 
-        # editor = os.environ.get('EDITOR', "nano")
-        # subprocess.run([editor, temp_path.name], check=True)
 
     @atomic_method
     def merge_flowthon(self, file_name, interactive=True) -> None:

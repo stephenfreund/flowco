@@ -242,9 +242,11 @@ class BuildCommand(Command):
         "algorithm": Phase.algorithm,
         "code": Phase.code,
         "run": Phase.run_checked,
+        "assertions": Phase.assertions_code,
+        "check": Phase.assertions_checked,
     }
 
-    always_force_to_run = ["run", "all"]
+    always_force_to_run = ["run", "all", "check"]
 
     def __init__(self, subparsers):
         super().__init__(subparsers)
@@ -274,8 +276,7 @@ class BuildCommand(Command):
                 Phase.requirements,
                 Phase.algorithm,
                 Phase.code,
-                Phase.sanity_checks,
-                Phase.unit_tests,
+                Phase.assertions_code,
             ]:
                 page.invalidate_build_cache(phase=target_phase, node_id=args.node_id)
             page.save()
@@ -283,6 +284,25 @@ class BuildCommand(Command):
         for _ in page.build(builder, target_phase, args.repair, args.node_id):
             pass
 
+        message('')
+        for node in page.dfg.nodes:
+            message('')
+            title = f"{node.pill} @ {node.phase}"
+            message(title)
+            message("-" * len(title))
+            if node.messages:
+                for m in node.messages:
+                    title = m.title()
+                    indent = " " * (len(title) + 4)
+                    paras = m.message().splitlines()
+                    message("\n".join(textwrap.wrap(f"[{title}]: {paras[0]}", initial_indent="", subsequent_indent=indent)))
+                    for para in paras[1:]:
+                        message("\n".join(textwrap.wrap(para, initial_indent=indent, subsequent_indent=indent)))
+                    message('')
+            else:
+                message('No messages')
+                message('')
+        message('')
 
 def class_name_to_key(name):
     base_name = name[:-7]  # Remove "Command" suffix

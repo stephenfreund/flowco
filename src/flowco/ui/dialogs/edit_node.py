@@ -2,12 +2,13 @@ from dataclasses import dataclass, field
 import json
 import re
 from typing import Any, Callable, List, Optional, Tuple
+from flowco.builder.cache import BuildCache
 from flowco.dataflow.phase import Phase
 import streamlit as st
 from pydantic import BaseModel, Field, create_model
 
 from flowco.builder.build import PassConfig
-from flowco.builder.new_passes import (
+from flowco.builder.synthesize import (
     interactive_algorithm_assistant,
     interactive_code_assistant,
     interactive_requirements_assistant,
@@ -790,7 +791,7 @@ def edit_node(node_id: str, edits: Optional[Node] = None):
                 cache=new_node.cache.update(phase=phase, node=new_node)
             )
 
-        log("Updating node", new_node.formatted_str())
+        log("Updating node", new_node.update(cache=BuildCache()).model_dump_json(indent=2))
 
         dfg = dfg.with_node(new_node)
         ui_page.update_dfg(dfg)

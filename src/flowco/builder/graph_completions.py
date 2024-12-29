@@ -1,18 +1,17 @@
-from typing import Any, Callable, List, Optional, TypeVar, get_origin
+from typing import Any, Dict, List, Optional, TypeVar, get_origin
 
 from pydantic import BaseModel, Field, create_model
 from typing import get_args, Union
 
 from flowco.assistant.assistant import Assistant
-from flowco.dataflow.phase import Phase
 from flowco.dataflow.dfg import (
     DataFlowGraph,
     GraphLike,
     NodeLike,
     Node,
-    SanityCheck,
 )
-from flowco.util.config import config
+from flowco.dataflow.phase import Phase
+from flowco.util.output import log
 
 
 def extract_type(field_annotation) -> type[Any]:
@@ -23,20 +22,6 @@ def extract_type(field_annotation) -> type[Any]:
             if arg is not type(None):
                 return arg
     return field_annotation
-
-
-def restrict_model_fields(model: type[BaseModel], *to_include: str) -> type[BaseModel]:
-    assert set(to_include).issubset(model.model_fields.keys())
-    kwargs = {
-        name: (
-            field.annotation,
-            Field(
-                description=field.description,
-            ),
-        )
-        for name, field in model.model_fields.items()
-    }
-    return create_model(model.__name__, **kwargs)  # type: ignore
 
 
 def node_completion_model(
@@ -105,69 +90,6 @@ def node_completion(
         return new_node
 
 
-T = TypeVar("T", bound=GraphLike)
-
-
-def graph_completion(
-    assistant: "Assistant",
-    graph_like_response_model: type[T],
-    stream_update: Optional[Callable[[T], None]] = None,
-    can_fail=False,
-) -> T:
-    if can_fail:
-        graph_like_response_model = extend_model_to_include_error_option(graph_like_response_model)  # type: ignore
-
-        new_graph = assistant.model_completion(
-            graph_like_response_model,
-            stream_update if config.stream else None,
-        )
-        if new_graph.result:
-            return new_graph.result
-        else:
-            assert False, f"Error: {new_graph.error}"
-    else:
-        new_graph = assistant.model_completion(
-            graph_like_response_model,
-            stream_update if config.stream else None,
-        )
-        return new_graph
-
-
-def graph_node_completion_model(
-    node_completion_model: Optional[type[NodeLike]],
-    *to_include: str,
-    include_explanation=False,
-) -> type[GraphLike]:
-    field_names = set(to_include)
-    assert field_names.issubset(DataFlowGraph.model_fields.keys() - {"nodes"})
-
-    kwargs = {}
-    if node_completion_model:
-        kwargs["nodes"] = (
-            List[node_completion_model],
-            Field(
-                description="List of nodes in the data flow graph.",
-            ),
-        )
-    kwargs = kwargs | {
-        name: (
-            extract_type(field.annotation),
-            Field(
-                description=field.description,
-            ),
-        )
-        for name, field in DataFlowGraph.model_fields.items()
-        if name in to_include and field.annotation is not None
-    }
-
-    if include_explanation:
-        kwargs["explanation"] = (
-            str,
-            Field(description="Explanation of the completion."),
-        )
-
-    return create_model("GraphCompletion", **kwargs)  # type: ignore
-
 
 def graph_node_like_model(
     node_like_model: type[NodeLike], *to_include: str
@@ -214,26 +136,73 @@ def extend_model_to_include_error_option(model: type[BaseModel]):
     )
 
 
-if __name__ == "__main__":
-    node = Node(
-        id="0",
-        pill="pill",
-        label="label",
-        body="body",
-        predecessors=["1"],
-        phase=Phase.TEST,
-        unit_test=SanityCheck(
-            requirement="requirement",
-            definition="definition",
-            call="call",
-        ),
-        function_name="function_name",
-        function_result_var="function_result_var",
+def messages_for_graph(
+    graph: DataFlowGraph,
+    graph_fields: List[str] = [],
+    node_fields: List[str] = [],
+) -> List[str | Dict[str, Any]]:
+    initial_graph_model = graph_node_like_model(
+        node_like_model(*node_fields), *graph_fields
     )
 
-    node_like = make_node_like(node, node_like_model("id", "pill", "label"))
-    print(node_like)
-    print(node_like.model_dump_json(indent=2))
+    initial_graph = make_graph_node_like(graph, initial_graph_model)
 
-    _node_completion = node_completion_model("body")
-    print(_node_completion.model_fields)
+    return [
+        {"type": "text", "text": "Here is the dataflow graph" },
+        {"type": "text", "text": initial_graph.model_dump_json(exclude_none=True, indent=2) },
+    ]
+
+
+def messages_for_node(
+    node: Node, node_fields: List[str] = []
+) -> List[str | Dict[str, Any]]:
+    initial_node_model = node_like_model(*node_fields)
+
+    initial_node = make_node_like(node, initial_node_model)
+
+    return [
+        {"type": "text", "text": f"Here is the node named `{node.pill}`" },
+        {"type": "text", "text": initial_node.model_dump_json(exclude_none=True, indent=2) },
+    ]
+
+
+def cache_prompt(phase: Phase, node: Node, description: str) -> str:
+    """
+    Use when it isn't a total match...
+    """
+    if node.cache.matches_in(phase, node):
+        log(f"Rebuild due to user edits to output.")
+        # return f"Modify the existing {description} to improve clarity and precision."
+        return f"Make as few changes to the existing {description} as possible."
+    else:
+        log(f"Rebuild due to input changes.")
+        diff_map = node.cache.diff(phase, node)
+        return f"Here are the changes to reflect in the new {description}:\n```\n{diff_map}\n```\nPreserve any existing {description} as much as possible."
+
+
+def update_node_with_completion(node: Node, completion: BaseModel) -> Node:
+    """
+    Updates the `node` instance with fields from the `completion` instance.
+
+    Only the fields that are explicitly set in `completion` will be used to update `node`.
+
+    Args:
+        node (Node): The original Node instance to be updated.
+        completion (BaseModel): The instance containing update values.
+
+    Returns:
+        Node: A new Node instance with updated fields.
+    """
+    # Dump the node's data
+    node_data = node.model_dump()
+
+    # Dump only the fields that are set in completion
+    completion_data = completion.model_dump(exclude_unset=True)
+
+    # Merge the dictionaries, with completion_data overriding node_data
+    merged_data = node_data | completion_data
+
+    # Validate and create a new Node instance
+    updated_node = Node.model_validate(merged_data)
+
+    return updated_node

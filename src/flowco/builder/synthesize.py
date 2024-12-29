@@ -5,13 +5,13 @@ import textwrap
 from typing import Dict, List, Tuple
 from pydantic import Field, BaseModel
 from flowco.assistant.openai import OpenAIAssistant
-from flowco.dataflow.graph_completions import (
-    graph_node_like_model,
-    make_graph_node_like,
-    make_node_like,
+from flowco.builder.graph_completions import (
+    cache_prompt,
     node_completion_model,
-    node_like_model,
+    update_node_with_completion,
 )
+from flowco.builder.graph_completions import messages_for_graph
+from flowco.builder.graph_completions import messages_for_node
 from flowco.dataflow.phase import Phase
 from flowco.util.semantic_diff import semantic_diff_strings
 from flowco.util.output import logger, log
@@ -19,58 +19,6 @@ from flowco.builder.build import PassConfig, node_pass
 from flowco.util.config import config
 
 from flowco.dataflow.dfg import DataFlowGraph, Parameter, Node
-
-
-def cache_prompt(phase: Phase, node: Node, description: str) -> str:
-    """
-    Use when it isn't a total match...
-    """
-    if node.cache.matches_in(phase, node):
-        log(f"Rebuild due to user edits to output.")
-        # return f"Modify the existing {description} to improve clarity and precision."
-        return f"Make as few changes to the existing {description} as possible."
-    else:
-        log(f"Rebuild due to input changes.")
-        diff_map = node.cache.diff(phase, node)
-        return f"Here are the changes to reflect in the new {description}:\n```\n{diff_map}\n```\nPreserve any existing {description} as much as possible."
-
-
-def add_graph_to_assistant(
-    assistant: OpenAIAssistant,
-    graph: DataFlowGraph,
-    graph_fields: List[str] = [],
-    node_fields: List[str] = [],
-) -> None:
-    initial_graph_model = graph_node_like_model(
-        node_like_model(*node_fields), *graph_fields
-    )
-
-    initial_graph = make_graph_node_like(graph, initial_graph_model)
-
-    assistant.add_json_object(
-        "Here is the dataflow graph",
-        initial_graph.model_dump(exclude_none=True),
-    )
-
-
-def add_node_to_assistant(
-    assistant: OpenAIAssistant, node: Node, node_fields: List[str] = []
-) -> None:
-    initial_node_model = node_like_model(*node_fields)
-
-    initial_node = make_node_like(node, initial_node_model)
-
-    assistant.add_json_object(
-        f"Here is the node named `{node.pill}`",
-        initial_node.model_dump(exclude_none=True),
-    )
-
-
-def get_last_item(iterator, default=None):
-    q = deque(iterator, maxlen=1)
-    if len(q) == 0:
-        return default
-    return q[0]
 
 
 @node_pass(
@@ -128,34 +76,6 @@ def get_requirements_completion(assistant) -> BaseModel | None:
     return completion
 
 
-def update_node_with_completion(node: Node, completion: BaseModel) -> Node:
-    """
-    Updates the `node` instance with fields from the `completion` instance.
-
-    Only the fields that are explicitly set in `completion` will be used to update `node`.
-
-    Args:
-        node (Node): The original Node instance to be updated.
-        completion (BaseModel): The instance containing update values.
-
-    Returns:
-        Node: A new Node instance with updated fields.
-    """
-    # Dump the node's data
-    node_data = node.model_dump()
-
-    # Dump only the fields that are set in completion
-    completion_data = completion.model_dump(exclude_unset=True)
-
-    # Merge the dictionaries, with completion_data overriding node_data
-    merged_data = node_data | completion_data
-
-    # Validate and create a new Node instance
-    updated_node = Node.model_validate(merged_data)
-
-    return updated_node
-
-
 def requirements_assistant(
     pass_config: PassConfig,
     graph: DataFlowGraph,
@@ -181,27 +101,31 @@ def requirements_assistant(
         label=node.label,
     )
 
-    add_graph_to_assistant(
-        assistant=assistant,
-        graph=graph,
-        graph_fields=["edges", "description"],
-        node_fields=["requirements"],
+    assistant.add_message(
+        "user",
+        messages_for_graph(
+            graph=graph,
+            graph_fields=["edges", "description"],
+            node_fields=["requirements"],
+        ),
     )
 
     image = graph.to_image_prompt_messages()
     assistant.add_message("user", image)
 
-    add_node_to_assistant(
-        assistant=assistant,
-        node=node,
-        node_fields=[
-            "id",
-            "pill",
-            "label",
-            "predecessors",
-            "preconditions",
-            "requirements",
-        ],
+    assistant.add_message(
+        "user",
+        messages_for_node(
+            node=node,
+            node_fields=[
+                "id",
+                "pill",
+                "label",
+                "predecessors",
+                "preconditions",
+                "requirements",
+            ],
+        )
     )
 
     return assistant
@@ -451,21 +375,23 @@ def algorithm_assistant(node, diff_instructions, interactive=False):
         diff=diff_instructions,
     )
 
-    add_node_to_assistant(
-        assistant=assistant,
-        node=node,
-        node_fields=[
-            "id",
-            "pill",
-            "preconditions",
-            "requirements",
-            "description",
-            "function_return_type",
-            "function_computed_value",
-            "function_parameters",
-            "function_result_var",
-            "algorithm",
-        ],
+    assistant.add_message(
+        "user",
+        messages_for_node(
+            node=node,
+            node_fields=[
+                "id",
+                "pill",
+                "preconditions",
+                "requirements",
+                "description",
+                "function_return_type",
+                "function_computed_value",
+                "function_parameters",
+                "function_result_var",
+                "algorithm",
+            ],
+        )
     )
 
     return assistant
@@ -562,9 +488,9 @@ def code_assistant(node: Node, diff_instructions, interactive=False):
     parameter_types = {param.name: param.type for param in node.function_parameters}
     parameter_type_str = "\n".join(
         [
-            f"* {name}:\n{textwrap.indent(t.to_markdown(), '    ')}\n"
+            f"* {name}:\n{textwrap.indent(t.to_markdown(include_description=False), '    ')}\n"
             for name, t in parameter_types.items()
-        ]
+        ],
     )
 
     assistant = OpenAIAssistant(
@@ -576,21 +502,23 @@ def code_assistant(node: Node, diff_instructions, interactive=False):
         diff=diff_instructions,
     )
 
-    add_node_to_assistant(
-        assistant=assistant,
-        node=node,
-        node_fields=[
-            "id",
-            "pill",
-            "preconditions",
-            "requirements",
-            "description",
-            "function_return_type",
-            "function_computed_value",
-            "function_parameters",
-            "function_result_var",
-            "algorithm",
-        ],
+    assistant.add_message(
+        "user",
+        messages_for_node(
+            node=node,
+            node_fields=[
+                "id",
+                "pill",
+                "preconditions",
+                "requirements",
+                "description",
+                "function_return_type",
+                "function_computed_value",
+                "function_parameters",
+                "function_result_var",
+                "algorithm",
+            ],
+        )
     )
 
     return assistant
@@ -769,33 +697,35 @@ def full_assistant(
     )
 
     if phase < Phase.requirements:
-        add_graph_to_assistant(
-            assistant=assistant,
+        messages = messages_for_graph(
             graph=graph,
             graph_fields=["edges", "description"],
             node_fields=["requirements"],
         )
+        assistant.add_message("user", messages)
 
         image = graph.to_image_prompt_messages()
         assistant.add_message("user", image)
 
-    add_node_to_assistant(
-        assistant=assistant,
-        node=node,
-        node_fields=[
-            "id",
-            "pill",
-            "label",
-            "predecessors",
-            "preconditions",
-            "requirements",
-            "function_parameters",
-            "function_return_type",
-            "function_computed_value",
-            "description",
-            "algorithm",
-            "code",
-        ],
+    assistant.add_message(
+        "user",
+        messages_for_node(
+            node=node,
+            node_fields=[
+                "id",
+                "pill",
+                "label",
+                "predecessors",
+                "preconditions",
+                "requirements",
+                "function_parameters",
+                "function_return_type",
+                "function_computed_value",
+                "description",
+                "algorithm",
+                "code",
+            ],
+        )
     )
 
     return assistant

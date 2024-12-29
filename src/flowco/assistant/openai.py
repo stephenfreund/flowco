@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import json
+import pprint
 from typing import Any, Dict, Iterable, List, TypeVar
 from litellm import ChatCompletionMessageToolCall
 from openai import OpenAI
@@ -7,7 +8,8 @@ from pydantic import BaseModel
 
 from flowco.util.config import config
 from flowco.util.costs import add_cost
-from flowco.util.output import debug
+from flowco.util.output import debug, warn
+from litellm.utils import supports_vision
 
 
 @dataclass
@@ -46,7 +48,7 @@ class OpenAIAssistant:
         assert model in openai_models, f"Invalid model: {model}"
         self.model = model
         self.interactive = interactive
-        self.conversation: List[Dict[str, Any]] = []
+        self.messages: List[Dict[str, Any]] = []
         self.interactive: bool = interactive
         self.question_queue: List["ChatCompletionMessageToolCall"] = []
         self.done = False
@@ -75,17 +77,37 @@ class OpenAIAssistant:
     def add_prompt_by_key(self, key: str, **prompt_substitutions) -> None:
         self.add_message("system", config.get_prompt(key, **prompt_substitutions))
 
-    def add_message(self, role: str, content: str | list[dict[str, Any]]):
+    def add_message(self, role: str, content: str | dict[str,Any] | list[str | dict[str, Any]]):
         assert role in ["user", "assistant", "system", "tool"], f"Invalid role: {role}"
 
-        debug(
-            "Add Message: " + json.dumps({"role": role, "content": content}, indent=2)
-        )
+        if isinstance(content, dict):
+            content = [content]
 
-        if isinstance(content, str):
-            self.conversation.append({"role": role, "content": content})
-        else:
-            self.conversation.append({"role": role, "content": content})
+        if not isinstance(content, str):
+            if not supports_vision(config.model):
+                for message in content:
+                    if isinstance(message, dict) and message["type"] == "image_url":
+                        warn(
+                            f"Skipping image message because model {config.model} does not support vision."
+                        )
+
+                content = [ message for message in content if isinstance(message, dict) and message["type"] != "image_url" ]
+
+
+        debug(f"Add Message {pprint.pformat({'role': role, 'content': content})}")
+
+        self.messages.append({"role": role, "content": content})
+
+
+    #     debug(
+    #         "Add Message: " + json.dumps({"role": role, "content": content}, indent=2)
+    #     )
+
+    #     self.conversation.append({"role": role, "content": content})
+
+    # def add_messages(self, role: str, messages: List[str|dict[str, Any]]):
+    #     for message in messages:
+    #         self.add_message(role, message)
 
     def _cost(self, completion):
         pricing = openai_models[self.model]
@@ -101,7 +123,7 @@ class OpenAIAssistant:
         assert self.question_queue == [], "There are still questions in the queue."
 
         if prompt is not None:
-            self.conversation.append({"role": "user", "content": prompt})
+            self.messages.append({"role": "user", "content": prompt})
 
         client = OpenAI()
 
@@ -125,7 +147,7 @@ class OpenAIAssistant:
         assert self.question_queue == [], "There are still questions in the queue."
 
         if prompt is not None:
-            self.conversation.append({"role": "user", "content": prompt})
+            self.messages.append({"role": "user", "content": prompt})
 
         client = OpenAI()
 
@@ -147,7 +169,7 @@ class OpenAIAssistant:
         if completion.choices[0].finish_reason == "tool_calls":
             assert self.interactive, "Tool calls are only allowed in interactive mode."
             self._add_questions_to_queue(final_response_message)
-            self.conversation.append(final_response_message)
+            self.messages.append(final_response_message)
         else:
             self.done = True
             self.add_message("assistant", content)
@@ -157,7 +179,7 @@ class OpenAIAssistant:
 
         args = {
             "model": self.model,
-            "messages": self.conversation,
+            "messages": self.messages,
             "response_format": t,
         }
         if self.interactive:
@@ -229,7 +251,7 @@ class OpenAIAssistant:
             "name": tool_call.function.name,
             "content": answer,
         }
-        self.conversation.append(response)
+        self.messages.append(response)
 
     def is_done(self) -> bool:
         return self.done

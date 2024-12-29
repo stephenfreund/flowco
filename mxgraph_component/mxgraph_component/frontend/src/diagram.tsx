@@ -106,7 +106,18 @@ const edge_style = 'endArrow=classic;html=1;rounded=0;labelBackgroundColor=white
 const output_node_style_text = `html=1;shape=rectangle;whiteSpace=wrap;shadow=1;fillColor=#E8E8E8;strokeColor=#990000;align=left;verticalAlign=middle;spacing=5;fontFamily=monospace;`;
 const output_node_style_image = `html=1;shape=image;shadow=1;imageBackground=#E8E8E8;imageBorder=#990000;`;
 const output_edge_style = 'rounded=1;orthogonalLoop=1;dashed=1;strokeWidth=2;strokeColor=#990000;fillColor=#76608a;endArrow=block;endFill=0;edgeStyle=orthogonalEdgeStyle;curved=0;';
-const phase_colors = ['#F4F4F4', '#d899b3', '#eeb1b8', '#fac4b3', '#fedebf', '#fef2d0', '#f5fbd5', '#ddf1da', '#c1e6db', '#adcfe4', '#beb8d9'];
+const phase_colors = [
+    '#F4F4F4', // clean
+    '#d899b3', // requirements
+    '#eeb1b8', // algorithm
+    '#fac4b3', // code
+    '#fedebf', // runnable
+    '#fef2d0', // run_checked
+    '#f5fbd5', 
+    '#ddf1da', 
+    '#c1e6db',
+    '#adcfe4', 
+    '#beb8d9'];
 
 function phase_to_color(phase: number): string {
     console.log('phase', phase);

@@ -23,6 +23,7 @@ class FlowthonNode(BaseModel):
     requirements: List[str] | None
     algorithm: Optional[List[str]] | None
     code: Optional[List[str]] | None
+    assertions: Optional[List[str]] = None
 
     def to_json(self, level: AbstractionLevel) -> Dict[str, Any]:
         map = {
@@ -87,6 +88,15 @@ class FlowthonNode(BaseModel):
             ), f"Expected list of str, got {node_data['code']}"
             node_data["code"] = node_data["code"]
 
+        if "assertions" in node_data:
+            assert isinstance(
+                node_data["assertions"], list
+            ), f"Expected list, got {type(node_data['assertions'])}"
+            assert all(
+                isinstance(x, str) for x in node_data["assertions"]
+            ), f"Expected list of str, got {node_data['assertions']}"
+            node_data["assertions"] = node_data["assertions"]
+
         return cls(
             pill=pill,
             uses=node_data.get("uses", []),
@@ -94,6 +104,7 @@ class FlowthonNode(BaseModel):
             requirements=node_data.get("requirements", None),
             algorithm=node_data.get("algorithm", None),
             code=node_data.get("code", None),
+            assertions=node_data.get("assertions", None),
         )
 
 
@@ -138,6 +149,7 @@ class FlowthonGraph(BaseModel):
                 requirements=node.requirements,
                 algorithm=node.algorithm,
                 code=node.code,
+                assertions=node.assertions
             )
         return dfg, cls(nodes=nodes)
 
@@ -187,6 +199,7 @@ class FlowthonGraph(BaseModel):
                     requirements=node.requirements,
                     algorithm=node.algorithm,
                     code=node.code,
+                    assertions=node.assertions,
                 )
 
                 message(f"Adding new node {new_node.pill}")
@@ -224,6 +237,8 @@ class FlowthonGraph(BaseModel):
                     edits.append("algorithm")
                 if node.code and node.code != original.code:
                     edits.append("code")
+                if node.assertions and node.assertions != original.assertions:
+                    edits.append("assertions")
 
                 if edits:
                     message(

@@ -83,8 +83,13 @@ class BuildCache(BaseModel):
             ),
             Phase.code: PhaseCacheDescriptor(
                 phase=Phase.code,
-                in_fields=["signature", "parameter_types", "requirements", "algorithm"],
+                in_fields=["signature", "function_parameters", "requirements", "algorithm"],
                 out_fields=["code"],
+            ),
+            Phase.assertions_code: PhaseCacheDescriptor(
+                phase=Phase.assertions_code,
+                in_fields=["preconditions", "requirements", "function_parameters", "function_return_type", "assertions"],
+                out_fields=[ "assertion_checks"],
             ),
         }
 

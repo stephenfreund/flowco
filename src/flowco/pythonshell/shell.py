@@ -1,20 +1,26 @@
 import inspect
+import json
+import re
 import textwrap
 import io
 import base64
 import traceback
-from typing import List
+from typing import Any, Dict, List
 from PIL import Image
 import nbformat as nbf
 from nbclient import NotebookClient, exceptions as nb_exceptions
 
+from flowco.assistant.openai import OpenAIAssistant
 from flowco.builder.type_ops import encode
+from flowco.dataflow.checks import CheckOutcomes, QualitativeCheck
 from flowco.dataflow.dfg import Node, DataFlowGraph
 from flowco.page.output import NodeResult, OutputType, ResultOutput, ResultValue
 from flowco.page.tables import GlobalTables
 from flowco.pythonshell.sandbox import Sandbox
-from flowco.util.output import debug, error, logger
+from flowco.util.output import error, log, logger, message
 from pydantic import BaseModel
+
+from flowco.util.text import strip_ansi
 
 
 class EvalResult(BaseModel):
@@ -168,16 +174,45 @@ class PythonShell:
         self.nb.cells.append(cell)
         index = len(self.nb.cells) - 1
         try:
-            debug(f"Executing cell {index}")
-            debug(f"Cell code: {code}")
+            # debug(f"Executing cell {index}")
+            # debug(f"Cell code: {code}")
             result = self.client.execute_cell(cell, index, store_history=False)
             return result
         except nb_exceptions.CellExecutionError as cee:
-            error(f"Error executing cell {index}: {cee}")
+            # error(f"Error executing cell {index}: {cee}")
             raise cee
         except Exception as e:
-            error(f"Unexpected error executing cell {index}: {e}")
+            # error(f"Unexpected error executing cell {index}: {e}")
             raise e
+
+    def load_tables(self, tables: GlobalTables):
+        """
+        Load table definitions into the PythonShell.
+        """
+        for table_def in tables.function_defs():
+            self._run_cell(table_def)
+
+    def load_parameters(self, dfg: DataFlowGraph, node: Node) -> List[str]:
+        # Prepare arguments from predecessor nodes
+        arguments = []
+        for predecessor_id in node.predecessors:
+            predecessor = dfg[predecessor_id]
+            with logger(f"Retrieving predecessor result for {predecessor_id}"):
+                repr_val, _ = predecessor.result.result.to_repr()
+                self._run_cell(f"{predecessor.function_result_var} = {repr_val}")
+                arguments.append(predecessor.function_result_var)
+
+        return arguments
+
+    def load_result_var(self, node: Node):
+        """
+        Load the result variable from the previous node into the PythonShell.
+        """
+        if node.result is not None:
+            repr_val, _ = node.result.result.to_repr()
+            self._run_cell(f"{node.function_result_var} = {repr_val}")
+        else:
+            self._run_cell(f"{node.function_result_var} = None")
 
     def run_node(
         self, tables: GlobalTables, dfg: DataFlowGraph, node: Node
@@ -195,20 +230,8 @@ class PythonShell:
 
         with logger(f"Evaluating node '{node.id}'"):
             try:
-                # Load table functions
-                for table_def in tables.function_defs():
-                    self._run_cell(table_def)
-
-                # Prepare arguments from predecessor nodes
-                arguments = []
-                for predecessor_id in node.predecessors:
-                    predecessor = dfg[predecessor_id]
-                    with logger(f"Retrieving predecessor result for {predecessor_id}"):
-                        repr_val, _ = predecessor.result.result.to_repr()
-                        self._run_cell(
-                            f"{predecessor.function_result_var} = {repr_val}"
-                        )
-                        arguments.append(predecessor.function_result_var)
+                self.load_tables(tables)
+                arguments = self.load_parameters(dfg, node)
 
                 # Execute the node's code
                 self._run_cell("\n".join(node.code))
@@ -228,6 +251,126 @@ class PythonShell:
                 return NodeResult(
                     result=ResultValue(text=text, pickle=pickle_result), output=output
                 )
+
+            except Exception as e:
+                error(f"Error evaluating node '{node.id}': {e}")
+                error(traceback.format_exc())
+                raise (e)
+
+    def extract_assertion_error_message(self, error_log):
+        """
+        Extracts the message following 'AssertionError:' from a given error log string.
+
+        Parameters:
+        error_log (str): The multiline string containing the error message.
+
+        Returns:
+        str or None: The extracted assertion error message, or None if not found.
+        """
+        # Define a regex pattern to find 'AssertionError:' followed by the message
+        pattern = r"AssertionError:\s*(.*)"
+
+        # Search for the pattern in the error_log
+        match = re.search(pattern, error_log)
+
+        if match:
+            # Return the captured group which is the error message
+            return match.group(1).strip()
+        else:
+            # Return None or an appropriate message if not found
+            return None
+
+    def make_context(self, dfg, node: Node) -> Dict[str, Any]:
+        context = {}
+        for predecessor_id in node.predecessors:
+            predecessor = dfg[predecessor_id]
+            context[predecessor.function_result_var] = predecessor.result.result
+
+        context[node.function_result_var] = node.result.result
+        return context
+
+    def _inspect_output(self, node: Node, qualitative_checks : Dict[str, QualitativeCheck]) -> Dict[str, str]:
+
+        if len(qualitative_checks) == 0:
+            return {}
+        
+        result_messages = node.result.to_prompt_messages()
+
+        class InspectionCompletion(BaseModel):
+            requirement: str
+            error: bool
+            message: str | None
+
+        class InspectionsCompletion(BaseModel):
+            errors: List[InspectionCompletion]
+
+        requirements = [ check.requirement for check in qualitative_checks.values() ]
+        assertions = [ assertion for assertion in qualitative_checks.keys() ]
+
+        assistant = OpenAIAssistant(
+            "gpt-4o",
+            interactive=False,
+            system_prompt_key=["system-prompt", "inspect-output"],
+            requirements=json.dumps(requirements, indent=2),
+        )
+        assistant.add_message("user", "Here is the output.")
+        assistant.add_message("user", result_messages)
+
+        completion = assistant.completion(InspectionsCompletion)
+        messages = { x.requirement: x.message if x.error else None for x in completion.errors }
+        return { assertion: messages[check.requirement] for assertion, check in qualitative_checks.items() }
+
+        
+        
+
+
+    def run_assertions(
+        self, tables: GlobalTables, dfg: DataFlowGraph, node: Node
+    ) -> NodeResult:
+        """
+        Evaluate a Node object and capture outputs.
+
+        Args:
+            dfg (DataFlowGraph): The data flow graph containing node dependencies.
+            node (Node): The Node object to evaluate.
+
+        Returns:
+            NodeResult: The result of evaluating the node.
+        """
+
+        with logger(f"Evaluating assertions for node '{node.id}'"):
+            try:
+                self.load_tables(tables)
+                arguments = self.load_parameters(dfg, node)
+                self.load_result_var(node)
+
+                context = self.make_context(dfg, node)
+                outcomes = {}
+                for assertion, check in node.assertion_checks.items():
+                    if check.type == "quantitative":
+                        with logger(f"Evaluating quantitative assertion {assertion}"):
+                            assertion_message = None
+                            try:
+                                self._run_cell("\n".join(check.code))
+                            except nb_exceptions.CellExecutionError as e:
+                                if e.ename == "AssertionError":
+                                    assertion_message = self.extract_assertion_error_message(
+                                        strip_ansi(e.traceback)
+                                    )
+                            except Exception as e:
+                                raise e
+                            log(assertion_message)
+                            outcomes[assertion] = assertion_message
+                        
+                with logger(f"Evaluating qualitative assertions"):
+                    qualitative_checks = { assertion : check for assertion, check in node.assertion_checks.items() if check.type == "qualitative" }
+                    assertion_messages = self._inspect_output(node, qualitative_checks)
+                    outcomes = outcomes | assertion_messages
+
+                node = node.update(
+                    assertion_outcomes=CheckOutcomes(outcomes=outcomes, context=context)
+                )
+                return node
 
             except Exception as e:
                 error(f"Error evaluating node '{node.id}': {e}")

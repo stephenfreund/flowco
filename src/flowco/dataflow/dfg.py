@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from collections import deque
-from dataclasses import dataclass
 import os
 import textwrap
-from typing import Any, Dict, List, Literal, Optional, Set, Union
+from typing import Any, Dict, List, Literal, Optional, OrderedDict, Set, Union
 from graphviz import Digraph
 from pydantic import BaseModel, Field
 
@@ -13,15 +12,13 @@ import base64
 import openai
 
 from flowco.builder.cache import BuildCache
+from flowco.dataflow.checks import Check, CheckOutcomes
 from flowco.dataflow.extended_type import ExtendedType
 from flowco.dataflow.function_call import FunctionCall
 from flowco.dataflow.parameter import Parameter
 from flowco.dataflow.phase import Phase
 from flowco.dataflow.tests import (
-    SanityCheck,
-    SanityCheckResult,
     UnitTest,
-    UnitTestResult,
 )
 from flowco.page.output import NodeResult, OutputType
 from flowco.util.config import config
@@ -45,36 +42,6 @@ class FailOnDifferentValueStrategy(jsonmerge.strategies.Strategy):
             )
         return base
 
-
-@dataclass
-class UserUpdateError(FlowcoError):
-    consistent: bool
-    explanation: str
-    summary: str
-    updates: Dict[str, Any]
-
-
-class Assertion(BaseModel):
-    requirement: str = Field(
-        description="The requirement that must be true of the return value for the function."
-    )
-    assertion: str = Field(
-        description="The assertion to verify the requirement is met after the function is called."
-    )
-
-
-# class Assessment(BaseModel):
-#     """
-#     An assessment of a computation stage's algorithm.
-#     """
-
-#     overall: Literal["Good", "Bad", "More Information Required"] = Field(
-#         description="An overall assessment of the algorithm."
-#     )
-#     details: str = Field(description="A detailed assessment of the algorithm.")
-#     question: Optional[str] = Field(
-#         description="A question to ask to gain more confidence in the algorithm."
-#     )
 
 
 class NodeLike(BaseModel):
@@ -107,8 +74,14 @@ class NodeMessage(BaseModel):
     )
     text: str = Field(description="The message generated during the build process.")
 
+    def title(self) -> str:
+        return f"{self.level.title()}@{self.phase}"
+
+    def message(self) -> str:
+        return self.text
+
     def __str__(self) -> str:
-        return f"[{self.level.title()}] {self.phase}: {self.text}"
+        return f"[{self.level.title()}@{self.phase}]: {self.text}"
 
 
 class NodeQuestions(BaseModel):
@@ -166,11 +139,6 @@ class Node(NodeLike, BaseModel):
         description="The phase of the computation stage for this node in the data flow graph.",
     )
 
-    cache: BuildCache = Field(
-        default_factory=BuildCache,
-        description="A cache of the build process for this node.",
-    )
-
     # Requirements Phase: From preds
     function_parameters: Optional[List[Parameter]] = Field(
         default=None,
@@ -216,33 +184,31 @@ class Node(NodeLike, BaseModel):
         description="The function for this computation stage of the data flow graph, stored as a list of source lines.  The signature should match the function_name, function_parameters, and function_return_type fields.  Don't include newlines in the strings.",
     )
 
-    # Runnable Phase
-    result: Optional[NodeResult] = Field(
+    #####
+
+    assertions: Optional[List[str]] = Field(
         default=None,
-        description="The result of the computation stage.",
+        description="A list of assertions that must be true at run time."
+    )
+
+    assertion_checks: Optional[OrderedDict[str, Check]] = Field(
+        default_factory=OrderedDict,
+        description="The generated assertions."
+    )
+
+    assertion_outcomes: Optional[CheckOutcomes] = Field(
+        default_factory=CheckOutcomes,
+        description="The outcomes of the assertions."
     )
 
     #####
 
-    # Generated
-    sanity_checks: Optional[List[SanityCheck]] = Field(
-        default=None,
-        description="A list of unittest functions to verify the function is correct.",
-    )
-
     unit_tests: Optional[List[UnitTest]] = Field(
         default=None,
-        description="A list of expected value tests to verify the function is correct.",
+        description="A list of unit tests that the node must pass."
     )
 
-    # Generated
-    sanity_check_results: Dict[str, SanityCheckResult] = Field(
-        default_factory=dict,
-        description="A map from uuid to outcome for sanity checks.",
-    )
-    unit_test_results: Dict[str, UnitTestResult] = Field(
-        default_factory=dict, description="A map from uuid to outcome for unit tests."
-    )
+    ### 
 
     messages: List[NodeMessage] = Field(
         default_factory=list,
@@ -252,6 +218,18 @@ class Node(NodeLike, BaseModel):
     build_status: Optional[str] = Field(
         default=None, description="The status of the build process for this node."
     )
+
+    # Runnable Phase
+    result: Optional[NodeResult] = Field(
+        default=None,
+        description="The result of the computation stage.",
+    )
+
+    cache: BuildCache = Field(
+        default_factory=BuildCache,
+        description="A cache of the build process for this node.",
+    )
+
 
     def semantically_eq(self, other: "Node") -> bool:
         return (
@@ -266,8 +244,9 @@ class Node(NodeLike, BaseModel):
             and self.algorithm == other.algorithm
             and self.code == other.code
             and self.result == other.result
-            and self.sanity_check_results == other.sanity_check_results
-            and self.unit_test_results == other.unit_test_results
+            and self.assertions == other.assertions
+            and self.assertion_checks == other.assertion_checks
+            and self.assertion_outcomes == other.assertion_outcomes
         )
 
     def diff(self, other: "Node") -> dict:
@@ -395,35 +374,11 @@ class Node(NodeLike, BaseModel):
             algorithm=None,
             description=None,
             code=None,
+            assertions_check=None,
+            assertion_outcomes=None,
             result=None,
             messages=[],
             build_status=None,
-            sanity_check_results={},
-            unit_test_results={},
-        )
-
-    def formatted_str(self) -> str:
-        return format_basemodel(
-            self,
-            order=[
-                "id",
-                "pill",
-                "label",
-                "phase",
-                "function_name",
-                "function_result_var",
-                "predecessors",
-                "function_parameters",
-                "preconditions",
-                "requirements",
-                "description",
-                "function_return_type",
-                "function_computed_value",
-                "algorithm",
-                "code",
-                "messages",
-            ],
-            drop_missing=True,
         )
 
 
@@ -507,8 +462,6 @@ class DataFlowGraph(GraphLike, BaseModel):
             nodes = data.get("nodes", [])
             edges = data.get("edges", [])
 
-            print(nodes)
-
             # Process nodes to reset 'phase' and 'cache'
             new_nodes = []
             for node in nodes:
@@ -522,6 +475,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                         function_name=node["function_name"],
                         function_result_var=node["function_result_var"],
                         predecessors=node["predecessors"],
+                        assertions=node['assertions'],
                         phase=Phase.clean,
                         cache=BuildCache(),
                     )

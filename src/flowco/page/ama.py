@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterable, List, Literal, Tuple
 from flowco.assistant.openai import OpenAIAssistant
 from flowco.assistant.stream import StreamingAssistantWithFunctionCalls
-from flowco.builder.passes import GraphView, add_graph_to_assistant
+from flowco.builder.graph_completions import messages_for_graph
 from flowco.dataflow.dfg import Geometry
 from flowco.dataflow.phase import Phase
 from flowco.page.page import Page
@@ -670,22 +670,21 @@ class AskMeAnything:
 
             self.assistant.add_message("user", self.page.dfg.to_image_prompt_messages())
 
-            graph_view = GraphView(
-                graph_fields=["edges"],
-                node_fields=[
-                    "id",
-                    "pill",
-                    "label",
-                    # "description",
-                    "requirements",
-                    # "function_result_var",
-                    # "function_return_type",
-                    # "function_computed_value",
-                    "algorithm",
-                    "code",
-                ],
+            self.assistant.add_messages(
+                messages_for_graph(
+                    self.page.dfg,
+                    graph_fields=["edges"],
+                    node_fields=[
+                        "id",
+                        "pill",
+                        "label",
+                        "requirements",
+                        "algorithm",
+                        "code",
+                    ],
+                )
             )
-            add_graph_to_assistant(self.assistant, self.page.dfg, graph_view)
+
             self.assistant.add_message("user", locals)
 
         if selected_node is not None:

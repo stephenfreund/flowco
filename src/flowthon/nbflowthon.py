@@ -7,8 +7,9 @@ prompt = """\
 Here is an example Flowthon description of a dataflow graph for a data science computation. 
 The graph consists of three nodes: `Array-Numbers`, `Plot-Histogram`, and `Compute-Mean`. 
 Each node represents a specific computation or visualization task, and the edges between nodes indicate the dependencies between them. 
-The description includes the requirements for each node, as well as the dependencies between nodes.
-It also includes the csv files that are used in the computation.
+The description includes the requirements for each node, as well as the dependencies between nodes and a list of
+assertions that must be true for the result of each node.
+The description also includes the csv files that are used in the computation.
 ```
 {
   "tables": {
@@ -25,6 +26,10 @@ It also includes the csv files that are used in the computation.
         "array_numbers_result is a NumPy array.",
         "array_numbers_result has 500 elements.",
         "Each element in array_numbers_result is sampled from a normal distribution with a default mean of 0 and a standard deviation of 1."
+      ],
+      "assertions": [
+        "array_numbers_result is not empty.",
+        "The median is close to 0."
       ]
     },
     "Plot-Histogram": {
@@ -38,6 +43,8 @@ It also includes the csv files that are used in the computation.
         "X-axis is labeled 'Value'.",
         "Y-axis is labeled 'Frequency'.",
         "Histogram bars are displayed in orange color."
+      ],
+      "assertions": [
       ]
     },
     "Compute-Mean": {
@@ -48,7 +55,9 @@ It also includes the csv files that are used in the computation.
       "requirements": [
         "The mean of the values in array_numbers_result is computed.",
         "The result is a single floating-point number."
-      ]
+      ],
+      "assertions": [
+        "The mean is close to 0.",        
     }
   }
 }
@@ -65,6 +74,10 @@ must be numbers, strings, lists, dictionaries, dataframes, arrays, or series.
 
 The requirements should be written in
 plain English and should be as specific as possible.
+
+The assertions should be written in
+plain English and should be as specific as possible.  Use any assertions or checks in 
+the notebook to guide the assertions in the Flowthon description.
 
 The label field should
 describe the computation or visualization that the node represents.
