@@ -33,6 +33,8 @@ class FlowthonNode(BaseModel):
     label: str  # Short description
     requirements: Optional[List[str]] = None
     algorithm: Optional[List[str]] = None
+
+    imports: Optional[List[str]] = None  # New attribute for per-function imports
     code: Optional[List[str]] = None
     assertions: Optional[List[str]] = None
 
@@ -64,7 +66,7 @@ class FlowthonNode(BaseModel):
         assert isinstance(pill, str), f"Expected str, got {type(pill)}"
         assert isinstance(node_data, dict), f"Expected dict, got {type(node_data)}"
         assert all(
-            key in ["uses", "label", "requirements", "algorithm", "code", "assertions"]
+            key in ["uses", "label", "requirements", "algorithm", "code", "assertions", "imports"]
             for key in node_data
         ), f"Missing keys in {node_data}"
 
@@ -114,6 +116,15 @@ class FlowthonNode(BaseModel):
                 isinstance(x, str) for x in node_data["assertions"]
             ), f"Expected list of str, got {node_data['assertions']}"
             node_data["assertions"] = node_data["assertions"]
+ 
+        if "imports" in node_data:
+            assert isinstance(
+                node_data["imports"], list
+            ), f"Expected list, got {type(node_data['imports'])}"
+            assert all(
+                isinstance(x, str) for x in node_data["imports"]
+            ), f"Expected list of str, got {node_data['imports']}"
+            node_data["imports"] = node_data["imports"]
 
         return cls(
             pill=pill,
@@ -121,13 +132,13 @@ class FlowthonNode(BaseModel):
             label=node_data.get("label", ""),
             requirements=node_data.get("requirements", None),
             algorithm=node_data.get("algorithm", None),
+            imports=node_data.get("imports", None),
             code=node_data.get("code", None),
             assertions=node_data.get("assertions", None),
         )
 
 
 class FlowthonProgram(BaseModel):
-    imports: List[str] = []
     tables: List[str] = []
     nodes: Dict[str, FlowthonNode] = {}
 
@@ -152,7 +163,6 @@ class FlowthonProgram(BaseModel):
 
     def to_json(self, level: AbstractionLevel) -> Dict[str, Any]:
         map = {
-            "imports": self.imports,
             "tables": self.tables,
             "nodes": {pill: node.to_json(level) for pill, node in self.nodes.items()},
         }
@@ -162,16 +172,8 @@ class FlowthonProgram(BaseModel):
     def from_json(cls, data: dict) -> "FlowthonProgram":
         assert isinstance(data, dict), f"Expected dict, got {type(data)}"
         assert all(
-            key in ["nodes", "tables", "imports"] for key in data
+            key in ["nodes", "tables" ] for key in data
         ), f"Missing keys in {data}"
-
-        if "imports" in data:
-            assert isinstance(
-                data["imports"], list
-            ), f"Expected list, got {type(data['imports'])}"
-            assert all(
-                isinstance(x, str) for x in data["imports"]
-            ), f"Expected list of str, got {data['imports']}"
 
         if "tables" in data:
             assert isinstance(
@@ -190,7 +192,6 @@ class FlowthonProgram(BaseModel):
             ), f"Expected dict of str, got {data['nodes']}"
 
         return cls(
-            imports=data.get("imports", []),
             tables=data.get("tables", []),
             nodes={
                 pill: FlowthonNode.from_json(pill, node_data)
@@ -211,8 +212,11 @@ class FlowthonProgram(BaseModel):
             tree = ast.parse(source_code)
             function_info = {}
             lines = source_code.split("\n")
+            imports = []
 
             for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    imports.append(ast.unparse(node).strip())
                 if isinstance(node, ast.FunctionDef):
                     doc = ast.get_docstring(node)
                     params = [arg.arg for arg in node.args.args]
@@ -256,8 +260,6 @@ class FlowthonProgram(BaseModel):
                             "\n"
                         )
 
-                    print(func_code)
-
                     # Exclude docstring lines
                     if doc_start is not None and doc_end is not None:
                         # Calculate relative indices
@@ -267,12 +269,18 @@ class FlowthonProgram(BaseModel):
                         func_code = (
                             func_code[:relative_start] + func_code[relative_end:]
                         )
+                    
+                    if func_code[-1].strip() == "...":
+                        func_code = None
 
                     function_info[node.name] = {
                         "docstring": doc,
                         "parameters": params,
+                        "imports": imports,
                         "code": func_code,
                     }
+
+                    imports = []  # Reset imports for the next function
 
             return function_info
 
@@ -318,116 +326,132 @@ class FlowthonProgram(BaseModel):
                 filename = match.group(1)
                 return filename
             return None
-
-        # 5. Function to parse Markdown docstrings using markdown and BeautifulSoup
-        def parse_markdown_docstring(
-            doc: str, allowed_headers: Dict[str, str]
-        ) -> Dict[str, Any]:
+            
+        def parse_markdown_docstring(doc: str, allowed_headers: Dict[str, str]) -> Dict[str, Any]:
             """
             Parses a Markdown-formatted docstring into a structured dictionary based on allowed section headers.
-
+            
+            This function manually parses the docstring without converting it to HTML, preserving the original Markdown formatting
+            and handling multi-line bullets.
+            
             :param doc: The docstring to parse.
             :param allowed_headers: A dictionary mapping FlowthonNode field names to header titles.
             :return: A dictionary with structured data.
             :raises ValueError: If an undefined section header is found.
             """
-            # Convert Markdown to HTML
-            if doc is None:
-                doc = ""
-
-            html = markdown.markdown(doc)
-            soup = BeautifulSoup(html, "html.parser")
-
-            # Initialize sections with default values
             sections = {
                 "short_description": "",
             }
-
-            # Initialize allowed sections as empty lists
-            for field, header in allowed_headers.items():
+            
+            # Initialize all allowed sections as empty lists
+            for field in allowed_headers:
                 sections[field] = []
-
+            
             current_section = "short_description"
             buffer = []
-
-            for elem in soup.children:
-                if elem.name and re.match(r"h[1-6]", elem.name):
-                    # It's a header
-                    header_text = elem.get_text().strip()
+            
+            # Split the docstring into lines for processing
+            lines = doc.splitlines()
+            
+            # Regular expression to match headers (e.g., # Requirements)
+            header_regex = re.compile(r'^(#{1,6})\s+(.*)')
+            
+            # Regular expression to match bullet points (e.g., - Must handle edge cases)
+            bullet_regex = re.compile(r'^-\s+(.*)')
+            
+            for line in lines:
+                stripped_line = line.strip()
+                
+                # Check if the line is a header
+                header_match = header_regex.match(stripped_line)
+                if header_match:
+                    header_text = header_match.group(2).strip()
+                    
                     if header_text not in allowed_headers.values():
-                        raise ValueError(
-                            f"Undefined section header '{header_text}' found in docstring."
-                        )
-                    # Map header text to field name
+                        raise ValueError(f"Undefined section header '{header_text}' found in docstring.")
+                    
+                    # Map header text to field name (case-insensitive)
                     field_name = None
                     for key, value in allowed_headers.items():
-                        if value == header_text:
+                        if value.lower() == header_text.lower():
                             field_name = key
                             break
+                    
                     if not field_name:
-                        raise ValueError(
-                            f"Header '{header_text}' does not correspond to any FlowthonNode field."
-                        )
-
-                    # Save the buffer to the previous section
-                    content = "".join([str(e) for e in buffer]).strip()
-                    if current_section == "short_description":
-                        # Extract text without HTML tags
-                        sections["short_description"] = (
-                            BeautifulSoup(content, "html.parser").get_text().strip()
-                        )
-                    elif current_section in sections:
-                        if isinstance(sections[current_section], list):
-                            sections[current_section] = parse_html_bullet_list(buffer)
-                        else:
-                            # Extract text without HTML tags
-                            sections[current_section] = [
-                                BeautifulSoup(content, "html.parser").get_text().strip()
-                            ]
-
-                    # Update current section
+                        raise ValueError(f"Header '{header_text}' does not correspond to any FlowthonNode field.")
+                    
+                    # Assign buffered content to the previous section
+                    if buffer:
+                        if current_section == "short_description":
+                            # Concatenate all buffered lines for short description
+                            sections["short_description"] = ' '.join(buffer).strip()
+                        elif current_section in sections and isinstance(sections[current_section], list):
+                            # Process buffered lines to extract bullet points, including multi-line bullets
+                            bullets = []
+                            current_bullet = ""
+                            for buf_line in buffer:
+                                bullet_match = bullet_regex.match(buf_line)
+                                if bullet_match:
+                                    if current_bullet:
+                                        bullets.append(current_bullet.strip())
+                                    current_bullet = bullet_match.group(1)
+                                elif buf_line.startswith('    ') or buf_line.startswith('\t'):
+                                    # Continuation of the current bullet (indented line)
+                                    current_bullet += ' ' + buf_line.strip()
+                                else:
+                                    # Non-indented line without a bullet; append to current bullet
+                                    current_bullet += ' ' + buf_line.strip()
+                            if current_bullet:
+                                bullets.append(current_bullet.strip())
+                            
+                            sections[current_section].extend(bullets)
+                        
+                        buffer = []
+                    
+                    # Update the current section
                     current_section = field_name
-                    buffer = []
-                    continue  # Move to next element
-
-                # Accumulate content for the current section
-                buffer.append(elem)
-
-            # After loop ends, save any remaining buffer
-            if buffer:
-                content = "".join([str(e) for e in buffer]).strip()
-                if current_section == "short_description":
-                    sections["short_description"] = (
-                        BeautifulSoup(content, "html.parser").get_text().strip()
-                    )
-                elif current_section in sections:
-                    if isinstance(sections[current_section], list):
-                        sections[current_section] = parse_html_bullet_list(buffer)
+                    continue  # Move to the next line
+                
+                # Accumulate lines for the current section
+                if stripped_line:
+                    buffer.append(stripped_line)
+                else:
+                    # Blank line indicates possible separation between paragraphs or sections
+                    if current_section == "short_description":
+                        if buffer:
+                            sections["short_description"] += ' ' + ' '.join(buffer).strip()
+                            buffer = []
                     else:
-                        sections[current_section] = [
-                            BeautifulSoup(content, "html.parser").get_text().strip()
-                        ]
-
+                        # For list sections, blank lines within bullets are treated as continuation
+                        if buffer:
+                            buffer.append(stripped_line)
+            
+            # After processing all lines, assign any remaining buffer content
+            if buffer:
+                if current_section == "short_description":
+                    sections["short_description"] = buffer[0].strip()
+                elif current_section in sections and isinstance(sections[current_section], list):
+                    bullets = []
+                    current_bullet = ""
+                    for buf_line in buffer:
+                        bullet_match = bullet_regex.match(buf_line)
+                        if bullet_match:
+                            if current_bullet:
+                                bullets.append(current_bullet.strip())
+                            current_bullet = bullet_match.group(1)
+                        elif buf_line.startswith('    ') or buf_line.startswith('\t'):
+                            # Continuation of the current bullet (indented line)
+                            current_bullet += ' ' + buf_line.strip()
+                        else:
+                            # Non-indented line without a bullet; append to current bullet
+                            current_bullet += ' ' + buf_line.strip()
+                    if current_bullet:
+                        bullets.append(current_bullet.strip())
+                    
+                    sections[current_section].extend(bullets)
+            
             return sections
 
-        def parse_html_bullet_list(elements: List[Any]) -> List[str]:
-            """
-            Parses HTML elements to extract bullet list items.
-
-            :param elements: List of BeautifulSoup elements containing the bullet list.
-            :return: A list of bullet items as strings.
-            """
-            bullets = []
-            for elem in elements:
-                if elem.name in ["ul", "ol"]:
-                    for li in elem.find_all("li"):
-                        bullets.append(li.get_text().strip())
-                else:
-                    # Fallback: extract text from the element
-                    text = elem.get_text().strip()
-                    if text:
-                        bullets.append(text)
-            return bullets
 
         # 6. Function to map extracted data to FlowthonNode
         def map_to_flowthon_node(
@@ -441,6 +465,10 @@ class FlowthonProgram(BaseModel):
             :param sections: Dictionary containing parsed docstring sections.
             :return: A FlowthonNode instance or None if validation fails.
             """
+            code = info.get("code")
+            if code:
+                code = info.get("imports", []) + code
+                
             try:
                 node = FlowthonNode(
                     pill=func_name,
@@ -448,7 +476,7 @@ class FlowthonProgram(BaseModel):
                     label=sections.get("short_description", ""),  # Wrap in list
                     requirements=sections.get("requirements"),
                     algorithm=sections.get("algorithm"),
-                    code=info.get("code"),  # Use the code lines directly
+                    code=code,
                     assertions=sections.get("assertions"),
                     preconditions=sections.get("preconditions"),
                     steps=sections.get("steps"),
@@ -462,26 +490,22 @@ class FlowthonProgram(BaseModel):
         Parses the input text and converts each import, table declaration, and function into respective BaseModel instances.
 
         :param input_text: The content of the input file as a string.
-        :return: A ParsedFile instance containing imports, tables, and functions.
+        :return: A ParsedFile instance containing tables, and functions.
         :raises ValueError: If an undefined section header is found in any docstring.
         """
-        import_lines = []
         table_filenames = []
         python_code_lines = []
 
         for line in data.split("\n"):
             stripped = line.strip()
-            if stripped.startswith("import ") or stripped.startswith("from "):
-                import_lines.append(line)
-            elif stripped.startswith("table "):
+            # if stripped.startswith("import ") or stripped.startswith("from "):
+            #     import_lines.append(line)
+            if stripped.startswith("table "):
                 table_filename = extract_table_info(line)
                 if table_filename:
                     table_filenames.append(table_filename)
             else:
                 python_code_lines.append(line)
-
-        # Parse import statements as list of strings
-        imports = []  # TODO: handle better.  import_lines
 
         # Parse table declarations as list of filenames
         tables = table_filenames
@@ -526,18 +550,13 @@ class FlowthonProgram(BaseModel):
         if errors:
             raise FlowcoError("\n".join(errors))
 
-        parsed_file = FlowthonProgram(imports=imports, tables=tables, nodes=functions)
+        parsed_file = FlowthonProgram(tables=tables, nodes=functions)
         return parsed_file
 
     def to_source(
         self, abstraction_level: AbstractionLevel = AbstractionLevel.spec
     ) -> str:
         lines = []
-
-        # 1. Add import statements
-        lines.extend(self.imports)
-        if self.imports:
-            lines.append("")  # Add a blank line after imports
 
         # 2. Add table declarations
         for table in self.tables:
@@ -547,8 +566,16 @@ class FlowthonProgram(BaseModel):
 
         # 3. Add function definitions
         for func in self.nodes.values():
-
+ 
+            print(abstraction_level)
+            print(func.pill)
             print(func.code)
+
+            headers = []
+            if abstraction_level == AbstractionLevel.code:
+                if func.imports:
+                    headers += func.imports
+
 
             if func.code:
                 # get all lines up to and including the first one that ends with :
@@ -558,13 +585,11 @@ class FlowthonProgram(BaseModel):
                 )
                 assert first_line.startswith("def")
                 first_line_index = code.index(first_line)
-                headers = [code[code.index(first_line)]]
-                body = [f"    {x}" for x in code[:first_line_index]] + code[
-                    first_line_index + 1 :
-                ]
+                headers += code[:code.index(first_line)+1]
+                body = code[first_line_index + 1 :]
             else:
                 params = ", ".join(func.uses)
-                headers = [f"def {func.pill}({params}):"]
+                headers += [f"def {func.pill}({params}):"]
                 body = ["    ..."]
 
             lines.extend(headers)
@@ -735,7 +760,13 @@ class FlowthonProgram(BaseModel):
                         if node.algorithm is not None
                         else new_node.algorithm
                     ),
-                    code=self.merge_code(new_node.code, node.code),
+                    code=(
+                        node.code
+                        if node.code is not None
+                        else new_node.code
+                    )
+                    
+#                    self.merge_code(new_node.code, node.code),
                 )
 
                 edits = []

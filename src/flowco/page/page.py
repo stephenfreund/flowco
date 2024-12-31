@@ -401,7 +401,7 @@ class Page(BaseModel, extra="allow"):
             )
 
         self.update_dfg(dfg)
-        return FlowthonProgram(tables=self.tables.all_files(), imports=[], nodes=nodes)
+        return FlowthonProgram(tables=self.tables.all_files(), nodes=nodes)
 
         # dfg, editable = FlowthonProgram.from_dfg(self.dfg)
         # self.update_dfg(dfg)
@@ -419,7 +419,6 @@ class Page(BaseModel, extra="allow"):
     def merge_flowthon(self, flowthon: FlowthonProgram, interactive=True) -> None:
         with logger("Merging"):
             self.tables = GlobalTables.from_list(flowthon.tables)
-            # self.imports = flowthon.imports
             build_config = self.base_build_config(repair=True)
             new_dfg = flowthon.merge(build_config, self.dfg, interactive=interactive)
             self.update_dfg(new_dfg)

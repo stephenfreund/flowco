@@ -1,13 +1,13 @@
 {
   "file_name": "finch-small.flowco",
   "dfg": {
-    "version": 87,
+    "version": 369,
     "description": "",
     "nodes": [
       {
         "id": "remove_all",
         "pill": "remove_all",
-        "label": "Remove all bad values, including negatives from Finch table",
+        "label": "",
         "geometry": {
           "x": 210.0,
           "y": 220.0,
@@ -31,8 +31,8 @@
           ]
         },
         "requirements": [
-          "The dataframe `remove_all` contains only rows from the dataframe returned by `finch_beaks_1975_table()` where 'Beak length, mm' and 'Beak depth, mm' columns have non-negative and non-null values.",
-          "`remove_all` retains the same columnar structure as the dataframe produced by `finch_beaks_1975_table()`: columns 'species' (type: str), 'Beak length, mm' (type: float), and 'Beak depth, mm' (type: float)."
+          "The variable `remove_all` is a dataframe derived from the `finch_beaks_1975_table()` dataframe by filtering out rows where 'Beak length, mm' or 'Beak depth, mm' columns are either null or have negative values.",
+          "The resulting dataframe, `remove_all`, retains the same schema as the original dataframe, with 'species' as type string, and 'Beak length, mm' and 'Beak depth, mm' as type float."
         ],
         "description": "",
         "function_return_type": {
@@ -44,40 +44,38 @@
                 "type": {
                   "type": "str"
                 },
-                "description": "Name of the species observed."
+                "description": "The species of the bird specimen."
               },
               {
                 "key": "Beak length, mm",
                 "type": {
                   "type": "float"
                 },
-                "description": "Beak length measurements in mm."
+                "description": "The length of the beak in millimeters."
               },
               {
                 "key": "Beak depth, mm",
                 "type": {
                   "type": "float"
                 },
-                "description": "Beak depth measurements in mm."
+                "description": "The depth of the beak in millimeters."
               }
             ]
           },
-          "description": "Dataframe resulting from filtering out rows with null or negative measurements for beak length and depth."
+          "description": "A dataframe containing only rows from the original data where 'Beak length, mm' and 'Beak depth, mm' are not null and not negative."
         },
         "function_computed_value": "",
         "algorithm": [
-          "Retrieve the dataframe by invoking the `finch_beaks_1975_table()` function.",
-          "Construct a condition to identify rows where both 'Beak length, mm' and 'Beak depth, mm' values are non-negative and non-null.",
-          "Filter the rows of the dataframe using the constructed condition.",
-          "Assign the filtered dataframe to the variable `remove_all`.",
-          "Ensure that the column structure and data types remain unchanged."
+          "Invoke the `finch_beaks_1975_table()` function to retrieve the initial dataset.",
+          "Define a logical condition that selects rows where both the 'Beak length, mm' and 'Beak depth, mm' columns have non-null values and are greater than or equal to zero.",
+          "Filter the dataset using this condition and store the results.",
+          "Assign this filtered dataframe to the variable `remove_all`, maintaining the original schema."
         ],
         "code": [
           "import pandas as pd",
           "def remove_all() -> pd.DataFrame:",
-          "    finch_data = finch_beaks_1975_table()",
-          "    condition = (finch_data['Beak length, mm'] >= 0) & (finch_data['Beak depth, mm'] >= 0) & finch_data[['Beak length, mm', 'Beak depth, mm']].notnull().all(axis=1)",
-          "    filtered_data = finch_data[condition]",
+          "    data = finch_beaks_1975_table()",
+          "    filtered_data = data[(data['Beak length, mm'].notnull()) & (data['Beak depth, mm'].notnull()) & (data['Beak length, mm'] >= 0) & (data['Beak depth, mm'] >= 0)]",
           "    return filtered_data"
         ],
         "assertions": null,
@@ -101,7 +99,7 @@
             "1": {
               "in_values": {
                 "pill": "remove_all",
-                "label": "Remove all bad values, including negatives from Finch table",
+                "label": "",
                 "function_parameters": [],
                 "preconditions": {
                   "finch_beaks_1975_table()": [
@@ -112,8 +110,8 @@
               "out_values": {
                 "function_parameters": [],
                 "requirements": [
-                  "The dataframe `remove_all` contains only rows from the dataframe returned by `finch_beaks_1975_table()` where 'Beak length, mm' and 'Beak depth, mm' columns have non-negative and non-null values.",
-                  "`remove_all` retains the same columnar structure as the dataframe produced by `finch_beaks_1975_table()`: columns 'species' (type: str), 'Beak length, mm' (type: float), and 'Beak depth, mm' (type: float)."
+                  "The variable `remove_all` is a dataframe derived from the `finch_beaks_1975_table()` dataframe by filtering out rows where 'Beak length, mm' or 'Beak depth, mm' columns are either null or have negative values.",
+                  "The resulting dataframe, `remove_all`, retains the same schema as the original dataframe, with 'species' as type string, and 'Beak length, mm' and 'Beak depth, mm' as type float."
                 ],
                 "description": "",
                 "function_return_type": {
@@ -125,25 +123,25 @@
                         "type": {
                           "type": "str"
                         },
-                        "description": "Name of the species observed."
+                        "description": "The species of the bird specimen."
                       },
                       {
                         "key": "Beak length, mm",
                         "type": {
                           "type": "float"
                         },
-                        "description": "Beak length measurements in mm."
+                        "description": "The length of the beak in millimeters."
                       },
                       {
                         "key": "Beak depth, mm",
                         "type": {
                           "type": "float"
                         },
-                        "description": "Beak depth measurements in mm."
+                        "description": "The depth of the beak in millimeters."
                       }
                     ]
                   },
-                  "description": "Dataframe resulting from filtering out rows with null or negative measurements for beak length and depth."
+                  "description": "A dataframe containing only rows from the original data where 'Beak length, mm' and 'Beak depth, mm' are not null and not negative."
                 },
                 "function_computed_value": ""
               },
@@ -157,17 +155,16 @@
                   ]
                 },
                 "requirements": [
-                  "The dataframe `remove_all` contains only rows from the dataframe returned by `finch_beaks_1975_table()` where 'Beak length, mm' and 'Beak depth, mm' columns have non-negative and non-null values.",
-                  "`remove_all` retains the same columnar structure as the dataframe produced by `finch_beaks_1975_table()`: columns 'species' (type: str), 'Beak length, mm' (type: float), and 'Beak depth, mm' (type: float)."
+                  "The variable `remove_all` is a dataframe derived from the `finch_beaks_1975_table()` dataframe by filtering out rows where 'Beak length, mm' or 'Beak depth, mm' columns are either null or have negative values.",
+                  "The resulting dataframe, `remove_all`, retains the same schema as the original dataframe, with 'species' as type string, and 'Beak length, mm' and 'Beak depth, mm' as type float."
                 ]
               },
               "out_values": {
                 "algorithm": [
-                  "Retrieve the dataframe by invoking the `finch_beaks_1975_table()` function.",
-                  "Construct a condition to identify rows where both 'Beak length, mm' and 'Beak depth, mm' values are non-negative and non-null.",
-                  "Filter the rows of the dataframe using the constructed condition.",
-                  "Assign the filtered dataframe to the variable `remove_all`.",
-                  "Ensure that the column structure and data types remain unchanged."
+                  "Invoke the `finch_beaks_1975_table()` function to retrieve the initial dataset.",
+                  "Define a logical condition that selects rows where both the 'Beak length, mm' and 'Beak depth, mm' columns have non-null values and are greater than or equal to zero.",
+                  "Filter the dataset using this condition and store the results.",
+                  "Assign this filtered dataframe to the variable `remove_all`, maintaining the original schema."
                 ]
               },
               "valid": true
@@ -176,24 +173,22 @@
               "in_values": {
                 "function_parameters": [],
                 "requirements": [
-                  "The dataframe `remove_all` contains only rows from the dataframe returned by `finch_beaks_1975_table()` where 'Beak length, mm' and 'Beak depth, mm' columns have non-negative and non-null values.",
-                  "`remove_all` retains the same columnar structure as the dataframe produced by `finch_beaks_1975_table()`: columns 'species' (type: str), 'Beak length, mm' (type: float), and 'Beak depth, mm' (type: float)."
+                  "The variable `remove_all` is a dataframe derived from the `finch_beaks_1975_table()` dataframe by filtering out rows where 'Beak length, mm' or 'Beak depth, mm' columns are either null or have negative values.",
+                  "The resulting dataframe, `remove_all`, retains the same schema as the original dataframe, with 'species' as type string, and 'Beak length, mm' and 'Beak depth, mm' as type float."
                 ],
                 "algorithm": [
-                  "Retrieve the dataframe by invoking the `finch_beaks_1975_table()` function.",
-                  "Construct a condition to identify rows where both 'Beak length, mm' and 'Beak depth, mm' values are non-negative and non-null.",
-                  "Filter the rows of the dataframe using the constructed condition.",
-                  "Assign the filtered dataframe to the variable `remove_all`.",
-                  "Ensure that the column structure and data types remain unchanged."
+                  "Invoke the `finch_beaks_1975_table()` function to retrieve the initial dataset.",
+                  "Define a logical condition that selects rows where both the 'Beak length, mm' and 'Beak depth, mm' columns have non-null values and are greater than or equal to zero.",
+                  "Filter the dataset using this condition and store the results.",
+                  "Assign this filtered dataframe to the variable `remove_all`, maintaining the original schema."
                 ]
               },
               "out_values": {
                 "code": [
                   "import pandas as pd",
                   "def remove_all() -> pd.DataFrame:",
-                  "    finch_data = finch_beaks_1975_table()",
-                  "    condition = (finch_data['Beak length, mm'] >= 0) & (finch_data['Beak depth, mm'] >= 0) & finch_data[['Beak length, mm', 'Beak depth, mm']].notnull().all(axis=1)",
-                  "    filtered_data = finch_data[condition]",
+                  "    data = finch_beaks_1975_table()",
+                  "    filtered_data = data[(data['Beak length, mm'].notnull()) & (data['Beak depth, mm'].notnull()) & (data['Beak length, mm'] >= 0) & (data['Beak depth, mm'] >= 0)]",
                   "    return filtered_data"
                 ]
               },
@@ -208,8 +203,8 @@
                   ]
                 },
                 "requirements": [
-                  "The dataframe `remove_all` contains only rows from the dataframe returned by `finch_beaks_1975_table()` where 'Beak length, mm' and 'Beak depth, mm' columns have non-negative and non-null values.",
-                  "`remove_all` retains the same columnar structure as the dataframe produced by `finch_beaks_1975_table()`: columns 'species' (type: str), 'Beak length, mm' (type: float), and 'Beak depth, mm' (type: float)."
+                  "The variable `remove_all` is a dataframe derived from the `finch_beaks_1975_table()` dataframe by filtering out rows where 'Beak length, mm' or 'Beak depth, mm' columns are either null or have negative values.",
+                  "The resulting dataframe, `remove_all`, retains the same schema as the original dataframe, with 'species' as type string, and 'Beak length, mm' and 'Beak depth, mm' as type float."
                 ],
                 "function_return_type": {
                   "the_type": {
@@ -220,25 +215,25 @@
                         "type": {
                           "type": "str"
                         },
-                        "description": "Name of the species observed."
+                        "description": "The species of the bird specimen."
                       },
                       {
                         "key": "Beak length, mm",
                         "type": {
                           "type": "float"
                         },
-                        "description": "Beak length measurements in mm."
+                        "description": "The length of the beak in millimeters."
                       },
                       {
                         "key": "Beak depth, mm",
                         "type": {
                           "type": "float"
                         },
-                        "description": "Beak depth measurements in mm."
+                        "description": "The depth of the beak in millimeters."
                       }
                     ]
                   },
-                  "description": "Dataframe resulting from filtering out rows with null or negative measurements for beak length and depth."
+                  "description": "A dataframe containing only rows from the original data where 'Beak length, mm' and 'Beak depth, mm' are not null and not negative."
                 },
                 "assertions": null
               },
@@ -253,7 +248,7 @@
       {
         "id": "plot_histogram",
         "pill": "plot_histogram",
-        "label": "Plot histogram of beak lengths",
+        "label": " Plot histogram of beak lengths",
         "geometry": {
           "x": 600.0,
           "y": 200.0,
@@ -284,65 +279,68 @@
                     "type": {
                       "type": "str"
                     },
-                    "description": "Name of the species observed."
+                    "description": "The species of the bird specimen."
                   },
                   {
                     "key": "Beak length, mm",
                     "type": {
                       "type": "float"
                     },
-                    "description": "Beak length measurements in mm."
+                    "description": "The length of the beak in millimeters."
                   },
                   {
                     "key": "Beak depth, mm",
                     "type": {
                       "type": "float"
                     },
-                    "description": "Beak depth measurements in mm."
+                    "description": "The depth of the beak in millimeters."
                   }
                 ]
               },
-              "description": "Dataframe resulting from filtering out rows with null or negative measurements for beak length and depth."
+              "description": "A dataframe containing only rows from the original data where 'Beak length, mm' and 'Beak depth, mm' are not null and not negative."
             }
           }
         ],
         "preconditions": {
           "remove_all": [
-            "The dataframe `remove_all` contains only rows from the dataframe returned by `finch_beaks_1975_table()` where 'Beak length, mm' and 'Beak depth, mm' columns have non-negative and non-null values.",
-            "`remove_all` retains the same columnar structure as the dataframe produced by `finch_beaks_1975_table()`: columns 'species' (type: str), 'Beak length, mm' (type: float), and 'Beak depth, mm' (type: float)."
+            "The variable `remove_all` is a dataframe derived from the `finch_beaks_1975_table()` dataframe by filtering out rows where 'Beak length, mm' or 'Beak depth, mm' columns are either null or have negative values.",
+            "The resulting dataframe, `remove_all`, retains the same schema as the original dataframe, with 'species' as type string, and 'Beak length, mm' and 'Beak depth, mm' as type float."
           ],
           "finch_beaks_1975_table()": [
             "The global function `finch_beaks_1975_table()` has already been imported and returns a dataframe with the type\n```\npd.DataFrame[species: str, Beak length, mm: float, Beak depth, mm: float]\n```\nHere are the first few rows:\n```\n    species  Beak length, mm  Beak depth, mm\n0    fortis              9.4             8.0\n1    fortis              9.2             8.3\n2  scandens             13.9             8.4\n3  scandens             14.0             8.8\n4  scandens             12.9             8.4\n```\nUse this function whenever you need to access the data in this table.  Do not redefine it.\n"
           ]
         },
         "requirements": [
-          "The plotted histogram visualizes the distribution of the 'Beak length, mm' column from the `remove_all` dataframe.",
-          "The x-axis is labeled as 'Beak Length (mm)', and the y-axis is labeled as 'Frequency'.",
-          "The bars of the histogram are styled in blue for better visualization."
+          "The function generates a histogram plot of the 'Beak length, mm' column from the dataframe `remove_all`.",
+          "The plot will display with blue-colored bins.",
+          "The x-axis will be labeled as 'Beak Length (mm)' and the y-axis as 'Frequency'.",
+          "The input data comes from the `remove_all` dataframe, which is a filtered version of the dataframe returned by `finch_beaks_1975_table` with invalid rows removed as per given preconditions.",
+          "The function displays the plot on the screen and results in no value output."
         ],
         "description": "",
         "function_return_type": {
           "the_type": {
             "type": "None"
           },
-          "description": "The function generates a visual representation and does not return a value."
+          "description": "This operation produces a histogram visualization as a side effect."
         },
         "function_computed_value": "",
         "algorithm": [
-          "Retrieve the 'Beak length, mm' column values from the given `remove_all` dataframe.",
-          "Use Matplotlib to create a histogram of these values.",
-          "Customize the x-axis label to 'Beak Length (mm)' and the y-axis label to 'Frequency'.",
-          "Set the histogram bar colors to blue for enhanced visibility.",
-          "Render the plot."
+          "Access the `remove_all` dataframe provided as input.",
+          "Extract the column 'Beak length, mm' from the dataframe.",
+          "Use matplotlib's `pyplot.hist` function to create a histogram of the extracted data.",
+          "Specify the `color` argument as `\"blue\"` to set the bins' color.",
+          "Label the x-axis of the histogram as 'Beak Length (mm)'.",
+          "Label the y-axis of the histogram as 'Frequency'.",
+          "Invoke the function to display the plot."
         ],
         "code": [
-          "from typing import Any",
           "import pandas as pd",
           "import seaborn as sns",
           "import matplotlib.pyplot as plt",
           "def plot_histogram(remove_all: pd.DataFrame) -> None:",
-          "    beak_lengths = remove_all['Beak length, mm']",
-          "    sns.histplot(beak_lengths, color='blue')",
+          "    plt.figure(figsize=(8, 6))",
+          "    sns.histplot(data=remove_all, x='Beak length, mm', color='blue', binwidth=1)",
           "    plt.xlabel('Beak Length (mm)')",
           "    plt.ylabel('Frequency')",
           "    plt.show()"
@@ -360,7 +358,7 @@
           },
           "output": {
             "output_type": "image",
-            "data": "data:image/png;base64,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M3/+/Pnz56sdAADQhnBNPACARKglAIBEqCUAgESoJQCARKglAIBEqCUAgESoJQCARKglAIBEqCUAgESoJQCARKglAIBEqCUAgESoJQCARKglAIBEqCUAgESoJQCARKglAIBEqCUAgESoJQCARKglAIBEqCUAgESoJQCARKglAIBEqCUAgESoJQCARKglAIBEqCUAgESoJQCARKglAIBEqCUAgESoJQCARKglAIBEqCUAgESoJQCARKglAIBEqCUAgESoJQCARNStpffee0/TQO/evZVxg8Ewc+ZMb2/vzp07x8XFlZSUqBoDANBWqL63dP/99xffsH//fmUwKSlp69atWVlZe/bsKSoqio2NVTsGAKBNsFf9A+zt/f39G45cu3YtIyNjw4YNI0eOFEJkZmZqtdrc3NzBgwerHQYAIDnV95ZOnToVGBjYvXv3qVOn6nQ6IUReXl5NTU1UVJTyht69ewcHBx84cODmbY1GY3kDakcFANicurU0aNCg1atXb9++PT09/ezZs4899tj169f1er2jo2OXLl3Mb/Pz89Pr9Tdvnpqa6nlDUFCQqlEBADJQ9yDe2LFjlQd9+/YdNGhQSEjI3//+dxcXFws3T0lJSU5OVh6Xl5fTTADQ7rXeAvEuXbr06tXr9OnT/v7+1dXVZWVl5pdKSkoanX9SODk5eTTQalEBALbSerVUUVFx5syZgICAAQMGODg45OTkKOMFBQU6nS4yMrLVkgAApKXuQbw333xz/PjxISEhRUVF8+bN69Sp05QpUzw9PRMTE5OTk728vDw8PGbNmhUZGckyPACAULuWLly4MGXKlMuXL3ft2nXo0KG5ubldu3YVQixdutTOzi4uLs5oNEZHR69YsULVGACAtkLdWtq4cWOT487OzmlpaWlpaap+OgCgzeGaeAAAiVBLAACJUEsAAIlQSwAAiVBLAACJUEsAAImofmMLWE6n05WWllprtvz8fGtNBQCthlqShU6ni4jQGgxV1p22utpo3QkBQFXUkixKS0sNhiqtdr2rq9YqE16+/I9z5+bW1tZaZTYAaB3UklxcXbXu7v2tMlVVFQfxALQ9LHkAAEiEWgIASIRaAgBIhFoCAEiEWgIASIRaAgBIhFoCAEjE0lr69ddfVc0BAICwvJZ69uw5YsSI9evXGwwGVQMBADoyS2vpyJEjffv2TU5O9vf3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WFh46dIl5aXCwsJnn322S5cuXl5eMTEx586dU8YPHz78xBNP+Pj4eHp6Dhs27MiRI03OPG/evICAAMt3v8rKyl588cWuXbt6eHiMHDny+PHjyvh7773Xr1+/devWhYaGenp6Tp48+fr168pL169fnzp1qnIvlaVLlw4fPnz27NlCiOHDh58/fz4pKUnZETR/RHZ2tlar7dy5s1LGTcbYuHHj+PHjzU+HDx8+a9as2bNn33PPPX5+fqtWraqsrJwxY4a7u3vPnj2//fZb5W27d+/WaDTZ2dkPPfSQi4vLyJEjL168+O2332q1Wg8Pj+eee66qqso85/jx4zdu3GjhXwtwG9QS2rOKior169f37NlTueVBTU1NdHS0u7v7vn37vv/+e+VXeXV1tRDi+vXrCQkJ+/fvz83NDQ8PHzdunLknFCaTadasWWvXrt23b1/fvn0tDPDMM88ov8rz8vL69+8/atSoK1euKC+dOXNmy5Yt27Zt27Zt2549exYuXKiMJycnf//9919//fWOHTv27dtnLshNmzZ169Zt/vz5yo6gMlhVVfUf//Ef69at27t3r06ne/PNN2/OcOXKlV9++WXgwIENB9esWePj43Po0KFZs2a9+uqrzzzzzKOPPnrkyJHRo0dPmzatYd+89957n3766Q8//KA0+rJlyzZs2PDNN9989913//mf/2l+2yOPPHLo0KE2cWcmyK6FVyAHZJOQkNCpUyc3Nzc3NzchREBAQF5envLSunXrIiIi6uvrladGo9HFxUW5pVZDdXV17u7uW7duVZ4KIbKysp577jmtVnvhwoUmPzQzM9PT07PR4L59+zw8PAwGg3mkR48en332mclkmjdvnqura3l5uTI+Z86cQYMGmUym8vJyBweHrKwsZbysrMzV1fX1119Xnja6WYNy44/Tp08rT9PS0vz8/G7OdvToUSGETqczjwwbNmzo0KHK49raWjc3t2nTpilPlcI7cOCA6caNDHbu3Km8lJqaKoQ4c+aM8vSPf/xjdHS0eU5lR/DcuXNN/v0AluM2gGiHRowYkZ6eLoS4evXqihUrxo4de+jQoZCQkOPHj58+fdrd3d38ToPBcObMGSFESUnJO++8s3v37osXL9bV1VVVVTW88XNSUpKTk1Nubq6Pj4/lMY4fP15RUdHw3nS///678nFCiNDQUHOSgICAixcvCiF+/fXXmpqaRx55RBn39PS8/Y3sXF1de/To0WiSRn7//XchhLOzc8NB8w5fp06dvL29H3jgAeWpn5+fEKLhPOZ3+vn5ubq6du/e3fz00KFD5re5uLgIIRruZgHNQy2hHXJzc+vZs6fy+K9//aunp+eqVasWLFhQUVExYMCAv/3tbw3f3LVrVyFEQkLC5cuXly9fHhIS4uTkFBkZqRzcUzzxxBNffvlldnb21KlTLY9RUVEREBDQ6E6d5gV7Dg4O5kGNRlNfX39Xf8YmJzE1dfs0pUqvXr2q/Emb3ND8VDlr1TBMw5duk1k5ONnwI4DmoZbQzmk0Gjs7O2WPoX///l999ZWvr6+Hh0ejt33//fcrVqwYN26cEKKwsLC0tLThq08//fT48eOfe+65Tp06TZ482cKP7t+/v16vt7e3Dw0NtXCT7t27Ozg4HD58ODg4WAhx7dq1kydPPv7448qrjo6OdXV1Fk5l1qNHDw8Pj19++aVXr153u63lfv75527dut3V3iTQJJY8oB0yGo16vV6v1+fn58+aNauiokJZhzZ16lQfH5+YmJh9+/adPXt29+7dr7322oULF4QQ4eHh69aty8/PP3jw4NSpU5VDUg1NnDhx3bp1M2bM+K//+q8mP7Suru5YA/n5+VFRUZGRkRMmTPjuu+/OnTv3ww8/vP322z/++ONtkru7uyckJMyZM2fXrl3/+te/EhMT7ezszOvuQkND9+7d+9tvvzVqzduzs7OLiorav3+/5Zs0w759+0aPHq3qR6CDoJbQDm3fvj0gICAgIGDQoEGHDx/OysoaPny4EMLV1XXv3r3BwcGxsbFarTYxMdFgMCh7ThkZGVevXu3fv/+0adNee+01X1/fm6f9wx/+sGbNmmnTpm3atOnmVysqKh5qYPz48RqN5h//+Mfjjz8+Y8aMXr16TZ48+fz588rJm9tYsmRJZGTkU089FRUVNWTIEK1Waz4tNH/+/HPnzvXo0eNuj5W9+OKLGzdubN5xQksYDIYtW7a89NJLKs2PDqXpg9EAZFBZWXnvvfcuXrw4MTGxJfOYTKZBgwYlJSVNmTLFWtkaSk9P37x583fffafG5Oho2FsC5HL06NEvv/zyzJkzR44cUVZYxMTEtHBOjUbz+eef19bWWiNgExwcHBp+hwloCfaWALkcPXr0xRdfLCgocHR0HDBgwJIlS8yrt4GOgFoCAEiEg3gAAIlQSwAAiVBLAACJUEsAAIlQSwAAiVBLAACJUEsAAIlQSwAAifw/IKUntt8BHmMAAAAASUVORK5CYII="
+            "data": "data:image/png;base64,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i1IRzpw5k56e3ooPJAghXF1dO3bs+MADDyxfvlyv1y9fvlzrRE1v9+7dxcXFQUFBer1er9efOXPm1VdfDQ4O1jqX6u6++24fH58TJ05oHaTp+fj46PX6e+65xzISGhrKPQ63E1dXV39//0uXLm3bti06OlrrOCoKCQkxGAyWV36Xl5dnZWXxyu/bmlIRjh8//v3333t7e2sdp/mYTKaamhqtUzS98ePHHz169PAfAgICZsyYsW3bNq1zqe7s2bMXL1709/fXOkjTc3BwuO+++/Ly8iwjx44da9++fRNugjMOatm2bZvZbO7SpcuJEydmzJjRtWvXVvP+64qKCksrP3Xq1OHDh728vIKCghISEubOndupU6eQkJCkpKSAgICRI0dqmvRWXW9PS0tL8/PzlecHKP99GgyG2/fAiXQ3/f39n3jiiZycnK1bt9bX1yuXmHh5eTk4OGga9pZI99Tb2/u9994bMWKEv79/SUnJkiVLzp079+STT2ob9RZd759uw7Znb29vMBi6dOmiUcamId1TLy+vd955Z8yYMQaD4eTJk6+//nrHjh0jIyO1jXqLrvc7nTFjxtNPP/3www8PHDgwLS3tm2++2blzZ1NuWL3bJ2zcV199dffddzs4OBgMhsmTJ5eVlWmdqMns2LHjmn9FcXFxZrPZZDIlJSX5+fk5OjoOHjw4Ly9P66S36np7umLFimvGZ8+erXHWWyDdTeU+z2vs2LFD67C3RLqnv//++6hRowICAhwcHPz9/UeMGLF//36tk96q6/3Tbah13Akp3dOqqqohQ4bceeed9vb27du3nzhxotFo1DrprfqT3+ny5cs7duzo5OTUs2fPLVu2NO12eXM0AACQ47oEAAAgR0sAAABytAQAACBHSwAAAHK0BAAAIEdLAAAAcrQEAAAgR0sAbJFOp2vyN8w2iZUrV1r/fuqkpKRJkyaplCQmJmbBggUqrRy4XdASgNvAc889p/uDt7d3VFTU0aNH1d7oDf3BvmnBwcEpKSk38UWj0bho0aI333yzqRP9/95666333nvv8uXLKq0fuC3QEoDbQ1RU1Pnz58+fP799+3a9Xv/4449rnUhj//rXvx588MGmfbFNQ927d+/QocOXX36p0vqB2wItAbg9ODo6Ku+U6tWr1z/+8Y+CgoILFy4oswoKCp566ilPT08vL6/o6OjTp08r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"
           }
         },
         "cache": {
@@ -368,7 +366,7 @@
             "1": {
               "in_values": {
                 "pill": "plot_histogram",
-                "label": "Plot histogram of beak lengths",
+                "label": " Plot histogram of beak lengths",
                 "function_parameters": [
                   {
                     "name": "remove_all",
@@ -381,32 +379,32 @@
                             "type": {
                               "type": "str"
                             },
-                            "description": "Name of the species observed."
+                            "description": "The species of the bird specimen."
                           },
                           {
                             "key": "Beak length, mm",
                             "type": {
                               "type": "float"
                             },
-                            "description": "Beak length measurements in mm."
+                            "description": "The length of the beak in millimeters."
                           },
                           {
                             "key": "Beak depth, mm",
                             "type": {
                               "type": "float"
                             },
-                            "description": "Beak depth measurements in mm."
+                            "description": "The depth of the beak in millimeters."
                           }
                         ]
                       },
-                      "description": "Dataframe resulting from filtering out rows with null or negative measurements for beak length and depth."
+                      "description": "A dataframe containing only rows from the original data where 'Beak length, mm' and 'Beak depth, mm' are not null and not negative."
                     }
                   }
                 ],
                 "preconditions": {
                   "remove_all": [
-                    "The dataframe `remove_all` contains only rows from the dataframe returned by `finch_beaks_1975_table()` where 'Beak length, mm' and 'Beak depth, mm' columns have non-negative and non-null values.",
-                    "`remove_all` retains the same columnar structure as the dataframe produced by `finch_beaks_1975_table()`: columns 'species' (type: str), 'Beak length, mm' (type: float), and 'Beak depth, mm' (type: float)."
+                    "The variable `remove_all` is a dataframe derived from the `finch_beaks_1975_table()` dataframe by filtering out rows where 'Beak length, mm' or 'Beak depth, mm' columns are either null or have negative values.",
+                    "The resulting dataframe, `remove_all`, retains the same schema as the original dataframe, with 'species' as type string, and 'Beak length, mm' and 'Beak depth, mm' as type float."
                   ],
                   "finch_beaks_1975_table()": [
                     "The global function `finch_beaks_1975_table()` has already been imported and returns a dataframe with the type\n```\npd.DataFrame[species: str, Beak length, mm: float, Beak depth, mm: float]\n```\nHere are the first few rows:\n```\n    species  Beak length, mm  Beak depth, mm\n0    fortis              9.4             8.0\n1    fortis              9.2             8.3\n2  scandens             13.9             8.4\n3  scandens             14.0             8.8\n4  scandens             12.9             8.4\n```\nUse this function whenever you need to access the data in this table.  Do not redefine it.\n"
@@ -426,39 +424,41 @@
                             "type": {
                               "type": "str"
                             },
-                            "description": "Name of the species observed."
+                            "description": "The species of the bird specimen."
                           },
                           {
                             "key": "Beak length, mm",
                             "type": {
                               "type": "float"
                             },
-                            "description": "Beak length measurements in mm."
+                            "description": "The length of the beak in millimeters."
                           },
                           {
                             "key": "Beak depth, mm",
                             "type": {
                               "type": "float"
                             },
-                            "description": "Beak depth measurements in mm."
+                            "description": "The depth of the beak in millimeters."
                           }
                         ]
                       },
-                      "description": "Dataframe resulting from filtering out rows with null or negative measurements for beak length and depth."
+                      "description": "A dataframe containing only rows from the original data where 'Beak length, mm' and 'Beak depth, mm' are not null and not negative."
                     }
                   }
                 ],
                 "requirements": [
-                  "The plotted histogram visualizes the distribution of the 'Beak length, mm' column from the `remove_all` dataframe.",
-                  "The x-axis is labeled as 'Beak Length (mm)', and the y-axis is labeled as 'Frequency'.",
-                  "The bars of the histogram are styled in blue for better visualization."
+                  "The function generates a histogram plot of the 'Beak length, mm' column from the dataframe `remove_all`.",
+                  "The plot will display with blue-colored bins.",
+                  "The x-axis will be labeled as 'Beak Length (mm)' and the y-axis as 'Frequency'.",
+                  "The input data comes from the `remove_all` dataframe, which is a filtered version of the dataframe returned by `finch_beaks_1975_table` with invalid rows removed as per given preconditions.",
+                  "The function displays the plot on the screen and results in no value output."
                 ],
                 "description": "",
                 "function_return_type": {
                   "the_type": {
                     "type": "None"
                   },
-                  "description": "The function generates a visual representation and does not return a value."
+                  "description": "This operation produces a histogram visualization as a side effect."
                 },
                 "function_computed_value": ""
               },
@@ -468,26 +468,30 @@
               "in_values": {
                 "preconditions": {
                   "remove_all": [
-                    "The dataframe `remove_all` contains only rows from the dataframe returned by `finch_beaks_1975_table()` where 'Beak length, mm' and 'Beak depth, mm' columns have non-negative and non-null values.",
-                    "`remove_all` retains the same columnar structure as the dataframe produced by `finch_beaks_1975_table()`: columns 'species' (type: str), 'Beak length, mm' (type: float), and 'Beak depth, mm' (type: float)."
+                    "The variable `remove_all` is a dataframe derived from the `finch_beaks_1975_table()` dataframe by filtering out rows where 'Beak length, mm' or 'Beak depth, mm' columns are either null or have negative values.",
+                    "The resulting dataframe, `remove_all`, retains the same schema as the original dataframe, with 'species' as type string, and 'Beak length, mm' and 'Beak depth, mm' as type float."
                   ],
                   "finch_beaks_1975_table()": [
                     "The global function `finch_beaks_1975_table()` has already been imported and returns a dataframe with the type\n```\npd.DataFrame[species: str, Beak length, mm: float, Beak depth, mm: float]\n```\nHere are the first few rows:\n```\n    species  Beak length, mm  Beak depth, mm\n0    fortis              9.4             8.0\n1    fortis              9.2             8.3\n2  scandens             13.9             8.4\n3  scandens             14.0             8.8\n4  scandens             12.9             8.4\n```\nUse this function whenever you need to access the data in this table.  Do not redefine it.\n"
                   ]
                 },
                 "requirements": [
-                  "The plotted histogram visualizes the distribution of the 'Beak length, mm' column from the `remove_all` dataframe.",
-                  "The x-axis is labeled as 'Beak Length (mm)', and the y-axis is labeled as 'Frequency'.",
-                  "The bars of the histogram are styled in blue for better visualization."
+                  "The function generates a histogram plot of the 'Beak length, mm' column from the dataframe `remove_all`.",
+                  "The plot will display with blue-colored bins.",
+                  "The x-axis will be labeled as 'Beak Length (mm)' and the y-axis as 'Frequency'.",
+                  "The input data comes from the `remove_all` dataframe, which is a filtered version of the dataframe returned by `finch_beaks_1975_table` with invalid rows removed as per given preconditions.",
+                  "The function displays the plot on the screen and results in no value output."
                 ]
               },
               "out_values": {
                 "algorithm": [
-                  "Retrieve the 'Beak length, mm' column values from the given `remove_all` dataframe.",
-                  "Use Matplotlib to create a histogram of these values.",
-                  "Customize the x-axis label to 'Beak Length (mm)' and the y-axis label to 'Frequency'.",
-                  "Set the histogram bar colors to blue for enhanced visibility.",
-                  "Render the plot."
+                  "Access the `remove_all` dataframe provided as input.",
+                  "Extract the column 'Beak length, mm' from the dataframe.",
+                  "Use matplotlib's `pyplot.hist` function to create a histogram of the extracted data.",
+                  "Specify the `color` argument as `\"blue\"` to set the bins' color.",
+                  "Label the x-axis of the histogram as 'Beak Length (mm)'.",
+                  "Label the y-axis of the histogram as 'Frequency'.",
+                  "Invoke the function to display the plot."
                 ]
               },
               "valid": true
@@ -506,50 +510,53 @@
                             "type": {
                               "type": "str"
                             },
-                            "description": "Name of the species observed."
+                            "description": "The species of the bird specimen."
                           },
                           {
                             "key": "Beak length, mm",
                             "type": {
                               "type": "float"
                             },
-                            "description": "Beak length measurements in mm."
+                            "description": "The length of the beak in millimeters."
                           },
                           {
                             "key": "Beak depth, mm",
                             "type": {
                               "type": "float"
                             },
-                            "description": "Beak depth measurements in mm."
+                            "description": "The depth of the beak in millimeters."
                           }
                         ]
                       },
-                      "description": "Dataframe resulting from filtering out rows with null or negative measurements for beak length and depth."
+                      "description": "A dataframe containing only rows from the original data where 'Beak length, mm' and 'Beak depth, mm' are not null and not negative."
                     }
                   }
                 ],
                 "requirements": [
-                  "The plotted histogram visualizes the distribution of the 'Beak length, mm' column from the `remove_all` dataframe.",
-                  "The x-axis is labeled as 'Beak Length (mm)', and the y-axis is labeled as 'Frequency'.",
-                  "The bars of the histogram are styled in blue for better visualization."
+                  "The function generates a histogram plot of the 'Beak length, mm' column from the dataframe `remove_all`.",
+                  "The plot will display with blue-colored bins.",
+                  "The x-axis will be labeled as 'Beak Length (mm)' and the y-axis as 'Frequency'.",
+                  "The input data comes from the `remove_all` dataframe, which is a filtered version of the dataframe returned by `finch_beaks_1975_table` with invalid rows removed as per given preconditions.",
+                  "The function displays the plot on the screen and results in no value output."
                 ],
                 "algorithm": [
-                  "Retrieve the 'Beak length, mm' column values from the given `remove_all` dataframe.",
-                  "Use Matplotlib to create a histogram of these values.",
-                  "Customize the x-axis label to 'Beak Length (mm)' and the y-axis label to 'Frequency'.",
-                  "Set the histogram bar colors to blue for enhanced visibility.",
-                  "Render the plot."
+                  "Access the `remove_all` dataframe provided as input.",
+                  "Extract the column 'Beak length, mm' from the dataframe.",
+                  "Use matplotlib's `pyplot.hist` function to create a histogram of the extracted data.",
+                  "Specify the `color` argument as `\"blue\"` to set the bins' color.",
+                  "Label the x-axis of the histogram as 'Beak Length (mm)'.",
+                  "Label the y-axis of the histogram as 'Frequency'.",
+                  "Invoke the function to display the plot."
                 ]
               },
               "out_values": {
                 "code": [
-                  "from typing import Any",
                   "import pandas as pd",
                   "import seaborn as sns",
                   "import matplotlib.pyplot as plt",
                   "def plot_histogram(remove_all: pd.DataFrame) -> None:",
-                  "    beak_lengths = remove_all['Beak length, mm']",
-                  "    sns.histplot(beak_lengths, color='blue')",
+                  "    plt.figure(figsize=(8, 6))",
+                  "    sns.histplot(data=remove_all, x='Beak length, mm', color='blue', binwidth=1)",
                   "    plt.xlabel('Beak Length (mm)')",
                   "    plt.ylabel('Frequency')",
                   "    plt.show()"
@@ -571,47 +578,49 @@
                             "type": {
                               "type": "str"
                             },
-                            "description": "Name of the species observed."
+                            "description": "The species of the bird specimen."
                           },
                           {
                             "key": "Beak length, mm",
                             "type": {
                               "type": "float"
                             },
-                            "description": "Beak length measurements in mm."
+                            "description": "The length of the beak in millimeters."
                           },
                           {
                             "key": "Beak depth, mm",
                             "type": {
                               "type": "float"
                             },
-                            "description": "Beak depth measurements in mm."
+                            "description": "The depth of the beak in millimeters."
                           }
                         ]
                       },
-                      "description": "Dataframe resulting from filtering out rows with null or negative measurements for beak length and depth."
+                      "description": "A dataframe containing only rows from the original data where 'Beak length, mm' and 'Beak depth, mm' are not null and not negative."
                     }
                   }
                 ],
                 "preconditions": {
                   "remove_all": [
-                    "The dataframe `remove_all` contains only rows from the dataframe returned by `finch_beaks_1975_table()` where 'Beak length, mm' and 'Beak depth, mm' columns have non-negative and non-null values.",
-                    "`remove_all` retains the same columnar structure as the dataframe produced by `finch_beaks_1975_table()`: columns 'species' (type: str), 'Beak length, mm' (type: float), and 'Beak depth, mm' (type: float)."
+                    "The variable `remove_all` is a dataframe derived from the `finch_beaks_1975_table()` dataframe by filtering out rows where 'Beak length, mm' or 'Beak depth, mm' columns are either null or have negative values.",
+                    "The resulting dataframe, `remove_all`, retains the same schema as the original dataframe, with 'species' as type string, and 'Beak length, mm' and 'Beak depth, mm' as type float."
                   ],
                   "finch_beaks_1975_table()": [
                     "The global function `finch_beaks_1975_table()` has already been imported and returns a dataframe with the type\n```\npd.DataFrame[species: str, Beak length, mm: float, Beak depth, mm: float]\n```\nHere are the first few rows:\n```\n    species  Beak length, mm  Beak depth, mm\n0    fortis              9.4             8.0\n1    fortis              9.2             8.3\n2  scandens             13.9             8.4\n3  scandens             14.0             8.8\n4  scandens             12.9             8.4\n```\nUse this function whenever you need to access the data in this table.  Do not redefine it.\n"
                   ]
                 },
                 "requirements": [
-                  "The plotted histogram visualizes the distribution of the 'Beak length, mm' column from the `remove_all` dataframe.",
-                  "The x-axis is labeled as 'Beak Length (mm)', and the y-axis is labeled as 'Frequency'.",
-                  "The bars of the histogram are styled in blue for better visualization."
+                  "The function generates a histogram plot of the 'Beak length, mm' column from the dataframe `remove_all`.",
+                  "The plot will display with blue-colored bins.",
+                  "The x-axis will be labeled as 'Beak Length (mm)' and the y-axis as 'Frequency'.",
+                  "The input data comes from the `remove_all` dataframe, which is a filtered version of the dataframe returned by `finch_beaks_1975_table` with invalid rows removed as per given preconditions.",
+                  "The function displays the plot on the screen and results in no value output."
                 ],
                 "function_return_type": {
                   "the_type": {
                     "type": "None"
                   },
-                  "description": "The function generates a visual representation and does not return a value."
+                  "description": "This operation produces a histogram visualization as a side effect."
                 },
                 "assertions": null
               },
@@ -631,7 +640,7 @@
         "dst": "plot_histogram"
       }
     ],
-    "image": "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"
+    "image": null
   },
   "tables": {
     "tables": [

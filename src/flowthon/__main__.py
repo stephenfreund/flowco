@@ -211,7 +211,7 @@ class RunCommand(Command):
             else:
                 flowthon = FlowthonProgram.from_json(json.loads(contents))
 
-            if any("    ..." not in x.code for x in flowthon.nodes.values()):
+            if any(x.code and "    ..." not in x.code for x in flowthon.nodes.values()):
                 level = AbstractionLevel.code
             elif any(x.algorithm for x in flowthon.nodes.values()):
                 level = AbstractionLevel.algorithm
@@ -219,6 +219,7 @@ class RunCommand(Command):
                 level = AbstractionLevel.spec
 
             page.merge_flowthon(flowthon, interactive=args.interactive)
+            flowthon = page.to_flowthon(level)
 
             if ext == ".flowthon":
                 contents = flowthon.to_source(level)
