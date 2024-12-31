@@ -77,7 +77,9 @@ class OpenAIAssistant:
     def add_prompt_by_key(self, key: str, **prompt_substitutions) -> None:
         self.add_message("system", config.get_prompt(key, **prompt_substitutions))
 
-    def add_message(self, role: str, content: str | dict[str,Any] | list[str | dict[str, Any]]):
+    def add_message(
+        self, role: str, content: str | dict[str, Any] | list[str | dict[str, Any]]
+    ):
         assert role in ["user", "assistant", "system", "tool"], f"Invalid role: {role}"
 
         if isinstance(content, dict):
@@ -91,13 +93,15 @@ class OpenAIAssistant:
                             f"Skipping image message because model {config.model} does not support vision."
                         )
 
-                content = [ message for message in content if isinstance(message, dict) and message["type"] != "image_url" ]
-
+                content = [
+                    message
+                    for message in content
+                    if isinstance(message, dict) and message["type"] != "image_url"
+                ]
 
         debug(f"Add Message {pprint.pformat({'role': role, 'content': content})}")
 
         self.messages.append({"role": role, "content": content})
-
 
     #     debug(
     #         "Add Message: " + json.dumps({"role": role, "content": content}, indent=2)

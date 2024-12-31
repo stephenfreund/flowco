@@ -17,7 +17,7 @@ from flowco.dataflow.dfg import Node, DataFlowGraph
 from flowco.page.output import NodeResult, OutputType, ResultOutput, ResultValue
 from flowco.page.tables import GlobalTables
 from flowco.pythonshell.sandbox import Sandbox
-from flowco.util.output import error, log, logger, message
+from flowco.util.output import debug, error, log, logger, message
 from pydantic import BaseModel
 
 from flowco.util.text import strip_ansi
@@ -63,11 +63,11 @@ class PythonShell:
             self.client.start_new_kernel_client()
             self._init()
         except nb_exceptions.CellExecutionError as cee:
-            error(f"Cell execution error during kernel setup: {cee}")
+            debug(f"Cell execution error during kernel setup: {cee}")
             self.close()
             raise
         except Exception as e:
-            error(f"Unexpected error during kernel setup: {e}")
+            debug(f"Unexpected error during kernel setup: {e}")
             self.close()
             raise
 
@@ -289,11 +289,13 @@ class PythonShell:
         context[node.function_result_var] = node.result.result
         return context
 
-    def _inspect_output(self, node: Node, qualitative_checks : Dict[str, QualitativeCheck]) -> Dict[str, str]:
+    def _inspect_output(
+        self, node: Node, qualitative_checks: Dict[str, QualitativeCheck]
+    ) -> Dict[str, str]:
 
         if len(qualitative_checks) == 0:
             return {}
-        
+
         result_messages = node.result.to_prompt_messages()
 
         class InspectionCompletion(BaseModel):
@@ -304,8 +306,8 @@ class PythonShell:
         class InspectionsCompletion(BaseModel):
             errors: List[InspectionCompletion]
 
-        requirements = [ check.requirement for check in qualitative_checks.values() ]
-        assertions = [ assertion for assertion in qualitative_checks.keys() ]
+        requirements = [check.requirement for check in qualitative_checks.values()]
+        assertions = [assertion for assertion in qualitative_checks.keys()]
 
         assistant = OpenAIAssistant(
             "gpt-4o",
@@ -317,12 +319,13 @@ class PythonShell:
         assistant.add_message("user", result_messages)
 
         completion = assistant.completion(InspectionsCompletion)
-        messages = { x.requirement: x.message if x.error else None for x in completion.errors }
-        return { assertion: messages[check.requirement] for assertion, check in qualitative_checks.items() }
-
-        
-        
-
+        messages = {
+            x.requirement: x.message if x.error else None for x in completion.errors
+        }
+        return {
+            assertion: messages[check.requirement]
+            for assertion, check in qualitative_checks.items()
+        }
 
     def run_assertions(
         self, tables: GlobalTables, dfg: DataFlowGraph, node: Node
@@ -354,16 +357,22 @@ class PythonShell:
                                 self._run_cell("\n".join(check.code))
                             except nb_exceptions.CellExecutionError as e:
                                 if e.ename == "AssertionError":
-                                    assertion_message = self.extract_assertion_error_message(
-                                        strip_ansi(e.traceback)
+                                    assertion_message = (
+                                        self.extract_assertion_error_message(
+                                            strip_ansi(e.traceback)
+                                        )
                                     )
                             except Exception as e:
                                 raise e
                             log(assertion_message)
                             outcomes[assertion] = assertion_message
-                        
+
                 with logger(f"Evaluating qualitative assertions"):
-                    qualitative_checks = { assertion : check for assertion, check in node.assertion_checks.items() if check.type == "qualitative" }
+                    qualitative_checks = {
+                        assertion: check
+                        for assertion, check in node.assertion_checks.items()
+                        if check.type == "qualitative"
+                    }
                     assertion_messages = self._inspect_output(node, qualitative_checks)
                     outcomes = outcomes | assertion_messages
 

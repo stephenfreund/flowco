@@ -10,12 +10,10 @@ import markdown
 from pydantic import BaseModel, Field, PrivateAttr
 from pydantic_core import ValidationError
 
-from flowthon.flowthon_graph import FlowthonGraph
 from flowco.dataflow.phase import Phase
 from flowco.dataflow.dfg import DataFlowGraph
 from flowco.builder.build import BuildEngine, BuildUpdate, PassConfig
 from flowco.page.tables import GlobalTables
-from flowco.session.session import session
 from flowco.session.session_file_system import fs_exists, fs_read, fs_write
 from flowco.util.config import AbstractionLevel, config
 from flowco.util.errors import FlowcoError
@@ -23,6 +21,7 @@ from flowco.util.output import error, log, logger
 from flowco.util.text import (
     format_basemodel,
 )
+from flowthon.flowthon import FlowthonNode, FlowthonProgram
 
 T = TypeVar("T", bound=Union[BaseModel, str])
 
@@ -370,49 +369,60 @@ class Page(BaseModel, extra="allow"):
         return html.format(content=html_content, title=self.file_name)
 
     @atomic_method
-    def to_flowthon(self, level: AbstractionLevel, file_name: str) -> None:
-        dfg, editable = FlowthonGraph.from_dfg(self.dfg)
+    def to_flowthon(self, level: AbstractionLevel) -> FlowthonProgram:
+        dfg = self.dfg
+        dfg = dfg.normalize_ids_to_pills()
+
+        # assert all nodes had ids matching pills
+        for node in dfg.nodes:
+            assert node.id == node.pill, f"{node.id} != {node.pill}"
+
+        # assert all edges had ids matching pills
+        for edge in dfg.edges:
+            assert edge.src in dfg.node_ids(), f"{edge.src} not in {dfg.node_ids()}"
+            assert edge.dst in dfg.node_ids(), f"{edge.dst} not in {dfg.node_ids()}"
+            assert (
+                edge.id == f"{edge.src}->{edge.dst}"
+            ), f"{edge.id} != {edge.src}-->{edge.dst}"
+
+        nodes = {}
+        for node_id in dfg.topological_sort():
+            node = dfg[node_id]
+            predecessors = [dfg[n].pill for n in node.predecessors]
+
+            nodes[node.pill] = FlowthonNode(
+                pill=node.pill,
+                uses=predecessors,
+                label=node.label,
+                requirements=node.requirements,
+                algorithm=node.algorithm,
+                code=node.code,
+                assertions=node.assertions,
+            )
+
         self.update_dfg(dfg)
+        return FlowthonProgram(tables=self.tables.all_files(), imports=[], nodes=nodes)
 
-        # make file name by replacing the extension .flowco, with .flowthon
-        with open(file_name, "w") as f:
-            rep = {
-                "tables": self.tables.model_dump(),
-                "graph": editable.to_json(level),
-            }
-            json_str = json.dumps(rep, indent=2)
-            f.write(json_str)
+        # dfg, editable = FlowthonProgram.from_dfg(self.dfg)
+        # self.update_dfg(dfg)
 
+        # # make file name by replacing the extension .flowco, with .flowthon
+        # with open(file_name, "w") as f:
+        #     rep = {
+        #         "tables": self.tables.model_dump(),
+        #         "graph": editable.to_json(level),
+        #     }
+        #     json_str = json.dumps(rep, indent=2)
+        #     f.write(json_str)
 
     @atomic_method
-    def merge_flowthon(self, file_name, interactive=True) -> None:
+    def merge_flowthon(self, flowthon: FlowthonProgram, interactive=True) -> None:
         with logger("Merging"):
-            with open(file_name, "r") as f:
-                new_json = f.read()
-
-            rep = json.loads(new_json)
-            self.tables = GlobalTables(**rep["tables"])
-            new_editable = FlowthonGraph.from_json(rep["graph"])
+            self.tables = GlobalTables.from_list(flowthon.tables)
+            # self.imports = flowthon.imports
             build_config = self.base_build_config(repair=True)
-            new_dfg = new_editable.merge(
-                build_config, self.dfg, interactive=interactive
-            )
+            new_dfg = flowthon.merge(build_config, self.dfg, interactive=interactive)
             self.update_dfg(new_dfg)
-
-            if any(node.code for node in new_dfg.nodes):
-                level = AbstractionLevel.code
-            elif any(node.algorithm for node in new_dfg.nodes):
-                level = AbstractionLevel.algorithm
-            else:
-                level = AbstractionLevel.spec
-
-            with open(file_name, "w") as f:
-                rep = {
-                    "tables": self.tables.model_dump(),
-                    "graph": new_editable.to_json(level),
-                }
-                json_str = json.dumps(rep, indent=2)
-                f.write(json_str)
 
     # @atomic
     # def add_bugs(self, node_ids: Optional[List[str]]) -> None:

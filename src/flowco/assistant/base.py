@@ -27,7 +27,9 @@ class AssistantBase:
                     config.get_prompt(key, **system_prompt_substitutions),
                 )
 
-    def add_message(self, role: str, content: str | dict[str, any] | list[str | dict[str, any]]):
+    def add_message(
+        self, role: str, content: str | dict[str, any] | list[str | dict[str, any]]
+    ):
         debug(
             "Add Message: " + json.dumps({"role": role, "content": content}, indent=2)
         )
@@ -37,12 +39,20 @@ class AssistantBase:
 
         if not isinstance(content, str):
             for message in content:
-                if isinstance(message, dict) and message["type"] == "image_url" and not supports_vision(config.model):
+                if (
+                    isinstance(message, dict)
+                    and message["type"] == "image_url"
+                    and not supports_vision(config.model)
+                ):
                     warn(
                         f"Skipping image message because model {config.model} does not support vision."
                     )
 
-            content = [ message for message in content if isinstance(message, dict) and message["type"] != "image_url" ]
+            content = [
+                message
+                for message in content
+                if isinstance(message, dict) and message["type"] != "image_url"
+            ]
 
         self.messages.append({"role": role, "content": content})
 

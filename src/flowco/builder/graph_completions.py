@@ -90,7 +90,6 @@ def node_completion(
         return new_node
 
 
-
 def graph_node_like_model(
     node_like_model: type[NodeLike], *to_include: str
 ) -> type[GraphLike]:
@@ -148,8 +147,11 @@ def messages_for_graph(
     initial_graph = make_graph_node_like(graph, initial_graph_model)
 
     return [
-        {"type": "text", "text": "Here is the dataflow graph" },
-        {"type": "text", "text": initial_graph.model_dump_json(exclude_none=True, indent=2) },
+        {"type": "text", "text": "Here is the dataflow graph"},
+        {
+            "type": "text",
+            "text": initial_graph.model_dump_json(exclude_none=True, indent=2),
+        },
     ]
 
 
@@ -161,8 +163,11 @@ def messages_for_node(
     initial_node = make_node_like(node, initial_node_model)
 
     return [
-        {"type": "text", "text": f"Here is the node named `{node.pill}`" },
-        {"type": "text", "text": initial_node.model_dump_json(exclude_none=True, indent=2) },
+        {"type": "text", "text": f"Here is the node named `{node.pill}`"},
+        {
+            "type": "text",
+            "text": initial_node.model_dump_json(exclude_none=True, indent=2),
+        },
     ]
 
 

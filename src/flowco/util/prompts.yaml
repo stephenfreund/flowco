@@ -454,8 +454,7 @@ algorithm: |
     {diff}
 
     Your response should be an list of strings, each of which is one step in the algorithm.  
-    Steps should begin with "*".
-    A step may have substeps that begin with "  -".  Do not use any markdown headers.
+    A step may have substeps that begin with "- ".  Do not use any markdown headers.
 
 
 
@@ -590,8 +589,9 @@ compile: |
     * Return a value consistent with the return type.
     * Have no side effects.
     * Be optimized for readability, clarity, and simplicity.
+    * Do not include pydoc strings.
     
-    You may only import matplotlib, seaborn, numpy, sklearn, and pandas.  Uses seaborn for all plots, with
+    You may only import matplotlib, seaborn, numpy, sklearn, scipy, and pandas.  Uses seaborn for all plots, with
     no changes to the base style.  Do not call `plt.close()` and *do not* save them to disk.
 
     Do not include other functions.

@@ -125,7 +125,7 @@ def requirements_assistant(
                 "preconditions",
                 "requirements",
             ],
-        )
+        ),
     )
 
     return assistant
@@ -391,7 +391,7 @@ def algorithm_assistant(node, diff_instructions, interactive=False):
                 "function_result_var",
                 "algorithm",
             ],
-        )
+        ),
     )
 
     return assistant
@@ -518,7 +518,7 @@ def code_assistant(node: Node, diff_instructions, interactive=False):
                 "function_result_var",
                 "algorithm",
             ],
-        )
+        ),
     )
 
     return assistant
@@ -725,7 +725,7 @@ def full_assistant(
                 "algorithm",
                 "code",
             ],
-        )
+        ),
     )
 
     return assistant

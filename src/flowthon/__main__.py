@@ -1,14 +1,18 @@
 import argparse
 from genericpath import exists
 import inspect
+import json
 import os
+from pathlib import Path
 import re
+import shutil
 import sys
 from abc import ABC, abstractmethod
 from typing import Dict, List
+import webbrowser
 
-from matplotlib import interactive
 import nbformat
+from sklearn import base
 
 from flowthon.nbflowthon import convert_notebook_to_flowthon
 from flowthon.nbsplit import split_notebook_by_heading_level
@@ -24,6 +28,7 @@ from flowco.util.output import Output, error, message, logger
 
 from flowco.util.errors import FlowcoError
 from flowco.util.stopper import Stopper
+from flowthon.flowthon import FlowthonProgram
 
 ### Base
 
@@ -79,12 +84,12 @@ class ConvertCommand(Command):
             original_nb = nbformat.read(f, as_version=4)
 
         if args.split == 0:
-            flowthon_file = f"{notebook_root}.flowthon"
+            flowthon_file = f"{notebook_root}.flowjson"
             convert_to_flowthon(original_nb, flowthon_file)
         else:
             notebooks = split_notebook_by_heading_level(original_nb, args.split)
             for idx, nb in enumerate(notebooks, start=1):
-                flowthon_file = f"{notebook_root}_{idx}.flowthon"
+                flowthon_file = f"{notebook_root}_{idx}.flowjson"
                 convert_to_flowthon(nb, flowthon_file)
 
 
@@ -119,22 +124,31 @@ class CreateCommand(Command):
             level = AbstractionLevel.spec
 
         file_name = args.file_name
+
+        base_name, ext = os.path.splitext(file_name)
+
+        if ext != ".flowthon" and ext != ".flowjson":
+            raise FlowcoError("File name must end with .flowthon or .flowjson")
+
         if exists(file_name) and not args.force:
             raise FlowcoError(f"File {file_name} already exists.")
-
-        if not file_name.endswith(".flowthon"):
-            raise FlowcoError("File name must end with .flowthon")
 
         if args.flowco:
             flowco_file = args.flowco
         else:
-            flowco_file = file_name.replace(".flowthon", ".flowco")
+            flowco_file = base_name + ".flowco"
             Page.create(flowco_file)
             message(f"Created {flowco_file}.")
 
         page = Page.from_file(flowco_file)
+        flowthon = page.to_flowthon(level)
 
-        page.to_flowthon(level, file_name)
+        with open(file_name, "w", encoding="utf-8") as f:
+            if ext == ".flowthon":
+                print(flowthon.to_source(level), file=f)
+            else:
+                print(flowthon.to_json(level), file=f)
+
         message(f"Created {file_name}.")
 
 
@@ -163,13 +177,19 @@ class RunCommand(Command):
 
     def run(self, args):
         file_name = args.file_name
+
+        base_name, ext = os.path.splitext(file_name)
+
+        if ext != ".flowthon" and ext != ".flowjson":
+            raise FlowcoError("File name must end with .flowthon or .flowjson")
+
         if not exists(file_name):
             raise FlowcoError(f"File {file_name} does not exist.")
 
         if args.flowco:
             flowco_file = args.flowco
         else:
-            flowco_file = file_name.replace(".flowthon", ".flowco")
+            flowco_file = base_name + ".flowco"
 
         if exists(flowco_file):
             page = Page.from_file(flowco_file)
@@ -183,17 +203,46 @@ class RunCommand(Command):
             for _ in page.build(builder, Phase.run_checked, False, None):
                 pass
         else:
-            page.merge_flowthon(args.file_name, interactive=args.interactive)
+            with open(file_name, "r", encoding="utf-8") as f:
+                contents = f.read()
+
+            if ext == ".flowthon":
+                flowthon = FlowthonProgram.from_source(contents)
+            else:
+                flowthon = FlowthonProgram.from_json(json.loads(contents))
+
+            if any("    ..." not in x.code for x in flowthon.nodes.values()):
+                level = AbstractionLevel.code
+            elif any(x.algorithm for x in flowthon.nodes.values()):
+                level = AbstractionLevel.algorithm
+            else:
+                level = AbstractionLevel.spec
+
+            page.merge_flowthon(flowthon, interactive=args.interactive)
+
+            if ext == ".flowthon":
+                contents = flowthon.to_source(level)
+            else:
+                contents = json.dumps(flowthon.to_json(level), indent=2)
+
+            # copy original file to file.bak
+            bak_file = base_name + ".bak"
+            shutil.copy(file_name, bak_file)
+            message(f"Created {bak_file}.")
+
+            with open(file_name, "w", encoding="utf-8") as f:
+                print(contents, file=f)
 
         page.save()
 
-        html_file = file_name.replace(".flowthon", ".html")
+        html_file = base_name + ".html"
         with open(html_file, "w") as f:
             f.write(page.to_html())
             message(f"Wrote HTML to {html_file}")
 
-        if args.html:
-            os.system(f"open {html_file}")
+        path = Path(base_name + ".html")
+        file_url = path.absolute().as_uri()
+        webbrowser.open(file_url)
 
 
 class CleanCommand(Command):
@@ -208,11 +257,111 @@ class CleanCommand(Command):
 
     def run(self, args):
         file_name = args.file_name
-        flowco_file = file_name.replace(".flowthon", ".flowco")
+
+        base_name, ext = os.path.splitext(file_name)
+
+        if ext != ".flowthon" and ext != ".flowjson":
+            raise FlowcoError("File name must end with .flowthon or .flowjson")
+
+        flowco_file = base_name + ".flowco"
 
         page = Page.from_file(flowco_file)
         page = Page.create(flowco_file)
         page.clean()
+
+
+class ToSourceCommand(Command):
+    def __init__(self, subparsers):
+        super().__init__(subparsers)
+        self.parser = subparsers.add_parser(
+            "to-source", help="Convert flowjson to flowthon"
+        )
+        self.parser.add_argument(
+            "file_name",
+            type=str,
+            help="File to build",
+        )
+
+    def run(self, args):
+        file_name = args.file_name
+
+        base_name, ext = os.path.splitext(file_name)
+
+        if ext != ".flowjson":
+            raise FlowcoError("File name must end with .flowjson")
+
+        if not exists(file_name):
+            raise FlowcoError(f"File {file_name} does not exist.")
+
+        with open(file_name, "r", encoding="utf-8") as f:
+            contents = f.read()
+
+        flowthon = FlowthonProgram.from_json(json.loads(contents))
+
+        if any(x.code != None for x in flowthon.nodes.values()):
+            level = AbstractionLevel.code
+        elif any(x.algorithm != None for x in flowthon.nodes.values()):
+            level = AbstractionLevel.algorithm
+        else:
+            level = AbstractionLevel.spec
+
+        contents = flowthon.to_source(level)
+
+        # copy original file to file.bak
+        out_file = base_name + ".flowthon"
+        bak_file = base_name + ".bak"
+        shutil.copy(file_name, bak_file)
+        message(f"Created {bak_file}.")
+
+        with open(out_file, "w", encoding="utf-8") as f:
+            print(contents, file=f)
+
+
+class ToJsonCommand(Command):
+    def __init__(self, subparsers):
+        super().__init__(subparsers)
+        self.parser = subparsers.add_parser(
+            "to-json", help="Convert flowthon to flowjson"
+        )
+        self.parser.add_argument(
+            "file_name",
+            type=str,
+            help="File to build",
+        )
+
+    def run(self, args):
+        file_name = args.file_name
+
+        base_name, ext = os.path.splitext(file_name)
+
+        if ext != ".flowthon":
+            raise FlowcoError("File name must end with .flowthon")
+
+        if not exists(file_name):
+            raise FlowcoError(f"File {file_name} does not exist.")
+
+        with open(file_name, "r", encoding="utf-8") as f:
+            contents = f.read()
+
+        flowthon = FlowthonProgram.from_source(contents)
+
+        if any(x.code != None for x in flowthon.nodes.values()):
+            level = AbstractionLevel.code
+        elif any(x.algorithm != None for x in flowthon.nodes.values()):
+            level = AbstractionLevel.algorithm
+        else:
+            level = AbstractionLevel.spec
+
+        contents = json.dumps(flowthon.to_json(level), indent=2)
+
+        # copy original file to file.bak
+        out_file = base_name + ".flowjson"
+        bak_file = base_name + ".bak"
+        shutil.copy(file_name, bak_file)
+        message(f"Created {bak_file}.")
+
+        with open(out_file, "w", encoding="utf-8") as f:
+            print(contents, file=f)
 
 
 def class_name_to_key(name):

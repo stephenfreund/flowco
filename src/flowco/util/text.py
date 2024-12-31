@@ -319,3 +319,11 @@ def pill_to_python_name(pill: str) -> str:
     text = text.lower()
 
     return text
+
+
+def pill_to_result_var_name(pill: str) -> str:
+    return f"{pill_to_python_name(pill)}"
+
+
+def pill_to_function_name(pill: str) -> str:
+    return f"{pill_to_python_name(pill)}"

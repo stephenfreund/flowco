@@ -4,31 +4,31 @@ from typing import Any, List, Dict, Literal, Optional, Union
 from flowco.page.output import ResultValue
 
 
-
 class QuantitiveCheck(BaseModel):
     type: Literal["quantitative"]
     code: List[str] = Field(
         description="A unittest function to verify the code meets the requirement.  The code is stored as a list of source lines."
     )
 
+
 class QualitativeCheck(BaseModel):
     type: Literal["qualitative"]
-    requirement: str = Field(description="A description of the requirement for this test.")
+    requirement: str = Field(
+        description="A description of the requirement for this test."
+    )
+
 
 class CheckOutcomes(BaseModel):
-    outcomes: Dict[str, str|None] = Field(
-        default = {},
+    outcomes: Dict[str, str | None] = Field(
+        default={},
         description="The error message if the test failed, or None if it succeeded.",
     )
     context: Optional[Dict[str, ResultValue]] = Field(
-        default={},
-        description="The context for the checks."
+        default={}, description="The context for the checks."
     )
 
-Check = Union[
-    QuantitiveCheck,
-    QualitativeCheck
-]
+
+Check = Union[QuantitiveCheck, QualitativeCheck]
 
 
 class UnitTest(BaseModel):
@@ -38,9 +38,7 @@ class UnitTest(BaseModel):
     inputs: Dict[str, Any] = Field(
         description="Python expressions to use as the parameter values."
     )
-    check: Check = Field(
-        description="The check to perform."
-    )
+    check: Check = Field(description="The check to perform.")
     outcome: Optional[str] = Field(
         default=None,
         description="The error message if the test failed, or None if it succeeded.",

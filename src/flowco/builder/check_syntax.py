@@ -3,7 +3,6 @@ import textwrap
 from typing import Optional
 
 
-
 from flowco.assistant.assistant import Assistant
 from flowco.builder.build import PassConfig, node_pass
 from flowco.builder.type_ops import types_equal
@@ -24,12 +23,8 @@ from flowco.util.output import message, warn, log
 from flowco.util.text import strip_ansi
 
 
-
-
 @node_pass(required_phase=Phase.code, target_phase=Phase.runnable)
-def check_syntax(
-    pass_config: PassConfig, graph: DataFlowGraph, node: Node
-) -> Node:
+def check_syntax(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
     new_node = _repair_node_syntax(node, max_retries=config.retries)
     if new_node:
         new_node = new_node.update(phase=Phase.runnable)
@@ -289,5 +284,3 @@ def _repair_node_syntax(node: Node, max_retries: int) -> Optional[Node]:
 #             )
 #             message(str(completion.unit_test))
 #             test = completion.unit_test
-
-

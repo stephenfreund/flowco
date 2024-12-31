@@ -83,13 +83,24 @@ class BuildCache(BaseModel):
             ),
             Phase.code: PhaseCacheDescriptor(
                 phase=Phase.code,
-                in_fields=["signature", "function_parameters", "requirements", "algorithm"],
+                in_fields=[
+                    "signature",
+                    "function_parameters",
+                    "requirements",
+                    "algorithm",
+                ],
                 out_fields=["code"],
             ),
             Phase.assertions_code: PhaseCacheDescriptor(
                 phase=Phase.assertions_code,
-                in_fields=["preconditions", "requirements", "function_parameters", "function_return_type", "assertions"],
-                out_fields=[ "assertion_checks"],
+                in_fields=[
+                    "preconditions",
+                    "requirements",
+                    "function_parameters",
+                    "function_return_type",
+                    "assertions",
+                ],
+                out_fields=["assertion_checks"],
             ),
         }
 
@@ -128,6 +139,20 @@ class BuildCache(BaseModel):
             item = self.caches[phase].update(node)
 
         new_cache = BuildCache(caches=self.caches | {phase: item})
+        if new_cache != self:
+            return new_cache
+        else:
+            return self
+
+    def update_all(self, node: BaseModel) -> BaseModel:
+        new_caches = {
+            phase: CacheEntry(
+                in_values=node.model_dump(include=self._descriptors[phase].in_fields),
+                out_values=node.model_dump(include=self._descriptors[phase].out_fields),
+            )
+            for phase in self._descriptors
+        }
+        new_cache = BuildCache(caches=new_caches)
         if new_cache != self:
             return new_cache
         else:

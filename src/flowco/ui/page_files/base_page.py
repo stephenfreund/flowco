@@ -253,9 +253,12 @@ class FlowcoPage:
             with st.container(key="node_algorithm"):
                 if show_algorithm() and node is not None:
                     st.write("#### Algorithm")
-                    st.write(
-                        "\n".join(node.algorithm) if node.algorithm is not None else ""
-                    )
+                    if node.algorithm is not None:
+                        algorithm = [
+                            f"* {x}" if not x.startswith("- ") else f"  {x}"
+                            for x in node.algorithm
+                        ]
+                        st.write("\n".join(algorithm))
 
             with st.container(key="node_code"):
                 if show_code() and node is not None:

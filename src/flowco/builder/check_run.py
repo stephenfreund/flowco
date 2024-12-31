@@ -2,7 +2,12 @@ import textwrap
 from typing import Optional
 from flowco.assistant.assistant import Assistant
 from flowco.builder.build import PassConfig, node_pass
-from flowco.builder.graph_completions import make_node_like, node_completion, node_completion_model, node_like_model
+from flowco.builder.graph_completions import (
+    make_node_like,
+    node_completion,
+    node_completion_model,
+    node_like_model,
+)
 from flowco.dataflow.dfg import DataFlowGraph, Node
 from flowco.dataflow.phase import Phase
 from flowco.page.error_messages import error_message
@@ -33,6 +38,7 @@ def check_run(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node
         warn(str(e))
         node.error(phase=Phase.run_checked, message=strip_ansi(str(e).split("\n")[-2]))
         return node
+
 
 def _repair_run(
     pass_config: PassConfig, graph: DataFlowGraph, node: Node, max_retries: int
@@ -108,4 +114,3 @@ def _repair_run(
                 )
             )
             node = node.merge(new_node)
-

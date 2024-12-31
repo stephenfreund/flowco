@@ -25,6 +25,7 @@ from flowco.util.output import Output, error, log, message, logger
 
 from flowco.util.errors import FlowcoError
 from flowco.util.stopper import Stopper
+from flowthon.flowthon import FlowthonProgram
 
 ### Base
 
@@ -154,6 +155,7 @@ class ExportCommand(Command):
         self.parser = subparsers.add_parser(
             "export", help="Convert page to editable file"
         )
+        self.parser.add_argument("--json", help="export as json", action="store_true")
         self.parser.add_argument(
             "--algorithm", help="show algorithm", action="store_true"
         )
@@ -175,10 +177,17 @@ class ExportCommand(Command):
             level = AbstractionLevel.algorithm
         else:
             level = AbstractionLevel.spec
-        file_name = args.file_name or page.file_name.replace(".flowco", ".flowthon")
+
+        extension = ".flowjson" if args.json else ".flowthon"
+        file_name = args.file_name or page.file_name.replace(".flowco", extension)
         if exists(file_name) and not args.force:
             raise FlowcoError(f"File {file_name} already exists.")
-        page.to_flowthon(level, file_name)
+        flowthon = page.to_flowthon(level)
+        with open(file_name, "w") as f:
+            if args.json:
+                f.write(flowthon.to_json(level))
+            else:
+                f.write(flowthon.to_source(level))
         message(f"Exported {page.file_name} to {file_name}.")
 
 
@@ -195,9 +204,19 @@ class MergeCommand(Command):
         )
 
     def run(self, page, args):
+        # ensure extension is .json or .flowthon
+        if not args.file_name.endswith(".flowjson") and not args.file_name.endswith(
+            ".flowthon"
+        ):
+            raise FlowcoError("File must be a .flowjson or .flowthon file.")
         if not exists(args.file_name):
             raise FlowcoError(f"File {args.file_name} does not exist.")
-        page.merge_flowthon(args.file_name)
+        if args.file_name.endswith(".flowthon"):
+            flowthon = FlowthonProgram.from_file(args.file_name)
+        else:
+            flowthon = FlowthonProgram.from_json(args.file_name)
+
+        page.merge_flowthon(flowthon)
         message(f"Merged {args.file_name} into {page.file_name}.")
 
 
@@ -284,9 +303,9 @@ class BuildCommand(Command):
         for _ in page.build(builder, target_phase, args.repair, args.node_id):
             pass
 
-        message('')
+        message("")
         for node in page.dfg.nodes:
-            message('')
+            message("")
             title = f"{node.pill} @ {node.phase}"
             message(title)
             message("-" * len(title))
@@ -295,14 +314,31 @@ class BuildCommand(Command):
                     title = m.title()
                     indent = " " * (len(title) + 4)
                     paras = m.message().splitlines()
-                    message("\n".join(textwrap.wrap(f"[{title}]: {paras[0]}", initial_indent="", subsequent_indent=indent)))
+                    message(
+                        "\n".join(
+                            textwrap.wrap(
+                                f"[{title}]: {paras[0]}",
+                                initial_indent="",
+                                subsequent_indent=indent,
+                            )
+                        )
+                    )
                     for para in paras[1:]:
-                        message("\n".join(textwrap.wrap(para, initial_indent=indent, subsequent_indent=indent)))
-                    message('')
+                        message(
+                            "\n".join(
+                                textwrap.wrap(
+                                    para,
+                                    initial_indent=indent,
+                                    subsequent_indent=indent,
+                                )
+                            )
+                        )
+                    message("")
             else:
-                message('No messages')
-                message('')
-        message('')
+                message("No messages")
+                message("")
+        message("")
+
 
 def class_name_to_key(name):
     base_name = name[:-7]  # Remove "Command" suffix

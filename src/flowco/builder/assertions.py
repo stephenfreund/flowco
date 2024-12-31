@@ -50,9 +50,7 @@ def compile_assertions(
 
         class AssertionCompletion(BaseModel):
             requirement: str
-            check: Check = Field(
-                description="The check to perform."
-            )
+            check: Check = Field(description="The check to perform.")
             error: str | None = Field(
                 description="An error message if the assertion is inconsistent with the requirements."
             )
@@ -62,7 +60,7 @@ def compile_assertions(
 
         completion = assistant.completion(AssertionsCompletion)
 
-        checks = { x.requirement: x.check for x in completion.assertions }
+        checks = {x.requirement: x.check for x in completion.assertions}
         new_node = node.update(assertion_checks=checks, phase=Phase.assertions_code)
 
         failures = [x for x in completion.assertions if x.error]
@@ -71,8 +69,8 @@ def compile_assertions(
                 new_node = new_node.error(
                     phase=Phase.assertions_code,
                     message=f"{check.requirement}: {check.error}",
-                )   
-            return new_node             
+                )
+            return new_node
 
         new_node = new_node.update(
             cache=new_node.cache.update(Phase.assertions_code, new_node)
@@ -95,7 +93,6 @@ def assertions_assistant(node: Node):
     else:
         prompt = "assertions-code"
 
-
     assistant = OpenAIAssistant(
         config.model,
         interactive=False,
@@ -103,7 +100,7 @@ def assertions_assistant(node: Node):
         input_vars=parameter_type_str,
         preconditions=json.dumps(node.preconditions, indent=2),
         output_var=node.function_result_var,
-        postconditions="\n".join([ f"* {r}" for r in node.requirements]),
+        postconditions="\n".join([f"* {r}" for r in node.requirements]),
         requirements=json.dumps(node.assertions, indent=2),
     )
 

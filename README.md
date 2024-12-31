@@ -69,6 +69,63 @@ This installs a bunch of normal packages through a hatchling `pyproject.toml`, a
     You will get a few new demo files in that directory.  They have some simple how-to instructions that may help you
     get started.
 
+
+### Flowthon: For those who like source code.
+
+* Make the source code for an existing file:
+    ```bash
+    flowco finch-small.flowco export
+    ```
+
+    Or a new one:
+        ```bash
+        flowthon create test.flowthon
+        ```
+
+* Edit the flowthon file in your favorite editor.
+
+* Run it:
+
+    ```bash
+    flowthon run finch-small.flowthon
+    ```
+
+    **Note:** This will modify your flowthon file in place to keep it in sync with the dataflow graph.  Be sure to reload it before editing.
+
+* Base structure of file:
+
+    ```
+    def create_1000():
+        """
+        Label
+
+        # Requirements
+        - ...
+
+        # Algorithm
+        - ...
+
+        # Assertions
+        - ...
+        """
+        ...
+
+    def plot_purple(create_1000):
+        """
+        ...
+        """
+        ...
+    ```
+
+    The ... for the code is necessary.  The other parts can be edited/omitted however you want.
+
+* To see all parts in the flowthon file, rerun `export` as follows.
+
+    ```bash
+    flowco finch-small.flowco export --code
+    ```
+
+
 ## "Sketchy" Behavior or Bugs?
 
 If you see a bug -- hahaha, **when** you see a bug -- please send me the Flowco file and the `logging.txt` file from the working directory, or upload to a github issue...

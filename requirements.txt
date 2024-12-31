@@ -29,3 +29,5 @@ fsspec
 google-auth-oauthlib
 markdown
 nbformat
+pydantic
+beautifulsoup4

@@ -85,6 +85,13 @@ class GlobalTables(BaseModel):
 
         return GlobalTables(tables=[*self.tables, file_path])
 
+    @classmethod
+    def from_list(cls, tables: List[str]) -> GlobalTables:
+        gt = GlobalTables(tables=[])
+        for table in tables:
+            gt = gt.add(table)
+        return gt
+
     def all_files(self) -> List[str]:
         return self.tables.copy()
 

@@ -25,7 +25,10 @@ from flowco.util.config import config
 from flowco.util.errors import FlowcoError
 from flowco.util.text import (
     format_basemodel,
+    function_name_to_title,
+    pill_to_function_name,
     pill_to_python_name,
+    pill_to_result_var_name,
 )
 from flowco.util.output import error, logger, log
 
@@ -41,7 +44,6 @@ class FailOnDifferentValueStrategy(jsonmerge.strategies.Strategy):
                 f"Merge conflict: tried to merge different value '{head}' into '{base}'"
             )
         return base
-
 
 
 class NodeLike(BaseModel):
@@ -187,28 +189,24 @@ class Node(NodeLike, BaseModel):
     #####
 
     assertions: Optional[List[str]] = Field(
-        default=None,
-        description="A list of assertions that must be true at run time."
+        default=None, description="A list of assertions that must be true at run time."
     )
 
     assertion_checks: Optional[OrderedDict[str, Check]] = Field(
-        default_factory=OrderedDict,
-        description="The generated assertions."
+        default_factory=OrderedDict, description="The generated assertions."
     )
 
     assertion_outcomes: Optional[CheckOutcomes] = Field(
-        default_factory=CheckOutcomes,
-        description="The outcomes of the assertions."
+        default_factory=CheckOutcomes, description="The outcomes of the assertions."
     )
 
     #####
 
     unit_tests: Optional[List[UnitTest]] = Field(
-        default=None,
-        description="A list of unit tests that the node must pass."
+        default=None, description="A list of unit tests that the node must pass."
     )
 
-    ### 
+    ###
 
     messages: List[NodeMessage] = Field(
         default_factory=list,
@@ -229,7 +227,6 @@ class Node(NodeLike, BaseModel):
         default_factory=BuildCache,
         description="A cache of the build process for this node.",
     )
-
 
     def semantically_eq(self, other: "Node") -> bool:
         return (
@@ -371,10 +368,12 @@ class Node(NodeLike, BaseModel):
             requirements=None,
             function_computed_value=None,
             function_return_type=None,
+            function_result_var=pill_to_result_var_name(self.pill),
+            function_name=pill_to_function_name(self.pill),
             algorithm=None,
             description=None,
             code=None,
-            assertions_check=None,
+            assertion_checks=None,
             assertion_outcomes=None,
             result=None,
             messages=[],
@@ -475,7 +474,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                         function_name=node["function_name"],
                         function_result_var=node["function_result_var"],
                         predecessors=node["predecessors"],
-                        assertions=node['assertions'],
+                        assertions=node["assertions"],
                         phase=Phase.clean,
                         cache=BuildCache(),
                     )
@@ -547,8 +546,9 @@ class DataFlowGraph(GraphLike, BaseModel):
         if old_pill != node.pill:
             old_name = pill_to_python_name(old_pill)
             new_name = pill_to_python_name(node.pill)
-            dfg = dfg.alpha_rename(f"compute_{old_name}", f"compute_{new_name}")
-            dfg = dfg.alpha_rename(f"{old_name}_result", f"{new_name}_result")
+            dfg = dfg.alpha_rename(old_name, new_name)
+            # dfg = dfg.alpha_rename(f"compute_{old_name}", f"compute_{new_name}")
+            # dfg = dfg.alpha_rename(f"{old_name}_result", f"{new_name}_result")
         return dfg
 
     def with_new_node(self, node: Node) -> "DataFlowGraph":
@@ -676,9 +676,8 @@ class DataFlowGraph(GraphLike, BaseModel):
         with logger("Generating pill"):
             exclude_pills: List[str] = [x.pill for x in self.nodes if x != node]
             pill = self.make_pill(node.label, exclude_pills=exclude_pills)
-            python_name = pill_to_python_name(pill)
-            function_name = f"compute_{python_name}"
-            function_result_var = f"{python_name}_result"
+            function_name = pill_to_function_name(pill)
+            function_result_var = pill_to_result_var_name(pill)
 
             return node.update(
                 pill=pill,
@@ -998,7 +997,9 @@ class DataFlowGraph(GraphLike, BaseModel):
             ValueError: If there are duplicate pills which would result in duplicate IDs.
         """
         # Step 1: Create a mapping from old id to pill
-        id_to_pill: Dict[str, str] = {node.id: node.pill for node in self.nodes}
+        id_to_pill: Dict[str, str] = {
+            node.id: pill_to_python_name(node.pill) for node in self.nodes
+        }
 
         # Step 2: Ensure that all pills are unique to prevent ID conflicts
         pills = list(id_to_pill.values())
@@ -1013,6 +1014,7 @@ class DataFlowGraph(GraphLike, BaseModel):
         for node in self.nodes:
             new_node = node.model_copy()
             new_node.id = id_to_pill[node.id]
+            new_node.pill = id_to_pill[node.id]
             # Update predecessors in the new node
             updated_predecessors = [
                 id_to_pill[pred_id] for pred_id in node.predecessors

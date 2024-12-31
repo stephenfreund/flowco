@@ -33,6 +33,8 @@ dependencies = [
   "google-auth-oauthlib",
   "markdown",
   "nbformat",
+  "pydantic",
+  "beautifulsoup4",
 
   # for the generated code...
   "pandas",

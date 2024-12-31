@@ -4,7 +4,11 @@ from pydantic import BaseModel, ValidationError
 from flowco.dataflow.dfg import DataFlowGraph, Edge, Geometry, Node
 from flowco.dataflow.phase import Phase
 from flowco.util.output import log, warn, error
-from flowco.util.text import pill_to_python_name
+from flowco.util.text import (
+    pill_to_function_name,
+    pill_to_python_name,
+    pill_to_result_var_name,
+)
 
 
 class DiagramNodeUpdate(BaseModel):
@@ -72,15 +76,13 @@ def update_dataflow_graph(
                 warn("Dataflow graph changed, so must re-evaluate requirements.")
                 node.phase = Phase.clean
 
-            python_name = pill_to_python_name(node_update.pill)
-
             # Update label and geometry
             node.label = node_update.label
             node.geometry = node_update.geometry
             node.label = node_update.label
             node.pill = node_update.pill
-            node.function_name = f"compute_{python_name}"
-            node.function_result_var = f"{python_name}_result"
+            node.function_name = pill_to_function_name(node_update.pill)
+            node.function_result_var = pill_to_result_var_name(node_update.pill)
 
             output_geometry = node_update.output_geometry
             if output_geometry is None:
@@ -96,8 +98,6 @@ def update_dataflow_graph(
             pill = node_update.pill
             label = node_update.label
 
-            python_name = pill_to_python_name(node_update.pill)
-
             # Create a new Node with default or placeholder values for missing fields
             new_node = Node(
                 id=node_update.id,
@@ -105,8 +105,8 @@ def update_dataflow_graph(
                 label=label,
                 geometry=node_update.geometry,
                 predecessors=[],  # To be updated based on edges later
-                function_name=f"compute_{python_name}",
-                function_result_var=f"{python_name}_result",
+                function_name=pill_to_function_name(pill),
+                function_result_var=pill_to_result_var_name(pill),
                 output_geometry=node_update.output_geometry
                 or node_update.geometry.translate(
                     node_update.geometry.width + 100, 0

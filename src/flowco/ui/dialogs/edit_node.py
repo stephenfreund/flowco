@@ -90,7 +90,12 @@ def create_list(
     current: List[str],
     show_section=True,
 ):
-    text = "\n".join([f"{prefix}{x}" for x in current])
+    text = "\n".join(
+        [
+            f"{prefix}{x}" if not x.startswith("- ") else f"{' ' * len(prefix)}{x}"
+            for x in current
+        ]
+    )
     if show_section:
         c = st.columns(2)
         with c[0]:
@@ -627,7 +632,7 @@ class Parts:
         with st.container(border=False):
             self.generated_algorithm = create_list(
                 "algorithm",
-                "",
+                "* ",
                 current.algorithm or [],
                 show_section=show_algorithm(),
             )
@@ -665,7 +670,7 @@ class Parts:
         if generated.algorithm is not None:
             update_generated_list(
                 self.generated_algorithm,
-                "",
+                "* ",
                 original.algorithm or [],
                 generated.algorithm,
             )
@@ -791,7 +796,10 @@ def edit_node(node_id: str, edits: Optional[Node] = None):
                 cache=new_node.cache.update(phase=phase, node=new_node)
             )
 
-        log("Updating node", new_node.update(cache=BuildCache()).model_dump_json(indent=2))
+        log(
+            "Updating node",
+            new_node.update(cache=BuildCache()).model_dump_json(indent=2),
+        )
 
         dfg = dfg.with_node(new_node)
         ui_page.update_dfg(dfg)

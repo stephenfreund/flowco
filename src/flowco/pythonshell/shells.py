@@ -82,7 +82,6 @@ class PythonShells:
             return shell.run_assertions(tables, dfg, node)
         finally:
             self._put_shell(shell)
-    
 
     def close_all(self) -> None:
         while not self.queue.empty():
