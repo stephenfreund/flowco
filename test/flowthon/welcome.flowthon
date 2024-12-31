@@ -1,0 +1,43 @@
+def create_1000() -> numpy.ndarray:
+    """
+    Create 10000 values drawn for a normal distribution
+
+    # Requirements
+    - The output create_1000 is a NumPy array containing exactly 10000 numerical values.
+    - The values in the array are of type float64.
+    - The values in the array are drawn randomly from a normal (Gaussian) distribution, with the mean and standard deviation unspecified.
+    - The array values are distributed as to represent a continuous variable distribution.
+
+    # Algorithm
+    - Import the numpy library.
+    - Use the numpy function 'np.random.normal()' to generate 10,000 random float64 values.
+    - Ensure the generated values are from a normal distribution with a mean and standard deviation of your choice.
+    - Assign the resulting NumPy array to the variable 'create_1000'.
+    - Return the variable 'create_1000'.
+
+    # Assertions
+    - The mean is about 3.
+    - There are 1000 values.
+    """
+    ...
+
+def plot_purple(create_1000: np.ndarray) -> None:
+    """
+    Plot green histogram
+
+    # Requirements
+    - The function named 'plot_purple' accepts the numerical dataset provided by the 'create_1000' step.
+    - The function generates a histogram visualization that depicts the frequency distribution of the dataset values.
+    - The bars of the histogram are rendered in a green color.
+    - The x-axis represents the value ranges of the dataset, while the y-axis denotes the frequencies.
+    - The function does not return any value but renders the plot using matplotlib, hence it is displayed in the active figure's axis environment.
+
+    # Algorithm
+    - Import matplotlib.pyplot with plt as the alias for plotting.
+    - Define a function named 'plot_purple', which takes one parameter named 'data'.
+    - Inside the function body, call the 'plt.hist' function with the input data as the first argument and set the 'color' argument to 'green' to configure the histogram bar colors.
+    - Add appropriate labels to the x-axis and y-axis using 'plt.xlabel' and 'plt.ylabel' to provide context to the histogram plot.
+    - Call the 'plt.show()' function to render and open the visualization in the active Matplotlib environment.
+    - End the function with no return statement as its purpose is only to display the plot.
+    """
+    ...
