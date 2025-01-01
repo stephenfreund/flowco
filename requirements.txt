@@ -30,4 +30,4 @@ google-auth-oauthlib
 markdown
 nbformat
 pydantic
-beautifulsoup4
+streamlit_code_editor
