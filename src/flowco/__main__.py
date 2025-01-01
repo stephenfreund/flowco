@@ -1,6 +1,7 @@
 import argparse
 from genericpath import exists
 import inspect
+import json
 import os
 from pathlib import Path
 import re
@@ -182,10 +183,10 @@ class ExportCommand(Command):
         file_name = args.file_name or page.file_name.replace(".flowco", extension)
         if exists(file_name) and not args.force:
             raise FlowcoError(f"File {file_name} already exists.")
-        flowthon = page.to_flowthon(level)
+        flowthon = page.to_flowthon()
         with open(file_name, "w") as f:
             if args.json:
-                f.write(flowthon.to_json(level))
+                f.write(json.dumps(flowthon.to_json(level), indent=2))
             else:
                 f.write(flowthon.to_source(level))
         message(f"Exported {page.file_name} to {file_name}.")

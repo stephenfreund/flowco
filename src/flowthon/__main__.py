@@ -141,7 +141,7 @@ class CreateCommand(Command):
             message(f"Created {flowco_file}.")
 
         page = Page.from_file(flowco_file)
-        flowthon = page.to_flowthon(level)
+        flowthon = page.to_flowthon()
 
         with open(file_name, "w", encoding="utf-8") as f:
             if ext == ".flowthon":
@@ -219,7 +219,7 @@ class RunCommand(Command):
                 level = AbstractionLevel.spec
 
             page.merge_flowthon(flowthon, interactive=args.interactive)
-            flowthon = page.to_flowthon(level)
+            flowthon = page.to_flowthon()
 
             if ext == ".flowthon":
                 contents = flowthon.to_source(level)

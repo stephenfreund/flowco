@@ -227,3 +227,8 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
     width: calc(200% - 48px);
     flex: unset !important;
 } */
+
+
+[aria-label="dialog"]:has(.st-key-code_editor) {
+    width: 90% !important;
+}

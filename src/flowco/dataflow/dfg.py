@@ -631,7 +631,8 @@ class DataFlowGraph(GraphLike, BaseModel):
 
             return topo_order
         except Exception as e:
-            raise FlowcoError(f"Error in topological sort: {e}") from None
+            raise e
+            # raise FlowcoError(f"Error in topological sort: {e}") from None
 
     def phases(self) -> Dict[str, Phase]:
         return {node.id: node.phase for node in self.nodes}
@@ -703,14 +704,27 @@ class DataFlowGraph(GraphLike, BaseModel):
             if isinstance(obj, str):
                 return obj.replace(from_str, to_str)
             elif isinstance(obj, BaseModel):
-                # Recursively replace in Pydantic models
-                return obj.model_copy(
-                    update={
-                        field: replace_in_obj(getattr(obj, field))
-                        for field in obj.model_fields.keys()
-                        if getattr(obj, field) is not None
-                    }
-                )
+                if isinstance(obj, Edge):
+                    return obj
+                elif isinstance(obj, Node):
+                    # Recursively replace in Pydantic models
+                    return obj.model_copy(
+                        update={
+                            field: replace_in_obj(getattr(obj, field))
+                            for field in obj.model_fields.keys()
+                            if field not in ['id', 'predecessors' ] and getattr(obj, field) is not None
+                        }
+                    )
+                else:
+                    # Recursively replace in Pydantic models
+                    return obj.model_copy(
+                        update={
+                            field: replace_in_obj(getattr(obj, field))
+                            for field in obj.model_fields.keys()
+                            if getattr(obj, field) is not None
+                        }
+                    )
+
             elif isinstance(obj, list):
                 return [replace_in_obj(item) for item in obj]
             elif isinstance(obj, dict):

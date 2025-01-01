@@ -1,10 +1,9 @@
-import dis
-from typing import List
 import streamlit as st
 from flowco.builder import build
 from flowco.dataflow.dfg import Geometry
 from flowco.ui.dialogs.edit_node import edit_node
 from flowco.ui.dialogs.data_files import data_files_dialog
+from flowco.ui.ui_init import st_abstraction_level
 from flowco.ui.ui_page import UIPage
 from flowco.ui.ui_util import phase_for_last_shown_part, set_session_state, toggle
 from flowco.util.output import error, log, debug, warn
@@ -21,6 +20,10 @@ import streamlit as st
 
 from flowco import __main__
 from flowco.ui.ui_page import UIPage
+
+from code_editor import code_editor
+from flowthon.flowthon import FlowthonProgram
+
 
 
 class BuildPage(FlowcoPage):
@@ -196,6 +199,32 @@ class BuildPage(FlowcoPage):
             ui_page.page().user_edit_graph_description(text)
             st.rerun()
 
+
+    @st.dialog("Edit as Flowthon program", width="large")
+    def edit_flowthon(self):
+        def doit():
+            updated_source = st.session_state.code_editor["text"]
+            flowthon = FlowthonProgram.from_source(updated_source)
+            ui_page.page().merge_flowthon(flowthon, rebuild=False, interactive=False)
+            st.session_state.force_update = True
+
+        ui_page: UIPage = st.session_state.ui_page
+        source = ui_page.page().to_flowthon().to_source(st_abstraction_level())
+
+        if st.button("Save", on_click=doit):
+            st.rerun(scope="app")
+
+        code_editor(
+            source,
+            key="code_editor",
+            lang="python",
+            response_mode="blur",
+            props={
+                "showGutter": False,
+            },
+        )
+
+
     def global_sidebar(self):
         ui_page: UIPage = st.session_state.ui_page
 
@@ -213,7 +242,7 @@ class BuildPage(FlowcoPage):
         st.write(ui_page.dfg().description)
 
         with st.container(key="page_controls"):
-            cols = st.columns(2)
+            cols = st.columns(4)
             with cols[0]:
                 if st.button(
                     "Edit Description",
@@ -229,3 +258,11 @@ class BuildPage(FlowcoPage):
                     help="Manage data files for the diagram",
                 ):
                     data_files_dialog()
+
+            with cols[3]:
+                if st.button(
+                    ":material/code:",
+                    disabled=not self.graph_is_editable(),
+                    help="Edit the diagram as a Flowthon program",
+                ):
+                    self.edit_flowthon()

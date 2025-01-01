@@ -385,7 +385,9 @@ class FlowthonProgram(BaseModel):
                         if current_section == "short_description":
                             # Concatenate all buffered lines for short description
                             sections["short_description"] = ' '.join(buffer).strip()
-                        elif current_section in sections and isinstance(sections[current_section], list):
+                        elif current_section in sections:
+                            if not sections[current_section]:
+                                sections[current_section] = []
                             # Process buffered lines to extract bullet points, including multi-line bullets
                             bullets = []
                             current_bullet = ""
@@ -567,10 +569,6 @@ class FlowthonProgram(BaseModel):
         # 3. Add function definitions
         for func in self.nodes.values():
  
-            print(abstraction_level)
-            print(func.pill)
-            print(func.code)
-
             headers = []
             if abstraction_level == AbstractionLevel.code:
                 if func.imports:
@@ -681,9 +679,6 @@ class FlowthonProgram(BaseModel):
         if incoming is None:
             return current
 
-        print(current)
-        print(incoming)
-
         current_header = next(
             (line for line in current if line.strip().endswith(":")), None
         )
@@ -704,6 +699,7 @@ class FlowthonProgram(BaseModel):
         self,
         pass_config: PassConfig,
         dfg: DataFlowGraph | None = None,
+        rebuild: bool = True,
         interactive=False,
     ) -> DataFlowGraph:
         """
@@ -741,10 +737,10 @@ class FlowthonProgram(BaseModel):
 
             else:
                 original = dfg[node.pill]
+
                 new_node = original.model_copy(
                     update={
                         "predecessors": [],
-                        "phase": Phase.clean,
                     }
                 )
 
@@ -752,21 +748,31 @@ class FlowthonProgram(BaseModel):
                     label=node.label,
                     requirements=(
                         node.requirements
-                        if node.requirements is not None
+                        if node.requirements 
                         else new_node.requirements
                     ),
                     algorithm=(
                         node.algorithm
-                        if node.algorithm is not None
+                        if node.algorithm 
                         else new_node.algorithm
                     ),
                     code=(
                         node.code
-                        if node.code is not None
+                        if node.code 
                         else new_node.code
                     )
-                    
-#                    self.merge_code(new_node.code, node.code),
+                )
+
+                phase = original.phase
+                if new_node.code != original.code:
+                    phase = min(phase, Phase.algorithm)
+                if new_node.algorithm != original.algorithm:
+                    phase = min(phase, Phase.requirements)
+                if new_node.requirements != original.requirements:
+                    phase = Phase.clean
+
+                new_node = new_node.update(
+                    phase=phase,
                 )
 
                 edits = []
@@ -814,11 +820,13 @@ class FlowthonProgram(BaseModel):
                 node_id in dfg
                 and new_graph[node_id].predecessors != dfg[node_id].predecessors
             ):
+                new_graph[node_id].phase = Phase.clean
                 message(
                     f"Modifying existing node {new_graph[node_id].pill}: predecessors"
                 )
 
-        new_graph = self.rebuild(pass_config, dfg, new_graph, interactive)
+        if rebuild:
+            new_graph = self.rebuild(pass_config, dfg, new_graph, interactive)
 
         return new_graph
 

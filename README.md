@@ -117,7 +117,7 @@ This installs a bunch of normal packages through a hatchling `pyproject.toml`, a
         ...
     ```
 
-    The ... for the code is necessary.  The other parts can be edited/omitted however you want.
+    The `...` for the code is necessary.  The other parts can be edited/omitted however you want.
 
 * To see all parts in the flowthon file, rerun `export` as follows.
 
