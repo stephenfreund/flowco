@@ -416,11 +416,15 @@ class Page(BaseModel, extra="allow"):
         #     f.write(json_str)
 
     @atomic_method
-    def merge_flowthon(self, flowthon: FlowthonProgram, rebuild=True, interactive=True) -> None:
+    def merge_flowthon(
+        self, flowthon: FlowthonProgram, rebuild=True, interactive=True
+    ) -> None:
         with logger("Merging"):
             self.tables = GlobalTables.from_list(flowthon.tables)
             build_config = self.base_build_config(repair=True)
-            new_dfg = flowthon.merge(build_config, self.dfg, rebuild=rebuild, interactive=interactive)
+            new_dfg = flowthon.merge(
+                build_config, self.dfg, rebuild=rebuild, interactive=interactive
+            )
             self.update_dfg(new_dfg)
 
     # @atomic

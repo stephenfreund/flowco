@@ -66,7 +66,16 @@ class FlowthonNode(BaseModel):
         assert isinstance(pill, str), f"Expected str, got {type(pill)}"
         assert isinstance(node_data, dict), f"Expected dict, got {type(node_data)}"
         assert all(
-            key in ["uses", "label", "requirements", "algorithm", "code", "assertions", "imports"]
+            key
+            in [
+                "uses",
+                "label",
+                "requirements",
+                "algorithm",
+                "code",
+                "assertions",
+                "imports",
+            ]
             for key in node_data
         ), f"Missing keys in {node_data}"
 
@@ -116,7 +125,7 @@ class FlowthonNode(BaseModel):
                 isinstance(x, str) for x in node_data["assertions"]
             ), f"Expected list of str, got {node_data['assertions']}"
             node_data["assertions"] = node_data["assertions"]
- 
+
         if "imports" in node_data:
             assert isinstance(
                 node_data["imports"], list
@@ -172,7 +181,7 @@ class FlowthonProgram(BaseModel):
     def from_json(cls, data: dict) -> "FlowthonProgram":
         assert isinstance(data, dict), f"Expected dict, got {type(data)}"
         assert all(
-            key in ["nodes", "tables" ] for key in data
+            key in ["nodes", "tables"] for key in data
         ), f"Missing keys in {data}"
 
         if "tables" in data:
@@ -269,7 +278,7 @@ class FlowthonProgram(BaseModel):
                         func_code = (
                             func_code[:relative_start] + func_code[relative_end:]
                         )
-                    
+
                     if func_code[-1].strip() == "...":
                         func_code = None
 
@@ -326,14 +335,16 @@ class FlowthonProgram(BaseModel):
                 filename = match.group(1)
                 return filename
             return None
-            
-        def parse_markdown_docstring(doc: str, allowed_headers: Dict[str, str]) -> Dict[str, Any]:
+
+        def parse_markdown_docstring(
+            doc: str, allowed_headers: Dict[str, str]
+        ) -> Dict[str, Any]:
             """
             Parses a Markdown-formatted docstring into a structured dictionary based on allowed section headers.
-            
+
             This function manually parses the docstring without converting it to HTML, preserving the original Markdown formatting
             and handling multi-line bullets.
-            
+
             :param doc: The docstring to parse.
             :param allowed_headers: A dictionary mapping FlowthonNode field names to header titles.
             :return: A dictionary with structured data.
@@ -342,49 +353,53 @@ class FlowthonProgram(BaseModel):
             sections = {
                 "short_description": "",
             }
-            
+
             # Initialize all allowed sections as empty lists
             for field in allowed_headers:
                 sections[field] = []
-            
+
             current_section = "short_description"
             buffer = []
-            
+
             # Split the docstring into lines for processing
             lines = doc.splitlines()
-            
+
             # Regular expression to match headers (e.g., # Requirements)
-            header_regex = re.compile(r'^(#{1,6})\s+(.*)')
-            
+            header_regex = re.compile(r"^(#{1,6})\s+(.*)")
+
             # Regular expression to match bullet points (e.g., - Must handle edge cases)
-            bullet_regex = re.compile(r'^-\s+(.*)')
-            
+            bullet_regex = re.compile(r"^-\s+(.*)")
+
             for line in lines:
                 stripped_line = line.strip()
-                
+
                 # Check if the line is a header
                 header_match = header_regex.match(stripped_line)
                 if header_match:
                     header_text = header_match.group(2).strip()
-                    
+
                     if header_text not in allowed_headers.values():
-                        raise ValueError(f"Undefined section header '{header_text}' found in docstring.")
-                    
+                        raise ValueError(
+                            f"Undefined section header '{header_text}' found in docstring."
+                        )
+
                     # Map header text to field name (case-insensitive)
                     field_name = None
                     for key, value in allowed_headers.items():
                         if value.lower() == header_text.lower():
                             field_name = key
                             break
-                    
+
                     if not field_name:
-                        raise ValueError(f"Header '{header_text}' does not correspond to any FlowthonNode field.")
-                    
+                        raise ValueError(
+                            f"Header '{header_text}' does not correspond to any FlowthonNode field."
+                        )
+
                     # Assign buffered content to the previous section
                     if buffer:
                         if current_section == "short_description":
                             # Concatenate all buffered lines for short description
-                            sections["short_description"] = ' '.join(buffer).strip()
+                            sections["short_description"] = " ".join(buffer).strip()
                         elif current_section in sections:
                             if not sections[current_section]:
                                 sections[current_section] = []
@@ -397,23 +412,25 @@ class FlowthonProgram(BaseModel):
                                     if current_bullet:
                                         bullets.append(current_bullet.strip())
                                     current_bullet = bullet_match.group(1)
-                                elif buf_line.startswith('    ') or buf_line.startswith('\t'):
+                                elif buf_line.startswith("    ") or buf_line.startswith(
+                                    "\t"
+                                ):
                                     # Continuation of the current bullet (indented line)
-                                    current_bullet += ' ' + buf_line.strip()
+                                    current_bullet += " " + buf_line.strip()
                                 else:
                                     # Non-indented line without a bullet; append to current bullet
-                                    current_bullet += ' ' + buf_line.strip()
+                                    current_bullet += " " + buf_line.strip()
                             if current_bullet:
                                 bullets.append(current_bullet.strip())
-                            
+
                             sections[current_section].extend(bullets)
-                        
+
                         buffer = []
-                    
+
                     # Update the current section
                     current_section = field_name
                     continue  # Move to the next line
-                
+
                 # Accumulate lines for the current section
                 if stripped_line:
                     buffer.append(stripped_line)
@@ -421,18 +438,22 @@ class FlowthonProgram(BaseModel):
                     # Blank line indicates possible separation between paragraphs or sections
                     if current_section == "short_description":
                         if buffer:
-                            sections["short_description"] += ' ' + ' '.join(buffer).strip()
+                            sections["short_description"] += (
+                                " " + " ".join(buffer).strip()
+                            )
                             buffer = []
                     else:
                         # For list sections, blank lines within bullets are treated as continuation
                         if buffer:
                             buffer.append(stripped_line)
-            
+
             # After processing all lines, assign any remaining buffer content
             if buffer:
                 if current_section == "short_description":
                     sections["short_description"] = buffer[0].strip()
-                elif current_section in sections and isinstance(sections[current_section], list):
+                elif current_section in sections and isinstance(
+                    sections[current_section], list
+                ):
                     bullets = []
                     current_bullet = ""
                     for buf_line in buffer:
@@ -441,19 +462,18 @@ class FlowthonProgram(BaseModel):
                             if current_bullet:
                                 bullets.append(current_bullet.strip())
                             current_bullet = bullet_match.group(1)
-                        elif buf_line.startswith('    ') or buf_line.startswith('\t'):
+                        elif buf_line.startswith("    ") or buf_line.startswith("\t"):
                             # Continuation of the current bullet (indented line)
-                            current_bullet += ' ' + buf_line.strip()
+                            current_bullet += " " + buf_line.strip()
                         else:
                             # Non-indented line without a bullet; append to current bullet
-                            current_bullet += ' ' + buf_line.strip()
+                            current_bullet += " " + buf_line.strip()
                     if current_bullet:
                         bullets.append(current_bullet.strip())
-                    
-                    sections[current_section].extend(bullets)
-            
-            return sections
 
+                    sections[current_section].extend(bullets)
+
+            return sections
 
         # 6. Function to map extracted data to FlowthonNode
         def map_to_flowthon_node(
@@ -470,7 +490,7 @@ class FlowthonProgram(BaseModel):
             code = info.get("code")
             if code:
                 code = info.get("imports", []) + code
-                
+
             try:
                 node = FlowthonNode(
                     pill=func_name,
@@ -568,12 +588,11 @@ class FlowthonProgram(BaseModel):
 
         # 3. Add function definitions
         for func in self.nodes.values():
- 
+
             headers = []
             if abstraction_level == AbstractionLevel.code:
                 if func.imports:
                     headers += func.imports
-
 
             if func.code:
                 # get all lines up to and including the first one that ends with :
@@ -583,7 +602,7 @@ class FlowthonProgram(BaseModel):
                 )
                 assert first_line.startswith("def")
                 first_line_index = code.index(first_line)
-                headers += code[:code.index(first_line)+1]
+                headers += code[: code.index(first_line) + 1]
                 body = code[first_line_index + 1 :]
             else:
                 params = ", ".join(func.uses)
@@ -748,19 +767,13 @@ class FlowthonProgram(BaseModel):
                     label=node.label,
                     requirements=(
                         node.requirements
-                        if node.requirements 
+                        if node.requirements
                         else new_node.requirements
                     ),
                     algorithm=(
-                        node.algorithm
-                        if node.algorithm 
-                        else new_node.algorithm
+                        node.algorithm if node.algorithm else new_node.algorithm
                     ),
-                    code=(
-                        node.code
-                        if node.code 
-                        else new_node.code
-                    )
+                    code=(node.code if node.code else new_node.code),
                 )
 
                 phase = original.phase

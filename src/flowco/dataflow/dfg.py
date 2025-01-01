@@ -712,7 +712,8 @@ class DataFlowGraph(GraphLike, BaseModel):
                         update={
                             field: replace_in_obj(getattr(obj, field))
                             for field in obj.model_fields.keys()
-                            if field not in ['id', 'predecessors' ] and getattr(obj, field) is not None
+                            if field not in ["id", "predecessors"]
+                            and getattr(obj, field) is not None
                         }
                     )
                 else:

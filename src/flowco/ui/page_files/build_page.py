@@ -25,7 +25,6 @@ from code_editor import code_editor
 from flowthon.flowthon import FlowthonProgram
 
 
-
 class BuildPage(FlowcoPage):
 
     def button_bar(self):
@@ -199,7 +198,6 @@ class BuildPage(FlowcoPage):
             ui_page.page().user_edit_graph_description(text)
             st.rerun()
 
-
     @st.dialog("Edit as Flowthon program", width="large")
     def edit_flowthon(self):
         def doit():
@@ -223,7 +221,6 @@ class BuildPage(FlowcoPage):
                 "showGutter": False,
             },
         )
-
 
     def global_sidebar(self):
         ui_page: UIPage = st.session_state.ui_page
