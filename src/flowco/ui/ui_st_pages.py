@@ -36,7 +36,9 @@ def st_pages():
     if st.session_state.builder is None and not st.session_state.ama_responding:
         pages = [
             st.Page(
-                projects_main, title="Browse", default=st.session_state.ui_page is None
+                projects_main,
+                title="Projects",
+                default=st.session_state.ui_page is None,
             ),
             st.Page(
                 build_main, title="Edit", default=st.session_state.ui_page is not None

@@ -8,8 +8,6 @@ from flowco.ui.ui_page import UIPage, load_ui_page
 from flowco.util.config import config
 from flowco.util.output import logger
 
-st.set_page_config(page_title="Flowco", layout="wide")
-
 
 # @st.cache_resource
 def custom_css():
@@ -25,6 +23,8 @@ def custom_css():
 
 
 def st_init():
+    st.set_page_config(layout="wide", page_icon=":material/account_tree:")
+
     st.markdown(f"<style>{custom_css()}</style>", unsafe_allow_html=True)
 
     if "init" not in st.session_state:
