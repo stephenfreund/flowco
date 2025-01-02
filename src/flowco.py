@@ -38,8 +38,6 @@ if "user_email" not in st.session_state:
     st.session_state.args = parse_args()
     st.session_state.user_email = st.session_state.args.user_email
 
-st_init()
-
 
 def init_service():
     if "service_initialized" not in st.session_state:
