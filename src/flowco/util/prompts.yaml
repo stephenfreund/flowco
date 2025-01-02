@@ -592,7 +592,7 @@ compile: |
     * Do not include pydoc strings.
     
     You may only import matplotlib, seaborn, numpy, sklearn, scipy, and pandas.  Uses seaborn for all plots, with
-    no changes to the base style.  Do not call `plt.close()` and *do not* save them to disk.
+    no changes to the base style.  Do not call `plt.close()`.  Do not call `plt.show()`.  Do not save plots to disk.
 
     Do not include other functions.
 

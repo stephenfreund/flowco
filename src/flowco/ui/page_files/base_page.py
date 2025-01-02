@@ -299,7 +299,7 @@ class FlowcoPage:
                 ):
                     settings(ui_page)
             with cols[3]:
-                if st.button("Logout"):
+                if st.button(":material/logout:", help="Sign out"):
                     sign_out()
                     st.rerun()
 

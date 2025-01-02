@@ -169,6 +169,7 @@ class BuildPage(FlowcoPage):
             value = st.session_state.trigger_build_toggle
             st.session_state.trigger_build_toggle = None
             self.toggle_building(value == "Run")
+            st.rerun()
 
         builder: Builder = st.session_state.builder
         debug(f"Builder is alive: {builder is not None and builder.is_alive()}")

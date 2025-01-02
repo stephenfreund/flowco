@@ -9,6 +9,7 @@ from flowco.dataflow.extended_type import ExtendedType
 from flowco.session.session_file_system import fs_read
 from flowco.util.output import log
 
+import seaborn as sns
 
 description = """\
 The global function `{table_function}()` has already been imported and returns a dataframe with the type
@@ -25,12 +26,15 @@ Use this function whenever you need to access the data in this table.  Do not re
 
 def file_path_to_table_name(file_path: str) -> str:
     basename = os.path.basename(file_path)
-    assert basename.endswith(".csv")
-    basename = basename[:-4]
-    fixed = "".join([c if c.isalnum() else "_" for c in basename])
-    if fixed[0].isdigit():
-        fixed = "T" + fixed
-    return fixed
+    assert basename.endswith(".csv") or basename in sns.get_dataset_names()
+    if basename.endswith(".csv"):
+        basename = basename[:-4]
+        fixed = "".join([c if c.isalnum() else "_" for c in basename])
+        if fixed[0].isdigit():
+            fixed = "T" + fixed
+        return fixed
+    else:
+        return basename
 
 
 # class Table(BaseModel):
@@ -72,15 +76,16 @@ class GlobalTables(BaseModel):
 
     def add(self, file_path: str) -> GlobalTables:
         try:
-            contents = fs_read(file_path, use_cache=True)
-            df = pd.read_csv(StringIO(contents))
+            if file_path.endswith(".csv"):
+                contents = fs_read(file_path, use_cache=True)
+                df = pd.read_csv(StringIO(contents))
         except:
             raise ValueError(f"Could not read contents for {file_path} as a DataFrame.")
 
         if file_path in self.tables:
             raise ValueError(f"File {file_path} already included.")
 
-        if not file_path.endswith(".csv"):
+        if not file_path.endswith(".csv") and not file_path in sns.get_dataset_names():
             raise ValueError(f"File {file_path} must be a CSV file.")
 
         return GlobalTables(tables=[*self.tables, file_path])
@@ -97,7 +102,7 @@ class GlobalTables(BaseModel):
 
     def remove(self, file_path: str) -> GlobalTables:
         return GlobalTables(
-            tables=[table for table in self.tables if table.file_path != file_path]
+            tables=[table for table in self.tables if table != file_path]
         )
 
     def as_preconditions(self) -> Dict[str, List[str]]:
@@ -119,7 +124,10 @@ class GlobalTables(BaseModel):
         return file_path_to_table_name(file_path)
 
     def table_contents(self, file_path) -> str:
-        return fs_read(file_path, use_cache=True)
+        if file_path.endswith(".csv"):
+            return fs_read(file_path, use_cache=True)
+        else:
+            return sns.load_dataset(file_path).to_csv(index=False)
 
     def table_description(self, file_path) -> str:
         # return a string containing the first few rows of the table and the types of the columns

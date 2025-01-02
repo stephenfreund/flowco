@@ -77,6 +77,8 @@ class AskMeAnything:
                 value, _ = result.result.to_repr()
                 init_code += f"{node.function_result_var} = {value}\n"
 
+        init_code += "\n".join(self.page.tables.function_defs())
+
         result = session.get("shells", PythonShells).run(init_code + "\n" + code)
         result_output = result.as_result_output()
         return "Running code", result_output.to_prompt()
@@ -668,9 +670,14 @@ class AskMeAnything:
                     # type_description = node.function_return_type.type_description()
                     locals += f"`{node.function_result_var} : {node.function_return_type.to_python_type()}` is {node.function_return_type.description}\n\n"
 
+            locals += "\nYou have access to these files:\n" + "\n".join(
+                self.page.tables.as_preconditions()
+            )
+
             self.assistant.add_message("user", self.page.dfg.to_image_prompt_messages())
 
-            self.assistant.add_messages(
+            self.assistant.add_message(
+                "user",
                 messages_for_graph(
                     self.page.dfg,
                     graph_fields=["edges"],
@@ -682,7 +689,7 @@ class AskMeAnything:
                         "algorithm",
                         "code",
                     ],
-                )
+                ),
             )
 
             self.assistant.add_message("user", locals)
