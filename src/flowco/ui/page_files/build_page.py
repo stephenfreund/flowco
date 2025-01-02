@@ -35,7 +35,7 @@ class BuildPage(FlowcoPage):
                     st.session_state.builder.get_message(),
                 )
         with st.container(key="button_bar"):
-            cols = st.columns(8)
+            cols = st.columns(7)
             with cols[0]:
                 st.button(
                     "Run All" if st.session_state.builder is None else " Stop ",
