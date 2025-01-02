@@ -40,6 +40,7 @@ if "user_email" not in st.session_state:
 
 
 def init_service():
+    st_init(page_config=False)
     if "service_initialized" not in st.session_state:
         global session
         session = StreamlitSession()

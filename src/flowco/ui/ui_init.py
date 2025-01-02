@@ -22,8 +22,9 @@ def custom_css():
         return file.read()
 
 
-def st_init():
-    st.set_page_config(layout="wide", page_icon=":material/account_tree:")
+def st_init(page_config=True):
+    if page_config:
+        st.set_page_config(layout="wide", page_icon=":material/account_tree:")
 
     st.markdown(f"<style>{custom_css()}</style>", unsafe_allow_html=True)
 
