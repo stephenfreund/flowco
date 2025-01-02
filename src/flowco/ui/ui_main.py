@@ -53,7 +53,7 @@ def init_service():
         st.session_state.service_initialized = True
 
 
-init_service()
 st_init()
+init_service()
 pg = st_pages()
 pg.run()
