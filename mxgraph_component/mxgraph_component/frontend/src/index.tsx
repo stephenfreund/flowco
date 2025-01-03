@@ -28,6 +28,9 @@ graph.setCellsEditable(true);
 graph.setCellsResizable(true);
 graph.setEnterStopsCellEditing(true);
 
+// Add this HTML somewhere in your page
+// <div id="customBox" style="position: absolute; display: none; background: #fff; border: 1px solid #000; padding: 10px; z-index: 1000;"></div>
+
 
 function setEditable(editable: boolean) {
   can_edit = editable;
@@ -420,6 +423,37 @@ function shouldHandleHover(cell: mxCell): boolean {
   return false;
 }
 
+
+// // Add mouse listeners to handle icon display on hover
+// graph.addMouseListener({
+//   mouseMove: function (sender: any, evt: any) {
+//     const cell = graph.getCellAt(evt.getGraphX(), evt.getGraphY());
+//     console.log("B", cell)
+//     if (cell && cell.vertex) {
+//       console.log("BORP")
+//         showCustomBox(cell, evt.getClientX(), evt.getClientY());
+//     } else {
+//         hideCustomBox();
+//     }
+//   }
+// });
+
+function showCustomBox(cell: any, x: number, y: number): void {
+    const box = document.getElementById('customBox')!;
+    box.style.left = `${x + 10}px`;
+    box.style.top = `${y + 10}px`;
+    box.style.display = 'block';
+    box.style.fontSize = '12px';
+    box.style.fontFamily = 'Arial';
+    box.innerHTML = `Node Info:<br>ID: ${cell.id}<br>Value: ${cell.value}`;
+}
+
+function hideCustomBox(): void {
+    const box = document.getElementById('customBox')!;
+    box.style.display = 'none';
+}
+
+
 /**
  * Handles the hover event by calling hoverNode with the appropriate flag.
  * @param isEntering - True if entering hover, false if exiting.
@@ -429,7 +463,8 @@ function handleHover(isEntering: boolean): void {
   if (isEntering && currentlyHoveredCell) {
     node = currentlyHoveredCell?.id;
     graph.toggleCellStyle("shadow", false, currentlyHoveredCell);
-
+    const geometry = currentlyHoveredCell.geometry;
+    showCustomBox(currentlyHoveredCell, geometry.x + geometry.width + 5, currentlyHoveredCell.geometry.y);
     // const outputCell = graph.getModel().getCell(`output-${node}`);
     // if (outputCell) {
     //   graph.toggleCells(true, [outputCell], true);
@@ -437,7 +472,7 @@ function handleHover(isEntering: boolean): void {
   } else {
     if (currentlyHoveredCell) {
       graph.toggleCellStyle("shadow", true, currentlyHoveredCell);
-
+      hideCustomBox();
       // // if currentyHoveredCell has more than one child, hode the output node.
       // if (currentlyHoveredCell.getChildCount() > 1) {
       //   const outputCell = graph.getModel().getCell(`output-${node}`);
