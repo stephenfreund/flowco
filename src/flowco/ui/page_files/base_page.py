@@ -14,7 +14,7 @@ from flowco.dataflow.dfg import Node
 from flowco.dataflow.phase import Phase
 from flowco.page.output import OutputType
 from flowco.ui.ui_dialogs import settings
-from flowco.ui.ui_init import st_abstraction_level
+from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_util import (
     show_algorithm,
     show_code,
@@ -346,33 +346,34 @@ class FlowcoPage:
         # Could be <<<<<< or node id...
         selected_node = st.session_state.selected_node
 
-        result = mxgraph_component(
-            key=st.session_state.nonce,
-            diagram=st.session_state.ui_page.dfg_as_mx_diagram().model_dump(),
-            editable=self.graph_is_editable(),
-            selected_node=selected_node,
-            dummy=uuid.uuid4().hex if st.session_state.force_update else None,
-            refresh_phase=self.refresh_phase().value,
-            clear=st.session_state.clear_graph,
-        )  # type: ignore
+        if st.session_state.ui_page is not None:
+            result = mxgraph_component(
+                key=st.session_state.nonce,
+                diagram=st.session_state.ui_page.dfg_as_mx_diagram().model_dump(),
+                editable=self.graph_is_editable(),
+                selected_node=selected_node,
+                dummy=uuid.uuid4().hex if st.session_state.force_update else None,
+                refresh_phase=self.refresh_phase().value,
+                clear=st.session_state.clear_graph,
+            )  # type: ignore
 
-        if not st.session_state.force_update:
-            self.update_ui_page(
-                dfg_update.mxDiagramUpdate.model_validate_json(result["diagram"])
-            )
+            if not st.session_state.force_update:
+                self.update_ui_page(
+                    dfg_update.mxDiagramUpdate.model_validate_json(result["diagram"])
+                )
 
-        st.session_state.force_update = False
-        st.session_state.clear_graph = False
+            st.session_state.force_update = False
+            st.session_state.clear_graph = False
 
-        if result["command"] == "edit":
-            if st.session_state.last_sequence_number != result["sequence_number"]:
-                st.session_state.last_sequence_number = result["sequence_number"]
-                self.edit_node(result["selected_node"])
-        else:
-            if selected_node == "<<<<<":
-                st.session_state.selected_node = None
+            if result["command"] == "edit":
+                if st.session_state.last_sequence_number != result["sequence_number"]:
+                    st.session_state.last_sequence_number = result["sequence_number"]
+                    self.edit_node(result["selected_node"])
             else:
-                st.session_state.selected_node = result["selected_node"]
+                if selected_node == "<<<<<":
+                    st.session_state.selected_node = None
+                else:
+                    st.session_state.selected_node = result["selected_node"]
 
         with st.sidebar:
             self.sidebar()

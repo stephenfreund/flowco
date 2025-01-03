@@ -12,7 +12,7 @@ import os
 import re
 import keyword
 from pathlib import Path
-
+import markdown
 
 def format_key_value(key, value, width=15, indent=0) -> str:
     value = str(value)
@@ -327,3 +327,15 @@ def pill_to_result_var_name(pill: str) -> str:
 
 def pill_to_function_name(pill: str) -> str:
     return f"{pill_to_python_name(pill)}"
+
+def md_to_html(md):
+    return markdown.markdown(
+        md,
+        extensions=[
+            "extra",  # Includes several extensions like tables, fenced code, etc.
+            "codehilite",  # Adds syntax highlighting to code blocks
+            "toc",  # Generates a table of contents
+            "sane_lists",  # Improves list handling
+            "smarty",  # Converts quotes and dashes to smart quotes and dashes
+        ],
+    )

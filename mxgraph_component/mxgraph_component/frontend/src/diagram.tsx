@@ -24,6 +24,8 @@ export interface DiagramNode {
     has_messages: boolean;
     output?: DiagramOutput;
     build_status?: string;
+
+    html: string;
     
 }
 

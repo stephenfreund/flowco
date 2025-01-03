@@ -26,6 +26,7 @@ from flowco.util.output import Output, error, log, message, logger
 
 from flowco.util.errors import FlowcoError
 from flowco.util.stopper import Stopper
+from flowco.util.text import md_to_html
 from flowthon.flowthon import FlowthonProgram
 
 ### Base
@@ -228,16 +229,7 @@ class HtmlCommand(Command):
 
     def run(self, page, args):
         md = page.to_markdown()
-        html_content = markdown.markdown(
-            md,
-            extensions=[
-                "extra",  # Includes several extensions like tables, fenced code, etc.
-                "codehilite",  # Adds syntax highlighting to code blocks
-                "toc",  # Generates a table of contents
-                "sane_lists",  # Improves list handling
-                "smarty",  # Converts quotes and dashes to smart quotes and dashes
-            ],
-        )
+        html_content = md_to_html(md)
 
         with open(
             os.path.join(os.path.dirname(__file__), "util/template.html"), "r"

@@ -4,6 +4,8 @@ from pydantic import BaseModel, Field
 
 from flowco.dataflow.dfg import DataFlowGraph, Node, Geometry
 from flowco.page.output import OutputType
+from flowco.util.config import AbstractionLevel
+from flowco.util.text import md_to_html
 
 
 class DiagramOutput(BaseModel):
@@ -22,6 +24,8 @@ class DiagramNode(BaseModel):
     has_messages: bool
     build_status: Optional[str] = None
     output: Optional[DiagramOutput] = None
+
+    html: str = ""
 
 
 class DiagramEdge(BaseModel):
@@ -65,13 +69,20 @@ def get_output(node: Node) -> Optional[DiagramOutput]:
 
 
 @staticmethod
-def from_dfg(dfg: DataFlowGraph) -> MxDiagram:
+def from_dfg(dfg: DataFlowGraph, level: AbstractionLevel) -> MxDiagram:
     # Create a mapping from node id to Node for easy lookup
     node_dict = {node.id: node for node in dfg.nodes}
 
     # Convert Nodes
     mx_nodes: Dict[str, DiagramNode] = {}
     for node in dfg.nodes:
+
+        html_keys = ["pill", "label", "requirements", "result"]
+        if AbstractionLevel.show_algorithm(level):
+            html_keys += ["algorithm"]
+        if AbstractionLevel.show_code(level):
+            html_keys += ["code"]
+
         diagram_node = DiagramNode(
             id=node.id,
             pill=node.pill,
@@ -82,8 +93,11 @@ def from_dfg(dfg: DataFlowGraph) -> MxDiagram:
             output_geometry=node.output_geometry,
             output=get_output(node),
             build_status=node.build_status,
+            html = md_to_html(node.to_markdown(keys=html_keys)),
         )
         mx_nodes[node.id] = diagram_node
+
+
 
     # Convert Edges
     mx_edges: Dict[str, DiagramEdge] = {}

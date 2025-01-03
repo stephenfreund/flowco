@@ -2,11 +2,7 @@ import os
 import uuid
 import streamlit as st
 
-from flowco.page.page import PageListener
-from flowco.ui.ui_args import parse_args
-from flowco.ui.ui_page import UIPage, load_ui_page
 from flowco.util.config import config
-from flowco.util.output import logger
 
 
 # @st.cache_resource
@@ -68,17 +64,5 @@ def st_init(page_config=True):
         st.session_state.ama = None
 
 
-def set_ui_page(ui_page: UIPage):
-    if "ui_page" in st.session_state and st.session_state.ui_page is not None:
-        with logger("closing current page"):
-            page = st.session_state.ui_page.page()
-    st.session_state.ui_page = ui_page
 
 
-def st_abstraction_level():
-    if (
-        "abstraction_level" not in st.session_state
-        or st.session_state.abstraction_level is None
-    ):
-        st.session_state.abstraction_level = config.abstraction_level
-    return st.session_state.abstraction_level

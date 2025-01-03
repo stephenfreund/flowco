@@ -13,7 +13,7 @@ import streamlit as st
 from flowco import __main__
 from flowco.ui.page_files.base_page import FlowcoPage
 from flowco.ui.ui_dialogs import confirm
-from flowco.ui.ui_init import set_ui_page
+from flowco.ui.ui_page import set_ui_page
 from flowco.ui.ui_page import UIPage
 from flowco.util.files import create_zip_in_memory
 

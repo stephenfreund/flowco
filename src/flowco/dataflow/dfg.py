@@ -380,6 +380,67 @@ class Node(NodeLike, BaseModel):
             build_status=None,
         )
 
+    def to_markdown(
+        self,
+        keys: List[str] = [
+            "pill",
+            "label",
+            "messages",
+            "requirements",
+            "description",
+            "function_return_type",
+            "algorithm",
+            "code",
+            "result",
+        ],
+    ) -> str:
+        md = ""
+        if "pill" in keys:
+            md += f"#### {self.pill}\n\n"
+        if "label" in keys:
+            md += f"{self.label}\n\n"
+        if "messages" in keys and self.messages is not None:
+            md += f"**Messages**\n\n"
+            md += "\n".join([f"* {x}" for x in self.messages])
+        if "requirements" in keys and self.requirements is not None:
+            requirements = "\n".join([f"* {x}" for x in self.requirements])
+            md += f"**Requirements**\n\n{requirements}\n\n"
+        if "description" in keys and self.description is not None:
+            md += f"**Description**\n\n{self.description}\n\n"
+        if "function_return_type" in keys and self.function_return_type is not None:
+            md += f"**Function Return Type** `{self.function_return_type}`\n\n"
+        if "algorithm" in keys and self.algorithm is not None:
+            algorithm = "\n".join([f"* {x}" for x in self.algorithm])
+            md += f"**Algorithm**\n\n{algorithm}\n\n"
+        if "code" in keys and self.code is not None:
+            code = "\n".join(self.code)
+            md += f"**Code** \n```python\n{code}\n```\n\n"
+        if "result" in keys and self.result is not None:
+            clipped = None
+            if (
+                self.function_return_type is not None
+                and not self.function_return_type.is_None_type()
+            ):
+                text = self.result.pp_result_text(clip=15)
+                if text is not None:
+                    clipped = f"<pre>{text}</pre>"
+
+            if not clipped:
+                text = self.result.pp_output_text(clip=15)
+                if text is not None:
+                    clipped = f"<pre>{text}</pre>"
+
+            if not clipped:
+                image_url = self.result.output_image()
+                if image_url is not None:
+                    base64encoded = image_url.split(",", maxsplit=1)
+                    image_data = base64encoded[0] + ";base64," + base64encoded[1]
+                    clipped = f"![{self.pill}]({image_data})"
+
+            md += f"**Output** \n\n{clipped}\n\n"
+
+        return md
+
 
 NodeOrNodeList = Optional[Union[str, List[str]]]
 
@@ -1076,44 +1137,7 @@ class DataFlowGraph(GraphLike, BaseModel):
 
         # Nodes Section
         for node in self.nodes:
-            md += f"## {node.pill}\n\n"
-            md += f"**Label:** {node.label}\n\n"
-
-            md += f"**Messages:**\n\n"
-            md += "\n".join([f"* {x}" for x in node.messages])
-
-            requirements = "\n".join([f"* {x}" for x in node.requirements])
-            md += f"**Requirements:**\n\n{requirements}\n\n"
-            md += f"**Description:**\n\n{node.description}\n\n"
-            md += f"**Function Return Type:** `{node.function_return_type}`\n\n"
-            # md += f"**Function Computed Value:** {node.function_computed_value}\n\n"
-            algorithm = "\n".join(node.algorithm or [])
-            md += f"**Algorithm:**\n\n{algorithm}\n\n"
-            code = "\n".join(node.code or [])
-            md += f"**Code:** \n```python\n{code}\n```\n\n"
-
-            if node.result is not None:
-                if (
-                    node.function_return_type is not None
-                    and not node.function_return_type.is_None_type()
-                ):
-                    text = node.result.pp_result_text()
-                    if text is not None:
-                        clipped = f"<pre>{text}</pre>"
-
-                if not clipped:
-                    text = node.result.pp_output_text()
-                    if text is not None:
-                        clipped = f"<pre>{text}</pre>"
-
-                if not clipped:
-                    image_url = node.result.output_image()
-                    if image_url is not None:
-                        base64encoded = image_url.split(",", maxsplit=1)
-                        image_data = base64encoded[0] + ";base64," + base64encoded[1]
-                        clipped = f"![{node.pill}]({image_data})"
-
-                md += f"**Result:** \n\n{clipped}\n\n"
+            md += node.to_markdown()
 
         return md
 

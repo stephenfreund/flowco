@@ -9,6 +9,8 @@ from flowco.page.tables import GlobalTables
 from flowco.ui import mx_diagram
 from flowco.ui.mx_diagram import MxDiagram
 from flowco.dataflow.dfg import DataFlowGraph, Node
+from flowco.util.config import config
+from flowco.util.output import logger
 
 
 def load_ui_page(file_name: str):
@@ -29,6 +31,15 @@ def load_ui_page(file_name: str):
     return ui_page
 
 
+def st_abstraction_level():
+    if (
+        "abstraction_level" not in st.session_state
+        or st.session_state.abstraction_level is None
+    ):
+        st.session_state.abstraction_level = config.abstraction_level
+    return st.session_state.abstraction_level
+
+
 class UIPage(PageListener):
 
     def __init__(self, file_name: str):
@@ -42,7 +53,7 @@ class UIPage(PageListener):
         return self._page.dfg
 
     def dfg_as_mx_diagram(self) -> MxDiagram:
-        return mx_diagram.from_dfg(self.dfg())
+        return mx_diagram.from_dfg(self.dfg(), st_abstraction_level())
 
     def node(self, node_id: str) -> Node | None:
         return self.dfg().get_node(node_id)
@@ -72,4 +83,11 @@ class UIPage(PageListener):
         self._page.redo()
         st.session_state.clear_graph = True
         st.session_state.force_update = True
+
+
+def set_ui_page(ui_page: UIPage):
+    if "ui_page" in st.session_state and st.session_state.ui_page is not None:
+        with logger("closing current page"):
+            page = st.session_state.ui_page.page()
+    st.session_state.ui_page = ui_page
         # st.rerun()

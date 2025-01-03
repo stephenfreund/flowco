@@ -77,6 +77,7 @@ class PythonShell:
             """\
             import pandas as pd
             import numpy as np
+            from numpy import nan
             import matplotlib.pyplot as plt
             import seaborn as sns
             import sklearn

@@ -122,6 +122,7 @@ class AskMeAnything:
     def update_node(
         self,
         id: str,
+        pill: str | None = None,
         label: str | None = None,
         requirements: List[str] | None = None,
         algorithm: List[str] | None = None,
@@ -130,7 +131,7 @@ class AskMeAnything:
         """
         {
             "name": "update_node",
-            "description": "Modify a node in the diagram.  You must preserve consistency between the label, requirements, algorithm, and code",
+            "description": "Modify a node in the diagram.  You must preserve consistency between the pill, label, requirements, algorithm, and code",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -138,9 +139,13 @@ class AskMeAnything:
                         "type": "string",
                         "description": "The id of the node to modify"
                     },
+                    "pill": {
+                        "type": "string",
+                        "description": "The pill of the node.  Two words, hyphenated and title-case.  Keep in sync with the label, requirements, algorithm, and code."
+                    },
                     "label": {
                         "type": "string",
-                        "description": "The new label of the node"
+                        "description": "The new label of the node.  Keep in sync with the requirements, algorithm, and code."
                     },
                     "requirements": {
                         "type": "array",
@@ -175,6 +180,8 @@ class AskMeAnything:
             return (f"Node {id} does not exist", None)
 
         node = dfg[id]
+        if pill:
+            node = node.update(pill=pill)
         if label:
             node = node.update(label=label)
         if code:
@@ -188,6 +195,8 @@ class AskMeAnything:
         self.page.update_dfg(dfg)
 
         mods = []
+        if pill:
+            mods.append(f"pill")
         if label:
             mods.append(f"label")
         if requirements:

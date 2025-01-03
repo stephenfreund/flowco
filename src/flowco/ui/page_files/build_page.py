@@ -3,7 +3,7 @@ from flowco.builder import build
 from flowco.dataflow.dfg import Geometry
 from flowco.ui.dialogs.edit_node import edit_node
 from flowco.ui.dialogs.data_files import data_files_dialog
-from flowco.ui.ui_init import st_abstraction_level
+from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_page import UIPage
 from flowco.ui.ui_util import phase_for_last_shown_part, set_session_state, toggle
 from flowco.util.output import error, log, debug, warn

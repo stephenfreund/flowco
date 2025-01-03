@@ -5,9 +5,9 @@ import sys
 import streamlit as st
 from flowco.pythonshell.shells import PythonShells
 from flowco.session.session_file_system import SessionFileSystem
-from flowco.ui.ui_init import set_ui_page, st_init
+from flowco.ui.ui_init import st_init
 from flowco.ui.authenticate import authenticate
-from flowco.ui.ui_page import UIPage
+from flowco.ui.ui_page import UIPage, set_ui_page
 from flowco.ui.ui_st_pages import st_pages
 
 from flowco.util.config import config

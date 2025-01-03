@@ -41,13 +41,9 @@ graphContainer.addEventListener('contextmenu', (event) => {
   event.preventDefault();
 });
 
-graphContainer.addEventListener('click', (event) => {
-  // Set focus back to the graph container
-  graphContainer.focus();
-});
-
 // Ensure the graph container is focusable
 graphContainer.setAttribute('tabindex', '0');
+
 
 
 // Class representing a set of icons displayed on vertex hover
@@ -233,6 +229,15 @@ function dragLeave(evt: Event, state: mxCellState) {
     currentIconSet = undefined;
   }
 }
+
+function getSelectedNode(): mxCell | null {
+  const cells = graph.getSelectionCells();
+  if (cells.length === 0) {
+    return null;
+  }
+  return cells[0];
+}
+
 
 // Override convertValueToString to handle custom types
 graph.convertValueToString = function (...args): string {
@@ -424,28 +429,33 @@ function shouldHandleHover(cell: mxCell): boolean {
 }
 
 
-// // Add mouse listeners to handle icon display on hover
-// graph.addMouseListener({
-//   mouseMove: function (sender: any, evt: any) {
-//     const cell = graph.getCellAt(evt.getGraphX(), evt.getGraphY());
-//     console.log("B", cell)
-//     if (cell && cell.vertex) {
-//       console.log("BORP")
-//         showCustomBox(cell, evt.getClientX(), evt.getClientY());
-//     } else {
-//         hideCustomBox();
-//     }
-//   }
-// });
 
-function showCustomBox(cell: any, x: number, y: number): void {
+function showCustomBox(cell: any): void {
+  if (cell.value && cell.value.html) {
+    const state = graph.getView().getState(cell);
+    const x = state.x + 5;
+    const y = state.y + 5
     const box = document.getElementById('customBox')!;
-    box.style.left = `${x + 10}px`;
+    box.style.left = `${x + 25}px`;
     box.style.top = `${y + 10}px`;
     box.style.display = 'block';
     box.style.fontSize = '12px';
     box.style.fontFamily = 'Arial';
-    box.innerHTML = `Node Info:<br>ID: ${cell.id}<br>Value: ${cell.value}`;
+    box.style.maxWidth = '600px';
+    box.style.pointerEvents = 'none';
+    box.style.backgroundColor = '#FAFAFA';
+    box.style.borderRadius = '5px';
+    box.style.boxShadow = '5px 5px 2.5px rgba(0, 0, 0, 0.3)';
+
+    box.innerHTML = cell.value.html;
+
+    // Resize all images inside the box
+    const images = box.querySelectorAll('img');
+    images.forEach((img) => {
+      img.style.maxWidth = '400px';
+      img.style.height = 'auto'; // Maintain aspect ratio
+    });
+  }
 }
 
 function hideCustomBox(): void {
@@ -463,23 +473,17 @@ function handleHover(isEntering: boolean): void {
   if (isEntering && currentlyHoveredCell) {
     node = currentlyHoveredCell?.id;
     graph.toggleCellStyle("shadow", false, currentlyHoveredCell);
-    const geometry = currentlyHoveredCell.geometry;
-    showCustomBox(currentlyHoveredCell, geometry.x + geometry.width + 5, currentlyHoveredCell.geometry.y);
-    // const outputCell = graph.getModel().getCell(`output-${node}`);
-    // if (outputCell) {
-    //   graph.toggleCells(true, [outputCell], true);
-    // }
+    const currentSelectedCell = getSelectedNode();
+    if (currentSelectedCell == null) {
+      showCustomBox(currentlyHoveredCell);
+    }
   } else {
     if (currentlyHoveredCell) {
       graph.toggleCellStyle("shadow", true, currentlyHoveredCell);
-      hideCustomBox();
-      // // if currentyHoveredCell has more than one child, hode the output node.
-      // if (currentlyHoveredCell.getChildCount() > 1) {
-      //   const outputCell = graph.getModel().getCell(`output-${node}`);
-      //   if (outputCell) {
-      //     graph.toggleCells(false, [outputCell], true);
-      //   }
-      // }
+      const currentSelectedCell = getSelectedNode();
+      if (currentSelectedCell == null) {
+        hideCustomBox();
+      }
     }
     const cells = graph.getSelectionCells();
     const selectedIds = cells.map(cell => cell.id);
@@ -712,6 +716,12 @@ function addListeners() {
 
   // Add a listener for selection changes
   graph.getSelectionModel().addListener("change", (sender, evt) => {
+    console.log("Selection Changed", graph.getSelectionCells())
+    hideCustomBox();
+    const node = getSelectedNode();
+    if (node) {
+      showCustomBox(node);
+    }
     streamlitResponse();
   });
 
