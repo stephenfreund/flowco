@@ -126,44 +126,47 @@ class FlowcoPage:
         if st.session_state.ama is None or st.session_state.ama.page != page:
             st.session_state.ama = AskMeAnything(page)
 
-        with st.container():
-            height = (
-                400
-                if "AMA" in st.session_state.show_pills
-                or st.session_state.ama_responding
-                else 1
-            )
-            container = st.container(height=height, border=True, key="chat_container")
-            with container:
-                for message in st.session_state.ama.messages():
-                    with st.chat_message(message.role):
-                        st.markdown(message.content, unsafe_allow_html=True)
-
-            if "AMA" in st.session_state.show_pills:
-                st.audio_input(
-                    "Record a voice message",
-                    label_visibility="collapsed",
-                    key="voice_input",
-                    on_change=lambda: self.ama_voice_input(container),
-                    disabled=not self.graph_is_editable(),
+        if "AMA" in st.session_state.show_pills:
+            with st.container():
+                height = (
+                    400
+                    # if "AMA" in st.session_state.show_pills
+                    # or st.session_state.ama_responding
+                    # else 1
                 )
+                container = st.container(
+                    height=height, border=True, key="chat_container"
+                )
+                with container:
+                    for message in st.session_state.ama.messages():
+                        with st.chat_message(message.role):
+                            st.markdown(message.content, unsafe_allow_html=True)
 
-            if (
-                len(st.session_state.ama) > 0
-                and "AMA" not in st.session_state.show_pills
-            ):
-                ama_prompt = "Ask Me Anything!  Click AMA to see our conversation."
-            else:
-                ama_prompt = "Ask Me Anything!"
+                if "AMA" in st.session_state.show_pills:
+                    st.audio_input(
+                        "Record a voice message",
+                        label_visibility="collapsed",
+                        key="voice_input",
+                        on_change=lambda: self.ama_voice_input(container),
+                        disabled=not self.graph_is_editable(),
+                    )
 
-            with st.container(key="ama_columns"):
-                if prompt := st.chat_input(
-                    ama_prompt,
-                    key="ama_input",
-                    on_submit=lambda: toggle("ama_responding"),
-                    disabled=not self.graph_is_editable(),
+                if (
+                    len(st.session_state.ama) > 0
+                    and "AMA" not in st.session_state.show_pills
                 ):
-                    self.ama_completion(container, prompt)
+                    ama_prompt = "Ask Me Anything!  Click AMA to see our conversation."
+                else:
+                    ama_prompt = "Ask Me Anything!"
+
+                with st.container(key="ama_columns"):
+                    if prompt := st.chat_input(
+                        ama_prompt,
+                        key="ama_input",
+                        on_submit=lambda: toggle("ama_responding"),
+                        disabled=not self.graph_is_editable(),
+                    ):
+                        self.ama_completion(container, prompt)
 
     def ama_voice_input(self, container):
         toggle("ama_responding")

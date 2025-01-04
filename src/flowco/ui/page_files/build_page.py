@@ -210,16 +210,25 @@ class BuildPage(FlowcoPage):
         ui_page: UIPage = st.session_state.ui_page
         source = ui_page.page().to_flowthon().to_source(st_abstraction_level())
 
-        if st.button("Save", on_click=doit):
-            st.rerun(scope="app")
+        if st.button(
+            "Save",
+            on_click=doit,
+            disabled=st.session_state.code_editor is None
+            or st.session_state.code_editor["text"] == source,
+        ):
+            st.rerun()
 
         code_editor(
             source,
             key="code_editor",
             lang="python",
-            response_mode="blur",
+            response_mode="debounce",
             props={
-                "showGutter": False,
+                "showGutter": True,
+            },
+            options={
+                "wrap": True,
+                "showLineNumbers": True,
             },
         )
 

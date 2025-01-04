@@ -63,6 +63,8 @@ def st_init(page_config=True):
 
         st.session_state.ama = None
 
+        st.session_state.code_editor = None
+
 
 
 
