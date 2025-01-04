@@ -67,6 +67,8 @@ def st_init(page_config=True):
 
         st.session_state.ama = None
 
+        st.session_state.code_editor = None
+
 
 def set_ui_page(ui_page: UIPage):
     if "ui_page" in st.session_state and st.session_state.ui_page is not None:
