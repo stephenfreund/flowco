@@ -226,53 +226,53 @@ class FlowcoPage:
                         st.caption(f"{node.function_return_type.description}")
                     self.show_output(node)
 
-            with st.container(key="node_description"):
-                if "Description" in st.session_state.show_pills and node is not None:
-                    if show_code():
-                        st.write(f"**Return Type:** `{node.function_return_type}`")
+            # with st.container(key="node_description"):
+            #     if "Description" in st.session_state.show_pills and node is not None:
+            #         if show_code():
+            #             st.write(f"**Return Type:** `{node.function_return_type}`")
 
-                    st.write("#### Description")
-                    description = (
-                        node.description if node.description is not None else ""
-                    )
-                    function_computed_value = (
-                        node.function_computed_value
-                        if node.function_computed_value is not None
-                        else ""
-                    )
-                    st.write(description + "\n\n" + function_computed_value)
+            #         st.write("#### Description")
+            #         description = (
+            #             node.description if node.description is not None else ""
+            #         )
+            #         function_computed_value = (
+            #             node.function_computed_value
+            #             if node.function_computed_value is not None
+            #             else ""
+            #         )
+            #         st.write(description + "\n\n" + function_computed_value)
 
-            with st.container(key="node_requirements"):
-                if show_requirements() and node is not None:
-                    st.write("#### Requirements")
-                    st.write(
-                        "\n".join(
-                            [
-                                "* " + x
-                                for x in (
-                                    node.requirements
-                                    if node.requirements is not None
-                                    else []
-                                )
-                            ]
-                        )
-                    )
+            # with st.container(key="node_requirements"):
+            #     if show_requirements() and node is not None:
+            #         st.write("#### Requirements")
+            #         st.write(
+            #             "\n".join(
+            #                 [
+            #                     "* " + x
+            #                     for x in (
+            #                         node.requirements
+            #                         if node.requirements is not None
+            #                         else []
+            #                     )
+            #                 ]
+            #             )
+            #         )
 
-            with st.container(key="node_algorithm"):
-                if show_algorithm() and node is not None:
-                    st.write("#### Algorithm")
-                    if node.algorithm is not None:
-                        algorithm = [
-                            f"* {x}" if not x.startswith("- ") else f"  {x}"
-                            for x in node.algorithm
-                        ]
-                        st.write("\n".join(algorithm))
+            # with st.container(key="node_algorithm"):
+            #     if show_algorithm() and node is not None:
+            #         st.write("#### Algorithm")
+            #         if node.algorithm is not None:
+            #             algorithm = [
+            #                 f"* {x}" if not x.startswith("- ") else f"  {x}"
+            #                 for x in node.algorithm
+            #             ]
+            #             st.write("\n".join(algorithm))
 
-            with st.container(key="node_code"):
-                if show_code() and node is not None:
-                    st.write("#### Code")
-                    if node.code is not None:
-                        st.code("\n".join(node.code))
+            # with st.container(key="node_code"):
+            #     if show_code() and node is not None:
+            #         st.write("#### Code")
+            #         if node.code is not None:
+            #             st.code("\n".join(node.code))
 
     def show_output(self, node: Node):
         if node is not None and node.result is not None:
@@ -297,19 +297,19 @@ class FlowcoPage:
 
     def bottom_bar(self):
         ui_page: UIPage = st.session_state.ui_page
-        with st.container(key="bottom_bar"):
-            cols = st.columns(4)
-            with cols[0]:
-                if st.button(
-                    ":material/settings:",
-                    help="Change settings",
-                    disabled=not self.graph_is_editable(),
-                ):
-                    settings(ui_page)
-            with cols[3]:
-                if st.button(":material/logout:", help="Sign out"):
-                    sign_out()
-                    st.rerun()
+        # with st.container():
+        #     cols = st.columns(2)
+        #     with cols[0]:
+        if st.button(
+            ":material/settings: Settings",
+            help="Change settings",
+            disabled=not self.graph_is_editable(),
+        ):
+            settings(ui_page)
+        # with cols[1]:
+        if st.button(":material/logout: Logout", help="Sign out"):
+            sign_out()
+            st.rerun()
 
     def button_bar(self):
         pass

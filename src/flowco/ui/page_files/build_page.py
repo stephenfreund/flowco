@@ -38,7 +38,11 @@ class BuildPage(FlowcoPage):
             cols = st.columns(7)
             with cols[0]:
                 st.button(
-                    "Run All" if st.session_state.builder is None else " Stop ",
+                    (
+                        ":material/play_circle:"
+                        if st.session_state.builder is None
+                        else ":material/stop_circle:"
+                    ),
                     on_click=lambda: set_session_state(
                         "trigger_build_toggle",
                         "Run" if st.session_state.builder is None else "Stop",
@@ -50,9 +54,9 @@ class BuildPage(FlowcoPage):
                         else "Stop building"
                     ),
                 )
-            with cols[2]:
+            with cols[1]:
                 st.button(
-                    "Run",
+                    ":material/refresh:",
                     on_click=lambda: set_session_state(
                         "trigger_build_toggle", "Update"
                     ),
@@ -248,28 +252,28 @@ class BuildPage(FlowcoPage):
         st.write("### Description")
         st.write(ui_page.dfg().description)
 
-        with st.container(key="page_controls"):
-            cols = st.columns(4)
-            with cols[0]:
-                if st.button(
-                    "Edit Description",
-                    disabled=not self.graph_is_editable(),
-                    help="Edit the description of the diagram",
-                ):
-                    self.edit_description()
+        # with st.container(key="ignore_page_controls"):
+        cols = st.columns(3)
+        with cols[0]:
+            if st.button(
+                ":material/edit_note: Desc.",
+                disabled=not self.graph_is_editable(),
+                help="Edit the description of the diagram",
+            ):
+                self.edit_description()
 
-            with cols[1]:
-                if st.button(
-                    "Data Files",
-                    disabled=not self.graph_is_editable(),
-                    help="Manage data files for the diagram",
-                ):
-                    data_files_dialog()
+        with cols[1]:
+            if st.button(
+                ":material/table_view: Files",
+                disabled=not self.graph_is_editable(),
+                help="Manage data files for the diagram",
+            ):
+                data_files_dialog()
 
-            with cols[3]:
-                if st.button(
-                    ":material/code:",
-                    disabled=not self.graph_is_editable(),
-                    help="Edit the diagram as a Flowthon program",
-                ):
-                    self.edit_flowthon()
+        with cols[2]:
+            if st.button(
+                ":material/code: Source",
+                disabled=not self.graph_is_editable(),
+                help="Edit the diagram as a Flowthon program",
+            ):
+                self.edit_flowthon()

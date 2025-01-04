@@ -5,7 +5,7 @@ import streamlit as st
 from flowco.util.config import config
 
 
-# @st.cache_resource
+@st.cache_resource
 def custom_css():
     #
     # stSkeleton height shouldb e 0

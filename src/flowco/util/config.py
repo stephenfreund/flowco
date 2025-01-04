@@ -9,12 +9,6 @@ from typing import TypeVar
 from pydantic import BaseModel
 
 
-# Put this into PassConfig...
-class RegenerationPolicy(StrEnum):
-    replace = "replace"
-    merge = "merge"
-
-
 class AbstractionLevel(StrEnum):
     # label = "Graph"
     spec = "Requirements"
@@ -74,9 +68,6 @@ class Config:
         self.builder = _flowco_get_env("builder", "node-passes")
         self.sequential = bool(int(_flowco_get_env("sequential", "0")))
         self.zero_temp = _flowco_get_env("zero_temp", "1") != "0"
-        self.regenerate_policy = RegenerationPolicy(
-            _flowco_get_env("regenerate_policy", "merge")
-        )
         self.abstraction_level = AbstractionLevel(
             _flowco_get_env("abstraction_level", "Requirements")
         )
