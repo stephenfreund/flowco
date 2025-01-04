@@ -8,6 +8,9 @@ all:
 	echo "Make sure dot is installed on your system"
 	echo "If not, install it using 'sudo apt-get install graphviz' or similar"
 
+start-dev:
+	cd mxgraph_component/mxgraph_component/frontend; npm run start
+
 
 
 # docker-image:

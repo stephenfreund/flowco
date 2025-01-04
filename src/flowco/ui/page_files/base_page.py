@@ -34,6 +34,10 @@ from flowco.util.config import AbstractionLevel
 
 class FlowcoPage:
 
+    def rerun_with_force_update(self):
+        st.session_state.force_update = True
+        st.rerun()
+
     def sidebar(self):
         ui_page: UIPage = st.session_state.ui_page
         node_id: str | None = st.session_state.selected_node
@@ -61,6 +65,7 @@ class FlowcoPage:
                 def fix():
                     if st.session_state.abstraction_level is None:
                         st.session_state.abstraction_level = "Requirements"
+                    self.rerun_with_force_update()
 
                 st.segmented_control(
                     "Abstraction Level",
@@ -116,7 +121,7 @@ class FlowcoPage:
 
         self.show_node_details(node)
 
-    def show_ama(self, node: Node):
+    def show_ama(self, node: Node | None):
         page = st.session_state.ui_page.page()
         if st.session_state.ama is None or st.session_state.ama.page != page:
             st.session_state.ama = AskMeAnything(page)
@@ -173,12 +178,12 @@ class FlowcoPage:
     def ama_completion(self, container, prompt):
         page = st.session_state.ui_page.page()
         dfg = page.dfg
-        try:
-            with container:
-                with st.chat_message("user"):
-                    st.markdown(prompt)
+        with container:
+            with st.chat_message("user"):
+                st.markdown(prompt)
 
-                empty = st.empty()
+            empty = st.empty()
+            try:
                 with empty.chat_message("assistant"):
                     response = st.write_stream(
                         st.session_state.ama.complete(
@@ -191,17 +196,17 @@ class FlowcoPage:
                         st.session_state.ama.last_message().content,
                         unsafe_allow_html=True,
                     )
-        except Exception as e:
-            with empty.chat_message("assistant"):
-                st.error(f"An error occurred in AMA: {e}")
-                st.stop()
-        finally:
-            time.sleep(1)
-            st.session_state.ama_responding = False
-            if dfg != page.dfg:
-                st.session_state.force_update = True
-                self.auto_update()
-            st.rerun()
+            except Exception as e:
+                with empty.chat_message("assistant"):
+                    st.error(f"An error occurred in AMA: {e}")
+                    st.stop()
+            finally:
+                time.sleep(1)
+                st.session_state.ama_responding = False
+                if dfg != page.dfg:
+                    st.session_state.force_update = True
+                    self.auto_update()
+                st.rerun()
 
     def auto_update(self):
         pass

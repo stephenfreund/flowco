@@ -81,13 +81,13 @@ class AskMeAnything:
 
         result = session.get("shells", PythonShells).run(init_code + "\n" + code)
         result_output = result.as_result_output()
-        return "Running code", result_output.to_prompt()
+        return "Finished running code", result_output.to_prompt()
 
     def inspect(self, id: str) -> ReturnType:
         """
         {
             "name": "inspect",
-            "description": "Inspect the output for a node in the diagram",
+            "description": "Inspect the output for a node in the diagram, including any generated plots.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -110,12 +110,12 @@ class AskMeAnything:
         else:
             if result.output is not None:
                 return (
-                    f"Inspecting the output for {node.pill}",
+                    f"Inspected the output for {node.pill}",
                     result.output.to_prompt(),
                 )
             else:
                 return (
-                    f"Inspecting the result for {node.pill}",
+                    f"Inspected the result for {node.pill}",
                     result.result.to_prompt(),
                 )
 
@@ -131,7 +131,7 @@ class AskMeAnything:
         """
         {
             "name": "update_node",
-            "description": "Modify a node in the diagram.  You must preserve consistency between the pill, label, requirements, algorithm, and code",
+            "description": "Modify a node in the diagram.  You must preserve consistency between the pill, label, requirements, algorithm, and code.  Use null for node parts you don't want to modify.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -180,33 +180,32 @@ class AskMeAnything:
             return (f"Node {id} does not exist", None)
 
         node = dfg[id]
-        if pill:
-            node = node.update(pill=pill)
-        if label:
-            node = node.update(label=label)
-        if code:
+        mods = []
+        if code and code != node.code:
+            log(f"Updating code to {code}")
             node = node.update(code=code, phase=Phase.algorithm)
-        if algorithm:
+            mods.append("code")
+        if algorithm and algorithm != node.algorithm:
+            log(f"Updating algorithm to {algorithm}")
             node = node.update(algorithm=algorithm, phase=Phase.requirements)
-        if requirements:
+            mods.append("algorithm")
+        if requirements and requirements != node.requirements:
+            log(f"Updating requirements to {requirements}")
             node = node.update(requirements=requirements, phase=Phase.clean)
+            mods.append("requirements")
+        if label and label != node.label:
+            log(f"Updating label to {label}")
+            node = node.update(label=label, phase=Phase.clean)
+            mods.append("label")
+        if pill and pill != node.pill:
+            log(f"Updating pill to {pill}")
+            node = node.update(pill=pill, phase=Phase.clean)
+            mods.append("pill")
 
         dfg = dfg.with_node(node)
         self.page.update_dfg(dfg)
 
-        mods = []
-        if pill:
-            mods.append(f"pill")
-        if label:
-            mods.append(f"label")
-        if requirements:
-            mods.append(f"requirements")
-        if algorithm:
-            mods.append(f"algorithm")
-        if code:
-            mods.append(f"code")
-
-        mod_str = ", ".join(mods)
+        mod_str = ", ".join(reversed(mods))
 
         return (f"Updated {mod_str} for {node.pill}", node.model_dump_json(indent=2))
 
@@ -679,7 +678,7 @@ class AskMeAnything:
                     # type_description = node.function_return_type.type_description()
                     locals += f"`{node.function_result_var} : {node.function_return_type.to_python_type()}` is {node.function_return_type.description}\n\n"
 
-            locals += "\nYou have access to these files:\n" + "\n".join(
+            locals += "\nYou have access to these files:\n" + str(
                 self.page.tables.as_preconditions()
             )
 

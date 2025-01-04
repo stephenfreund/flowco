@@ -75,14 +75,14 @@ def from_dfg(dfg: DataFlowGraph, level: AbstractionLevel) -> MxDiagram:
 
     # Convert Nodes
     mx_nodes: Dict[str, DiagramNode] = {}
+
+    html_keys = ["pill", "label", "requirements", "result"]
+    if AbstractionLevel.show_algorithm(level):
+        html_keys += ["algorithm"]
+    if AbstractionLevel.show_code(level):
+        html_keys += ["code"]
+
     for node in dfg.nodes:
-
-        html_keys = ["pill", "label", "requirements", "result"]
-        if AbstractionLevel.show_algorithm(level):
-            html_keys += ["algorithm"]
-        if AbstractionLevel.show_code(level):
-            html_keys += ["code"]
-
         diagram_node = DiagramNode(
             id=node.id,
             pill=node.pill,
@@ -93,11 +93,9 @@ def from_dfg(dfg: DataFlowGraph, level: AbstractionLevel) -> MxDiagram:
             output_geometry=node.output_geometry,
             output=get_output(node),
             build_status=node.build_status,
-            html = md_to_html(node.to_markdown(keys=html_keys)),
+            html=md_to_html(node.to_markdown(keys=html_keys)),
         )
         mx_nodes[node.id] = diagram_node
-
-
 
     # Convert Edges
     mx_edges: Dict[str, DiagramEdge] = {}

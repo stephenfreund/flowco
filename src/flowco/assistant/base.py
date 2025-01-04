@@ -37,13 +37,9 @@ class AssistantBase:
         if isinstance(content, dict):
             content = [content]
 
-        if not isinstance(content, str):
+        if not isinstance(content, str) and not supports_vision(config.model):
             for message in content:
-                if (
-                    isinstance(message, dict)
-                    and message["type"] == "image_url"
-                    and not supports_vision(config.model)
-                ):
+                if isinstance(message, dict) and message["type"] == "image_url":
                     warn(
                         f"Skipping image message because model {config.model} does not support vision."
                     )
@@ -51,7 +47,7 @@ class AssistantBase:
             content = [
                 message
                 for message in content
-                if isinstance(message, dict) and message["type"] != "image_url"
+                if not (isinstance(message, dict) and message["type"] == "image_url")
             ]
 
         self.messages.append({"role": role, "content": content})

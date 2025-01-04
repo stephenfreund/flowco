@@ -211,9 +211,11 @@ class StreamingAssistantWithFunctionCalls(AssistantBase):
         add_cost(cost)
 
     def _trim_conversation(self):
-        pass
-        # old_len = litellm.token_counter(self.model, messages=self.messages)
-
+        old_len = litellm.utils.token_counter(self.model, messages=self.messages)
+        log(f"Conversation has {old_len} tokens.")
+        if old_len > 50000:
+            for m in self.messages:
+                print(litellm.utils.token_counter(self.model, messages=[m]), m)
         # self.messages = trim_messages(self.messages, self.model)
 
         # new_len = litellm.token_counter(self.model, messages=self.messages)
@@ -221,46 +223,55 @@ class StreamingAssistantWithFunctionCalls(AssistantBase):
         #     warn(f"Trimming conversation from {old_len} to {new_len} tokens.")
 
     def _add_function_results_to_conversation(self, response_message):
+
+        def make_response(tool_call, content):
+            response = {
+                "tool_call_id": tool_call.id,
+                "role": "tool",
+                "name": tool_call.function.name,
+                "content": content,
+            }
+            self.messages.append(response)
+
         response_message["role"] = "assistant"
         tool_calls = response_message.tool_calls
         try:
             for tool_call in tool_calls:
                 user_response, function_response = self._make_call(tool_call)
-
+                yield f"\n* **{user_response}.**\n\n"
                 if function_response is None:
-                    function_response_str = ""
+                    make_response(tool_call, user_response)
                 elif isinstance(function_response, str):
-                    function_response_str = function_response
+                    make_response(tool_call, function_response)
                 elif function_response["type"] == "text":
-                    function_response_str = function_response["text"]
-                    function_response_str = sandwich_tokens(
-                        function_response_str, self.model, 8192 * 2, 0.5
-                    )
+                    content = function_response["text"]
+                    content = sandwich_tokens(content, self.model, 8192 * 2, 0.5)
+                    make_response(tool_call, content)
                 elif function_response["type"] == "image_url":
                     id = str(uuid.uuid4())[:6]
                     key = f"result-{id}"
                     self.image_cache[key] = function_response["image_url"]["url"]
-                    function_response_str = (
-                        json.dumps(function_response, indent=2)
-                        + f"\n refer to this image as ![code_result]({key}.png) to show it in your response."
+                    content = f"The result is the image '{key}.png'."
+                    make_response(tool_call, content)
+                    self.add_message(
+                        role="user",
+                        content=[
+                            {
+                                "type": "text",
+                                "text": f"Here is image '{key}.png'.",
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": function_response["image_url"]["url"],
+                            },
+                        ],
                     )
+                    yield f"![code_result]({key}.png)"
                 else:
-                    function_response_str = (
-                        f"Unknown response type: {function_response['type']}"
-                    )
-                    function_response_str = sandwich_tokens(
-                        function_response_str, self.model, 8192 * 2, 0.5
-                    )
+                    content = f"Unknown response type: {function_response['type']}"
+                    content = sandwich_tokens(content, self.model, 8192 * 2, 0.5)
+                    make_response(tool_call, content)
 
-                response = {
-                    "tool_call_id": tool_call.id,
-                    "role": "tool",
-                    "name": tool_call.function.name,
-                    "content": f"{user_response}\n{function_response_str}",
-                }
-
-                yield f"\n* **{user_response}.**\n\n"
-                self.messages.append(response)
         except Exception as e:
             error(
                 f"An exception occurred while processing tool calls: {e}\n{traceback.format_exc()}"
