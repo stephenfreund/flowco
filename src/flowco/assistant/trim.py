@@ -12,7 +12,7 @@ def sandwich_tokens(
 ) -> str:
     if max_tokens == None:
         return text
-    tokens = litellm.encode(model, text)
+    tokens = litellm.utils.encode(model, text)
     if len(tokens) <= max_tokens:
         return text
     else:
@@ -20,14 +20,14 @@ def sandwich_tokens(
         top_len = int(top_proportion * total_len)
         bot_start = len(tokens) - (total_len - top_len)
         return (
-            litellm.decode(model, tokens[0:top_len])
+            litellm.utils.decode(model, tokens[0:top_len])
             + " [...] "
-            + litellm.decode(model, tokens[bot_start:])
+            + litellm.utils.decode(model, tokens[bot_start:])
         )
 
 
 def _sum_messages(messages, model):
-    return litellm.token_counter(model, messages=messages)
+    return litellm.utils.token_counter(model, messages=messages)
 
 
 def _sum_kept_chunks(chunks, model):
@@ -39,9 +39,9 @@ def _extract(messages, model, tool_call_ids):
     other = []
     for m in messages:
         if m.get("tool_call_id", -1) in tool_call_ids:
-            content = sandwich_tokens(m["content"], model, 512, 1.0)
-            # print(len(litellm.encode(model, m['content'])), '->', len(litellm.encode(model, content)))
-            m["content"] = content
+            # content = sandwich_tokens(m["content"], model, 512, 1.0)
+            # # print(len(litellm.encode(model, m['content'])), '->', len(litellm.encode(model, content)))
+            # m["content"] = content
             tools += [m]
         else:
             other += [m]
@@ -53,7 +53,7 @@ def _chunkify(messages, model):
         return []
     m = messages[0]
     if "tool_calls" not in m:
-        m["content"] = sandwich_tokens(m["content"], model, 1024, 0)
+        # m["content"] = sandwich_tokens(m["content"], model, 1024, 0)
         return [([m], False)] + _chunkify(messages[1:], model)
     else:
         ids = [tool_call["id"] for tool_call in m["tool_calls"]]
@@ -83,7 +83,7 @@ def trim_messages(
     max_tokens_for_model = litellm.model_cost[model]["max_input_tokens"]
     max_tokens = int(max_tokens_for_model * trim_ratio)
 
-    if litellm.token_counter(model, messages=messages) < max_tokens:
+    if litellm.utils.token_counter(model, messages=messages) < max_tokens:
         return messages
 
     chunks = _chunkify(messages=messages, model=model)
@@ -93,12 +93,12 @@ def trim_messages(
     chunks = [(m, b or m[0]["role"] == "system") for (m, b) in chunks]
     # print("1", sum_kept_chunks(chunks, model))
 
-    # 2. First User Message
-    for i in range(len(chunks)):
-        messages, kept = chunks[i]
-        if messages[0]["role"] == "user":
-            chunks[i] = (messages, True)
-    # print("2", sum_kept_chunks(chunks, model))
+    # # 2. First User Message
+    # for i in range(len(chunks)):
+    #     messages, kept = chunks[i]
+    #     if messages[0]["role"] == "user":
+    #         chunks[i] = (messages, True)
+    # # print("2", sum_kept_chunks(chunks, model))
 
     # 3. Fill it up
     for i in range(len(chunks))[::-1]:

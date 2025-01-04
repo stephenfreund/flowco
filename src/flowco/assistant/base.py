@@ -13,7 +13,7 @@ class AssistantBase:
         self, system_prompt_key: str | list[str], **system_prompt_substitutions
     ) -> None:
         self.instructor_client = instructor.from_litellm(litellm.completion)
-        self.messages: list[str | dict[str, any]] = []
+        self.messages: list[dict[str, any]] = []
 
         if isinstance(system_prompt_key, str):
             self.add_message(

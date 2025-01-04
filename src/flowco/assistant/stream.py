@@ -1,6 +1,6 @@
 import traceback
 from flowco.assistant.base import AssistantBase
-from flowco.assistant.trim import sandwich_tokens
+from flowco.assistant.trim import sandwich_tokens, trim_messages
 from flowco.util.output import error, log, warn
 from flowco.util.costs import add_cost
 from typing import (
@@ -216,11 +216,11 @@ class StreamingAssistantWithFunctionCalls(AssistantBase):
         if old_len > 50000:
             for m in self.messages:
                 print(litellm.utils.token_counter(self.model, messages=[m]), m)
-        # self.messages = trim_messages(self.messages, self.model)
+        self.messages = trim_messages(self.messages, self.model)
 
-        # new_len = litellm.token_counter(self.model, messages=self.messages)
-        # if old_len != new_len:
-        #     warn(f"Trimming conversation from {old_len} to {new_len} tokens.")
+        new_len = litellm.utils.token_counter(self.model, messages=self.messages)
+        if old_len != new_len:
+            warn(f"Trimming conversation from {old_len} to {new_len} tokens.")
 
     def _add_function_results_to_conversation(self, response_message):
 

@@ -49,7 +49,7 @@ def st_init(page_config=True):
 
         st.session_state.show_description = False
         st.session_state.show_output = True
-        st.session_state.show_ama = False
+        st.session_state.show_ama = True
 
         st.session_state.current_page = None
 
@@ -64,7 +64,3 @@ def st_init(page_config=True):
         st.session_state.ama = None
 
         st.session_state.code_editor = None
-
-
-
-

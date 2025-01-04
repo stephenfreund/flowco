@@ -37,6 +37,9 @@ def settings(ui_page: UIPage):
         config.x_no_dfg_image_in_prompt = st.toggle(
             "Dont' send dataflow image in prompt", value=config.x_no_dfg_image_in_prompt
         )
+        config.x_trust_ama = st.toggle(
+            "Trust AMA to provide correct completions", value=config.x_trust_ama
+        )
 
         builders = config.get_build_passes_keys()
         config.builder = st.selectbox(

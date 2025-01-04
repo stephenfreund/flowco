@@ -611,8 +611,30 @@ PDSeriesType.model_rebuild()
 NumpyNdarrayType.model_rebuild()
 ExtendedType.model_rebuild()
 
+
+class update_node(BaseModel):
+    id: str = Field(description="The id of the node to modify.")
+    label: str = Field(
+        description="The new label of the node.  Keep in sync with the requirements, algorithm, and code."
+    )
+    requirements: List[str] = Field(
+        description="A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well."
+    )
+    return_type: ExtendedType = Field(description="The return type of the node.")
+    algorithm: List[str] = Field(description="The algorithm of the node.")
+    code: List[str] = Field(
+        description="The code for the node.  Only modify if there is already an code.  The code should be a list of strings, one for each line of code.  The signature must match the original version, except for the return type"
+    )
+
+
 if __name__ == "__main__":
+
     from openai import OpenAI
+    import openai
+
+    print("---")
+    print(openai.pydantic_function_tool(update_node))
+    print("---")
 
     client = OpenAI()
 
