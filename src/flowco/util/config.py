@@ -81,6 +81,7 @@ class Config:
             _flowco_get_env("x_no_dfg_image_in_prompt", "0") != "0"
         )
         self.x_trust_ama = _flowco_get_env("x_trust_ama", "1") != "0"
+        self.x_algorithm_phase = _flowco_get_env("a_algorithm_phase", "0") != "0"
 
     def get_x_options(self) -> Dict[str, Any]:
         return {k: v for k, v in vars(self).items() if k.startswith("x_")}
@@ -237,6 +238,15 @@ class Config:
             nargs=0,
             default=self.x_trust_ama,
             help="Trust the AMA to provide the correct output",
+            action=StoreTrueConfigAction,
+            config=self,
+        )
+        parser.add_argument(
+            "--x_algorithm_phase",
+            type=bool,
+            nargs=0,
+            default=self.x_algorithm_phase,
+            help="Include the algorithm phase",
             action=StoreTrueConfigAction,
             config=self,
         )

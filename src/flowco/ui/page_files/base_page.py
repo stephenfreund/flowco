@@ -16,9 +16,7 @@ from flowco.page.output import OutputType
 from flowco.ui.ui_dialogs import settings
 from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_util import (
-    show_algorithm,
     show_code,
-    show_requirements,
     toggle,
 )
 import streamlit as st
@@ -33,10 +31,6 @@ from flowco.util.config import AbstractionLevel
 
 
 class FlowcoPage:
-
-    def rerun_with_force_update(self):
-        st.session_state.force_update = True
-        st.rerun()
 
     def sidebar(self):
         ui_page: UIPage = st.session_state.ui_page
@@ -59,33 +53,61 @@ class FlowcoPage:
 
         # st.select_slider(
         with st.container(key="controls"):
-            c = st.columns(2)
-            with c[0]:
+            if config.x_algorithm_phase:
+                c = st.columns(2)
+                with c[0]:
+
+                    def fix():
+                        if st.session_state.abstraction_level is None:
+                            st.session_state.abstraction_level = "Requirements"
+                        st.session_state.force_update = True
+
+                    st.segmented_control(
+                        "Abstraction Level",
+                        (
+                            AbstractionLevel
+                            if config.x_algorithm_phase
+                            else [AbstractionLevel.spec, AbstractionLevel.code]
+                        ),
+                        key="abstraction_level",
+                        on_change=fix,
+                        disabled=not self.graph_is_editable(),
+                    )
+                with c[1]:
+                    st.pills(
+                        "Show:",
+                        ["Output"]
+                        + (["Description"] if not config.x_no_descriptions else [])
+                        + ["AMA"],
+                        default=(["Output"] if st.session_state.show_output else [])
+                        + (["Description"] if st.session_state.show_description else [])
+                        + (["AMA"] if st.session_state.show_ama else []),
+                        selection_mode="multi",
+                        key="show_pills",
+                        disabled=not self.graph_is_editable(),
+                    )
+
+            else:
 
                 def fix():
-                    if st.session_state.abstraction_level is None:
-                        st.session_state.abstraction_level = "Requirements"
-                    self.rerun_with_force_update()
+                    if "Code" in st.session_state.show_pills:
+                        st.session_state.abstraction_level = AbstractionLevel.code
+                    else:
+                        st.session_state.abstraction_level = AbstractionLevel.spec
+                    st.session_state.force_update = True
 
-                st.segmented_control(
-                    "Abstraction Level",
-                    AbstractionLevel,
-                    key="abstraction_level",
-                    on_change=fix,
-                    disabled=not self.graph_is_editable(),
-                )
-            with c[1]:
+                pills = ["AMA", "Output", "Code"]
+                default = ["AMA", "Output"]
+
                 st.pills(
                     "Show:",
-                    ["Output"]
-                    + (["Description"] if not config.x_no_descriptions else [])
-                    + ["AMA"],
-                    default=(["Output"] if st.session_state.show_output else [])
-                    + (["Description"] if st.session_state.show_description else [])
-                    + (["AMA"] if st.session_state.show_ama else []),
+                    pills,
+                    default=default,
                     selection_mode="multi",
                     key="show_pills",
                     disabled=not self.graph_is_editable(),
+                    on_change=fix,
+                    label_visibility="collapsed",
                 )
 
         self.show_ama(node)
@@ -143,13 +165,14 @@ class FlowcoPage:
                             st.markdown(message.content, unsafe_allow_html=True)
 
                 if "AMA" in st.session_state.show_pills:
-                    st.audio_input(
+                    if st.audio_input(
                         "Record a voice message",
                         label_visibility="collapsed",
                         key="voice_input",
                         on_change=lambda: self.ama_voice_input(container),
                         disabled=not self.graph_is_editable(),
-                    )
+                    ):
+                        st.rerun()
 
                 if (
                     len(st.session_state.ama) > 0
@@ -209,7 +232,7 @@ class FlowcoPage:
                 if dfg != page.dfg:
                     st.session_state.force_update = True
                     self.auto_update()
-                st.rerun()
+                st.rerun()  # TODO: This could be in a callback!
 
     def auto_update(self):
         pass
@@ -268,11 +291,11 @@ class FlowcoPage:
             #             ]
             #             st.write("\n".join(algorithm))
 
-            # with st.container(key="node_code"):
-            #     if show_code() and node is not None:
-            #         st.write("#### Code")
-            #         if node.code is not None:
-            #             st.code("\n".join(node.code))
+            with st.container(key="node_code"):
+                if show_code() and node is not None:
+                    st.write("#### Code")
+                    if node.code is not None:
+                        st.code("\n".join(node.code))
 
     def show_output(self, node: Node):
         if node is not None and node.result is not None:

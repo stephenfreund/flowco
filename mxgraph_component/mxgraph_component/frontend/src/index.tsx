@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import * as _ from "lodash";
 
 import { DiagramNode, DiagramEdge, mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, NodeValue, node_style, labelForEdge, toSnakeCase, node_hover_style, clean_color, isDiagramNode } from "./diagram";
+import { stat } from "fs";
 
 var currentDiagram: mxDiagram | undefined = undefined;
 var currentRefreshPhase = 0;
@@ -433,11 +434,11 @@ function shouldHandleHover(cell: mxCell): boolean {
 function showCustomBox(cell: any): void {
   if (cell.value && cell.value.html) {
     const state = graph.getView().getState(cell);
-    const x = state.x + 5;
-    const y = state.y + 5
+    const x = state.x + state.width * 2 / 3;
+    const y = state.y + state.height * 2 / 3;
     const box = document.getElementById('customBox')!;
-    box.style.left = `${x + 25}px`;
-    box.style.top = `${y + 10}px`;
+    box.style.left = `${x}px`;
+    box.style.top = `${y}px`;
     box.style.display = 'block';
     box.style.fontSize = '12px';
     box.style.fontFamily = 'Arial';

@@ -84,7 +84,9 @@ class UndoStack:
                     version=dfg.version + 1,
                 )
                 self.redo_stack.append(current)
-            return dfg
+                return dfg
+            else:
+                return current
 
     # No op if in atomic operation or nothing left
     def redo(self, current: DataFlowGraph):
@@ -93,7 +95,9 @@ class UndoStack:
                 dfg = self.redo_stack.pop()
                 dfg = dfg.update(version=dfg.version + 1)
                 self.undo_stack.append(current)
-            return dfg
+                return dfg
+            else:
+                return current
 
     def inc(self, current: DataFlowGraph):
         with self.lock:

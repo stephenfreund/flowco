@@ -187,6 +187,12 @@ class OpenAIAssistant:
             "response_format": t,
         }
         if self.interactive:
+
+            if config.x_algorithm_phase:
+                interactive_phases = ["Requirements", "Algorithm", "Code"]
+            else:
+                interactive_phases = ["Requirements", "Code"]
+
             args["tools"] = [
                 {
                     "type": "function",
@@ -202,7 +208,7 @@ class OpenAIAssistant:
                             "properties": {
                                 "phase": {
                                     "type": "string",
-                                    "description": "The phase of the question.  Either 'Requirements', 'Algorithm', or 'Code'.",
+                                    "description": f"The phase of the question.  Either: {', '.join(interactive_phases)}",
                                 },
                                 "question": {
                                     "type": "string",

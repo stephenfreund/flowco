@@ -44,7 +44,12 @@ def st_init(page_config=True):
 
         st.session_state.abstraction_level = config.abstraction_level
         st.session_state.show_requirements = True
-        st.session_state.show_algorithm = True
+
+        if config.x_algorithm_phase:
+            st.session_state.show_algorithm = True
+        else:
+            st.session_state.show_algorithm = False
+
         st.session_state.show_code = True
 
         st.session_state.show_description = False

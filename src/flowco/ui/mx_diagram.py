@@ -1,10 +1,8 @@
-from sys import version
 from typing import Dict, Optional
 from pydantic import BaseModel, Field
 
 from flowco.dataflow.dfg import DataFlowGraph, Node, Geometry
-from flowco.page.output import OutputType
-from flowco.util.config import AbstractionLevel
+from flowco.util.config import config, AbstractionLevel
 from flowco.util.text import md_to_html
 
 
@@ -77,8 +75,11 @@ def from_dfg(dfg: DataFlowGraph, level: AbstractionLevel) -> MxDiagram:
     mx_nodes: Dict[str, DiagramNode] = {}
 
     html_keys = ["pill", "label", "requirements", "result"]
-    if AbstractionLevel.show_algorithm(level):
-        html_keys += ["algorithm"]
+
+    if config.x_algorithm_phase:
+        if AbstractionLevel.show_algorithm(level):
+            html_keys += ["algorithm"]
+
     if AbstractionLevel.show_code(level):
         html_keys += ["code"]
 

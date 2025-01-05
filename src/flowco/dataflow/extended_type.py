@@ -612,6 +612,7 @@ NumpyNdarrayType.model_rebuild()
 ExtendedType.model_rebuild()
 
 
+# Hack to get schema for ama.py
 class update_node(BaseModel):
     id: str = Field(description="The id of the node to modify.")
     label: str = Field(

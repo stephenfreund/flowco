@@ -336,36 +336,40 @@ def algorithm(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node
     assert node.requirements is not None, "Requirements must be defined."
     assert node.description is not None, "Description must be defined."
 
-    if graph.successors(node.id):
-        assert node.function_return_type is not None, "Return type must be defined."
-        assert (
-            node.function_computed_value is not None
-        ), "Computed value must be defined."
+    if config.x_algorithm_phase:
+        if graph.successors(node.id):
+            assert node.function_return_type is not None, "Return type must be defined."
+            assert (
+                node.function_computed_value is not None
+            ), "Computed value must be defined."
 
-    # Check cache
-    if node.cache.matches_in_and_out(Phase.algorithm, node):
-        log("Using cache for algorithm.")
-        return node.update(phase=Phase.algorithm)
+        # Check cache
+        if node.cache.matches_in_and_out(Phase.algorithm, node):
+            log("Using cache for algorithm.")
+            return node.update(phase=Phase.algorithm)
 
-    with logger("Diff instructions"):
-        diff_instructions = cache_prompt(Phase.algorithm, node, "algorithm")
+        with logger("Diff instructions"):
+            diff_instructions = cache_prompt(Phase.algorithm, node, "algorithm")
 
-    with logger("Algorithm Completion"):
-        assistant = algorithm_assistant(node, diff_instructions)
-        completion_model = algorithm_completion_model()
-        completion = assistant.completion(completion_model)
+        with logger("Algorithm Completion"):
+            assistant = algorithm_assistant(node, diff_instructions)
+            completion_model = algorithm_completion_model()
+            completion = assistant.completion(completion_model)
+            new_node = update_node_with_completion(node, completion)
 
-    with logger("Update node with completion"):
-        new_node = update_node_with_completion(node, completion)
-        new_node = new_node.update(phase=Phase.algorithm)
-        new_node = new_node.update(
-            cache=new_node.cache.update(Phase.algorithm, new_node)
-        )
+    else:
+        new_node = node
+
+    new_node = new_node.update(phase=Phase.algorithm)
+    new_node = new_node.update(cache=new_node.cache.update(Phase.algorithm, new_node))
 
     return new_node
 
 
 def algorithm_assistant(node, diff_instructions, interactive=False):
+
+    assert config.x_algorithm_phase, "Algorithm phase must be enabled."
+
     assistant = OpenAIAssistant(
         config.model,
         interactive=interactive,
@@ -398,6 +402,9 @@ def algorithm_assistant(node, diff_instructions, interactive=False):
 
 
 def algorithm_completion_model():
+
+    assert config.x_algorithm_phase, "Algorithm phase must be enabled."
+
     completion_model = node_completion_model("algorithm")
     return completion_model
 
@@ -405,6 +412,9 @@ def algorithm_completion_model():
 def interactive_algorithm_assistant(
     pass_config: PassConfig, graph: DataFlowGraph, node: Node, new_algorithm: List[str]
 ) -> Tuple[OpenAIAssistant, BaseModel]:
+
+    assert config.x_algorithm_phase, "Algorithm phase must be enabled."
+
     with logger("Algorithm step"):
         assert node.function_parameters is not None, "Parameters must be defined."
         assert node.preconditions is not None, "Preconditions must be defined."
@@ -456,7 +466,9 @@ def compile(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
         assert node.preconditions is not None, "Preconditions must be defined."
         assert node.requirements is not None, "Requirements must be defined."
         assert node.description is not None, "Description must be defined."
-        assert node.algorithm is not None, "Algorithm must be defined."
+
+        if config.x_algorithm_phase:
+            assert node.algorithm is not None, "Algorithm must be defined."
 
         if graph.successors(node.id):
             assert node.function_return_type is not None, "Return type must be defined."
@@ -502,23 +514,24 @@ def code_assistant(node: Node, diff_instructions, interactive=False):
         diff=diff_instructions,
     )
 
+    node_fields = [
+        "id",
+        "pill",
+        "preconditions",
+        "requirements",
+        "description",
+        "function_return_type",
+        "function_computed_value",
+        "function_parameters",
+        "function_result_var",
+    ]
+
+    if config.x_algorithm_phase:
+        node_fields.append("algorithm")
+
     assistant.add_message(
         "user",
-        messages_for_node(
-            node=node,
-            node_fields=[
-                "id",
-                "pill",
-                "preconditions",
-                "requirements",
-                "description",
-                "function_return_type",
-                "function_computed_value",
-                "function_parameters",
-                "function_result_var",
-                "algorithm",
-            ],
-        ),
+        messages_for_node(node=node, node_fields=node_fields),
     )
 
     return assistant
@@ -538,7 +551,9 @@ def interactive_code_assistant(
         assert node.preconditions is not None, "Preconditions must be defined."
         assert node.requirements is not None, "Requirements must be defined."
         assert node.description is not None, "Description must be defined."
-        assert node.algorithm is not None, "Algorithm must be defined."
+
+        if config.x_algorithm_phase:
+            assert node.algorithm is not None, "Algorithm must be defined."
 
         if graph.successors(node.id):
             assert node.function_return_type is not None, "Return type must be defined."
@@ -565,10 +580,18 @@ def interactive_code_assistant(
             ```
             {newline.join([ f"* {x}" for x in node.requirements])}
             ```
+            """
+            + (
+                f"""\
             The code must also conform to the algorithm:
             ```
             {newline.join([ f"{x}" for x in node.algorithm])}
             ```
+            """
+                if config.x_algorithm_phase and node.algorithm
+                else ""
+            )
+            + f"""\
 
             Also improve that new code for clarity and precision.  If there are any ambiguiuties
             or contradictions, ask for clarification.
@@ -591,6 +614,9 @@ def interactive_code_assistant(
     pred_required_phase=Phase.requirements,
 )
 def full_pass(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
+
+    assert config.x_algorithm_phase, "Algorithm phase must be enabled."
+
     with logger("Requirements-To-Code step"):
 
         # Compute inputs
@@ -654,6 +680,9 @@ def full_assistant(
     diff: Dict[Phase, str],
     interactive=False,
 ):
+
+    assert config.x_algorithm_phase, "Algorithm phase must be enabled."
+
     phase = node.phase
     params = ", ".join([str(p) for p in node.function_parameters])
 
@@ -732,6 +761,9 @@ def full_assistant(
 
 
 def full_completion(assistant: OpenAIAssistant, phase: Phase):
+
+    assert config.x_algorithm_phase, "Algorithm phase must be enabled."
+
     fields = []
     if phase < Phase.requirements:
         if not config.x_no_descriptions:

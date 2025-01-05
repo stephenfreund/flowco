@@ -120,302 +120,30 @@ class AskMeAnything:
                     result.result.to_prompt(),
                 )
 
-    def update_node(
-        self,
-        id: str,
-        pill: str | None = None,
-        label: str | None = None,
-        requirements: List[str] | None = None,
-        function_return_type: ExtendedType | None = None,
-        algorithm: List[str] | None = None,
-        code: List[str] | None = None,
-    ) -> ReturnType:
-        """\
-        {"name": "update_node",
-        "strict": true,
-        "parameters": {"$defs": {"AnyType": {"properties": {"type": {"const": "Any", "title": "Type", "type": "string"
-                            }
-                        }, "required": ["type"
-                        ], "title": "AnyType", "type": "object", "additionalProperties": false
-                    }, "BoolType": {"properties": {"type": {"const": "bool", "title": "Type", "type": "string"
-                            }
-                        }, "required": ["type"
-                        ], "title": "BoolType", "type": "object", "additionalProperties": false
-                    }, "ExtendedType": {"properties": {"the_type": {"anyOf": [
-                                    {"$ref": "#/$defs/IntType"
-                                    },
-                                    {"$ref": "#/$defs/BoolType"
-                                    },
-                                    {"$ref": "#/$defs/StrType"
-                                    },
-                                    {"$ref": "#/$defs/AnyType"
-                                    },
-                                    {"$ref": "#/$defs/NoneType"
-                                    },
-                                    {"$ref": "#/$defs/FloatType"
-                                    },
-                                    {"$ref": "#/$defs/OptionalType"
-                                    },
-                                    {"$ref": "#/$defs/ListType"
-                                    },
-                                    {"$ref": "#/$defs/TypedDictType"
-                                    },
-                                    {"$ref": "#/$defs/TupleType"
-                                    },
-                                    {"$ref": "#/$defs/SetType"
-                                    },
-                                    {"$ref": "#/$defs/PDDataFrameType"
-                                    },
-                                    {"$ref": "#/$defs/PDSeriesType"
-                                    },
-                                    {"$ref": "#/$defs/NumpyNdarrayType"
-                                    }
-                                ], "title": "The Type"
-                            }, "description": {"description": "A description of what this type represents. Indicate how to interpret each component of the type.", "title": "Description", "type": "string"
-                            }
-                        }, "required": ["the_type", "description"
-                        ], "title": "ExtendedType", "type": "object", "additionalProperties": false
-                    }, "FloatType": {"properties": {"type": {"const": "float", "title": "Type", "type": "string"
-                            }
-                        }, "required": ["type"
-                        ], "title": "FloatType", "type": "object", "additionalProperties": false
-                    }, "IntType": {"properties": {"type": {"const": "int", "title": "Type", "type": "string"
-                            }
-                        }, "required": ["type"
-                        ], "title": "IntType", "type": "object", "additionalProperties": false
-                    }, "KeyType": {"properties": {"key": {"title": "Key", "type": "string"
-                            }, "type": {"anyOf": [
-                                    {"$ref": "#/$defs/IntType"
-                                    },
-                                    {"$ref": "#/$defs/BoolType"
-                                    },
-                                    {"$ref": "#/$defs/StrType"
-                                    },
-                                    {"$ref": "#/$defs/AnyType"
-                                    },
-                                    {"$ref": "#/$defs/NoneType"
-                                    },
-                                    {"$ref": "#/$defs/FloatType"
-                                    },
-                                    {"$ref": "#/$defs/OptionalType"
-                                    },
-                                    {"$ref": "#/$defs/ListType"
-                                    },
-                                    {"$ref": "#/$defs/TypedDictType"
-                                    },
-                                    {"$ref": "#/$defs/TupleType"
-                                    },
-                                    {"$ref": "#/$defs/SetType"
-                                    },
-                                    {"$ref": "#/$defs/PDDataFrameType"
-                                    },
-                                    {"$ref": "#/$defs/PDSeriesType"
-                                    },
-                                    {"$ref": "#/$defs/NumpyNdarrayType"
-                                    }
-                                ], "title": "Type"
-                            }, "description": {"description": "What this key represents.", "title": "Description", "type": "string"
-                            }
-                        }, "required": ["key", "type", "description"
-                        ], "title": "KeyType", "type": "object", "additionalProperties": false
-                    }, "ListType": {"properties": {"type": {"const": "List", "title": "Type", "type": "string"
-                            }, "element_type": {"anyOf": [
-                                    {"$ref": "#/$defs/IntType"
-                                    },
-                                    {"$ref": "#/$defs/BoolType"
-                                    },
-                                    {"$ref": "#/$defs/StrType"
-                                    },
-                                    {"$ref": "#/$defs/AnyType"
-                                    },
-                                    {"$ref": "#/$defs/NoneType"
-                                    },
-                                    {"$ref": "#/$defs/FloatType"
-                                    },
-                                    {"$ref": "#/$defs/OptionalType"
-                                    },
-                                    {"$ref": "#/$defs/ListType"
-                                    },
-                                    {"$ref": "#/$defs/TypedDictType"
-                                    },
-                                    {"$ref": "#/$defs/TupleType"
-                                    },
-                                    {"$ref": "#/$defs/SetType"
-                                    },
-                                    {"$ref": "#/$defs/PDDataFrameType"
-                                    },
-                                    {"$ref": "#/$defs/PDSeriesType"
-                                    },
-                                    {"$ref": "#/$defs/NumpyNdarrayType"
-                                    }
-                                ], "title": "Element Type"
-                            }, "length": {"anyOf": [
-                                    {"type": "integer"
-                                    },
-                                    {"type": "null"
-                                    }
-                                ], "description": "The expected length of the list. If None, the length can be arbitrary.", "title": "Length"
-                            }
-                        }, "required": ["type", "element_type", "length"
-                        ], "title": "ListType", "type": "object", "additionalProperties": false
-                    }, "NoneType": {"properties": {"type": {"const": "None", "title": "Type", "type": "string"
-                            }
-                        }, "required": ["type"
-                        ], "title": "NoneType", "type": "object", "additionalProperties": false
-                    }, "NumpyNdarrayType": {"properties": {"type": {"const": "np.ndarray", "title": "Type", "type": "string"
-                            }, "element_type": {"anyOf": [
-                                    {"$ref": "#/$defs/IntType"
-                                    },
-                                    {"$ref": "#/$defs/BoolType"
-                                    },
-                                    {"$ref": "#/$defs/StrType"
-                                    },
-                                    {"$ref": "#/$defs/AnyType"
-                                    },
-                                    {"$ref": "#/$defs/NoneType"
-                                    },
-                                    {"$ref": "#/$defs/FloatType"
-                                    },
-                                    {"$ref": "#/$defs/OptionalType"
-                                    },
-                                    {"$ref": "#/$defs/ListType"
-                                    },
-                                    {"$ref": "#/$defs/TypedDictType"
-                                    },
-                                    {"$ref": "#/$defs/TupleType"
-                                    },
-                                    {"$ref": "#/$defs/SetType"
-                                    },
-                                    {"$ref": "#/$defs/PDDataFrameType"
-                                    },
-                                    {"$ref": "#/$defs/PDSeriesType"
-                                    },
-                                    {"$ref": "#/$defs/NumpyNdarrayType"
-                                    }
-                                ], "title": "Element Type"
-                            }, "length": {"anyOf": [
-                                    {"type": "integer"
-                                    },
-                                    {"type": "null"
-                                    }
-                                ], "description": "The expected length of the list. If None, the length can be arbitrary.", "title": "Length"
-                            }
-                        }, "required": ["type", "element_type", "length"
-                        ], "title": "NumpyNdarrayType", "type": "object", "additionalProperties": false
-                    }, "OptionalType": {"properties": {"type": {"const": "Optional", "title": "Type", "type": "string"
-                            }, "wrapped_type": {"anyOf": [
-                                    {"$ref": "#/$defs/IntType"
-                                    },
-                                    {"$ref": "#/$defs/BoolType"
-                                    },
-                                    {"$ref": "#/$defs/StrType"
-                                    },
-                                    {"$ref": "#/$defs/AnyType"
-                                    },
-                                    {"$ref": "#/$defs/NoneType"
-                                    },
-                                    {"$ref": "#/$defs/FloatType"
-                                    },
-                                    {"$ref": "#/$defs/OptionalType"
-                                    },
-                                    {"$ref": "#/$defs/ListType"
-                                    },
-                                    {"$ref": "#/$defs/TypedDictType"
-                                    },
-                                    {"$ref": "#/$defs/TupleType"
-                                    },
-                                    {"$ref": "#/$defs/SetType"
-                                    },
-                                    {"$ref": "#/$defs/PDDataFrameType"
-                                    },
-                                    {"$ref": "#/$defs/PDSeriesType"
-                                    },
-                                    {"$ref": "#/$defs/NumpyNdarrayType"
-                                    }
-                                ], "title": "Wrapped Type"
-                            }
-                        }, "required": ["type", "wrapped_type"
-                        ], "title": "OptionalType", "type": "object", "additionalProperties": false
-                    }, "PDDataFrameType": {"properties": {"type": {"const": "pd.DataFrame", "title": "Type", "type": "string"
-                            }, "columns": {"description": "A list of key-value pairs where the key is the column name and the value is the type of the column.", "items": {"$ref": "#/$defs/KeyType"
-                                }, "title": "Columns", "type": "array"
-                            }
-                        }, "required": ["type", "columns"
-                        ], "title": "PDDataFrameType", "type": "object", "additionalProperties": false
-                    }, "PDSeriesType": {"properties": {"type": {"const": "pd.Series", "title": "Type", "type": "string"
-                            }, "element_type": {"anyOf": [
-                                    {"$ref": "#/$defs/IntType"
-                                    },
-                                    {"$ref": "#/$defs/BoolType"
-                                    },
-                                    {"$ref": "#/$defs/StrType"
-                                    },
-                                    {"$ref": "#/$defs/AnyType"
-                                    },
-                                    {"$ref": "#/$defs/NoneType"
-                                    },
-                                    {"$ref": "#/$defs/FloatType"
-                                    },
-                                    {"$ref": "#/$defs/OptionalType"
-                                    },
-                                    {"$ref": "#/$defs/ListType"
-                                    },
-                                    {"$ref": "#/$defs/TypedDictType"
-                                    },
-                                    {"$ref": "#/$defs/TupleType"
-                                    },
-                                    {"$ref": "#/$defs/SetType"
-                                    },
-                                    {"$ref": "#/$defs/PDDataFrameType"
-                                    },
-                                    {"$ref": "#/$defs/PDSeriesType"
-                                    },
-                                    {"$ref": "#/$defs/NumpyNdarrayType"
-                                    }
-                                ], "title": "Element Type"
-                            }
-                        }, "required": ["type", "element_type"
-                        ], "title": "PDSeriesType", "type": "object", "additionalProperties": false
-                    }, "SetType": {"properties": {"type": {"const": "Set", "title": "Type", "type": "string"
-                            }, "element_type": {"anyOf": [
-                                    {"$ref": "#/$defs/IntType"
-                                    },
-                                    {"$ref": "#/$defs/BoolType"
-                                    },
-                                    {"$ref": "#/$defs/StrType"
-                                    },
-                                    {"$ref": "#/$defs/AnyType"
-                                    },
-                                    {"$ref": "#/$defs/NoneType"
-                                    },
-                                    {"$ref": "#/$defs/FloatType"
-                                    },
-                                    {"$ref": "#/$defs/OptionalType"
-                                    },
-                                    {"$ref": "#/$defs/ListType"
-                                    },
-                                    {"$ref": "#/$defs/TypedDictType"
-                                    },
-                                    {"$ref": "#/$defs/TupleType"
-                                    },
-                                    {"$ref": "#/$defs/SetType"
-                                    },
-                                    {"$ref": "#/$defs/PDDataFrameType"
-                                    },
-                                    {"$ref": "#/$defs/PDSeriesType"
-                                    },
-                                    {"$ref": "#/$defs/NumpyNdarrayType"
-                                    }
-                                ], "title": "Element Type"
-                            }
-                        }, "required": ["type", "element_type"
-                        ], "title": "SetType", "type": "object", "additionalProperties": false
-                    }, "StrType": {"properties": {"type": {"const": "str", "title": "Type", "type": "string"
-                            }
-                        }, "required": ["type"
-                        ], "title": "StrType", "type": "object", "additionalProperties": false
-                    }, "TupleType": {"properties": {"type": {"const": "Tuple", "title": "Type", "type": "string"
-                            }, "elements": {"items": {"anyOf": [
+    if config.x_algorithm_phase:
+
+        def update_node(
+            self,
+            id: str,
+            pill: str | None = None,
+            label: str | None = None,
+            requirements: List[str] | None = None,
+            function_return_type: ExtendedType | None = None,
+            algorithm: List[str] | None = None,
+            code: List[str] | None = None,
+        ) -> ReturnType:
+            """\
+            {"name": "update_node",
+            "strict": true,
+            "parameters": {"$defs": {"AnyType": {"properties": {"type": {"const": "Any", "title": "Type", "type": "string"
+                                }
+                            }, "required": ["type"
+                            ], "title": "AnyType", "type": "object", "additionalProperties": false
+                        }, "BoolType": {"properties": {"type": {"const": "bool", "title": "Type", "type": "string"
+                                }
+                            }, "required": ["type"
+                            ], "title": "BoolType", "type": "object", "additionalProperties": false
+                        }, "ExtendedType": {"properties": {"the_type": {"anyOf": [
                                         {"$ref": "#/$defs/IntType"
                                         },
                                         {"$ref": "#/$defs/BoolType"
@@ -444,337 +172,905 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/NumpyNdarrayType"
                                         }
-                                    ]
-                                }, "title": "Elements", "type": "array"
-                            }
-                        }, "required": ["type", "elements"
-                        ], "title": "TupleType", "type": "object", "additionalProperties": false
-                    }, "TypedDictType": {"properties": {"type": {"const": "TypedDict", "title": "Type", "type": "string"
-                            }, "name": {"description": "A unique name for the dictionary type. This is used to generate a unique TypedDict name.", "title": "Name", "type": "string"
-                            }, "items": {"description": "A list of key-value pairs where the key is the key name and the value is the type of the key.", "items": {"$ref": "#/$defs/KeyType"
-                                }, "title": "Items", "type": "array"
-                            }
-                        }, "required": ["type", "name", "items"
-                        ], "title": "TypedDictType", "type": "object", "additionalProperties": false
-                    }
-                }, "properties": {"id": {"description": "The id of the node to modify.", "title": "Id", "type": "string"
-                    }, "label": {"description": "The new label of the node.  Keep in sync with the requirements, algorithm, and code.", "title": "Label", "type": "string"
-                    }, "requirements": {"description": "A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well.", "items": {"type": "string"
-                        }, "title": "Requirements", "type": "array"
-                    }, "function_return_type": {"description": "The return type of the node.", "properties": {"the_type": {"anyOf": [
-                                    {"$ref": "#/$defs/IntType"
-                                    },
-                                    {"$ref": "#/$defs/BoolType"
-                                    },
-                                    {"$ref": "#/$defs/StrType"
-                                    },
-                                    {"$ref": "#/$defs/AnyType"
-                                    },
-                                    {"$ref": "#/$defs/NoneType"
-                                    },
-                                    {"$ref": "#/$defs/FloatType"
-                                    },
-                                    {"$ref": "#/$defs/OptionalType"
-                                    },
-                                    {"$ref": "#/$defs/ListType"
-                                    },
-                                    {"$ref": "#/$defs/TypedDictType"
-                                    },
-                                    {"$ref": "#/$defs/TupleType"
-                                    },
-                                    {"$ref": "#/$defs/SetType"
-                                    },
-                                    {"$ref": "#/$defs/PDDataFrameType"
-                                    },
-                                    {"$ref": "#/$defs/PDSeriesType"
-                                    },
-                                    {"$ref": "#/$defs/NumpyNdarrayType"
-                                    }
-                                ], "title": "The Type"
-                            }, "description": {"description": "A description of what this type represents. Indicate how to interpret each component of the type.", "title": "Description", "type": "string"
-                            }
-                        }, "required": ["the_type", "description"
-                        ], "title": "ExtendedType", "type": "object", "additionalProperties": false
-                    }, "algorithm": {"description": "The algorithm of the node.", "items": {"type": "string"
-                        }, "title": "Algorithm", "type": "array"
-                    }, "code": {"description": "The code for the node.  Only modify if there is already an code.  The code should be a list of strings, one for each line of code.  The signature must match the original version, except for the return type", "items": {"type": "string"
-                        }, "title": "Code", "type": "array"
-                    }
-                }, "required": ["id", "label", "requirements", "function_return_type", "algorithm", "code"
-                ], "title": "update_node", "type": "object", "additionalProperties": false
+                                    ], "title": "The Type"
+                                }, "description": {"description": "A description of what this type represents. Indicate how to interpret each component of the type.", "title": "Description", "type": "string"
+                                }
+                            }, "required": ["the_type", "description"
+                            ], "title": "ExtendedType", "type": "object", "additionalProperties": false
+                        }, "FloatType": {"properties": {"type": {"const": "float", "title": "Type", "type": "string"
+                                }
+                            }, "required": ["type"
+                            ], "title": "FloatType", "type": "object", "additionalProperties": false
+                        }, "IntType": {"properties": {"type": {"const": "int", "title": "Type", "type": "string"
+                                }
+                            }, "required": ["type"
+                            ], "title": "IntType", "type": "object", "additionalProperties": false
+                        }, "KeyType": {"properties": {"key": {"title": "Key", "type": "string"
+                                }, "type": {"anyOf": [
+                                        {"$ref": "#/$defs/IntType"
+                                        },
+                                        {"$ref": "#/$defs/BoolType"
+                                        },
+                                        {"$ref": "#/$defs/StrType"
+                                        },
+                                        {"$ref": "#/$defs/AnyType"
+                                        },
+                                        {"$ref": "#/$defs/NoneType"
+                                        },
+                                        {"$ref": "#/$defs/FloatType"
+                                        },
+                                        {"$ref": "#/$defs/OptionalType"
+                                        },
+                                        {"$ref": "#/$defs/ListType"
+                                        },
+                                        {"$ref": "#/$defs/TypedDictType"
+                                        },
+                                        {"$ref": "#/$defs/TupleType"
+                                        },
+                                        {"$ref": "#/$defs/SetType"
+                                        },
+                                        {"$ref": "#/$defs/PDDataFrameType"
+                                        },
+                                        {"$ref": "#/$defs/PDSeriesType"
+                                        },
+                                        {"$ref": "#/$defs/NumpyNdarrayType"
+                                        }
+                                    ], "title": "Type"
+                                }, "description": {"description": "What this key represents.", "title": "Description", "type": "string"
+                                }
+                            }, "required": ["key", "type", "description"
+                            ], "title": "KeyType", "type": "object", "additionalProperties": false
+                        }, "ListType": {"properties": {"type": {"const": "List", "title": "Type", "type": "string"
+                                }, "element_type": {"anyOf": [
+                                        {"$ref": "#/$defs/IntType"
+                                        },
+                                        {"$ref": "#/$defs/BoolType"
+                                        },
+                                        {"$ref": "#/$defs/StrType"
+                                        },
+                                        {"$ref": "#/$defs/AnyType"
+                                        },
+                                        {"$ref": "#/$defs/NoneType"
+                                        },
+                                        {"$ref": "#/$defs/FloatType"
+                                        },
+                                        {"$ref": "#/$defs/OptionalType"
+                                        },
+                                        {"$ref": "#/$defs/ListType"
+                                        },
+                                        {"$ref": "#/$defs/TypedDictType"
+                                        },
+                                        {"$ref": "#/$defs/TupleType"
+                                        },
+                                        {"$ref": "#/$defs/SetType"
+                                        },
+                                        {"$ref": "#/$defs/PDDataFrameType"
+                                        },
+                                        {"$ref": "#/$defs/PDSeriesType"
+                                        },
+                                        {"$ref": "#/$defs/NumpyNdarrayType"
+                                        }
+                                    ], "title": "Element Type"
+                                }, "length": {"anyOf": [
+                                        {"type": "integer"
+                                        },
+                                        {"type": "null"
+                                        }
+                                    ], "description": "The expected length of the list. If None, the length can be arbitrary.", "title": "Length"
+                                }
+                            }, "required": ["type", "element_type", "length"
+                            ], "title": "ListType", "type": "object", "additionalProperties": false
+                        }, "NoneType": {"properties": {"type": {"const": "None", "title": "Type", "type": "string"
+                                }
+                            }, "required": ["type"
+                            ], "title": "NoneType", "type": "object", "additionalProperties": false
+                        }, "NumpyNdarrayType": {"properties": {"type": {"const": "np.ndarray", "title": "Type", "type": "string"
+                                }, "element_type": {"anyOf": [
+                                        {"$ref": "#/$defs/IntType"
+                                        },
+                                        {"$ref": "#/$defs/BoolType"
+                                        },
+                                        {"$ref": "#/$defs/StrType"
+                                        },
+                                        {"$ref": "#/$defs/AnyType"
+                                        },
+                                        {"$ref": "#/$defs/NoneType"
+                                        },
+                                        {"$ref": "#/$defs/FloatType"
+                                        },
+                                        {"$ref": "#/$defs/OptionalType"
+                                        },
+                                        {"$ref": "#/$defs/ListType"
+                                        },
+                                        {"$ref": "#/$defs/TypedDictType"
+                                        },
+                                        {"$ref": "#/$defs/TupleType"
+                                        },
+                                        {"$ref": "#/$defs/SetType"
+                                        },
+                                        {"$ref": "#/$defs/PDDataFrameType"
+                                        },
+                                        {"$ref": "#/$defs/PDSeriesType"
+                                        },
+                                        {"$ref": "#/$defs/NumpyNdarrayType"
+                                        }
+                                    ], "title": "Element Type"
+                                }, "length": {"anyOf": [
+                                        {"type": "integer"
+                                        },
+                                        {"type": "null"
+                                        }
+                                    ], "description": "The expected length of the list. If None, the length can be arbitrary.", "title": "Length"
+                                }
+                            }, "required": ["type", "element_type", "length"
+                            ], "title": "NumpyNdarrayType", "type": "object", "additionalProperties": false
+                        }, "OptionalType": {"properties": {"type": {"const": "Optional", "title": "Type", "type": "string"
+                                }, "wrapped_type": {"anyOf": [
+                                        {"$ref": "#/$defs/IntType"
+                                        },
+                                        {"$ref": "#/$defs/BoolType"
+                                        },
+                                        {"$ref": "#/$defs/StrType"
+                                        },
+                                        {"$ref": "#/$defs/AnyType"
+                                        },
+                                        {"$ref": "#/$defs/NoneType"
+                                        },
+                                        {"$ref": "#/$defs/FloatType"
+                                        },
+                                        {"$ref": "#/$defs/OptionalType"
+                                        },
+                                        {"$ref": "#/$defs/ListType"
+                                        },
+                                        {"$ref": "#/$defs/TypedDictType"
+                                        },
+                                        {"$ref": "#/$defs/TupleType"
+                                        },
+                                        {"$ref": "#/$defs/SetType"
+                                        },
+                                        {"$ref": "#/$defs/PDDataFrameType"
+                                        },
+                                        {"$ref": "#/$defs/PDSeriesType"
+                                        },
+                                        {"$ref": "#/$defs/NumpyNdarrayType"
+                                        }
+                                    ], "title": "Wrapped Type"
+                                }
+                            }, "required": ["type", "wrapped_type"
+                            ], "title": "OptionalType", "type": "object", "additionalProperties": false
+                        }, "PDDataFrameType": {"properties": {"type": {"const": "pd.DataFrame", "title": "Type", "type": "string"
+                                }, "columns": {"description": "A list of key-value pairs where the key is the column name and the value is the type of the column.", "items": {"$ref": "#/$defs/KeyType"
+                                    }, "title": "Columns", "type": "array"
+                                }
+                            }, "required": ["type", "columns"
+                            ], "title": "PDDataFrameType", "type": "object", "additionalProperties": false
+                        }, "PDSeriesType": {"properties": {"type": {"const": "pd.Series", "title": "Type", "type": "string"
+                                }, "element_type": {"anyOf": [
+                                        {"$ref": "#/$defs/IntType"
+                                        },
+                                        {"$ref": "#/$defs/BoolType"
+                                        },
+                                        {"$ref": "#/$defs/StrType"
+                                        },
+                                        {"$ref": "#/$defs/AnyType"
+                                        },
+                                        {"$ref": "#/$defs/NoneType"
+                                        },
+                                        {"$ref": "#/$defs/FloatType"
+                                        },
+                                        {"$ref": "#/$defs/OptionalType"
+                                        },
+                                        {"$ref": "#/$defs/ListType"
+                                        },
+                                        {"$ref": "#/$defs/TypedDictType"
+                                        },
+                                        {"$ref": "#/$defs/TupleType"
+                                        },
+                                        {"$ref": "#/$defs/SetType"
+                                        },
+                                        {"$ref": "#/$defs/PDDataFrameType"
+                                        },
+                                        {"$ref": "#/$defs/PDSeriesType"
+                                        },
+                                        {"$ref": "#/$defs/NumpyNdarrayType"
+                                        }
+                                    ], "title": "Element Type"
+                                }
+                            }, "required": ["type", "element_type"
+                            ], "title": "PDSeriesType", "type": "object", "additionalProperties": false
+                        }, "SetType": {"properties": {"type": {"const": "Set", "title": "Type", "type": "string"
+                                }, "element_type": {"anyOf": [
+                                        {"$ref": "#/$defs/IntType"
+                                        },
+                                        {"$ref": "#/$defs/BoolType"
+                                        },
+                                        {"$ref": "#/$defs/StrType"
+                                        },
+                                        {"$ref": "#/$defs/AnyType"
+                                        },
+                                        {"$ref": "#/$defs/NoneType"
+                                        },
+                                        {"$ref": "#/$defs/FloatType"
+                                        },
+                                        {"$ref": "#/$defs/OptionalType"
+                                        },
+                                        {"$ref": "#/$defs/ListType"
+                                        },
+                                        {"$ref": "#/$defs/TypedDictType"
+                                        },
+                                        {"$ref": "#/$defs/TupleType"
+                                        },
+                                        {"$ref": "#/$defs/SetType"
+                                        },
+                                        {"$ref": "#/$defs/PDDataFrameType"
+                                        },
+                                        {"$ref": "#/$defs/PDSeriesType"
+                                        },
+                                        {"$ref": "#/$defs/NumpyNdarrayType"
+                                        }
+                                    ], "title": "Element Type"
+                                }
+                            }, "required": ["type", "element_type"
+                            ], "title": "SetType", "type": "object", "additionalProperties": false
+                        }, "StrType": {"properties": {"type": {"const": "str", "title": "Type", "type": "string"
+                                }
+                            }, "required": ["type"
+                            ], "title": "StrType", "type": "object", "additionalProperties": false
+                        }, "TupleType": {"properties": {"type": {"const": "Tuple", "title": "Type", "type": "string"
+                                }, "elements": {"items": {"anyOf": [
+                                            {"$ref": "#/$defs/IntType"
+                                            },
+                                            {"$ref": "#/$defs/BoolType"
+                                            },
+                                            {"$ref": "#/$defs/StrType"
+                                            },
+                                            {"$ref": "#/$defs/AnyType"
+                                            },
+                                            {"$ref": "#/$defs/NoneType"
+                                            },
+                                            {"$ref": "#/$defs/FloatType"
+                                            },
+                                            {"$ref": "#/$defs/OptionalType"
+                                            },
+                                            {"$ref": "#/$defs/ListType"
+                                            },
+                                            {"$ref": "#/$defs/TypedDictType"
+                                            },
+                                            {"$ref": "#/$defs/TupleType"
+                                            },
+                                            {"$ref": "#/$defs/SetType"
+                                            },
+                                            {"$ref": "#/$defs/PDDataFrameType"
+                                            },
+                                            {"$ref": "#/$defs/PDSeriesType"
+                                            },
+                                            {"$ref": "#/$defs/NumpyNdarrayType"
+                                            }
+                                        ]
+                                    }, "title": "Elements", "type": "array"
+                                }
+                            }, "required": ["type", "elements"
+                            ], "title": "TupleType", "type": "object", "additionalProperties": false
+                        }, "TypedDictType": {"properties": {"type": {"const": "TypedDict", "title": "Type", "type": "string"
+                                }, "name": {"description": "A unique name for the dictionary type. This is used to generate a unique TypedDict name.", "title": "Name", "type": "string"
+                                }, "items": {"description": "A list of key-value pairs where the key is the key name and the value is the type of the key.", "items": {"$ref": "#/$defs/KeyType"
+                                    }, "title": "Items", "type": "array"
+                                }
+                            }, "required": ["type", "name", "items"
+                            ], "title": "TypedDictType", "type": "object", "additionalProperties": false
+                        }
+                    }, "properties": {"id": {"description": "The id of the node to modify.", "title": "Id", "type": "string"
+                        }, "label": {"description": "The new label of the node.  Keep in sync with the requirements, algorithm, and code.", "title": "Label", "type": "string"
+                        }, "requirements": {"description": "A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well.", "items": {"type": "string"
+                            }, "title": "Requirements", "type": "array"
+                        }, "function_return_type": {"description": "The return type of the node.", "properties": {"the_type": {"anyOf": [
+                                        {"$ref": "#/$defs/IntType"
+                                        },
+                                        {"$ref": "#/$defs/BoolType"
+                                        },
+                                        {"$ref": "#/$defs/StrType"
+                                        },
+                                        {"$ref": "#/$defs/AnyType"
+                                        },
+                                        {"$ref": "#/$defs/NoneType"
+                                        },
+                                        {"$ref": "#/$defs/FloatType"
+                                        },
+                                        {"$ref": "#/$defs/OptionalType"
+                                        },
+                                        {"$ref": "#/$defs/ListType"
+                                        },
+                                        {"$ref": "#/$defs/TypedDictType"
+                                        },
+                                        {"$ref": "#/$defs/TupleType"
+                                        },
+                                        {"$ref": "#/$defs/SetType"
+                                        },
+                                        {"$ref": "#/$defs/PDDataFrameType"
+                                        },
+                                        {"$ref": "#/$defs/PDSeriesType"
+                                        },
+                                        {"$ref": "#/$defs/NumpyNdarrayType"
+                                        }
+                                    ], "title": "The Type"
+                                }, "description": {"description": "A description of what this type represents. Indicate how to interpret each component of the type.", "title": "Description", "type": "string"
+                                }
+                            }, "required": ["the_type", "description"
+                            ], "title": "ExtendedType", "type": "object", "additionalProperties": false
+                        }, "algorithm": {"description": "The algorithm of the node.", "items": {"type": "string"
+                            }, "title": "Algorithm", "type": "array"
+                        }, "code": {"description": "The code for the node.  Only modify if there is already an code.  The code should be a list of strings, one for each line of code.  The signature must match the original version, except for the return type", "items": {"type": "string"
+                            }, "title": "Code", "type": "array"
+                        }
+                    }, "required": ["id", "label", "requirements", "function_return_type", "algorithm", "code"
+                    ], "title": "update_node", "type": "object", "additionalProperties": false
+                }
             }
-        }
-        """
+            """
 
-        # """
-        # {
-        #     "name": "update_node",
-        #     "description": "Modify a node in the diagram.  You must preserve consistency between the pill, label, requirements, algorithm, and code.  Use null for node parts you don't want to modify.  If you wish to modify the return type for the node, leave the algorithm and code blank.",
-        #     "parameters": {
-        #         "type": "object",
-        #         "properties": {
-        #             "id": {
-        #                 "type": "string",
-        #                 "description": "The id of the node to modify"
-        #             },
-        #             "pill": {
-        #                 "type": "string",
-        #                 "description": "The pill of the node.  Two words, hyphenated and title-case.  Keep in sync with the label, requirements, algorithm, and code."
-        #             },
-        #             "label": {
-        #                 "type": "string",
-        #                 "description": "The new label of the node.  Keep in sync with the requirements, algorithm, and code."
-        #             },
-        #             "requirements": {
-        #                 "type": "array",
-        #                 "items": {
-        #                     "type": "string"
-        #                 },
-        #                 "description": "A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well."
-        #             },
-        #             "algorithm": {
-        #                 "type": "array",
-        #                 "items": {
-        #                     "type": "string"
-        #                 },
-        #                 "description": "The algorithm for the node.  Only modify if there is already an algorithm."
-        #             },
-        #             "code": {
-        #                 "type": "array",
-        #                 "items": {
-        #                     "type": "string"
-        #                 },
-        #                 "description": "The code for the node.  Only modify if there is already an code.  The code should be a list of strings, one for each line of code.  The signature must match the original version."
-        #             }
-        #         },
-        #         "required": ["id" ]
-        #     }
-        # }
-        # """
-        log(f"update_node: {id}, {requirements}, {algorithm}, {code}")
-        dfg = self.page.dfg
+            # """
+            # {
+            #     "name": "update_node",
+            #     "description": "Modify a node in the diagram.  You must preserve consistency between the pill, label, requirements, algorithm, and code.  Use null for node parts you don't want to modify.  If you wish to modify the return type for the node, leave the algorithm and code blank.",
+            #     "parameters": {
+            #         "type": "object",
+            #         "properties": {
+            #             "id": {
+            #                 "type": "string",
+            #                 "description": "The id of the node to modify"
+            #             },
+            #             "pill": {
+            #                 "type": "string",
+            #                 "description": "The pill of the node.  Two words, hyphenated and title-case.  Keep in sync with the label, requirements, algorithm, and code."
+            #             },
+            #             "label": {
+            #                 "type": "string",
+            #                 "description": "The new label of the node.  Keep in sync with the requirements, algorithm, and code."
+            #             },
+            #             "requirements": {
+            #                 "type": "array",
+            #                 "items": {
+            #                     "type": "string"
+            #                 },
+            #                 "description": "A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well."
+            #             },
+            #             "algorithm": {
+            #                 "type": "array",
+            #                 "items": {
+            #                     "type": "string"
+            #                 },
+            #                 "description": "The algorithm for the node.  Only modify if there is already an algorithm."
+            #             },
+            #             "code": {
+            #                 "type": "array",
+            #                 "items": {
+            #                     "type": "string"
+            #                 },
+            #                 "description": "The code for the node.  Only modify if there is already an code.  The code should be a list of strings, one for each line of code.  The signature must match the original version."
+            #             }
+            #         },
+            #         "required": ["id" ]
+            #     }
+            # }
+            # """
+            log(f"update_node: {id}, {requirements}, {algorithm}, {code}")
+            dfg = self.page.dfg
 
-        if dfg[id] is None:
-            return (f"Node {id} does not exist", None)
+            if dfg[id] is None:
+                return (f"Node {id} does not exist", None)
 
-        node = dfg[id]
-        mods = []
+            node = dfg[id]
+            mods = []
 
-        if code and code != node.code:
-            log(f"Updating code to {code}")
-            node = node.update(code=code, phase=Phase.algorithm)
-            mods.append("code")
-        if algorithm and algorithm != node.algorithm:
-            log(f"Updating algorithm to {algorithm}")
-            node = node.update(algorithm=algorithm, phase=Phase.requirements)
-            mods.append("algorithm")
-        if requirements and requirements != node.requirements:
-            log(f"Updating requirements to {requirements}")
-            node = node.update(
-                requirements=requirements,
-                phase=Phase.clean,
-            )
-            mods.append("requirements")
-
-        if function_return_type:
-            function_return_type = ExtendedType.model_validate(function_return_type)
-            if function_return_type != node.function_return_type:
-                log(f"Updating function_return_type to {function_return_type}")
+            if code and code != node.code:
+                log(f"Updating code to {code}")
+                node = node.update(code=code, phase=Phase.algorithm)
+                mods.append("code")
+            if algorithm and algorithm != node.algorithm:
+                log(f"Updating algorithm to {algorithm}")
+                node = node.update(algorithm=algorithm, phase=Phase.requirements)
+                mods.append("algorithm")
+            if requirements and requirements != node.requirements:
+                log(f"Updating requirements to {requirements}")
                 node = node.update(
-                    function_return_type=function_return_type,
+                    requirements=requirements,
                     phase=Phase.clean,
                 )
-            mods.append("return-type")
-        if label and label != node.label:
-            log(f"Updating label to {label}")
-            node = node.update(label=label, phase=Phase.clean)
-            mods.append("label")
-        if pill and pill != node.pill:
-            log(f"Updating pill to {pill}")
-            node = node.update(pill=pill, phase=Phase.clean)
-            mods.append("pill")
+                mods.append("requirements")
 
-        if node.phase == Phase.clean:
-            dfg = dfg.lower_phase_with_successors(node.id, Phase.clean)
+            if function_return_type:
+                function_return_type = ExtendedType.model_validate(function_return_type)
+                if function_return_type != node.function_return_type:
+                    log(
+                        f"Updating function_return_type from {node.function_return_type} to {function_return_type}"
+                    )
+                    node = node.update(
+                        function_return_type=function_return_type,
+                        phase=Phase.clean,
+                    )
+                mods.append("return-type")
+            if label and label != node.label:
+                log(f"Updating label to {label}")
+                node = node.update(label=label, phase=Phase.clean)
+                mods.append("label")
+            if pill and pill != node.pill:
+                log(f"Updating pill to {pill}")
+                node = node.update(pill=pill, phase=Phase.clean)
+                mods.append("pill")
 
-        if config.x_trust_ama:
-            if "requirements" in mods or "return-type" in mods:
-                node = node.update(cache=node.cache.update(Phase.requirements, node))
-                node = node.update(phase=Phase.requirements)
-            if "algorithm" in mods:
-                node = node.update(cache=node.cache.update(Phase.algorithm, node))
-                node = node.update(phase=Phase.algorithm)
-            if "code" in mods:
-                node = node.update(cache=node.cache.update(Phase.code, node))
-                node = node.update(phase=Phase.code)
+            if node.phase == Phase.clean:
+                dfg = dfg.lower_phase_with_successors(node.id, Phase.clean)
 
-        dfg = dfg.with_node(node)
-        self.page.update_dfg(dfg)
+            if config.x_trust_ama:
+                if "requirements" in mods or "return-type" in mods:
+                    node = node.update(
+                        cache=node.cache.update(Phase.requirements, node)
+                    )
+                    node = node.update(phase=Phase.requirements)
+                if "algorithm" in mods:
+                    node = node.update(cache=node.cache.update(Phase.algorithm, node))
+                    node = node.update(phase=Phase.algorithm)
+                if "code" in mods:
+                    node = node.update(cache=node.cache.update(Phase.code, node))
+                    node = node.update(phase=Phase.code)
 
-        mod_str = ", ".join(reversed(mods))
+            dfg = dfg.with_node(node)
+            self.page.update_dfg(dfg)
 
-        return (f"Updated {mod_str} for {node.pill}", node.model_dump_json(indent=2))
+            mod_str = ", ".join(reversed(mods))
 
-    def update_label(
-        self,
-        id: str,
-        label: str,
-    ) -> ReturnType:
-        """
-        {
-            "name": "update_label",
-            "description": "Update the label of a node in the diagram",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "description": "The id of the node to update"
-                    },
-                    "label": {
-                        "type": "string",
-                        "description": "The new label of the node"
-                    }
-                },
-                "required": ["id", "label"]
+            return (
+                f"Updated {mod_str} for {node.pill}",
+                node.model_dump_json(indent=2),
+            )
+
+    else:
+
+        def update_node(
+            self,
+            id: str,
+            pill: str | None = None,
+            label: str | None = None,
+            requirements: List[str] | None = None,
+            function_return_type: ExtendedType | None = None,
+            code: List[str] | None = None,
+        ) -> ReturnType:
+            """\
+            {"name": "update_node",
+            "strict": true,
+            "parameters": {"$defs": {"AnyType": {"properties": {"type": {"const": "Any", "title": "Type", "type": "string"
+                                }
+                            }, "required": ["type"
+                            ], "title": "AnyType", "type": "object", "additionalProperties": false
+                        }, "BoolType": {"properties": {"type": {"const": "bool", "title": "Type", "type": "string"
+                                }
+                            }, "required": ["type"
+                            ], "title": "BoolType", "type": "object", "additionalProperties": false
+                        }, "ExtendedType": {"properties": {"the_type": {"anyOf": [
+                                        {"$ref": "#/$defs/IntType"
+                                        },
+                                        {"$ref": "#/$defs/BoolType"
+                                        },
+                                        {"$ref": "#/$defs/StrType"
+                                        },
+                                        {"$ref": "#/$defs/AnyType"
+                                        },
+                                        {"$ref": "#/$defs/NoneType"
+                                        },
+                                        {"$ref": "#/$defs/FloatType"
+                                        },
+                                        {"$ref": "#/$defs/OptionalType"
+                                        },
+                                        {"$ref": "#/$defs/ListType"
+                                        },
+                                        {"$ref": "#/$defs/TypedDictType"
+                                        },
+                                        {"$ref": "#/$defs/TupleType"
+                                        },
+                                        {"$ref": "#/$defs/SetType"
+                                        },
+                                        {"$ref": "#/$defs/PDDataFrameType"
+                                        },
+                                        {"$ref": "#/$defs/PDSeriesType"
+                                        },
+                                        {"$ref": "#/$defs/NumpyNdarrayType"
+                                        }
+                                    ], "title": "The Type"
+                                }, "description": {"description": "A description of what this type represents. Indicate how to interpret each component of the type.", "title": "Description", "type": "string"
+                                }
+                            }, "required": ["the_type", "description"
+                            ], "title": "ExtendedType", "type": "object", "additionalProperties": false
+                        }, "FloatType": {"properties": {"type": {"const": "float", "title": "Type", "type": "string"
+                                }
+                            }, "required": ["type"
+                            ], "title": "FloatType", "type": "object", "additionalProperties": false
+                        }, "IntType": {"properties": {"type": {"const": "int", "title": "Type", "type": "string"
+                                }
+                            }, "required": ["type"
+                            ], "title": "IntType", "type": "object", "additionalProperties": false
+                        }, "KeyType": {"properties": {"key": {"title": "Key", "type": "string"
+                                }, "type": {"anyOf": [
+                                        {"$ref": "#/$defs/IntType"
+                                        },
+                                        {"$ref": "#/$defs/BoolType"
+                                        },
+                                        {"$ref": "#/$defs/StrType"
+                                        },
+                                        {"$ref": "#/$defs/AnyType"
+                                        },
+                                        {"$ref": "#/$defs/NoneType"
+                                        },
+                                        {"$ref": "#/$defs/FloatType"
+                                        },
+                                        {"$ref": "#/$defs/OptionalType"
+                                        },
+                                        {"$ref": "#/$defs/ListType"
+                                        },
+                                        {"$ref": "#/$defs/TypedDictType"
+                                        },
+                                        {"$ref": "#/$defs/TupleType"
+                                        },
+                                        {"$ref": "#/$defs/SetType"
+                                        },
+                                        {"$ref": "#/$defs/PDDataFrameType"
+                                        },
+                                        {"$ref": "#/$defs/PDSeriesType"
+                                        },
+                                        {"$ref": "#/$defs/NumpyNdarrayType"
+                                        }
+                                    ], "title": "Type"
+                                }, "description": {"description": "What this key represents.", "title": "Description", "type": "string"
+                                }
+                            }, "required": ["key", "type", "description"
+                            ], "title": "KeyType", "type": "object", "additionalProperties": false
+                        }, "ListType": {"properties": {"type": {"const": "List", "title": "Type", "type": "string"
+                                }, "element_type": {"anyOf": [
+                                        {"$ref": "#/$defs/IntType"
+                                        },
+                                        {"$ref": "#/$defs/BoolType"
+                                        },
+                                        {"$ref": "#/$defs/StrType"
+                                        },
+                                        {"$ref": "#/$defs/AnyType"
+                                        },
+                                        {"$ref": "#/$defs/NoneType"
+                                        },
+                                        {"$ref": "#/$defs/FloatType"
+                                        },
+                                        {"$ref": "#/$defs/OptionalType"
+                                        },
+                                        {"$ref": "#/$defs/ListType"
+                                        },
+                                        {"$ref": "#/$defs/TypedDictType"
+                                        },
+                                        {"$ref": "#/$defs/TupleType"
+                                        },
+                                        {"$ref": "#/$defs/SetType"
+                                        },
+                                        {"$ref": "#/$defs/PDDataFrameType"
+                                        },
+                                        {"$ref": "#/$defs/PDSeriesType"
+                                        },
+                                        {"$ref": "#/$defs/NumpyNdarrayType"
+                                        }
+                                    ], "title": "Element Type"
+                                }, "length": {"anyOf": [
+                                        {"type": "integer"
+                                        },
+                                        {"type": "null"
+                                        }
+                                    ], "description": "The expected length of the list. If None, the length can be arbitrary.", "title": "Length"
+                                }
+                            }, "required": ["type", "element_type", "length"
+                            ], "title": "ListType", "type": "object", "additionalProperties": false
+                        }, "NoneType": {"properties": {"type": {"const": "None", "title": "Type", "type": "string"
+                                }
+                            }, "required": ["type"
+                            ], "title": "NoneType", "type": "object", "additionalProperties": false
+                        }, "NumpyNdarrayType": {"properties": {"type": {"const": "np.ndarray", "title": "Type", "type": "string"
+                                }, "element_type": {"anyOf": [
+                                        {"$ref": "#/$defs/IntType"
+                                        },
+                                        {"$ref": "#/$defs/BoolType"
+                                        },
+                                        {"$ref": "#/$defs/StrType"
+                                        },
+                                        {"$ref": "#/$defs/AnyType"
+                                        },
+                                        {"$ref": "#/$defs/NoneType"
+                                        },
+                                        {"$ref": "#/$defs/FloatType"
+                                        },
+                                        {"$ref": "#/$defs/OptionalType"
+                                        },
+                                        {"$ref": "#/$defs/ListType"
+                                        },
+                                        {"$ref": "#/$defs/TypedDictType"
+                                        },
+                                        {"$ref": "#/$defs/TupleType"
+                                        },
+                                        {"$ref": "#/$defs/SetType"
+                                        },
+                                        {"$ref": "#/$defs/PDDataFrameType"
+                                        },
+                                        {"$ref": "#/$defs/PDSeriesType"
+                                        },
+                                        {"$ref": "#/$defs/NumpyNdarrayType"
+                                        }
+                                    ], "title": "Element Type"
+                                }, "length": {"anyOf": [
+                                        {"type": "integer"
+                                        },
+                                        {"type": "null"
+                                        }
+                                    ], "description": "The expected length of the list. If None, the length can be arbitrary.", "title": "Length"
+                                }
+                            }, "required": ["type", "element_type", "length"
+                            ], "title": "NumpyNdarrayType", "type": "object", "additionalProperties": false
+                        }, "OptionalType": {"properties": {"type": {"const": "Optional", "title": "Type", "type": "string"
+                                }, "wrapped_type": {"anyOf": [
+                                        {"$ref": "#/$defs/IntType"
+                                        },
+                                        {"$ref": "#/$defs/BoolType"
+                                        },
+                                        {"$ref": "#/$defs/StrType"
+                                        },
+                                        {"$ref": "#/$defs/AnyType"
+                                        },
+                                        {"$ref": "#/$defs/NoneType"
+                                        },
+                                        {"$ref": "#/$defs/FloatType"
+                                        },
+                                        {"$ref": "#/$defs/OptionalType"
+                                        },
+                                        {"$ref": "#/$defs/ListType"
+                                        },
+                                        {"$ref": "#/$defs/TypedDictType"
+                                        },
+                                        {"$ref": "#/$defs/TupleType"
+                                        },
+                                        {"$ref": "#/$defs/SetType"
+                                        },
+                                        {"$ref": "#/$defs/PDDataFrameType"
+                                        },
+                                        {"$ref": "#/$defs/PDSeriesType"
+                                        },
+                                        {"$ref": "#/$defs/NumpyNdarrayType"
+                                        }
+                                    ], "title": "Wrapped Type"
+                                }
+                            }, "required": ["type", "wrapped_type"
+                            ], "title": "OptionalType", "type": "object", "additionalProperties": false
+                        }, "PDDataFrameType": {"properties": {"type": {"const": "pd.DataFrame", "title": "Type", "type": "string"
+                                }, "columns": {"description": "A list of key-value pairs where the key is the column name and the value is the type of the column.", "items": {"$ref": "#/$defs/KeyType"
+                                    }, "title": "Columns", "type": "array"
+                                }
+                            }, "required": ["type", "columns"
+                            ], "title": "PDDataFrameType", "type": "object", "additionalProperties": false
+                        }, "PDSeriesType": {"properties": {"type": {"const": "pd.Series", "title": "Type", "type": "string"
+                                }, "element_type": {"anyOf": [
+                                        {"$ref": "#/$defs/IntType"
+                                        },
+                                        {"$ref": "#/$defs/BoolType"
+                                        },
+                                        {"$ref": "#/$defs/StrType"
+                                        },
+                                        {"$ref": "#/$defs/AnyType"
+                                        },
+                                        {"$ref": "#/$defs/NoneType"
+                                        },
+                                        {"$ref": "#/$defs/FloatType"
+                                        },
+                                        {"$ref": "#/$defs/OptionalType"
+                                        },
+                                        {"$ref": "#/$defs/ListType"
+                                        },
+                                        {"$ref": "#/$defs/TypedDictType"
+                                        },
+                                        {"$ref": "#/$defs/TupleType"
+                                        },
+                                        {"$ref": "#/$defs/SetType"
+                                        },
+                                        {"$ref": "#/$defs/PDDataFrameType"
+                                        },
+                                        {"$ref": "#/$defs/PDSeriesType"
+                                        },
+                                        {"$ref": "#/$defs/NumpyNdarrayType"
+                                        }
+                                    ], "title": "Element Type"
+                                }
+                            }, "required": ["type", "element_type"
+                            ], "title": "PDSeriesType", "type": "object", "additionalProperties": false
+                        }, "SetType": {"properties": {"type": {"const": "Set", "title": "Type", "type": "string"
+                                }, "element_type": {"anyOf": [
+                                        {"$ref": "#/$defs/IntType"
+                                        },
+                                        {"$ref": "#/$defs/BoolType"
+                                        },
+                                        {"$ref": "#/$defs/StrType"
+                                        },
+                                        {"$ref": "#/$defs/AnyType"
+                                        },
+                                        {"$ref": "#/$defs/NoneType"
+                                        },
+                                        {"$ref": "#/$defs/FloatType"
+                                        },
+                                        {"$ref": "#/$defs/OptionalType"
+                                        },
+                                        {"$ref": "#/$defs/ListType"
+                                        },
+                                        {"$ref": "#/$defs/TypedDictType"
+                                        },
+                                        {"$ref": "#/$defs/TupleType"
+                                        },
+                                        {"$ref": "#/$defs/SetType"
+                                        },
+                                        {"$ref": "#/$defs/PDDataFrameType"
+                                        },
+                                        {"$ref": "#/$defs/PDSeriesType"
+                                        },
+                                        {"$ref": "#/$defs/NumpyNdarrayType"
+                                        }
+                                    ], "title": "Element Type"
+                                }
+                            }, "required": ["type", "element_type"
+                            ], "title": "SetType", "type": "object", "additionalProperties": false
+                        }, "StrType": {"properties": {"type": {"const": "str", "title": "Type", "type": "string"
+                                }
+                            }, "required": ["type"
+                            ], "title": "StrType", "type": "object", "additionalProperties": false
+                        }, "TupleType": {"properties": {"type": {"const": "Tuple", "title": "Type", "type": "string"
+                                }, "elements": {"items": {"anyOf": [
+                                            {"$ref": "#/$defs/IntType"
+                                            },
+                                            {"$ref": "#/$defs/BoolType"
+                                            },
+                                            {"$ref": "#/$defs/StrType"
+                                            },
+                                            {"$ref": "#/$defs/AnyType"
+                                            },
+                                            {"$ref": "#/$defs/NoneType"
+                                            },
+                                            {"$ref": "#/$defs/FloatType"
+                                            },
+                                            {"$ref": "#/$defs/OptionalType"
+                                            },
+                                            {"$ref": "#/$defs/ListType"
+                                            },
+                                            {"$ref": "#/$defs/TypedDictType"
+                                            },
+                                            {"$ref": "#/$defs/TupleType"
+                                            },
+                                            {"$ref": "#/$defs/SetType"
+                                            },
+                                            {"$ref": "#/$defs/PDDataFrameType"
+                                            },
+                                            {"$ref": "#/$defs/PDSeriesType"
+                                            },
+                                            {"$ref": "#/$defs/NumpyNdarrayType"
+                                            }
+                                        ]
+                                    }, "title": "Elements", "type": "array"
+                                }
+                            }, "required": ["type", "elements"
+                            ], "title": "TupleType", "type": "object", "additionalProperties": false
+                        }, "TypedDictType": {"properties": {"type": {"const": "TypedDict", "title": "Type", "type": "string"
+                                }, "name": {"description": "A unique name for the dictionary type. This is used to generate a unique TypedDict name.", "title": "Name", "type": "string"
+                                }, "items": {"description": "A list of key-value pairs where the key is the key name and the value is the type of the key.", "items": {"$ref": "#/$defs/KeyType"
+                                    }, "title": "Items", "type": "array"
+                                }
+                            }, "required": ["type", "name", "items"
+                            ], "title": "TypedDictType", "type": "object", "additionalProperties": false
+                        }
+                    }, "properties": {"id": {"description": "The id of the node to modify.", "title": "Id", "type": "string"
+                        }, "label": {"description": "The new label of the node.  Keep in sync with the requirements and code.", "title": "Label", "type": "string"
+                        }, "requirements": {"description": "A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well.", "items": {"type": "string"
+                            }, "title": "Requirements", "type": "array"
+                        }, "function_return_type": {"description": "The return type of the node.  Only change if necessary.", "properties": {"the_type": {"anyOf": [
+                                        {"$ref": "#/$defs/IntType"
+                                        },
+                                        {"$ref": "#/$defs/BoolType"
+                                        },
+                                        {"$ref": "#/$defs/StrType"
+                                        },
+                                        {"$ref": "#/$defs/AnyType"
+                                        },
+                                        {"$ref": "#/$defs/NoneType"
+                                        },
+                                        {"$ref": "#/$defs/FloatType"
+                                        },
+                                        {"$ref": "#/$defs/OptionalType"
+                                        },
+                                        {"$ref": "#/$defs/ListType"
+                                        },
+                                        {"$ref": "#/$defs/TypedDictType"
+                                        },
+                                        {"$ref": "#/$defs/TupleType"
+                                        },
+                                        {"$ref": "#/$defs/SetType"
+                                        },
+                                        {"$ref": "#/$defs/PDDataFrameType"
+                                        },
+                                        {"$ref": "#/$defs/PDSeriesType"
+                                        },
+                                        {"$ref": "#/$defs/NumpyNdarrayType"
+                                        }
+                                    ], "title": "The Type"
+                                }, "description": {"description": "A description of what this type represents. Indicate how to interpret each component of the type.", "title": "Description", "type": "string"
+                                }
+                            }, "required": ["the_type", "description"
+                            ], "title": "ExtendedType", "type": "object", "additionalProperties": false
+                        },"code": {"description": "The code for the node.  Only modify if there is already an code.  The code should be a list of strings, one for each line of code.  The signature must match the original version, except for the return type", "items": {"type": "string"
+                            }, "title": "Code", "type": "array"
+                        }
+                    }, "required": ["id", "label", "requirements", "function_return_type", "code"],
+                      "title": "update_node", "type": "object", "additionalProperties": false
+                }
             }
-        }
-        """
-        log(f"update_label: {id}, {label}")
-        dfg = self.page.dfg
+            """
+            log(f"update_node: {id}, {requirements},  {code}")
+            dfg = self.page.dfg
 
-        if dfg[id] is None:
-            return (f"Node {id} does not exist", None)
+            if dfg[id] is None:
+                return (f"Node {id} does not exist", None)
 
-        node = dfg[id]
-        node = node.update(label=label)
-        dfg = dfg.with_node(node)
-        self.page.update_dfg(dfg)
+            node = dfg[id]
+            mods = []
 
-        return ("Updated label for {node.pill}", node.model_dump_json(indent=2))
+            if code and code != node.code:
+                log(f"Updating code to {code}")
+                node = node.update(code=code, phase=Phase.algorithm)
+                mods.append("code")
+            if requirements and requirements != node.requirements:
+                log(f"Updating requirements to {requirements}")
+                node = node.update(
+                    requirements=requirements,
+                    phase=Phase.clean,
+                )
+                mods.append("requirements")
 
-    def update_requirements(
-        self,
-        id: str,
-        requirements: List[str],
-    ) -> ReturnType:
-        """
-        {
-            "name": "update_requirements",
-            "description": "Update the requirements of a node in the diagram",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "description": "The id of the node to update"
-                    },
-                    "requirements": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "description": "The new requirements of the node"
-                    }
-                },
-                "required": ["id", "requirements"]
-            }
-        }
-        """
-        log(f"update_requirements: {id}, {requirements}")
-        dfg = self.page.dfg
+            if function_return_type:
+                function_return_type = ExtendedType.model_validate(function_return_type)
+                if function_return_type != node.function_return_type:
+                    log(
+                        f"Updating function_return_type from {node.function_return_type.to_markdown(True)} to {function_return_type.to_markdown(True)}"
+                    )
+                    node = node.update(
+                        function_return_type=function_return_type,
+                        phase=Phase.clean,
+                    )
+                mods.append("return-type")
+            if label and label != node.label:
+                log(f"Updating label to {label}")
+                node = node.update(label=label, phase=Phase.clean)
+                mods.append("label")
+            if pill and pill != node.pill:
+                log(f"Updating pill to {pill}")
+                node = node.update(pill=pill, phase=Phase.clean)
+                mods.append("pill")
 
-        if dfg[id] is None:
-            return (f"Node {id} does not exist", None)
+            if node.phase == Phase.clean:
+                dfg = dfg.lower_phase_with_successors(node.id, Phase.clean)
 
-        node = dfg[id]
-        node = node.update(requirements=requirements)
-        dfg = dfg.with_node(node)
-        self.page.update_dfg(dfg)
+            if config.x_trust_ama:
+                if "requirements" in mods or "return-type" in mods:
+                    node = node.update(
+                        cache=node.cache.update(Phase.requirements, node)
+                    )
+                    node = node.update(phase=Phase.requirements)
+                if "code" in mods:
+                    node = node.update(cache=node.cache.update(Phase.code, node))
+                    node = node.update(phase=Phase.code)
 
-        return (f"Updated requirements for {node.pill}", node.model_dump_json(indent=2))
+            dfg = dfg.with_node(node)
+            self.page.update_dfg(dfg)
 
-    def update_algorithm(
-        self,
-        id: str,
-        algorithm: List[str],
-    ) -> ReturnType:
-        """
-        {
-            "name": "update_algorithm",
-            "description": "Update the algorithm of a node in the diagram",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "description": "The id of the node to update"
-                    },
-                    "algorithm": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "description": "The new algorithm of the node"
-                    }
-                },
-                "required": ["id", "algorithm"]
-            }
-        }
-        """
-        log(f"update_algorithm: {id}, {algorithm}")
-        dfg = self.page.dfg
+            mod_str = ", ".join(reversed(mods))
 
-        if dfg[id] is None:
-            return ("Node {id} does not exist", None)
-
-        node = dfg[id]
-        node = node.update(algorithm=algorithm)
-        dfg = dfg.with_node(node)
-        self.page.update_dfg(dfg)
-
-        return (f"Updated algorithm for {node.pill}", node.model_dump_json(indent=2))
-
-    def update_code(
-        self,
-        id: str,
-        code: List[str],
-    ) -> ReturnType:
-        """
-        {
-            "name": "update_code",
-            "description": "Update the code of a node in the diagram.  Only update if there is already code.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "description": "The id of the node to update"
-                    },
-                    "code": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "description": "The new code of the node"
-                    }
-                },
-                "required": ["id", "code"]
-            }
-        }
-        """
-        log(f"update_code: {id}, {code}")
-        dfg = self.page.dfg
-
-        if dfg[id] is None:
-            return (f"Node {id} does not exist", None)
-
-        node = dfg[id]
-        node = node.update(code=code)
-        dfg = dfg.with_node(node)
-        self.page.update_dfg(dfg)
-
-        return (f"Updated code for {node.pill}", node.model_dump_json(indent=2))
+            return (
+                f"Updated {mod_str} for {node.pill}",
+                node.model_dump_json(indent=2),
+            )
 
     def add_node(
         self,
@@ -1095,19 +1391,21 @@ class AskMeAnything:
 
             self.assistant.add_message("user", self.page.dfg.to_image_prompt_messages())
 
+            node_fields = [
+                "id",
+                "pill",
+                "label",
+                "requirements",
+                "code",
+            ]
+
+            if config.x_algorithm_phase:
+                node_fields.append("algorithm")
+
             self.assistant.add_message(
                 "user",
                 messages_for_graph(
-                    self.page.dfg,
-                    graph_fields=["edges"],
-                    node_fields=[
-                        "id",
-                        "pill",
-                        "label",
-                        "requirements",
-                        "algorithm",
-                        "code",
-                    ],
+                    self.page.dfg, graph_fields=["edges"], node_fields=node_fields
                 ),
             )
 

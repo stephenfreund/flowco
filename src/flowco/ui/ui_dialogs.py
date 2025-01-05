@@ -40,6 +40,9 @@ def settings(ui_page: UIPage):
         config.x_trust_ama = st.toggle(
             "Trust AMA to provide correct completions", value=config.x_trust_ama
         )
+        config.x_algorithm_phase = st.toggle(
+            "Include algorithm phase", value=config.x_algorithm_phase
+        )
 
         builders = config.get_build_passes_keys()
         config.builder = st.selectbox(

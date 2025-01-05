@@ -158,9 +158,12 @@ class ExportCommand(Command):
             "export", help="Convert page to editable file"
         )
         self.parser.add_argument("--json", help="export as json", action="store_true")
-        self.parser.add_argument(
-            "--algorithm", help="show algorithm", action="store_true"
-        )
+
+        if config.x_algorithm_phase:
+            self.parser.add_argument(
+                "--algorithm", help="show algorithm", action="store_true"
+            )
+
         self.parser.add_argument("--code", help="show code", action="store_true")
         self.parser.add_argument(
             "--force", help="overwrite file if exsts", action="store_true"
@@ -175,7 +178,7 @@ class ExportCommand(Command):
     def run(self, page, args):
         if args.code:
             level = AbstractionLevel.code
-        elif args.algorithm:
+        elif args.algorithm and config.x_algorithm_phase:
             level = AbstractionLevel.algorithm
         else:
             level = AbstractionLevel.spec
@@ -251,12 +254,14 @@ class BuildCommand(Command):
     build_target_to_phase: Dict[str, Phase] = {
         "clean": Phase.clean,
         "requirements": Phase.requirements,
-        "algorithm": Phase.algorithm,
         "code": Phase.code,
         "run": Phase.run_checked,
         "assertions": Phase.assertions_code,
         "check": Phase.assertions_checked,
     }
+
+    if config.x_algorithm_phase:
+        build_target_to_phase["algorithm"] = Phase.algorithm
 
     always_force_to_run = ["run", "all", "check"]
 
@@ -284,12 +289,16 @@ class BuildCommand(Command):
             p = builder.passes_by_target[target_phase]
             page.clean(phase=p.required_phase())
 
-            if target_phase in [
+            phases_with_cache = [
                 Phase.requirements,
-                Phase.algorithm,
                 Phase.code,
                 Phase.assertions_code,
-            ]:
+            ]
+
+            if config.x_algorithm_phase:
+                phases_with_cache.append(Phase.algorithm)
+
+            if target_phase in phases_with_cache:
                 page.invalidate_build_cache(phase=target_phase, node_id=args.node_id)
             page.save()
 

@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import black
 from collections import deque
 import os
 import textwrap
@@ -99,6 +99,12 @@ class Node(NodeLike, BaseModel):
     """
 
     def __init__(self, **data):
+
+        if "code" in data:
+            code = "\n".join(data["code"])
+            formatted_code = black.format_str(code, mode=black.Mode())
+            data["code"] = formatted_code.split("\n")
+
         super().__init__(**data)
 
     # From Diagram:
@@ -300,6 +306,12 @@ class Node(NodeLike, BaseModel):
             self.model_fields.keys() - {"id", "predecessors"}
         ), f"Invalid kwargs for updating a node: {set(kwargs.keys()).difference(self.model_fields.keys() - {'id', 'predecessors'})}"
 
+        # if code is updated, we need to reset the cache
+        if "code" in kwargs:
+            code = "\n".join(kwargs["code"])
+            formatted_code = black.format_str(code, mode=black.Mode())
+            kwargs["code"] = formatted_code.split("\n")
+
         new_node = self.model_copy(update=kwargs)
 
         if new_node == self:
@@ -380,20 +392,19 @@ class Node(NodeLike, BaseModel):
             build_status=None,
         )
 
-    def to_markdown(
-        self,
-        keys: List[str] = [
-            "pill",
-            "label",
-            "messages",
-            "requirements",
-            "description",
-            "function_return_type",
-            "algorithm",
-            "code",
-            "result",
-        ],
-    ) -> str:
+    def to_markdown(self, keys: List[str] | None = None) -> str:
+        if keys is None:
+            keys = [
+                "pill",
+                "label",
+                "messages",
+                "requirements",
+                "description",
+                "code",
+                "result",
+            ]
+            if self.algorithm is not None:
+                keys.append("algorithm")
         md = ""
         if "pill" in keys:
             md += f"#### {self.pill}\n\n"
@@ -415,29 +426,36 @@ class Node(NodeLike, BaseModel):
         if "code" in keys and self.code is not None:
             code = "\n".join(self.code)
             md += f"**Code** \n```python\n{code}\n```\n\n"
-        if "result" in keys and self.result is not None:
-            clipped = None
-            if (
-                self.function_return_type is not None
-                and not self.function_return_type.is_None_type()
-            ):
-                text = self.result.pp_result_text(clip=15)
-                if text is not None:
-                    clipped = f"<pre>{text}</pre>"
+        if "result" in keys:
+            md += f"**Output** \n\n"
 
-            if not clipped:
-                text = self.result.pp_output_text(clip=15)
-                if text is not None:
-                    clipped = f"<pre>{text}</pre>"
+            if self.function_return_type is not None:
+                md += self.function_return_type.description
+                md += "\n\n"
 
-            if not clipped:
-                image_url = self.result.output_image()
-                if image_url is not None:
-                    base64encoded = image_url.split(",", maxsplit=1)
-                    image_data = base64encoded[0] + ";base64," + base64encoded[1]
-                    clipped = f"![{self.pill}]({image_data})"
+            if self.result is not None:
+                clipped = None
+                if (
+                    self.function_return_type is not None
+                    and not self.function_return_type.is_None_type()
+                ):
+                    text = self.result.pp_result_text(clip=15)
+                    if text is not None:
+                        clipped = f"<pre>{text}</pre>"
 
-            md += f"**Output** \n\n{clipped}\n\n"
+                if not clipped:
+                    text = self.result.pp_output_text(clip=15)
+                    if text is not None:
+                        clipped = f"<pre>{text}</pre>"
+
+                if not clipped:
+                    image_url = self.result.output_image()
+                    if image_url is not None:
+                        base64encoded = image_url.split(",", maxsplit=1)
+                        image_data = base64encoded[0] + ";base64," + base64encoded[1]
+                        clipped = f"![{self.pill}]({image_data})"
+
+                md += f"{clipped}\n\n"
 
         return md
 
@@ -535,7 +553,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                         function_name=node["function_name"],
                         function_result_var=node["function_result_var"],
                         predecessors=node["predecessors"],
-                        assertions=node["assertions"],
+                        assertions=node.get("assertions", None),
                         phase=Phase.clean,
                         cache=BuildCache(),
                     )

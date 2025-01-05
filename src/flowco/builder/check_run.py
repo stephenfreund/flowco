@@ -64,7 +64,7 @@ def _repair_run(
 
             return node.update(result=result)
         except Exception as e:
-            if retries == 0:
+            if stashed_error is None:
                 stashed_error = e
             retries += 1
 
@@ -79,18 +79,19 @@ def _repair_run(
 
             message(f"Repair attempt {retries} of {config.retries}")
 
-            initial_node = make_node_like(
-                node,
-                node_like_model(
-                    "description",
-                    "function_name",
-                    "function_parameters",
-                    "function_return_type",
-                    "requirements",
-                    "algorithm",
-                    "code",
-                ),
-            )
+            node_fields = [
+                "description",
+                "function_name",
+                "function_parameters",
+                "function_return_type",
+                "requirements",
+                "code",
+            ]
+
+            if config.x_algorithm_phase:
+                node_fields.append("algorithm")
+
+            initial_node = make_node_like(node, node_like_model(*node_fields))
 
             assistant.add_prompt_by_key(
                 "repair-node-run",
