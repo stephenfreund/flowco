@@ -1,12 +1,11 @@
 import streamlit as st
-from flowco.builder import build
 from flowco.dataflow.dfg import Geometry
-from flowco.ui.dialogs.edit_node import edit_node
 from flowco.ui.dialogs.data_files import data_files_dialog
 from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_page import UIPage
-from flowco.ui.ui_util import phase_for_last_shown_part, set_session_state, toggle
-from flowco.util.output import error, log, debug, warn
+from flowco.ui.ui_util import phase_for_last_shown_part, set_session_state
+from flowco.util.config import config
+from flowco.util.output import debug
 from flowco.ui.page_files.base_page import FlowcoPage
 
 import queue
@@ -24,6 +23,11 @@ from flowco.ui.ui_page import UIPage
 from code_editor import code_editor
 from flowthon.flowthon import FlowthonProgram
 
+if config.x_algorithm_phase:
+    from flowco.ui.dialogs.edit_node import edit_node
+else:
+    from flowco.ui.dialogs.edit_node_no_alg import edit_node
+
 
 class BuildPage(FlowcoPage):
 
@@ -35,13 +39,13 @@ class BuildPage(FlowcoPage):
                     st.session_state.builder.get_message(),
                 )
         with st.container(key="button_bar"):
-            cols = st.columns(7)
-            with cols[0]:
+            cols = st.columns(8)
+            with cols[1]:
                 st.button(
                     (
-                        ":material/play_circle:"
+                        ":material/play_circle: Run All"
                         if st.session_state.builder is None
-                        else ":material/stop_circle:"
+                        else ":material/stop_circle: Stop"
                     ),
                     on_click=lambda: set_session_state(
                         "trigger_build_toggle",
@@ -54,16 +58,23 @@ class BuildPage(FlowcoPage):
                         else "Stop building"
                     ),
                 )
-            with cols[1]:
+            with cols[0]:
                 st.button(
-                    ":material/refresh:",
+                    ":material/refresh: Update",
                     on_click=lambda: set_session_state(
                         "trigger_build_toggle", "Update"
                     ),
                     disabled=not self.graph_is_editable(),
                     help="Build and run any nodes that have changed since the last Run",
                 )
-            with cols[4]:
+
+            with cols[2]:
+                st.write(
+                    "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
+                    unsafe_allow_html=True,
+                )
+
+            with cols[3]:
                 st.button(
                     ":material/undo:",
                     disabled=(
@@ -73,7 +84,7 @@ class BuildPage(FlowcoPage):
                     on_click=lambda: st.session_state.ui_page.undo(),
                     help="Undo the last change",
                 )
-            with cols[5]:
+            with cols[4]:
                 st.button(
                     ":material/redo:",
                     disabled=(
@@ -82,6 +93,11 @@ class BuildPage(FlowcoPage):
                     ),
                     on_click=lambda: st.session_state.ui_page.redo(),
                     help="Redo the last change",
+                )
+            with cols[5]:
+                st.write(
+                    "<span>&nbsp;&nbsp;&nbsp;</span>",
+                    unsafe_allow_html=True,
                 )
             with cols[6]:
                 if st.button(
@@ -100,6 +116,13 @@ class BuildPage(FlowcoPage):
                     ui_page.update_dfg(dfg)
                     st.session_state.force_update = True
                     st.rerun()
+            with cols[7]:
+                if st.button(
+                    ":material/table_view:",
+                    disabled=not self.graph_is_editable(),
+                    help="Manage data files for the diagram",
+                ):
+                    data_files_dialog()
 
     def auto_update(self):
         self.toggle_building(force=False)
@@ -249,30 +272,30 @@ class BuildPage(FlowcoPage):
         #     ),
         # )
 
-        st.write("### Description")
+        st.write("### Notes")
         st.write(ui_page.dfg().description)
 
         # with st.container(key="ignore_page_controls"):
-        cols = st.columns(3)
+        cols = st.columns(4)
         with cols[0]:
             if st.button(
-                ":material/edit_note: Desc.",
+                ":material/edit_note: Notes",
                 disabled=not self.graph_is_editable(),
                 help="Edit the description of the diagram",
             ):
                 self.edit_description()
 
-        with cols[1]:
-            if st.button(
-                ":material/table_view: Files",
-                disabled=not self.graph_is_editable(),
-                help="Manage data files for the diagram",
-            ):
-                data_files_dialog()
+        # with cols[1]:
+        #     if st.button(
+        #         ":material/table_view: Files",
+        #         disabled=not self.graph_is_editable(),
+        #         help="Manage data files for the diagram",
+        #     ):
+        #         data_files_dialog()
 
         with cols[2]:
             if st.button(
-                ":material/code: Source",
+                ":material/code:",
                 disabled=not self.graph_is_editable(),
                 help="Edit the diagram as a Flowthon program",
             ):

@@ -102,7 +102,10 @@ class Node(NodeLike, BaseModel):
 
         if "code" in data:
             code = "\n".join(data["code"])
-            formatted_code = black.format_str(code, mode=black.Mode())
+            try:
+                formatted_code = black.format_str(code, mode=black.Mode())
+            except Exception as e:
+                formatted_code = code
             data["code"] = formatted_code.split("\n")
 
         super().__init__(**data)
@@ -309,7 +312,10 @@ class Node(NodeLike, BaseModel):
         # if code is updated, we need to reset the cache
         if "code" in kwargs:
             code = "\n".join(kwargs["code"])
-            formatted_code = black.format_str(code, mode=black.Mode())
+            try:
+                formatted_code = black.format_str(code, mode=black.Mode())
+            except Exception as e:
+                formatted_code = code
             kwargs["code"] = formatted_code.split("\n")
 
         new_node = self.model_copy(update=kwargs)

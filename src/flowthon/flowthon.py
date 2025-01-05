@@ -1,26 +1,22 @@
 import ast
-from cmath import phase
 import difflib
 import json
 import re
 import textwrap
 from typing import Any, Dict, List, Optional
 
-import markdown
-from bs4 import BeautifulSoup
 from pydantic import BaseModel, ValidationError
-from regex import P
 
 from flowco.builder.build import BuildEngine
 from flowco.builder.pass_config import PassConfig
 from flowco.dataflow.dfg import DataFlowGraph, Edge, Geometry, Node
 from flowco.dataflow.phase import Phase
+from flowco.util.config import config
 from flowco.util.config import AbstractionLevel
 from flowco.util.errors import FlowcoError
 from flowco.util.output import log, logger, message
 from flowco.util.text import (
     pill_to_function_name,
-    pill_to_python_name,
     pill_to_result_var_name,
 )
 from flowco.util.yes_no import YesNoPrompt
@@ -52,10 +48,15 @@ class FlowthonNode(BaseModel):
         }
         if self.requirements:
             map["requirements"] = self.requirements
-        if self.algorithm and level in [
-            AbstractionLevel.algorithm,
-            AbstractionLevel.code,
-        ]:
+        if (
+            config.x_algorithm_phase
+            and self.algorithm
+            and level
+            in [
+                AbstractionLevel.algorithm,
+                AbstractionLevel.code,
+            ]
+        ):
             map["algorithm"] = self.algorithm
         if self.code and level in [AbstractionLevel.code]:
             map["code"] = self.code
@@ -65,19 +66,20 @@ class FlowthonNode(BaseModel):
     def from_json(cls, pill: str, node_data: dict) -> "FlowthonNode":
         assert isinstance(pill, str), f"Expected str, got {type(pill)}"
         assert isinstance(node_data, dict), f"Expected dict, got {type(node_data)}"
-        assert all(
-            key
-            in [
-                "uses",
-                "label",
-                "requirements",
-                "algorithm",
-                "code",
-                "assertions",
-                "imports",
-            ]
-            for key in node_data
-        ), f"Missing keys in {node_data}"
+
+        keys = [
+            "uses",
+            "label",
+            "requirements",
+            "code",
+            "assertions",
+            "imports",
+        ]
+
+        if config.x_algorithm_phase:
+            keys.append("algorithm")
+
+        assert all(key in keys for key in node_data), f"Missing keys in {node_data}"
 
         # assert that uses is a list of strings and that all strings are valid pills in the nodes
         assert isinstance(
@@ -100,13 +102,14 @@ class FlowthonNode(BaseModel):
                 isinstance(x, str) for x in node_data["requirements"]
             ), f"Expected list of str, got {node_data['requirements']}"
 
-        if "algorithm" in node_data:
-            assert isinstance(
-                node_data["algorithm"], list
-            ), f"Expected list, got {type(node_data['algorithm'])}"
-            assert all(
-                isinstance(x, str) for x in node_data["algorithm"]
-            ), f"Expected list of str, got {node_data['algorithm']}"
+        if config.x_algorithm_phase:
+            if "algorithm" in node_data:
+                assert isinstance(
+                    node_data["algorithm"], list
+                ), f"Expected list, got {type(node_data['algorithm'])}"
+                assert all(
+                    isinstance(x, str) for x in node_data["algorithm"]
+                ), f"Expected list of str, got {node_data['algorithm']}"
 
         if "code" in node_data:
             assert isinstance(
@@ -140,7 +143,9 @@ class FlowthonNode(BaseModel):
             uses=node_data.get("uses", []),
             label=node_data.get("label", ""),
             requirements=node_data.get("requirements", None),
-            algorithm=node_data.get("algorithm", None),
+            algorithm=(
+                node_data.get("algorithm", None) if config.x_algorithm_phase else None
+            ),
             imports=node_data.get("imports", None),
             code=node_data.get("code", None),
             assertions=node_data.get("assertions", None),
@@ -497,11 +502,11 @@ class FlowthonProgram(BaseModel):
                     uses=info.get("parameters", []),
                     label=sections.get("short_description", ""),  # Wrap in list
                     requirements=sections.get("requirements"),
-                    algorithm=sections.get("algorithm"),
+                    algorithm=(
+                        sections.get("algorithm") if config.x_algorithm_phase else None
+                    ),
                     code=code,
                     assertions=sections.get("assertions"),
-                    preconditions=sections.get("preconditions"),
-                    steps=sections.get("steps"),
                 )
                 return node
             except ValidationError as e:
@@ -633,11 +638,12 @@ class FlowthonProgram(BaseModel):
                 if section == "code" and abstraction_level != AbstractionLevel.code:
                     continue
 
-                if section == "algorithm" and (
-                    abstraction_level != AbstractionLevel.algorithm
-                    and abstraction_level != AbstractionLevel.code
-                ):
-                    continue
+                if config.x_algorithm_phase:
+                    if section == "algorithm" and (
+                        abstraction_level != AbstractionLevel.algorithm
+                        and abstraction_level != AbstractionLevel.code
+                    ):
+                        continue
 
                 if content:
                     # Capitalize the first letter of the section name for the header
@@ -698,12 +704,8 @@ class FlowthonProgram(BaseModel):
         if incoming is None:
             return current
 
-        current_header = next(
-            (line for line in current if line.strip().endswith(":")), None
-        )
-        incoming_header = next(
-            (line for line in incoming if line.strip().endswith(":")), None
-        )
+        current_header = next(line for line in current if line.strip().endswith(":"))
+        incoming_header = next(line for line in incoming if line.strip().endswith(":"))
 
         current_header_index = current.index(current_header) if current_header else None
         incoming_header_index = (
@@ -771,18 +773,27 @@ class FlowthonProgram(BaseModel):
                         else new_node.requirements
                     ),
                     algorithm=(
-                        node.algorithm if node.algorithm else new_node.algorithm
+                        (node.algorithm if node.algorithm else new_node.algorithm)
+                        if config.x_algorithm_phase
+                        else None
                     ),
                     code=(node.code if node.code else new_node.code),
                 )
 
                 phase = original.phase
-                if new_node.code != original.code:
-                    phase = min(phase, Phase.algorithm)
-                if new_node.algorithm != original.algorithm:
-                    phase = min(phase, Phase.requirements)
-                if new_node.requirements != original.requirements:
-                    phase = Phase.clean
+
+                if config.x_algorithm_phase:
+                    if new_node.code != original.code:
+                        phase = min(phase, Phase.algorithm)
+                    if new_node.algorithm != original.algorithm:
+                        phase = min(phase, Phase.requirements)
+                    if new_node.requirements != original.requirements:
+                        phase = Phase.clean
+                else:
+                    if new_node.code != original.code:
+                        phase = min(phase, Phase.requirements)
+                    if new_node.requirements != original.requirements:
+                        phase = Phase.clean
 
                 new_node = new_node.update(
                     phase=phase,
@@ -793,8 +804,11 @@ class FlowthonProgram(BaseModel):
                     edits.append("label")
                 if node.requirements and node.requirements != original.requirements:
                     edits.append("requirements")
-                if node.algorithm and node.algorithm != original.algorithm:
-                    edits.append("algorithm")
+
+                if config.x_algorithm_phase:
+                    if node.algorithm and node.algorithm != original.algorithm:
+                        edits.append("algorithm")
+
                 if node.code and node.code != original.code:
                     edits.append("code")
                 if node.assertions and node.assertions != original.assertions:
@@ -830,7 +844,7 @@ class FlowthonProgram(BaseModel):
         for node_id in new_graph.topological_sort():
             new_graph[node_id].predecessors = predecessors(new_graph[node_id])
             if (
-                node_id in dfg
+                node_id in dfg.node_ids()
                 and new_graph[node_id].predecessors != dfg[node_id].predecessors
             ):
                 new_graph[node_id].phase = Phase.clean

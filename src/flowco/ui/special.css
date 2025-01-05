@@ -94,6 +94,17 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
     padding: 0rem;
 }
 
+.st-key-button_bar .stHorizontalBlock {
+    gap: 0rem !important;
+    
+}
+
+.st-key-undo {
+    margin-left: 1rem !important;
+    padding-left: 1rem !important;
+}
+
+
 .st-key-button_bar .stColumn {
     width: fit-content !important;
     flex: unset !important;

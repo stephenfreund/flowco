@@ -12,6 +12,8 @@ import seaborn as sns
 @st.dialog("Manage Data Files", width="large")
 def data_files_dialog():
 
+    ok = st.empty()
+
     uploaded_files = st.file_uploader(
         "Upload New Dataset", type=["csv"], accept_multiple_files=True
     )
@@ -26,7 +28,7 @@ def data_files_dialog():
     with st.expander("Your Datasets", expanded=True):
         for file in files:
             with flex_columns():
-                cols = st.columns(2)
+                cols = st.columns([1, 3])
                 with cols[0]:
                     include = st.checkbox(
                         file_path_to_table_name(file), value=(tables.contains(file))
@@ -44,22 +46,29 @@ def data_files_dialog():
             elif not include and tables.contains(file):
                 tables = tables.remove(file)
 
-    with st.expander("Example Datasets from Seaborn Library"):
+    with st.expander(
+        "Example Datasets",
+        expanded=(len(files) == 0)
+        or any([tables.contains(x) for x in sns.get_dataset_names()]),
+    ):
         for name in sns.get_dataset_names():
             with flex_columns():
-                cols = st.columns(2)
+                cols = st.columns([1, 3])
                 with cols[0]:
                     include = st.checkbox(name, value=(tables.contains(name)))
                 with cols[1]:
                     with st.popover("Show"):
                         st.dataframe(
                             sns.load_dataset(name),
+                            selection_mode="single",
+                            hide_index=True,
+                            use_container_width=True,
                         )
             if include and not tables.contains(name):
                 tables = tables.add(name)
             elif not include and tables.contains(name):
                 tables = tables.remove(name)
 
-    if st.button("Ok"):
+    if ok.button("Save Selection"):
         page.update_tables(tables)
         st.rerun()

@@ -1326,3 +1326,86 @@ full-compile-code: |
     If the step already has code, fix it to implement the requirements and nothing more.
 
     {diff_code}
+
+###########################################
+
+change_command_no_alg: |
+    Here is the current label, requirements, and code for a computation step:
+    ```
+    {current}
+    ```
+    You will modify it to do the following:
+    ```
+    {command}
+    ```
+      
+    Proceed as follows. Ask questions to clarify any ambiguities or inconsistencies.
+
+    1. Describe the differences in the label, requirements, and code between the current
+       and the changed node.
+    2. Take the current label and make any necessary changes to the label to reflect the changes from step 1.
+    3. Take the current requirements and function_return_type 
+       and make any necessary changes to those fields to reflect the changes from step 1.
+    4. Take the current code and make any necessary changes to the code to reflect the changes from step 1.
+
+lift_up_changes_from_code_no_alg: |
+    You will be given the old and new descriptions of a computation step.  
+
+    Proceed as follows. Ask questions to clarify any ambiguities or inconsistencies.
+
+    1. Describe any semantic changes between the old and new code, or say "no changes".
+        Here are the old:
+        ```
+        {old_code}
+        ```
+        Here are the new:
+        ```
+        {new_code}
+        ```
+    2. Take the new requirements:
+       ```
+       {new_requirements}
+       ```
+       and make any necessary changes to reflect the changes from step 1.
+    3. Describe any semantic changes between the old requirements and those from step 2, or say "no changes".
+        Here are the old:
+        ```
+        {old_requirements}
+        ```
+    6. Take the new label:
+       ```
+       {new_label}
+       ```
+       and make any necessary changes to reflect the changes from step 3.
+
+
+lift_up_changes_from_editing_no_alg: |
+    You will be given the old and new descriptions of a computation step.  
+
+    Proceed as follows.
+
+    0. Revise the new code to address any problems in it.
+    1. Describe any semantic changes between the old and the code from step 0, or say "no changes".
+        Here are the old:
+        ```
+        {old_code}
+        ```
+        Here are the new:
+        ```
+        {new_code}
+        ```
+    2. Take the new requirements:
+       ```
+       {new_requirements}
+       ```
+       and make any necessary changes to reflect the changes from step 1.
+    5. Describe any semantic changes between the old requirements and those from step 2, or say "no changes".
+        Here are the old:
+        ```
+        {old_requirements}
+        ```
+    6. Take the new label:
+       ```
+       {new_label}
+       ```
+       and make any necessary changes to reflect the changes from step 1.

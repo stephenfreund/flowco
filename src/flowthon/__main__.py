@@ -101,9 +101,12 @@ class CreateCommand(Command):
         super().__init__(subparsers)
         self.parser = subparsers.add_parser("create", help="Make Flowthon file")
         self.parser.add_argument("--flowco", type=str, help="Convert from flowco file")
-        self.parser.add_argument(
-            "--algorithm", help="show algorithm", action="store_true"
-        )
+
+        if config.x_algorithm_phase:
+            self.parser.add_argument(
+                "--algorithm", help="show algorithm", action="store_true"
+            )
+
         self.parser.add_argument("--code", help="show code", action="store_true")
         self.parser.add_argument(
             "--force", help="overwrite file if exsts", action="store_true"
@@ -118,7 +121,7 @@ class CreateCommand(Command):
     def run(self, args):
         if args.code:
             level = AbstractionLevel.code
-        elif args.algorithm:
+        elif config.x_algorithm_phase and args.algorithm:
             level = AbstractionLevel.algorithm
         else:
             level = AbstractionLevel.spec
@@ -213,7 +216,9 @@ class RunCommand(Command):
 
             if any(x.code and "    ..." not in x.code for x in flowthon.nodes.values()):
                 level = AbstractionLevel.code
-            elif any(x.algorithm for x in flowthon.nodes.values()):
+            elif config.x_algorithm_phase and any(
+                x.algorithm for x in flowthon.nodes.values()
+            ):
                 level = AbstractionLevel.algorithm
             else:
                 level = AbstractionLevel.spec
@@ -301,7 +306,9 @@ class ToSourceCommand(Command):
 
         if any(x.code != None for x in flowthon.nodes.values()):
             level = AbstractionLevel.code
-        elif any(x.algorithm != None for x in flowthon.nodes.values()):
+        elif config.x_algorithm_phase and any(
+            x.algorithm != None for x in flowthon.nodes.values()
+        ):
             level = AbstractionLevel.algorithm
         else:
             level = AbstractionLevel.spec
@@ -348,7 +355,9 @@ class ToJsonCommand(Command):
 
         if any(x.code != None for x in flowthon.nodes.values()):
             level = AbstractionLevel.code
-        elif any(x.algorithm != None for x in flowthon.nodes.values()):
+        elif config.x_algorithm_phase and any(
+            x.algorithm != None for x in flowthon.nodes.values()
+        ):
             level = AbstractionLevel.algorithm
         else:
             level = AbstractionLevel.spec

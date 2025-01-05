@@ -7,9 +7,6 @@ from flowco.util.config import config
 
 @st.cache_resource
 def custom_css():
-    #
-    # stSkeleton height shouldb e 0
-    #
     script_path = os.path.abspath(__file__)
     script_dir = os.path.dirname(script_path)
     filename = "special.css"
