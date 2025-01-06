@@ -1,7 +1,5 @@
 from flowco.util.semantic_diff import (
     semantic_diff,
-    prop_algorithm_to_requirements,
-    prop_code_to_requirements_and_alg,
 )
 from pydantic import BaseModel
 

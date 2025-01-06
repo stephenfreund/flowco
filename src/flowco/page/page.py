@@ -138,6 +138,7 @@ class Page(BaseModel, extra="allow"):
     def atomic(self):
         return self
 
+    @staticmethod
     def atomic_method(f):
         @functools.wraps(f)
         def wrapper(self, *args, **kwargs):
@@ -523,3 +524,12 @@ class Page(BaseModel, extra="allow"):
     def user_edit_graph_description(self, description: str) -> None:
         if description != self.dfg.description:
             self.update_dfg(self.dfg.update(description=description))
+
+    @atomic_method
+    def user_edit_node_assertions(self, node_id: str, assertions: List[str]) -> None:
+        node = self.dfg[node_id]
+        if assertions != node.assertions:
+            self.update_dfg(self.dfg.with_node(node.update(assertions=assertions)))
+            self.update_dfg(
+                self.dfg.reduce_phases_to_below_target(node.id, Phase.assertions_code)
+            )

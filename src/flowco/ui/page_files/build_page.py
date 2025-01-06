@@ -1,5 +1,6 @@
 import streamlit as st
 from flowco.dataflow.dfg import Geometry
+from flowco.dataflow.phase import Phase
 from flowco.ui.dialogs.data_files import data_files_dialog
 from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_page import UIPage
@@ -31,6 +32,19 @@ else:
 
 class BuildPage(FlowcoPage):
 
+    # Override for other pages
+
+    def update_button_label(self) -> str:
+        return ":material/refresh: Update"
+
+    def run_button_label(self) -> str:
+        return ":material/play_circle: Run"
+
+    def build_target_phase(self) -> Phase:
+        return Phase.run_checked
+
+    # Below should all be untouched for subclasses
+
     def button_bar(self):
         if st.session_state.builder is not None:
             with st.container(border=True):
@@ -43,7 +57,7 @@ class BuildPage(FlowcoPage):
             with cols[1]:
                 st.button(
                     (
-                        ":material/play_circle: Run All"
+                        self.run_button_label()
                         if st.session_state.builder is None
                         else ":material/stop_circle: Stop"
                     ),
@@ -60,7 +74,7 @@ class BuildPage(FlowcoPage):
                 )
             with cols[0]:
                 st.button(
-                    ":material/refresh: Update",
+                    self.update_button_label(),
                     on_click=lambda: set_session_state(
                         "trigger_build_toggle", "Update"
                     ),
@@ -130,6 +144,7 @@ class BuildPage(FlowcoPage):
 
     def edit_node(self, node_id: str):
         ui_page: UIPage = st.session_state.ui_page
+        # Refresh before editing!
         if ui_page.dfg()[node_id].phase < phase_for_last_shown_part():
             if st.session_state.builder is None:
                 st.session_state.builder = Builder(
@@ -146,7 +161,12 @@ class BuildPage(FlowcoPage):
         ui_page: UIPage = st.session_state.ui_page
         builder: Builder = st.session_state.builder
         if builder is None:
-            st.session_state.builder = Builder(ui_page.page(), None, force=force)
+            st.session_state.builder = Builder(
+                ui_page.page(),
+                None,
+                target_phase=self.build_target_phase(),
+                force=force,
+            )
             st.session_state.builder_progress = 0
         else:
             builder.stop()
@@ -212,7 +232,7 @@ class BuildPage(FlowcoPage):
                 time.sleep(0.25)
                 st.rerun()
 
-    @st.dialog("Edit Description", width="wide")
+    @st.dialog("Edit Description", width="large")
     def edit_description(self):
         ui_page: UIPage = st.session_state.ui_page
         text = st.text_area(
@@ -262,20 +282,9 @@ class BuildPage(FlowcoPage):
     def global_sidebar(self):
         ui_page: UIPage = st.session_state.ui_page
 
-        # st.text_area(
-        #     "Description",
-        #     key="graph_description",
-        #     value=ui_page.dfg().description,
-        #     height=200,
-        #     on_change=lambda: ui_page.page().user_edit_graph_description(
-        #         st.session_state.graph_description
-        #     ),
-        # )
-
         st.write("### Notes")
         st.write(ui_page.dfg().description)
 
-        # with st.container(key="ignore_page_controls"):
         cols = st.columns(4)
         with cols[0]:
             if st.button(
@@ -284,14 +293,6 @@ class BuildPage(FlowcoPage):
                 help="Edit the description of the diagram",
             ):
                 self.edit_description()
-
-        # with cols[1]:
-        #     if st.button(
-        #         ":material/table_view: Files",
-        #         disabled=not self.graph_is_editable(),
-        #         help="Manage data files for the diagram",
-        #     ):
-        #         data_files_dialog()
 
         with cols[2]:
             if st.button(

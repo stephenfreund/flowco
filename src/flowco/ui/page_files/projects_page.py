@@ -11,6 +11,7 @@ from flowco.session.session_file_system import (
 import streamlit as st
 
 from flowco import __main__
+from flowco.ui.dialogs.data_files import data_files_dialog
 from flowco.ui.page_files.base_page import FlowcoPage
 from flowco.ui.ui_dialogs import confirm
 from flowco.ui.ui_page import set_ui_page
@@ -33,9 +34,9 @@ class ProjectsPage(FlowcoPage):
             st.error("Project already exists.")
         if name.endswith(".flowco"):
             name = name[: -len(".flowco")]
-        if st.button("OK") and name and name not in self.get_project_names():
+        if name and name not in self.get_project_names():
+            st.session_state.just_created_project = True
             self.add_project(name)
-            st.rerun()
 
     @st.dialog("New project", width="medium")
     def dup_project(self):
@@ -65,7 +66,7 @@ class ProjectsPage(FlowcoPage):
             st.session_state.force_update = True
         else:
             st.session_state.project_name = self.get_current_project_name()
-        st.rerun()
+        # st.rerun()
 
     def delete_project(self):
         file = st.session_state.ui_page.page().file_name
@@ -89,7 +90,7 @@ class ProjectsPage(FlowcoPage):
         st.session_state.selected_node = "<<<<<"
         st.session_state.force_update = True
         st.session_state.clear_graph = True
-        st.rerun()
+        # st.rerun()
 
     def sidebar(self):
         names = self.get_project_names()
@@ -148,6 +149,10 @@ class ProjectsPage(FlowcoPage):
             ui_page = st.session_state.ui_page
             st.write(ui_page.dfg().description)
 
+            if st.session_state.just_created_project:
+                st.session_state.just_created_project = False
+                data_files_dialog()
+
     def get_project_names(self):
         flowco_files = fs_glob("", "*.flowco")
         names = [file[: -len(".flowco")] for file in flowco_files]
@@ -195,4 +200,4 @@ class ProjectsPage(FlowcoPage):
                 st.session_state.selected_node = "<<<<<"
                 st.session_state.force_update = True
                 st.session_state.clear_graph = True
-                st.rerun()
+                # st.rerun()

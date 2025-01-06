@@ -64,6 +64,8 @@ phase_to_message = {
     Phase.code: "Making code",
     Phase.runnable: "Making runnable",
     Phase.run_checked: "Running",
+    Phase.assertions_code: "Making checks",
+    Phase.assertions_checked: "Checking",
 }
 
 

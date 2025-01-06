@@ -453,7 +453,7 @@ function showCustomBox(cell: any): void {
     // Resize all images inside the box
     const images = box.querySelectorAll('img');
     images.forEach((img) => {
-      img.style.maxWidth = '400px';
+      img.style.maxWidth = '450px';
       img.style.height = 'auto'; // Maintain aspect ratio
     });
   }

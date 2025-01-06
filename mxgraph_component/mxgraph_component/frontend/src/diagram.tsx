@@ -405,6 +405,7 @@ function layoutDiagram(graph: mxGraph) {
 
 export function updateDiagram(graph: mxGraph, diagram: mxDiagram): void {
     const model = graph.getModel();
+    
     model.beginUpdate();
     console.log('updateDiagram', diagram);
     try {

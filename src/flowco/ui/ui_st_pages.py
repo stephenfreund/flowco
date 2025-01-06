@@ -5,23 +5,21 @@ import streamlit as st
 
 # from flowco.ui.page_files.ama_page import AMAPage
 from flowco.ui.page_files.build_page import BuildPage
+from flowco.ui.page_files.check_page import CheckPage
 from flowco.ui.page_files.projects_page import ProjectsPage
+from flowco.util.output import error
 
 
 def st_pages():
     def build_main():
         st.session_state.current_page = "build"
-        try:
-            BuildPage().main()
-        except Exception as e:
-            print(e)
-            traceback.print_exc()
+        # st.session_state.selected_node = "<<<<<"
+        BuildPage().main()
 
-    # def ama_main():
-    #     if st.session_state.current_page != "ama":
-    #         st.session_state.selected_node = "<<<<<"
-    #     st.session_state.current_page = "ama"
-    #     AMAPage().main()
+    def check_main():
+        st.session_state.current_page = "check"
+        # st.session_state.selected_node = "<<<<<"
+        CheckPage().main()
 
     def test_main():
         st.write("Test")
@@ -33,23 +31,44 @@ def st_pages():
         st.session_state.selected_node = "<<<<<"
         ProjectsPage().main()
 
-    if st.session_state.builder is None and not st.session_state.ama_responding:
-        pages = [
-            st.Page(
-                projects_main,
-                title="Projects",
-                default=st.session_state.ui_page is None,
-            ),
-            st.Page(
-                build_main, title="Edit", default=st.session_state.ui_page is not None
-            ),
-            st.Page(test_main, title="Test"),
-            # st.Page(ama_main, title="Ask Me Anything"),
-        ]
-    else:
-        pages = [
-            st.Page(build_main, title="Edit"),
-        ]
+    try:
+        if st.session_state.builder is None and not st.session_state.ama_responding:
+            pages = [
+                st.Page(
+                    projects_main,
+                    title="Projects",
+                    default=st.session_state.ui_page is None,
+                ),
+                st.Page(
+                    build_main,
+                    title="Edit",
+                    default=st.session_state.ui_page is not None,
+                ),
+                st.Page(
+                    check_main,
+                    title="Check",
+                ),
+                st.Page(test_main, title="Test"),
+            ]
+        else:
+            if st.session_state.current_page == "build":
+                pages = [
+                    st.Page(build_main, title="Edit"),
+                ]
+            elif st.session_state.current_page == "check":
+                pages = [
+                    st.Page(check_main, title="Check"),
+                ]
+            else:
+                assert (
+                    False
+                ), f"Builder running from bad page {st.session_state.current_page}"
 
-    pg = st.navigation(pages)
-    return pg
+        pg = st.navigation(pages)
+        return pg
+    except Exception as e:
+        error(e)
+        error(traceback.format_exc())
+        st.error(e)
+        st.exception(e)
+        st.stop()

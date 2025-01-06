@@ -139,9 +139,8 @@ def toggle(key):
     st.session_state[key] = not st.session_state[key]
 
 
-def set_session_state(key, value):
+def set_session_state(key, value) -> None:
     st.session_state[key] = value
-    return value
 
 
 def show_requirements():

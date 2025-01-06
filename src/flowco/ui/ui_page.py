@@ -1,3 +1,4 @@
+from typing import List
 import streamlit as st
 import os
 
@@ -52,8 +53,8 @@ class UIPage(PageListener):
     def dfg(self):
         return self._page.dfg
 
-    def dfg_as_mx_diagram(self) -> MxDiagram:
-        return mx_diagram.from_dfg(self.dfg(), st_abstraction_level())
+    def dfg_as_mx_diagram(self, node_fields_to_show: List[str]) -> MxDiagram:
+        return mx_diagram.from_dfg(self.dfg(), node_fields_to_show)
 
     def node(self, node_id: str) -> Node | None:
         return self.dfg().get_node(node_id)
@@ -90,4 +91,4 @@ def set_ui_page(ui_page: UIPage):
         with logger("closing current page"):
             page = st.session_state.ui_page.page()
     st.session_state.ui_page = ui_page
-        # st.rerun()
+    # st.rerun()

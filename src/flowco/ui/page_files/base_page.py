@@ -1,4 +1,5 @@
 import time
+from typing import List, Tuple
 from openai import OpenAI
 import uuid
 
@@ -16,6 +17,7 @@ from flowco.ui.ui_dialogs import settings
 from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_util import (
     show_code,
+    show_requirements,
     toggle,
 )
 import streamlit as st
@@ -36,6 +38,38 @@ else:
 
 
 class FlowcoPage:
+
+    # override and call super in subclasses
+    def pills(self) -> List[Tuple[str, bool]]:
+
+        if config.x_algorithm_phase:
+            pill_list = []
+            if st.session_state.show_ama:
+                pill_list.append(("AMA", True))
+            if not config.x_no_descriptions:
+                pill_list.append(("Description", True))
+            if st.session_state.show_output:
+                pill_list.append(("Output", True))
+            p = pill_list
+        else:
+            p = [("AMA", True), ("Output", True), ("Code", False)]
+
+        return p
+
+    # override and call super in subclasses
+    def node_fields_to_show(self) -> List[str]:
+        fields = ["pill", "label", "requirements", "result", "messages"]
+        if config.x_algorithm_phase:
+            fields.append("algorithm")
+
+        if (
+            "show_pills" in st.session_state
+            and "Code" in st.session_state.show_pills
+            or "Code" in [pill for pill, show in self.pills() if show]
+        ):
+            fields.append("code")
+
+        return fields
 
     def sidebar(self):
         ui_page: UIPage = st.session_state.ui_page
@@ -58,6 +92,9 @@ class FlowcoPage:
 
         # st.select_slider(
         with st.container(key="controls"):
+            pills = self.pills()
+            all_pills = [pill for pill, _ in pills]
+            default_pills = [pill for pill, show in pills if show]
             if config.x_algorithm_phase:
                 c = st.columns(2)
                 with c[0]:
@@ -81,12 +118,8 @@ class FlowcoPage:
                 with c[1]:
                     st.pills(
                         "Show:",
-                        ["Output"]
-                        + (["Description"] if not config.x_no_descriptions else [])
-                        + ["AMA"],
-                        default=(["Output"] if st.session_state.show_output else [])
-                        + (["Description"] if st.session_state.show_description else [])
-                        + (["AMA"] if st.session_state.show_ama else []),
+                        all_pills,
+                        default=default_pills,
                         selection_mode="multi",
                         key="show_pills",
                         disabled=not self.graph_is_editable(),
@@ -101,19 +134,19 @@ class FlowcoPage:
                         st.session_state.abstraction_level = AbstractionLevel.spec
                     st.session_state.force_update = True
 
-                pills = ["AMA", "Output", "Code"]
-                default = ["AMA", "Output"]
-
                 st.pills(
                     "Show:",
-                    pills,
-                    default=default,
+                    all_pills,
+                    default=default_pills,
                     selection_mode="multi",
                     key="show_pills",
                     disabled=not self.graph_is_editable(),
                     on_change=fix,
                     label_visibility="collapsed",
                 )
+
+        if node is not None:
+            self.show_messages(node)
 
         self.show_ama(node)
 
@@ -144,9 +177,8 @@ class FlowcoPage:
 
     def node_sidebar(self, node: Node):
 
-        self.show_messages(node)
-
-        self.show_node_details(node)
+        with st.container(key="node_sidepanel"):
+            self.show_node_details(node)
 
     def show_ama(self, node: Node | None):
         page = st.session_state.ui_page.page()
@@ -155,12 +187,7 @@ class FlowcoPage:
 
         if "AMA" in st.session_state.show_pills:
             with st.container():
-                height = (
-                    400
-                    # if "AMA" in st.session_state.show_pills
-                    # or st.session_state.ama_responding
-                    # else 1
-                )
+                height = 400
                 container = st.container(
                     height=height, border=True, key="chat_container"
                 )
@@ -179,17 +206,9 @@ class FlowcoPage:
                     ):
                         st.rerun()
 
-                if (
-                    len(st.session_state.ama) > 0
-                    and "AMA" not in st.session_state.show_pills
-                ):
-                    ama_prompt = "Ask Me Anything!  Click AMA to see our conversation."
-                else:
-                    ama_prompt = "Ask Me Anything!"
-
                 with st.container(key="ama_columns"):
                     if prompt := st.chat_input(
-                        ama_prompt,
+                        "Ask Me Anything!",
                         key="ama_input",
                         on_submit=lambda: toggle("ama_responding"),
                         disabled=not self.graph_is_editable(),
@@ -242,65 +261,38 @@ class FlowcoPage:
     def auto_update(self):
         pass
 
+    # override and call super in subclasses
     def show_node_details(self, node):
-        with st.container(key="node_sidepanel"):
-            with st.container(key="node_output"):
-                if "Output" in st.session_state.show_pills and node is not None:
-                    st.write("#### Output")
-                    if (
-                        node.function_return_type is not None
-                        and not node.function_return_type.is_None_type()
-                    ):
-                        st.caption(f"{node.function_return_type.description}")
-                    self.show_output(node)
+        if "Output" in st.session_state.show_pills and node is not None:
+            st.write("#### Output")
+            if (
+                node.function_return_type is not None
+                and not node.function_return_type.is_None_type()
+            ):
+                st.caption(f"{node.function_return_type.description}")
+            self.show_output(node)
 
-            # with st.container(key="node_description"):
-            #     if "Description" in st.session_state.show_pills and node is not None:
-            #         if show_code():
-            #             st.write(f"**Return Type:** `{node.function_return_type}`")
+        with st.container(key="node_requirements"):
+            if show_requirements() and node is not None:
+                st.write("#### Requirements")
+                st.write(
+                    "\n".join(
+                        [
+                            "* " + x
+                            for x in (
+                                node.requirements
+                                if node.requirements is not None
+                                else []
+                            )
+                        ]
+                    )
+                )
 
-            #         st.write("#### Description")
-            #         description = (
-            #             node.description if node.description is not None else ""
-            #         )
-            #         function_computed_value = (
-            #             node.function_computed_value
-            #             if node.function_computed_value is not None
-            #             else ""
-            #         )
-            #         st.write(description + "\n\n" + function_computed_value)
-
-            # with st.container(key="node_requirements"):
-            #     if show_requirements() and node is not None:
-            #         st.write("#### Requirements")
-            #         st.write(
-            #             "\n".join(
-            #                 [
-            #                     "* " + x
-            #                     for x in (
-            #                         node.requirements
-            #                         if node.requirements is not None
-            #                         else []
-            #                     )
-            #                 ]
-            #             )
-            #         )
-
-            # with st.container(key="node_algorithm"):
-            #     if show_algorithm() and node is not None:
-            #         st.write("#### Algorithm")
-            #         if node.algorithm is not None:
-            #             algorithm = [
-            #                 f"* {x}" if not x.startswith("- ") else f"  {x}"
-            #                 for x in node.algorithm
-            #             ]
-            #             st.write("\n".join(algorithm))
-
-            with st.container(key="node_code"):
-                if show_code() and node is not None:
-                    st.write("#### Code")
-                    if node.code is not None:
-                        st.code("\n".join(node.code))
+        with st.container(key="node_code"):
+            if show_code() and node is not None:
+                st.write("#### Code")
+                if node.code is not None:
+                    st.code("\n".join(node.code))
 
     def show_output(self, node: Node):
         if node is not None and node.result is not None:
@@ -325,16 +317,13 @@ class FlowcoPage:
 
     def bottom_bar(self):
         ui_page: UIPage = st.session_state.ui_page
-        # with st.container():
-        #     cols = st.columns(2)
-        #     with cols[0]:
         if st.button(
             ":material/settings: Settings",
             help="Change settings",
             disabled=not self.graph_is_editable(),
         ):
             settings(ui_page)
-        # with cols[1]:
+
         if st.button(":material/logout: Logout", help="Sign out"):
             sign_out()
             st.rerun()
@@ -385,13 +374,15 @@ class FlowcoPage:
         if st.session_state.ui_page is not None:
             result = mxgraph_component(
                 key=st.session_state.nonce,
-                diagram=st.session_state.ui_page.dfg_as_mx_diagram().model_dump(),
+                diagram=st.session_state.ui_page.dfg_as_mx_diagram(
+                    self.node_fields_to_show()
+                ).model_dump(),
                 editable=self.graph_is_editable(),
                 selected_node=selected_node,
                 dummy=uuid.uuid4().hex if st.session_state.force_update else None,
                 refresh_phase=self.refresh_phase().value,
                 clear=st.session_state.clear_graph,
-            )  # type: ignore
+            )
 
             if not st.session_state.force_update:
                 self.update_ui_page(

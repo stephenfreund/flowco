@@ -25,7 +25,6 @@ from flowco.util.config import config
 from flowco.util.errors import FlowcoError
 from flowco.util.text import (
     format_basemodel,
-    function_name_to_title,
     pill_to_function_name,
     pill_to_python_name,
     pill_to_result_var_name,
@@ -408,6 +407,7 @@ class Node(NodeLike, BaseModel):
                 "description",
                 "code",
                 "result",
+                "assertions",
             ]
             if self.algorithm is not None:
                 keys.append("algorithm")
@@ -417,8 +417,10 @@ class Node(NodeLike, BaseModel):
         if "label" in keys:
             md += f"{self.label}\n\n"
         if "messages" in keys and self.messages is not None:
-            md += f"**Messages**\n\n"
-            md += "\n".join([f"* {x}" for x in self.messages])
+            for level in ["error", "warning", "info"]:
+                for message in self.messages:
+                    if message.level == level:
+                        md += f'\n\n<div markdown="1" class="message {level}">\n{message.message().rstrip()}\n</div>\n\n'
         if "requirements" in keys and self.requirements is not None:
             requirements = "\n".join([f"* {x}" for x in self.requirements])
             md += f"**Requirements**\n\n{requirements}\n\n"
@@ -462,6 +464,10 @@ class Node(NodeLike, BaseModel):
                         clipped = f"![{self.pill}]({image_data})"
 
                 md += f"{clipped}\n\n"
+
+        if "assertions" in keys and self.assertions is not None:
+            assertions = "\n".join([f"* {x}" for x in self.assertions])
+            md += f"**Checks**\n\n{assertions}\n\n"
 
         return md
 

@@ -1,6 +1,6 @@
 import json
 import textwrap
-from typing import List, Optional, OrderedDict
+from typing import List, Optional
 
 from nbclient.exceptions import CellExecutionError
 from pydantic import Field, BaseModel
@@ -9,20 +9,17 @@ from flowco.assistant.assistant import Assistant
 from flowco.assistant.openai import OpenAIAssistant
 from flowco.builder.build import PassConfig, node_pass
 from flowco.builder.graph_completions import (
-    make_node_like,
     messages_for_node,
     node_completion,
     node_completion_model,
-    node_like_model,
 )
-from flowco.dataflow.checks import CheckOutcomes, QuantitiveCheck, Check
+from flowco.dataflow.checks import CheckOutcomes, Check
 from flowco.dataflow.dfg import DataFlowGraph, Node
 from flowco.dataflow.phase import Phase
-from flowco.page.error_messages import error_message
 from flowco.pythonshell.shells import PythonShells
 from flowco.session.session import session
 from flowco.util.config import config
-from flowco.util.output import logger, log, message, warn
+from flowco.util.output import logger, log, warn, message
 from flowco.util.text import strip_ansi
 
 
@@ -60,15 +57,17 @@ def compile_assertions(
 
         completion = assistant.completion(AssertionsCompletion)
 
+        assert completion, "No completion from assistant"
+
         checks = {x.requirement: x.check for x in completion.assertions}
         new_node = node.update(assertion_checks=checks, phase=Phase.assertions_code)
 
         failures = [x for x in completion.assertions if x.error]
         if failures:
             for check in failures:
-                new_node = new_node.error(
+                new_node = new_node.warn(
                     phase=Phase.assertions_code,
-                    message=f"{check.requirement}: {check.error}",
+                    message=f"**{check.requirement}**: {check.error}",
                 )
             return new_node
 
@@ -80,6 +79,10 @@ def compile_assertions(
 
 
 def assertions_assistant(node: Node):
+
+    assert node.function_parameters, "No function parameters"
+    assert node.function_return_type, "No function return type"
+
     parameter_types = {param.name: param.type for param in node.function_parameters}
     parameter_type_str = "\n".join(
         [
@@ -128,7 +131,7 @@ def check_assertions(pass_config: PassConfig, graph: DataFlowGraph, node: Node) 
 
 def _repair_assertions(
     pass_config: PassConfig, graph: DataFlowGraph, node: Node, max_retries: int
-) -> Optional[Node]:
+) -> Node:
     assistant = Assistant("repair-system")
     retries = 0
     original = None
@@ -154,9 +157,9 @@ def _repair_assertions(
         if retries > max_retries:
             for assertion, outcome in node.assertion_outcomes.outcomes.items():
                 if outcome is not None:
-                    message = f"Assertion failure: {assertion}\n\n{outcome}"
                     original = original.error(
-                        phase=Phase.assertions_checked, message=message
+                        phase=Phase.assertions_checked,
+                        message=f"**Check Failed: {assertion}**\n\n*{outcome}*",
                     )
             return original
 

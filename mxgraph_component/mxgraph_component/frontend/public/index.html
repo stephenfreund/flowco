@@ -1,15 +1,266 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Streamlit Component</title>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Streamlit Component" />
-    <link rel="stylesheet" href="bootstrap.min.css" />
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="graph-container" style="width: 1600px; height: 1600px; overflow: hidden;"></div>
-    <div id="customBox" style="position: absolute; display: none; background: #fff; border: 1px solid #000; padding: 10px; z-index: 1000;"></div>  </body>
+
+<head>
+  <title>Streamlit Component</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Streamlit Component" />
+  <link rel="stylesheet" href="bootstrap.min.css" />
+</head>
+<style>
+  pre {
+    line-height: 125%;
+    padding: 1rem;
+    /* background: #FFFFFF; */
+  }
+
+  /* -----------------------------------------------------------
+   Base container for CodeHilite (typical) 
+   ----------------------------------------------------------- */
+  .codehilite,
+  .highlight {
+    color: #f0f2f6;
+    /* Default text color (e.g., gray20-ish) */
+    font-family: "Source Code Pro", monospace;
+    line-height: 1.5;
+    overflow: auto;
+    /* padding: 1rem; */
+    border-radius: 4px;
+  }
+
+  /* If your line numbering is output inside .linenos or .linenodiv */
+  .codehilite .linenos,
+  .codehilite .linenodiv {
+    color: #a3a8b8;
+    /* was “fadedText40” or something similar */
+    text-align: right;
+    padding-right: 0.75rem;
+    user-select: none;
+  }
+
+  /* If you inject each line number with a class like “.linenumber” */
+  .codehilite .linenumber {
+    color: #a3a8b8;
+    align-self: center;
+    min-width: 2.5rem !important;
+    /* approximate “theme.spacing.threeXL” */
+    display: inline-block;
+  }
+
+
+  /* -----------------------------------------------------------
+      Any normal/unclassified text => .n
+      ----------------------------------------------------------- */
+  .codehilite .n {
+    color: #31333F;
+    /* Force default color for normal text to rgb(49,51,63) */
+  }
+
+
+  /* -----------------------------------------------------------
+      Comments, docstrings, etc. 
+      (Pygments commonly uses the “.c” family)
+      ----------------------------------------------------------- */
+  .codehilite .c {
+    /* generic comment */
+    color: #808495;
+    /* gray70 */
+    font-style: italic;
+  }
+
+  /* -----------------------------------------------------------
+      Punctuation, operators, etc. 
+      Pygments often uses “.p” for punctuation, “.o” for operators
+      ----------------------------------------------------------- */
+  .codehilite .p {
+    /* punctuation */
+    color: #808495;
+    /* same as comment punctuation if you wish */
+  }
+
+  .codehilite .o {
+    /* operator */
+    color: #ed6f13;
+    /* orange90 */
+  }
+
+  /* -----------------------------------------------------------
+      Namespaces, properties, and variables can map to .na, .nt, .nv
+      ----------------------------------------------------------- */
+  .codehilite .na {
+    /* attribute names, namespaces, etc. */
+    color: #00a4d4;
+    /* lightBlue80 */
+    opacity: 0.7;
+    /* if you still want that subtle fade */
+  }
+
+  .codehilite .nt {
+    /* tag names, property names */
+    color: #00a4d4;
+    opacity: 0.7;
+  }
+
+  .codehilite .nv {
+    /* variable names */
+    color: #00a4d4;
+    opacity: 0.7;
+  }
+
+  /* -----------------------------------------------------------
+      Keywords, booleans, constants, symbols 
+      (.k family covers all keywords)
+      ----------------------------------------------------------- */
+  .codehilite .k {
+    /* keyword */
+    color: #1c83e1;
+    /* blue70 */
+    /* font-weight: 800;  extrabold */
+  }
+
+  .codehilite .kc,
+  /* keyword.constant */
+  .codehilite .kd,
+  /* keyword.declaration */
+  .codehilite .kn,
+  /* keyword.namespace */
+  .codehilite .kp,
+  /* keyword.pseudo */
+  .codehilite .kr,
+  /* keyword.reserved */
+  .codehilite .kt {
+    /* keyword.type */
+    color: #1c83e1;
+    /* font-weight: 800; */
+  }
+
+  .codehilite .bp {
+    /* builtins, sometimes appear as booleans in some lexers */
+    color: #1c83e1;
+  }
+
+  /* Booleans, constants, symbols can also appear as .kc, .kc, .nl, etc. */
+  .codehilite .kc {
+    color: #21c354;
+  }
+
+  /* if you want constants green70 */
+  .codehilite .kt {
+    color: #21c354;
+  }
+
+  /* -----------------------------------------------------------
+      Numbers and regex 
+      (.m typically for numbers, .sr for regex)
+      ----------------------------------------------------------- */
+  .codehilite .m,
+  .codehilite .mi,
+  .codehilite .mb,
+  .codehilite .mf,
+  .codehilite .il {
+    /* number */
+    color: #09ab3b;
+    /* blueGreen80 or another color you prefer */
+  }
+
+  .codehilite .sr {
+    /* regex in some lexers */
+    color: #09ab3b;
+  }
+
+  /* -----------------------------------------------------------
+      Strings, chars, attribute values
+      (.s and sub-classes: .s1, .s2, .se, .sc, .ss, etc.)
+      ----------------------------------------------------------- */
+  .codehilite .s {
+    /* generic string */
+    color: #09ab3b;
+    /* or #7defa1, depending on the brightness you like */
+  }
+
+  .codehilite .s1,
+  .codehilite .s2,
+  .codehilite .sc,
+  .codehilite .ss {
+    color: #09ab3b;
+  }
+
+  /* -----------------------------------------------------------
+      Decorators, at-rules (often appear as .cp or .k in some lexers)
+      ----------------------------------------------------------- */
+  .codehilite .cp {
+    /* this sometimes is a “comment preproc” color in Pygments */
+    color: #ed6f13;
+    /* orange90 */
+    font-weight: normal;
+  }
+
+  /* -----------------------------------------------------------
+      Function names, class names, selectors
+      (.nf, .nc, .nt in some lexers)
+      ----------------------------------------------------------- */
+  .codehilite .nf {
+    /* function name */
+    color: #1c83e1;
+    /* blue70 */
+    font-weight: 800;
+  }
+
+  .codehilite .nc {
+    /* class name */
+    color: #1c83e1;
+    font-weight: 800;
+  }
+
+  .codehilite .nt {
+    /* selectors or tag names in some lexers */
+    color: #1c83e1;
+    font-weight: 800;
+  }
+
+
+  /* If you want italic for certain tokens */
+  .codehilite .i {
+    /* italic text in some lexers */
+    font-style: italic;
+  }
+
+  /* General styles for the message box */
+  .message {
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
+      font-family: Arial, sans-serif;
+  }
+  
+  .message p {
+        margin: 0; /* Remove extra space after paragraphs */
+    }
+
+  /* Error message styles */
+  .error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+  }
+  
+  /* Warning message styles */
+  .warning {
+      background-color: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeeba;
+  }
+
+</style>
+
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="graph-container" style="width: 1600px; height: 1600px; overflow: hidden;"></div>
+  <div id="customBox"
+    style="position: absolute; display: none; background: #fff; border: 1px solid #000; padding: 10px; z-index: 1000;">
+  </div>
+</body>
+
 </html>

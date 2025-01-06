@@ -14,6 +14,7 @@ import keyword
 from pathlib import Path
 import markdown
 
+
 def format_key_value(key, value, width=15, indent=0) -> str:
     value = str(value)
     lines = textwrap.fill(
@@ -328,6 +329,7 @@ def pill_to_result_var_name(pill: str) -> str:
 def pill_to_function_name(pill: str) -> str:
     return f"{pill_to_python_name(pill)}"
 
+
 def md_to_html(md):
     return markdown.markdown(
         md,
@@ -337,5 +339,6 @@ def md_to_html(md):
             "toc",  # Generates a table of contents
             "sane_lists",  # Improves list handling
             "smarty",  # Converts quotes and dashes to smart quotes and dashes
+            "md_in_html",  # Allows Markdown inside HTML blocks
         ],
     )
