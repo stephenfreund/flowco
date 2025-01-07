@@ -60,7 +60,8 @@ try:
     pg = st_pages()
     pg.run()
 except Exception as e:
-    error(e)
-    error(traceback.format_exc())
+    print(e)
+    print(traceback.format_exc())
     st.error(e)
     st.exception(e)
+    st.stop()

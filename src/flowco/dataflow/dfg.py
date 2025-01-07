@@ -397,20 +397,20 @@ class Node(NodeLike, BaseModel):
             build_status=None,
         )
 
-    def to_markdown(self, keys: List[str] | None = None) -> str:
-        if keys is None:
-            keys = [
-                "pill",
-                "label",
-                "messages",
-                "requirements",
-                "description",
-                "code",
-                "result",
-                "assertions",
-            ]
-            if self.algorithm is not None:
-                keys.append("algorithm")
+    def to_markdown(self) -> str:
+
+        keys = [
+            "pill",
+            "label",
+            "messages",
+            "requirements",
+            "description",
+            "code",
+            "result",
+            "assertions",
+        ]
+        if self.algorithm is not None:
+            keys.append("algorithm")
         md = ""
         if "pill" in keys:
             md += f"#### {self.pill}\n\n"

@@ -40,18 +40,20 @@ def st_init(page_config=True):
         st.session_state.clear_graph = False
 
         st.session_state.abstraction_level = config.abstraction_level
-        st.session_state.show_requirements = True
 
-        if config.x_algorithm_phase:
-            st.session_state.show_algorithm = True
-        else:
-            st.session_state.show_algorithm = False
+        # st.session_state.show_requirements = True
 
-        st.session_state.show_code = True
+        # if config.x_algorithm_phase:
+        #     st.session_state.show_algorithm = True
+        # else:
+        #     st.session_state.show_algorithm = False
 
-        st.session_state.show_description = False
-        st.session_state.show_output = True
-        st.session_state.show_ama = True
+        # st.session_state.show_code = True
+        # st.session_state.show_description = False
+        # st.session_state.show_output = True
+        # st.session_state.show_ama = True
+
+        st.session_state.wide_right_panel = False
 
         st.session_state.current_page = None
 

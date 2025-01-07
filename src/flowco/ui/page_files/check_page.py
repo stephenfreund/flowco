@@ -50,21 +50,6 @@ class CheckPage(BuildPage):
     def build_target_phase(self) -> Phase:
         return Phase.assertions_checked
 
-    def pills(self) -> List[Tuple[str, bool]]:
-        return super().pills() + [("Checks", True)]
-
-    # override and call super in subclasses
-    def node_fields_to_show(self) -> List[str]:
-        fields = super().node_fields_to_show()
-        if (
-            "show_pills" in st.session_state
-            and "Checks" in st.session_state.show_pills
-            or "Checks" in [pill for pill, show in self.pills() if show]
-        ):
-            fields.append("assertions")
-
-        return fields
-
     @st.dialog("Edit Checks", width="large")
     def edit_checks(self, node: Node):
         ui_page: UIPage = st.session_state.ui_page
@@ -81,15 +66,13 @@ class CheckPage(BuildPage):
             st.rerun()
 
     def show_node_details(self, node: Node):
-        super().show_node_details(node)
+        st.write("**Checks**")
+        st.write("\n".join(["* " + x for x in (node.assertions or [])]))
+        if st.button(
+            ":material/edit_note:",
+            disabled=not self.graph_is_editable(),
+            help="Edit node checks",
+        ):
+            self.edit_checks(node)
 
-        with st.container(key="node_checks"):
-            if "Checks" in st.session_state.show_pills and node is not None:
-                st.write("#### Checks")
-                st.write("\n".join(["* " + x for x in (node.assertions or [])]))
-            if st.button(
-                ":material/edit_note:",
-                disabled=not self.graph_is_editable(),
-                help="Edit node checks",
-            ):
-                self.edit_checks(node)
+        super().show_node_details(node)

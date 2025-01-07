@@ -67,7 +67,7 @@ def get_output(node: Node) -> Optional[DiagramOutput]:
 
 
 @staticmethod
-def from_dfg(dfg: DataFlowGraph, fields: List[str] = ["pill", "label"]) -> MxDiagram:
+def from_dfg(dfg: DataFlowGraph) -> MxDiagram:
     # Create a mapping from node id to Node for easy lookup
     node_dict = {node.id: node for node in dfg.nodes}
 
@@ -75,7 +75,7 @@ def from_dfg(dfg: DataFlowGraph, fields: List[str] = ["pill", "label"]) -> MxDia
     mx_nodes: Dict[str, DiagramNode] = {}
 
     for node in dfg.nodes:
-        md = node.to_markdown(keys=fields)
+        md = node.to_markdown()
         html = md_to_html(md)
         diagram_node = DiagramNode(
             id=node.id,

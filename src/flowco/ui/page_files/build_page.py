@@ -120,14 +120,15 @@ class BuildPage(FlowcoPage):
                     disabled=not self.graph_is_editable(),
                 ):
                     ui_page = st.session_state.ui_page
-                    dfg = ui_page.dfg()
-                    dfg = dfg.update(
-                        nodes=[
-                            x.update(geometry=Geometry(x=0, y=0, width=0, height=0))
-                            for x in dfg.nodes
-                        ]
-                    )
-                    ui_page.update_dfg(dfg)
+                    with ui_page.page():
+                        dfg = ui_page.dfg()
+                        dfg = dfg.update(
+                            nodes=[
+                                x.update(geometry=Geometry(x=0, y=0, width=0, height=0))
+                                for x in dfg.nodes
+                            ]
+                        )
+                        ui_page.update_dfg(dfg)
                     st.session_state.force_update = True
                     st.rerun()
             with cols[7]:

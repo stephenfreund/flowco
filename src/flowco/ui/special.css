@@ -48,15 +48,22 @@
 }
 
 /* New overriding rule */
-/* .st-key-node_description .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
+.st-key-node_description .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_output .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_requirements .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_algorithm .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_code .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_code .stCode *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
-.st-key-node_checks .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
+.st-key-node_checks .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
+.st-key-right-panel .stCode *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
+.st-key-right-panel p,
+.st-key-right-panel .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6)
+ {
     font-size: 12px !important;
-} */
+}
+.st-key-right-panel h3 {
+    font-size: 1.25rem !important;
+}
 
 header {
     background: rgb(247, 249, 253) !important;
@@ -250,13 +257,14 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
 }
 
 .st-key-right-panel {
-    height: 100vh !important; /* Sets height to 100% of viewport height */
+    height: calc(100vh - 48px) !important; /* Sets height to 100% of viewport height */
     display: block !important;
     overflow-y: scroll !important;
     overflow-x: hidden !important;
-    margin-top: 5rem;
-    padding: 1rem !important;
+    margin-top: 3.25rem;
+    padding: 0.5rem !important;
     background-color: #F0F2F6;
+    padding-right: 1rem;
 }
 
 .st-key-right-panel {
@@ -270,4 +278,25 @@ div:has(> .st-key-right-panel) {
 
 div:has(> div > .st-key-right-panel) {
     background-color: #F0F2F6;
+}
+
+.st-key-right-panel img {
+    max-width: 280px !important;
+}
+
+.st-key-right_panel_width {
+    padding-right: 0.25rem !important;
+    padding-left: 0rem !important;
+}
+.st-key-right_panel_width * {
+    line-height: 0.5;
+    min-height: 0rem;
+    padding: 0.1rem;
+    /* margin:0.05rem; */
+    border:none;
+}
+
+.st-key-node_header .stColumn {
+    width: fit-content !important;
+    flex: unset !important;
 }

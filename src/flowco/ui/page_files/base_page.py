@@ -18,6 +18,7 @@ from flowco.page.output import OutputType
 from flowco.ui.ui_dialogs import settings
 from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_util import (
+    set_session_state,
     show_code,
     show_requirements,
     toggle,
@@ -42,110 +43,35 @@ else:
 
 class FlowcoPage:
 
-    # override and call super in subclasses
-    def pills(self) -> List[Tuple[str, bool]]:
-
-        if config.x_algorithm_phase:
-            pill_list = []
-            if st.session_state.show_ama:
-                pill_list.append(("AMA", True))
-            if not config.x_no_descriptions:
-                pill_list.append(("Description", True))
-            if st.session_state.show_output:
-                pill_list.append(("Output", True))
-            p = pill_list
-        else:
-            p = [("AMA", True), ("Output", True), ("Code", False)]
-
-        return p
-
-    # override and call super in subclasses
-    def node_fields_to_show(self) -> List[str]:
-        fields = ["pill", "label", "requirements", "result", "messages"]
-        if config.x_algorithm_phase:
-            fields.append("algorithm")
-
-        if (
-            "show_pills" in st.session_state
-            and "Code" in st.session_state.show_pills
-            or "Code" in [pill for pill, show in self.pills() if show]
-        ):
-            fields.append("code")
-
-        return fields
-
-    def sidebar(self):
+    def sidebar(self, node: Node | None = None):
         with st.container(key="masthead"):
-            self.masthead(node)
+            self.masthead()
             self.button_bar()
 
-        # st.select_slider(
-        with st.container(key="controls"):
-            pills = self.pills()
-            all_pills = [pill for pill, _ in pills]
-            default_pills = [pill for pill, show in pills if show]
-            if config.x_algorithm_phase:
-                c = st.columns(2)
-                with c[0]:
-
-                    def fix():
-                        if st.session_state.abstraction_level is None:
-                            st.session_state.abstraction_level = "Requirements"
-                        st.session_state.force_update = True
-
-                    st.segmented_control(
-                        "Abstraction Level",
-                        (
-                            AbstractionLevel
-                            if config.x_algorithm_phase
-                            else [AbstractionLevel.spec, AbstractionLevel.code]
-                        ),
-                        key="abstraction_level",
-                        on_change=fix,
-                        disabled=not self.graph_is_editable(),
-                    )
-                with c[1]:
-                    st.pills(
-                        "Show:",
-                        all_pills,
-                        default=default_pills,
-                        selection_mode="multi",
-                        key="show_pills",
-                        disabled=not self.graph_is_editable(),
-                    )
-
-            else:
+            with st.container(key="controls"):
 
                 def fix():
-                    if "Code" in st.session_state.show_pills:
-                        st.session_state.abstraction_level = AbstractionLevel.code
+                    if st.session_state.al is None:
+                        st.session_state.abstraction_level = "Requirements"
                     else:
-                        st.session_state.abstraction_level = AbstractionLevel.spec
+                        st.session_state.abstraction_level = st.session_state.al
                     st.session_state.force_update = True
 
-                st.pills(
-                    "Show:",
-                    all_pills,
-                    default=default_pills,
-                    selection_mode="multi",
-                    key="show_pills",
-                    disabled=not self.graph_is_editable(),
+                st.session_state.abstraction_level = st.segmented_control(
+                    "Abstraction Level",
+                    (
+                        AbstractionLevel
+                        if config.x_algorithm_phase
+                        else [AbstractionLevel.spec, AbstractionLevel.code]
+                    ),
+                    key="al",
+                    default=st.session_state.abstraction_level,
                     on_change=fix,
-                    label_visibility="collapsed",
+                    disabled=not self.graph_is_editable(),
                 )
 
-        self.show_ama(node)
+        self.show_ama()
         self.global_sidebar()
-
-        # if node is not None:
-        #     self.show_messages(node)
-
-        # self.show_ama(node)
-
-        # if node is not None:
-        #     self.node_sidebar(node)
-        # else:
-        #     self.global_sidebar()
 
     def right_panel(self):
         ui_page: UIPage = st.session_state.ui_page
@@ -162,16 +88,47 @@ class FlowcoPage:
         else:
             node = None
 
+        st.write("")
+        st.write("")
+        st.write("")
         with st.container(key="right-panel"):
-            st.write("")
-            st.write("")
-            st.write("")
-            if node is not None:
-                st.title(node.pill)
+            if node is None:
+                symbol = (
+                    ":material/chevron_right:"
+                    if st.session_state.wide_right_panel
+                    else ":material/chevron_left:"
+                )
+                if st.button(symbol, key="right_panel_width"):
+                    st.session_state.wide_right_panel = (
+                        not st.session_state.wide_right_panel
+                    )
+                    st.rerun()
+                st.write("")
+            else:
+                with st.container(key="node_header"):
+                    button, header = st.columns([1, 4], vertical_alignment="center")
+                    with button:
+                        symbol = (
+                            ":material/chevron_right:"
+                            if st.session_state.wide_right_panel
+                            else ":material/chevron_left:"
+                        )
+                        if st.button(symbol, key="right_panel_width"):
+                            st.session_state.wide_right_panel = (
+                                not st.session_state.wide_right_panel
+                            )
+                            st.rerun()
+
+                    with header:
+                        st.subheader(node.pill)
                 st.caption(f"Status: {node.phase}")
 
                 self.show_messages(node)
                 self.node_sidebar(node)
+
+        st.write("")
+        st.write("")
+        st.write("")
 
     def masthead(self, node: Node | None = None):
         if node is None:
@@ -195,40 +152,36 @@ class FlowcoPage:
         with st.container(key="node_sidepanel"):
             self.show_node_details(node)
 
-    def show_ama(self, node: Node | None):
+    def show_ama(self):
         page = st.session_state.ui_page.page()
         if st.session_state.ama is None or st.session_state.ama.page != page:
             st.session_state.ama = AskMeAnything(page)
 
-        if "AMA" in st.session_state.show_pills:
-            with st.container():
-                height = 400
-                container = st.container(
-                    height=height, border=True, key="chat_container"
-                )
-                with container:
-                    for message in st.session_state.ama.messages():
-                        with st.chat_message(message.role):
-                            st.markdown(message.content, unsafe_allow_html=True)
+        with st.container():
+            height = 400
+            container = st.container(height=height, border=True, key="chat_container")
+            with container:
+                for message in st.session_state.ama.messages():
+                    with st.chat_message(message.role):
+                        st.markdown(message.content, unsafe_allow_html=True)
 
-                if "AMA" in st.session_state.show_pills:
-                    if st.audio_input(
-                        "Record a voice message",
-                        label_visibility="collapsed",
-                        key="voice_input",
-                        on_change=lambda: self.ama_voice_input(container),
-                        disabled=not self.graph_is_editable(),
-                    ):
-                        st.rerun()
+            if st.audio_input(
+                "Record a voice message",
+                label_visibility="collapsed",
+                key="voice_input",
+                on_change=lambda: self.ama_voice_input(container),
+                disabled=not self.graph_is_editable(),
+            ):
+                st.rerun()
 
-                with st.container(key="ama_columns"):
-                    if prompt := st.chat_input(
-                        "Ask Me Anything!",
-                        key="ama_input",
-                        on_submit=lambda: toggle("ama_responding"),
-                        disabled=not self.graph_is_editable(),
-                    ):
-                        self.ama_completion(container, prompt)
+            with st.container(key="ama_columns"):
+                if prompt := st.chat_input(
+                    "Ask Me Anything!",
+                    key="ama_input",
+                    on_submit=lambda: toggle("ama_responding"),
+                    disabled=not self.graph_is_editable(),
+                ):
+                    self.ama_completion(container, prompt)
 
     def ama_voice_input(self, container):
         toggle("ama_responding")
@@ -278,34 +231,30 @@ class FlowcoPage:
 
     # override and call super in subclasses
     def show_node_details(self, node):
-        if "Output" in st.session_state.show_pills and node is not None:
-            st.write("#### Output")
-            if (
-                node.function_return_type is not None
-                and not node.function_return_type.is_None_type()
-            ):
-                st.caption(f"{node.function_return_type.description}")
-            self.show_output(node)
+        st.write("**Output**")
+        if (
+            node.function_return_type is not None
+            and not node.function_return_type.is_None_type()
+        ):
+            st.caption(f"{node.function_return_type.description}")
+        self.show_output(node)
 
+        st.write("**Requirements**")
         with st.container(key="node_requirements"):
-            if show_requirements() and node is not None:
-                st.write("#### Requirements")
-                st.write(
-                    "\n".join(
-                        [
-                            "* " + x
-                            for x in (
-                                node.requirements
-                                if node.requirements is not None
-                                else []
-                            )
-                        ]
-                    )
+            st.write(
+                "\n".join(
+                    [
+                        "* " + x
+                        for x in (
+                            node.requirements if node.requirements is not None else []
+                        )
+                    ]
                 )
+            )
 
-        with st.container(key="node_code"):
-            if show_code() and node is not None:
-                st.write("#### Code")
+        if AbstractionLevel.show_code(st.session_state.abstraction_level):
+            st.write("**Code**")
+            with st.container(key="node_code"):
                 if node.code is not None:
                     st.code("\n".join(node.code))
 
@@ -382,6 +331,12 @@ class FlowcoPage:
         else:
             return Phase.run_checked
 
+    def main_columns(self):
+        if st.session_state.wide_right_panel:
+            return st.columns([3, 2])
+        else:
+            return st.columns([4, 1])
+
     def main(self):
 
         self.init()
@@ -391,14 +346,12 @@ class FlowcoPage:
 
         if st.session_state.ui_page is not None:
 
-            left, right = st.columns([4, 1])
+            left, right = self.main_columns()
 
             with left:
                 result = mxgraph_component(
                     key=st.session_state.nonce,
-                    diagram=st.session_state.ui_page.dfg_as_mx_diagram(
-                        self.node_fields_to_show()
-                    ).model_dump(),
+                    diagram=st.session_state.ui_page.dfg_as_mx_diagram().model_dump(),
                     editable=self.graph_is_editable(),
                     selected_node=selected_node,
                     dummy=uuid.uuid4().hex if st.session_state.force_update else None,
