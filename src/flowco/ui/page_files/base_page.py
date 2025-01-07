@@ -75,20 +75,6 @@ class FlowcoPage:
         return fields
 
     def sidebar(self):
-        ui_page: UIPage = st.session_state.ui_page
-        node_id: str | None = st.session_state.selected_node
-
-        if node_id is not None:
-            possible_edge = ui_page.dfg().get_edge(node_id)
-            if possible_edge is not None:
-                # for edges, just show the source, which computes that edge value
-                node_id = possible_edge.src
-
-        if node_id is not None:
-            node = ui_page.node(node_id)
-        else:
-            node = None
-
         with st.container(key="masthead"):
             self.masthead(node)
             self.button_bar()
@@ -161,14 +147,37 @@ class FlowcoPage:
         # else:
         #     self.global_sidebar()
 
+    def right_panel(self):
+        ui_page: UIPage = st.session_state.ui_page
+        node_id: str | None = st.session_state.selected_node
+
+        if node_id is not None:
+            possible_edge = ui_page.dfg().get_edge(node_id)
+            if possible_edge is not None:
+                # for edges, just show the source, which computes that edge value
+                node_id = possible_edge.src
+
+        if node_id is not None:
+            node = ui_page.node(node_id)
+        else:
+            node = None
+
+        with st.container(key="right-panel"):
+            st.write("")
+            st.write("")
+            st.write("")
+            if node is not None:
+                st.title(node.pill)
+                st.caption(f"Status: {node.phase}")
+
+                self.show_messages(node)
+                self.node_sidebar(node)
+
     def masthead(self, node: Node | None = None):
         if node is None:
             ui_page: UIPage = st.session_state.ui_page
             st.title(ui_page.page().file_name)
             st.caption(f"Total cost: {total_cost():.2f} USD")
-        else:
-            st.title(node.pill)
-            st.caption(f"Status: {node.phase}")
 
     def show_messages(self, node: Node):
         for message in node.messages:
@@ -380,8 +389,9 @@ class FlowcoPage:
         # Could be <<<<<< or node id...
         selected_node = st.session_state.selected_node
 
-        left, right = st.columns([4, 1])
         if st.session_state.ui_page is not None:
+
+            left, right = st.columns([4, 1])
 
             with left:
                 result = mxgraph_component(
@@ -421,21 +431,12 @@ class FlowcoPage:
                     else:
                         st.session_state.selected_node = result["selected_node"]
 
+            with right:
+                self.right_panel()
+
         with st.sidebar:
             self.sidebar()
             st.divider()
             self.bottom_bar()
-
-        if st.session_state.ui_page is not None:
-            with right:
-                with st.container(key="right-panel"):
-                    st.write("")
-                    st.write("")
-                    st.write("")
-                    if selected_node is not None:
-                        node = st.session_state.ui_page.node(selected_node)
-                        if node is not None:
-                            self.show_messages(node)
-                            self.node_sidebar(node)
 
         self.fini()
