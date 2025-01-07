@@ -31,44 +31,37 @@ def st_pages():
         st.session_state.selected_node = "<<<<<"
         ProjectsPage().main()
 
-    try:
-        if st.session_state.builder is None and not st.session_state.ama_responding:
+    if st.session_state.builder is None and not st.session_state.ama_responding:
+        pages = [
+            st.Page(
+                projects_main,
+                title="Projects",
+                default=st.session_state.ui_page is None,
+            ),
+            st.Page(
+                build_main,
+                title="Edit",
+                default=st.session_state.ui_page is not None,
+            ),
+            st.Page(
+                check_main,
+                title="Check",
+            ),
+            st.Page(test_main, title="Test"),
+        ]
+    else:
+        if st.session_state.current_page == "build":
             pages = [
-                st.Page(
-                    projects_main,
-                    title="Projects",
-                    default=st.session_state.ui_page is None,
-                ),
-                st.Page(
-                    build_main,
-                    title="Edit",
-                    default=st.session_state.ui_page is not None,
-                ),
-                st.Page(
-                    check_main,
-                    title="Check",
-                ),
-                st.Page(test_main, title="Test"),
+                st.Page(build_main, title="Edit"),
+            ]
+        elif st.session_state.current_page == "check":
+            pages = [
+                st.Page(check_main, title="Check"),
             ]
         else:
-            if st.session_state.current_page == "build":
-                pages = [
-                    st.Page(build_main, title="Edit"),
-                ]
-            elif st.session_state.current_page == "check":
-                pages = [
-                    st.Page(check_main, title="Check"),
-                ]
-            else:
-                assert (
-                    False
-                ), f"Builder running from bad page {st.session_state.current_page}"
+            assert (
+                False
+            ), f"Builder running from bad page {st.session_state.current_page}"
 
-        pg = st.navigation(pages)
-        return pg
-    except Exception as e:
-        error(e)
-        error(traceback.format_exc())
-        st.error(e)
-        st.exception(e)
-        st.stop()
+    pg = st.navigation(pages)
+    return pg

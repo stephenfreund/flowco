@@ -1,4 +1,5 @@
 import os
+import traceback
 from flowco.pythonshell.shells import PythonShells
 from flowco.session.session_file_system import SessionFileSystem
 from flowco.ui.ui_args import parse_args
@@ -9,7 +10,7 @@ from flowco.util.files import setup_flowco_files
 import streamlit as st
 
 from flowco.util.costs import CostTracker
-from flowco.util.output import Output
+from flowco.util.output import Output, error
 
 from flowco.session.session import StreamlitSession, session
 from flowco.util.stopper import Stopper
@@ -53,7 +54,13 @@ def init_service():
         st.session_state.service_initialized = True
 
 
-st_init()
-init_service()
-pg = st_pages()
-pg.run()
+try:
+    st_init()
+    init_service()
+    pg = st_pages()
+    pg.run()
+except Exception as e:
+    error(e)
+    error(traceback.format_exc())
+    st.error(e)
+    st.exception(e)

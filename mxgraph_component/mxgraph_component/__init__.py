@@ -61,7 +61,7 @@ def mxgraph_component(
     selected_node: Optional[str] = None,
     refresh_phase: int = 0,
     dummy: Optional[str] = None,
-    clear = False,
+    clear=False,
 ) -> int:
     """Create a new instance of "maxgraph_component".
 
@@ -94,9 +94,10 @@ def mxgraph_component(
             "command": "update",
             "diagram": json.dumps(diagram),
             "selected_node": selected_node,
+            "height": 600,  # just a default value
         },
         forced=dummy != None,
-        clear = clear
+        clear=clear,
     )
 
     # We could modify the value returned from the component if we wanted.

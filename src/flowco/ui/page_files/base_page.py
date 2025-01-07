@@ -3,6 +3,8 @@ from typing import List, Tuple
 from openai import OpenAI
 import uuid
 
+from streamlit_js_eval import streamlit_js_eval
+
 from flowco.page.ama import AskMeAnything
 from flowco.ui.authenticate import sign_out
 import numpy as np
@@ -29,6 +31,7 @@ from flowco.ui.ui_page import UIPage
 from flowco.util.config import config
 from flowco.util.costs import total_cost
 from flowco.util.config import AbstractionLevel
+from flowco.util.output import log
 
 
 if config.x_algorithm_phase:
@@ -145,15 +148,18 @@ class FlowcoPage:
                     label_visibility="collapsed",
                 )
 
-        if node is not None:
-            self.show_messages(node)
-
         self.show_ama(node)
+        self.global_sidebar()
 
-        if node is not None:
-            self.node_sidebar(node)
-        else:
-            self.global_sidebar()
+        # if node is not None:
+        #     self.show_messages(node)
+
+        # self.show_ama(node)
+
+        # if node is not None:
+        #     self.node_sidebar(node)
+        # else:
+        #     self.global_sidebar()
 
     def masthead(self, node: Node | None = None):
         if node is None:
@@ -304,7 +310,10 @@ class FlowcoPage:
                 value = node.result.result.to_value()
                 if type(value) == np.ndarray or type(value) == list:
                     value = pd.DataFrame(value)
-                st.write(value)
+                if type(value) == pd.DataFrame:
+                    st.dataframe(value, height=200)
+                else:
+                    st.write(value)
             elif node.result.output is not None:
                 output = node.result.output
                 if output is not None:
@@ -371,40 +380,62 @@ class FlowcoPage:
         # Could be <<<<<< or node id...
         selected_node = st.session_state.selected_node
 
+        left, right = st.columns([4, 1])
         if st.session_state.ui_page is not None:
-            result = mxgraph_component(
-                key=st.session_state.nonce,
-                diagram=st.session_state.ui_page.dfg_as_mx_diagram(
-                    self.node_fields_to_show()
-                ).model_dump(),
-                editable=self.graph_is_editable(),
-                selected_node=selected_node,
-                dummy=uuid.uuid4().hex if st.session_state.force_update else None,
-                refresh_phase=self.refresh_phase().value,
-                clear=st.session_state.clear_graph,
-            )
 
-            if not st.session_state.force_update:
-                self.update_ui_page(
-                    dfg_update.mxDiagramUpdate.model_validate_json(result["diagram"])
+            with left:
+                result = mxgraph_component(
+                    key=st.session_state.nonce,
+                    diagram=st.session_state.ui_page.dfg_as_mx_diagram(
+                        self.node_fields_to_show()
+                    ).model_dump(),
+                    editable=self.graph_is_editable(),
+                    selected_node=selected_node,
+                    dummy=uuid.uuid4().hex if st.session_state.force_update else None,
+                    refresh_phase=self.refresh_phase().value,
+                    clear=st.session_state.clear_graph,
                 )
 
-            st.session_state.force_update = False
-            st.session_state.clear_graph = False
+                if not st.session_state.force_update:
+                    self.update_ui_page(
+                        dfg_update.mxDiagramUpdate.model_validate_json(
+                            result["diagram"]
+                        )
+                    )
 
-            if result["command"] == "edit":
-                if st.session_state.last_sequence_number != result["sequence_number"]:
-                    st.session_state.last_sequence_number = result["sequence_number"]
-                    self.edit_node(result["selected_node"])
-            else:
-                if selected_node == "<<<<<":
-                    st.session_state.selected_node = None
+                st.session_state.force_update = False
+                st.session_state.clear_graph = False
+
+                if result["command"] == "edit":
+                    if (
+                        st.session_state.last_sequence_number
+                        != result["sequence_number"]
+                    ):
+                        st.session_state.last_sequence_number = result[
+                            "sequence_number"
+                        ]
+                        self.edit_node(result["selected_node"])
                 else:
-                    st.session_state.selected_node = result["selected_node"]
+                    if selected_node == "<<<<<":
+                        st.session_state.selected_node = None
+                    else:
+                        st.session_state.selected_node = result["selected_node"]
 
         with st.sidebar:
             self.sidebar()
             st.divider()
             self.bottom_bar()
+
+        if st.session_state.ui_page is not None:
+            with right:
+                with st.container(key="right-panel"):
+                    st.write("")
+                    st.write("")
+                    st.write("")
+                    if selected_node is not None:
+                        node = st.session_state.ui_page.node(selected_node)
+                        if node is not None:
+                            self.show_messages(node)
+                            self.node_sidebar(node)
 
         self.fini()

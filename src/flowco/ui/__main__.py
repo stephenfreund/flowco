@@ -33,7 +33,7 @@ def dev():
 
     env["PYTHONPATH"] = f"{additional_path}:{env.get('PYTHONPATH', '')}"
     env["FLOWCO_DEV"] = "1"
-    # env["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY") 
+    # env["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY")
 
     # Build the command
     command = [

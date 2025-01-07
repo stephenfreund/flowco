@@ -431,38 +431,38 @@ function shouldHandleHover(cell: mxCell): boolean {
 
 
 
-function showCustomBox(cell: any): void {
-  if (cell.value && cell.value.html) {
-    const state = graph.getView().getState(cell);
-    const x = state.x + state.width * 2 / 3;
-    const y = state.y + state.height * 2 / 3;
-    const box = document.getElementById('customBox')!;
-    box.style.left = `${x}px`;
-    box.style.top = `${y}px`;
-    box.style.display = 'block';
-    box.style.fontSize = '12px';
-    box.style.fontFamily = 'Arial';
-    box.style.maxWidth = '600px';
-    box.style.pointerEvents = 'none';
-    box.style.backgroundColor = '#FAFAFA';
-    box.style.borderRadius = '5px';
-    box.style.boxShadow = '5px 5px 2.5px rgba(0, 0, 0, 0.3)';
+// function showCustomBox(cell: any): void {
+//   if (cell.value && cell.value.html) {
+//     const state = graph.getView().getState(cell);
+//     const x = state.x + state.width * 2 / 3;
+//     const y = state.y + state.height * 2 / 3;
+//     const box = document.getElementById('customBox')!;
+//     box.style.left = `${x}px`;
+//     box.style.top = `${y}px`;
+//     box.style.display = 'block';
+//     box.style.fontSize = '12px';
+//     box.style.fontFamily = 'Arial';
+//     box.style.maxWidth = '600px';
+//     box.style.pointerEvents = 'none';
+//     box.style.backgroundColor = '#FAFAFA';
+//     box.style.borderRadius = '5px';
+//     box.style.boxShadow = '5px 5px 2.5px rgba(0, 0, 0, 0.3)';
 
-    box.innerHTML = cell.value.html;
+//     box.innerHTML = cell.value.html;
 
-    // Resize all images inside the box
-    const images = box.querySelectorAll('img');
-    images.forEach((img) => {
-      img.style.maxWidth = '450px';
-      img.style.height = 'auto'; // Maintain aspect ratio
-    });
-  }
-}
+//     // Resize all images inside the box
+//     const images = box.querySelectorAll('img');
+//     images.forEach((img) => {
+//       img.style.maxWidth = '450px';
+//       img.style.height = 'auto'; // Maintain aspect ratio
+//     });
+//   }
+// }
 
-function hideCustomBox(): void {
-    const box = document.getElementById('customBox')!;
-    box.style.display = 'none';
-}
+// function hideCustomBox(): void {
+//     const box = document.getElementById('customBox')!;
+//     box.style.display = 'none';
+// }
 
 
 /**
@@ -475,16 +475,16 @@ function handleHover(isEntering: boolean): void {
     node = currentlyHoveredCell?.id;
     graph.toggleCellStyle("shadow", false, currentlyHoveredCell);
     const currentSelectedCell = getSelectedNode();
-    if (currentSelectedCell == null) {
-      showCustomBox(currentlyHoveredCell);
-    }
+    // if (currentSelectedCell == null) {
+    //   showCustomBox(currentlyHoveredCell);
+    // }
   } else {
     if (currentlyHoveredCell) {
       graph.toggleCellStyle("shadow", true, currentlyHoveredCell);
       const currentSelectedCell = getSelectedNode();
-      if (currentSelectedCell == null) {
-        hideCustomBox();
-      }
+      // if (currentSelectedCell == null) {
+      //   hideCustomBox();
+      // }
     }
     const cells = graph.getSelectionCells();
     const selectedIds = cells.map(cell => cell.id);
@@ -634,7 +634,7 @@ graph.connectionHandler.createTargetVertex = function (evt, source) {
 var mouseDown = false;
 
 function streamlitResponse(hover_node: string | null = null) {
-  console.log("Streamlit Response", can_edit, mouseDown, graph.isMouseDown)
+  console.log("Streamlit Response Borp", can_edit, mouseDown, graph.isMouseDown)
   if (can_edit && !mouseDown) {
     const cells = graph.getSelectionCells();
     const selectedIds = cells.map(cell => cell.id);
@@ -646,6 +646,11 @@ function streamlitResponse(hover_node: string | null = null) {
       const original_version = currentDiagram.version;
       console.log("Setting Value: " + selected_node)
       sessionStorage.setItem("selected_node", selected_node == null ? "" : selected_node);
+      
+      const translation = graph.view.translate;
+      console.log("Translation Save: ", translation)
+      sessionStorage.setItem("translation", JSON.stringify(translation));
+
       const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, original_version));
       Streamlit.setComponentValue({
         command: "update",
@@ -718,11 +723,11 @@ function addListeners() {
   // Add a listener for selection changes
   graph.getSelectionModel().addListener("change", (sender, evt) => {
     console.log("Selection Changed", graph.getSelectionCells())
-    hideCustomBox();
+    // hideCustomBox();
     const node = getSelectedNode();
-    if (node) {
-      showCustomBox(node);
-    }
+    // if (node) {
+    //   showCustomBox(node);
+    // }
     streamlitResponse();
   });
 
@@ -957,9 +962,15 @@ function onRender(event: Event): void {
           graph.clearSelection();
         }
       }
+      const translation = JSON.parse(sessionStorage.getItem("translation") || "{}");
+      console.log("Translation: ", translation)
+      graph.view.setTranslate(translation.x, translation.y);
     } else {
       sessionStorage.setItem("key", key)
       sessionStorage.setItem("selected_node", "")
+      const translation = graph.view.translate;
+      console.log("Translation Save: ", translation)
+      sessionStorage.setItem("translation", JSON.stringify(translation));
     }
   } else {
     // updateGraphWithDiagram(diagram)

@@ -48,7 +48,7 @@
 }
 
 /* New overriding rule */
-.st-key-node_description .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
+/* .st-key-node_description .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_output .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_requirements .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_algorithm .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
@@ -56,7 +56,7 @@
 .st-key-node_code .stCode *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_checks .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
     font-size: 12px !important;
-}
+} */
 
 header {
     background: rgb(247, 249, 253) !important;
@@ -243,4 +243,31 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
 
 [aria-label="dialog"]:has(.st-key-code_editor) {
     width: 90% !important;
+}
+
+.stMainBlockContainer * {
+    gap: 0rem !important;
+}
+
+.st-key-right-panel {
+    height: 100vh !important; /* Sets height to 100% of viewport height */
+    display: block !important;
+    overflow-y: scroll !important;
+    overflow-x: hidden !important;
+    margin-top: 5rem;
+    padding: 1rem !important;
+    background-color: #F0F2F6;
+}
+
+.st-key-right-panel {
+    font-size: 70%;
+}
+
+div:has(> .st-key-right-panel) {
+    display: block !important;
+}
+
+
+div:has(> div > .st-key-right-panel) {
+    background-color: #F0F2F6;
 }
