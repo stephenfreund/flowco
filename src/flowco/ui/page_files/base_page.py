@@ -1,9 +1,6 @@
 import time
-from typing import List, Tuple
 from openai import OpenAI
 import uuid
-
-from streamlit_js_eval import streamlit_js_eval
 
 from flowco.page.ama import AskMeAnything
 from flowco.ui import ui_help
@@ -19,9 +16,6 @@ from flowco.page.output import OutputType
 from flowco.ui.ui_dialogs import settings
 from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_util import (
-    set_session_state,
-    show_code,
-    show_requirements,
     toggle,
 )
 import streamlit as st
@@ -33,7 +27,6 @@ from flowco.ui.ui_page import UIPage
 from flowco.util.config import config
 from flowco.util.costs import total_cost
 from flowco.util.config import AbstractionLevel
-from flowco.util.output import log
 
 
 if config.x_algorithm_phase:
