@@ -37,6 +37,7 @@ class ProjectsPage(FlowcoPage):
         if name and name not in self.get_project_names():
             st.session_state.just_created_project = True
             self.add_project(name)
+            st.rerun()
 
     @st.dialog("New project", width="medium")
     def dup_project(self):

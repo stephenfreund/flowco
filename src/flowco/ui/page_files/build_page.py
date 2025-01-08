@@ -287,7 +287,11 @@ class BuildPage(FlowcoPage):
         ui_page: UIPage = st.session_state.ui_page
 
         st.write("### Notes")
-        st.write(ui_page.dfg().description)
+        description = ui_page.dfg().description
+        if description:
+            st.write(description)
+        else:
+            st.write("*Add notes here*")
 
         cols = st.columns(4)
         with cols[0]:
