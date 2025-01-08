@@ -112,10 +112,6 @@ class FlowcoPage:
                 self.show_messages(node)
                 self.node_sidebar(node)
 
-        st.write("")
-        st.write("")
-        st.write("")
-
     def masthead(self, node: Node | None = None):
         if node is None:
             ui_page: UIPage = st.session_state.ui_page

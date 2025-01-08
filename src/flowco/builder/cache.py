@@ -159,11 +159,7 @@ class BuildCache(BaseModel):
             return self
 
     def invalidate(self, target: Phase):
-        assert target in [
-            Phase.requirements,
-            Phase.algorithm,
-            Phase.code,
-        ], f"Invalid target {target}"
+        assert target in self._descriptors.keys(), f"Invalid target {target}"
 
         new_cache = BuildCache(
             caches={

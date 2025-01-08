@@ -28,6 +28,17 @@ from flowco.util.output import logger, log, warn, message
 from flowco.util.text import black_format, strip_ansi
 
 
+def suggest_assertions(graph: DataFlowGraph, node: Node) -> List[str]:
+    assistant = assertions_assistant(node, suggest=True)
+
+    class SuggestedAssertions(BaseModel):
+        suggestions: List[str]
+
+    suggestions = assistant.completion(SuggestedAssertions)
+    assert suggestions is not None, "No completion from assistant"
+    return suggestions.suggestions
+
+
 def none_return_type_completion(node):
     class AssertionCompletion(BaseModel):
         requirement: str
@@ -125,10 +136,11 @@ def compile_assertions(
         return new_node
 
 
-def assertions_assistant(node: Node):
+def assertions_assistant(node: Node, suggest=False):
 
     assert node.function_parameters is not None, "No function parameters"
     assert node.function_return_type is not None, "No function return type"
+    assert node.requirements is not None, "No requirements"
 
     parameter_types = {param.name: param.type for param in node.function_parameters}
     parameter_type_str = "\n".join(
@@ -139,20 +151,26 @@ def assertions_assistant(node: Node):
     )
 
     if node.function_return_type.is_None_type():
-        prompt = "assertions-inspect"
+        if suggest:
+            prompt = "suggest-assertions-inspect"
+        else:
+            prompt = "assertions-inspect"
     else:
-        prompt = "assertions-code"
+        if suggest:
+            prompt = "suggest-assertions-code"
+        else:
+            prompt = "assertions-code"
 
-    assistant = OpenAIAssistant(
-        config.model,
-        interactive=False,
-        system_prompt_key=["system-prompt", prompt],
-        input_vars=parameter_type_str,
-        preconditions=json.dumps(node.preconditions, indent=2),
-        output_var=node.function_result_var,
-        postconditions="\n".join([f"* {r}" for r in node.requirements]),
-        requirements=json.dumps(node.assertions, indent=2),
-    )
+    substitutions = {
+        "system_prompt_key": ["system-prompt", prompt],
+        "input_vars": parameter_type_str,
+        "preconditions": json.dumps(node.preconditions, indent=2),
+        "output_var": node.function_result_var,
+        "postconditions": "\n".join([f"* {r}" for r in node.requirements]),
+        "requirements": json.dumps(node.assertions or [], indent=2),
+    }
+
+    assistant = OpenAIAssistant(config.model, interactive=False, **substitutions)
 
     return assistant
 

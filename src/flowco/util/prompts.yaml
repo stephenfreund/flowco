@@ -633,11 +633,34 @@ assertions-code: |
     provide detailed information about the failure,
     including the expected value and observed value.
 
-    If the assertion requires qualitative reasoning, use a qualitative check and
-    create a precise description of what is required.
-
     If an assertion is inconsistent with the postconditions or other assertions, indicate why in an
     error message.  Otherwise, the error message should be empty.
+
+suggest-assertions-code: |
+    Here are the input variables for a function:
+    ```
+    {input_vars}
+    ```
+    The inputs satisfy the following requirements:
+    ```
+    {preconditions}
+    ```
+    The output for the function is stored in the variable:
+    ```
+    {output_var}
+    ```
+    These are the postconditions for the function.
+    ```
+    {postconditions}
+    ```
+    I have the following suggestions for additional checks:
+    ```
+    {requirements}
+    ```
+    Suggest additional, non-redundant checks that we can perform to gain confidence
+    that the function is correct.  Each should be a short sentence describing
+    a check that can be performed.  Do not include any code.
+
 
 assertions-inspect: |
     Here are the input variables for a function:
@@ -661,6 +684,29 @@ assertions-inspect: |
 
     If an assertion is inconsistent with the postconditions or other assertions, indicate why in an
     error message.  Otherwise, the error message should be empty.
+
+
+suggest-assertions-inspect: |
+    Here are the input variables for a function:
+    ```
+    {input_vars}
+    ```
+    The inputs satisfy the following requirements:
+    ```
+    {preconditions}
+    ```
+    These are the postconditions for the function.
+    ```
+    {postconditions}
+    ```
+    I have the following suggestions for additional checks:
+    ```
+    {requirements}
+    ```
+    Suggest additional, non-redundant checks that we can perform to gain confidence
+    that the function is correct.  Each should be a short sentence describing
+    a check that can be performed by visual inspect of the output.
+
 
 inspect-output: |
     Here is a list of requirements for the output of a function:

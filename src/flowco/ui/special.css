@@ -259,26 +259,22 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
 .stMainBlockContainer {
     background-color: #F0F2F6;
 }
-
 .st-key-right-panel {
-    height: calc(100vh - 48px) !important; /* Sets height to 100% of viewport height */
-    display: block !important;
-    overflow-y: scroll !important;
-    overflow-x: hidden !important;
+    height: calc(100vh - 75px) !important;
     margin-top: 3.25rem;
     padding: 0rem;
     padding-top: 0.5rem !important;
     background-color: #F0F2F6 !important;
-    /* margin-right: 1rem; */
 }
 
-.st-key-right-panel {
-    font-size: 70%;
-}
+
+div[data-testid="stVerticalBlock"]:has( > div > div > div.st-key-right-panel) {
+    overflow-y: scroll !important;
+    overflow-x: hidden !important;
 
 div:has(> .st-key-right-panel) {
     display: block !important;
-}
+} 
 
 
 div:has(> div > .st-key-right-panel) {
@@ -299,7 +295,6 @@ div:has(> div > .st-key-right-panel) {
     line-height: 0.5;
     min-height: 0rem;
     padding: 0.1rem;
-    /* margin:0.05rem; */
     border:none;
 }
 
