@@ -680,9 +680,10 @@ assertions-inspect: |
     ```
     {requirements}
     ```    
-    Create a precise description of what is required of the visual representation of the output.
+    For eacn requirement, explain exactly what to look for in the visual representation of the output to 
+    verify that the requirement is met.
 
-    If an assertion is inconsistent with the postconditions or other assertions, indicate why in an
+    If a requirement is inconsistent with the postconditions or other assertions, indicate why in an
     error message.  Otherwise, the error message should be empty.
 
 
