@@ -24,6 +24,7 @@ from flowco.page.output import NodeResult, OutputType
 from flowco.util.config import config
 from flowco.util.errors import FlowcoError
 from flowco.util.text import (
+    black_format,
     format_basemodel,
     pill_to_function_name,
     pill_to_python_name,
@@ -99,13 +100,9 @@ class Node(NodeLike, BaseModel):
 
     def __init__(self, **data):
 
-        if "code" in data:
-            code = "\n".join(data["code"])
-            try:
-                formatted_code = black.format_str(code, mode=black.Mode())
-            except Exception as e:
-                formatted_code = code
-            data["code"] = formatted_code.split("\n")
+        code = data.get("code", None)
+        if code is not None:
+            data["code"] = black_format(code)
 
         super().__init__(**data)
 
@@ -309,13 +306,9 @@ class Node(NodeLike, BaseModel):
         ), f"Invalid kwargs for updating a node: {set(kwargs.keys()).difference(self.model_fields.keys() - {'id', 'predecessors'})}"
 
         # if code is updated, we need to reset the cache
-        if "code" in kwargs:
-            code = "\n".join(kwargs["code"])
-            try:
-                formatted_code = black.format_str(code, mode=black.Mode())
-            except Exception as e:
-                formatted_code = code
-            kwargs["code"] = formatted_code.split("\n")
+        code = kwargs.get("code", None)
+        if code is not None:
+            kwargs["code"] = black_format(code)
 
         new_node = self.model_copy(update=kwargs)
 

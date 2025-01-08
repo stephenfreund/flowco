@@ -144,21 +144,15 @@ def set_session_state(key, value) -> None:
 
 
 def show_requirements():
-    return st.session_state.show_requirements and AbstractionLevel.show_requirements(
-        st.session_state.abstraction_level
-    )
+    return AbstractionLevel.show_requirements(st.session_state.abstraction_level)
 
 
 def show_algorithm():
-    return st.session_state.show_algorithm and AbstractionLevel.show_algorithm(
-        st.session_state.abstraction_level
-    )
+    return AbstractionLevel.show_algorithm(st.session_state.abstraction_level)
 
 
 def show_code():
-    return st.session_state.show_code and AbstractionLevel.show_code(
-        st.session_state.abstraction_level
-    )
+    return AbstractionLevel.show_code(st.session_state.abstraction_level)
 
 
 def visible_phases() -> Iterator[Phase]:

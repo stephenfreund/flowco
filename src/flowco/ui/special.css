@@ -253,7 +253,11 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
 }
 
 .stMainBlockContainer * {
-    gap: 0rem !important;
+    gap: 0.2rem !important;
+}
+
+.stMainBlockContainer {
+    background-color: #F0F2F6;
 }
 
 .st-key-right-panel {
@@ -262,9 +266,10 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
     overflow-y: scroll !important;
     overflow-x: hidden !important;
     margin-top: 3.25rem;
-    padding: 0.5rem !important;
-    background-color: #F0F2F6;
-    padding-right: 1rem;
+    padding: 0rem;
+    padding-top: 0.5rem !important;
+    background-color: #F0F2F6 !important;
+    /* margin-right: 1rem; */
 }
 
 .st-key-right-panel {
@@ -278,6 +283,8 @@ div:has(> .st-key-right-panel) {
 
 div:has(> div > .st-key-right-panel) {
     background-color: #F0F2F6;
+    padding: 0rem !important;
+    border: none !important;
 }
 
 .st-key-right-panel img {
@@ -285,7 +292,7 @@ div:has(> div > .st-key-right-panel) {
 }
 
 .st-key-right_panel_width {
-    padding-right: 0.25rem !important;
+    padding-right: 0rem !important;
     padding-left: 0rem !important;
 }
 .st-key-right_panel_width * {
@@ -299,4 +306,8 @@ div:has(> div > .st-key-right-panel) {
 .st-key-node_header .stColumn {
     width: fit-content !important;
     flex: unset !important;
+}
+
+.react-json-view {
+    font-size: 12px !important;
 }

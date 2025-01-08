@@ -1,3 +1,4 @@
+import os
 import trace
 import traceback
 from regex import E
@@ -23,8 +24,6 @@ def st_pages():
 
     def test_main():
         st.write("Test")
-
-    # build = st.Page(build_main, title="Build", default=st.session_state.ui_page is not None)
 
     def projects_main():
         st.session_state.current_page = "projects"

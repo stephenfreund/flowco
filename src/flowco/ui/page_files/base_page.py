@@ -6,6 +6,7 @@ import uuid
 from streamlit_js_eval import streamlit_js_eval
 
 from flowco.page.ama import AskMeAnything
+from flowco.ui import ui_help
 from flowco.ui.authenticate import sign_out
 import numpy as np
 import pandas as pd
@@ -71,7 +72,6 @@ class FlowcoPage:
                 )
 
         self.show_ama()
-        self.global_sidebar()
 
     def right_panel(self):
         ui_page: UIPage = st.session_state.ui_page
@@ -91,37 +91,23 @@ class FlowcoPage:
         st.write("")
         st.write("")
         st.write("")
-        with st.container(key="right-panel"):
-            if node is None:
-                symbol = (
-                    ":material/chevron_right:"
-                    if st.session_state.wide_right_panel
-                    else ":material/chevron_left:"
+        with st.container(key="right-panel", border=True):
+            symbol = (
+                ":material/chevron_right:"
+                if st.session_state.wide_right_panel
+                else ":material/chevron_left:"
+            )
+            if st.button(symbol, key="right_panel_width"):
+                st.session_state.wide_right_panel = (
+                    not st.session_state.wide_right_panel
                 )
-                if st.button(symbol, key="right_panel_width"):
-                    st.session_state.wide_right_panel = (
-                        not st.session_state.wide_right_panel
-                    )
-                    st.rerun()
-                st.write("")
+                st.rerun()
+            if node is None:
+                self.global_sidebar()
             else:
                 with st.container(key="node_header"):
-                    button, header = st.columns([1, 4], vertical_alignment="center")
-                    with button:
-                        symbol = (
-                            ":material/chevron_right:"
-                            if st.session_state.wide_right_panel
-                            else ":material/chevron_left:"
-                        )
-                        if st.button(symbol, key="right_panel_width"):
-                            st.session_state.wide_right_panel = (
-                                not st.session_state.wide_right_panel
-                            )
-                            st.rerun()
-
-                    with header:
-                        st.subheader(node.pill)
-                st.caption(f"Status: {node.phase}")
+                    st.subheader(node.pill)
+                    st.caption(f"Status: {node.phase}")
 
                 self.show_messages(node)
                 self.node_sidebar(node)
@@ -284,16 +270,23 @@ class FlowcoPage:
 
     def bottom_bar(self):
         ui_page: UIPage = st.session_state.ui_page
-        if st.button(
-            ":material/settings: Settings",
-            help="Change settings",
-            disabled=not self.graph_is_editable(),
-        ):
-            settings(ui_page)
+        cols = st.columns([1, 1, 1])
+        with cols[0]:
+            if st.button(":material/help: Help", disabled=not self.graph_is_editable()):
+                ui_help.help_dialog()
 
-        if st.button(":material/logout: Logout", help="Sign out"):
-            sign_out()
-            st.rerun()
+        with cols[1]:
+            if st.button(
+                ":material/settings: Settings",
+                help="Change settings",
+                disabled=not self.graph_is_editable(),
+            ):
+                settings(ui_page)
+
+        with cols[2]:
+            if st.button(":material/logout: Logout", help="Sign out"):
+                sign_out()
+                st.rerun()
 
     def button_bar(self):
         pass
@@ -317,7 +310,7 @@ class FlowcoPage:
     def fini(self):
         pass
 
-    def edit_node(self, node_id: str):
+    def prepare_node_for_edit(self, node_id: str):
         edit_node(node_id)
 
     def refresh_phase(self) -> Phase:
@@ -377,7 +370,7 @@ class FlowcoPage:
                         st.session_state.last_sequence_number = result[
                             "sequence_number"
                         ]
-                        self.edit_node(result["selected_node"])
+                        self.prepare_node_for_edit(result["selected_node"])
                 else:
                     if selected_node == "<<<<<":
                         st.session_state.selected_node = None

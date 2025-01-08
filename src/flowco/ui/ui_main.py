@@ -64,4 +64,3 @@ except Exception as e:
     print(traceback.format_exc())
     st.error(e)
     st.exception(e)
-    st.stop()

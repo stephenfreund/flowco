@@ -13,14 +13,73 @@ from flowco.builder.graph_completions import (
     node_completion,
     node_completion_model,
 )
-from flowco.dataflow.checks import CheckOutcomes, Check
+from flowco.dataflow.checks import (
+    CheckOutcomes,
+    Check,
+    QualitativeCheck,
+    QuantitiveCheck,
+)
 from flowco.dataflow.dfg import DataFlowGraph, Node
 from flowco.dataflow.phase import Phase
 from flowco.pythonshell.shells import PythonShells
 from flowco.session.session import session
 from flowco.util.config import config
 from flowco.util.output import logger, log, warn, message
-from flowco.util.text import strip_ansi
+from flowco.util.text import black_format, strip_ansi
+
+
+def none_return_type_completion(node):
+    class AssertionCompletion(BaseModel):
+        requirement: str
+        qualitative_analysis: str = Field(
+            description="A description of the requirement for this test."
+        )
+        error: str | None = Field(
+            description="An error message if the assertion is inconsistent with the requirements."
+        )
+
+    class AssertionsCompletion(BaseModel):
+        assertions: List[AssertionCompletion]
+
+    assistant = assertions_assistant(node)
+    completion = assistant.completion(AssertionsCompletion)
+    assert completion, "No completion from assistant"
+
+    checks = {
+        a: QualitativeCheck(type="qualitative", requirement=x.qualitative_analysis)
+        for a, x in zip(node.assertions, completion.assertions)
+    }
+    errors = {
+        a: x.error for a, x in zip(node.assertions, completion.assertions) if x.error
+    }
+    return checks, errors
+
+
+def not_none_return_type_completion(node):
+    class AssertionCompletion(BaseModel):
+        requirement: str
+        code: List[str] = Field(
+            description="Code to run to verify the this requirement is met.  The code is stored as a list of source lines."
+        )
+        error: str | None = Field(
+            description="An error message if the assertion is inconsistent with the requirements."
+        )
+
+    class AssertionsCompletion(BaseModel):
+        assertions: List[AssertionCompletion]
+
+    assistant = assertions_assistant(node)
+    completion = assistant.completion(AssertionsCompletion)
+    assert completion, "No completion from assistant"
+
+    checks = {
+        a: QuantitiveCheck(type="quantitative", code=black_format(x.code))
+        for a, x in zip(node.assertions, completion.assertions)
+    }
+    errors = {
+        a: x.error for a, x in zip(node.assertions, completion.assertions) if x.error
+    }
+    return checks, errors
 
 
 @node_pass(required_phase=Phase.run_checked, target_phase=Phase.assertions_code)
@@ -43,31 +102,19 @@ def compile_assertions(
                 cache=new_node.cache.update(Phase.assertions_code, new_node)
             )
 
-        assistant = assertions_assistant(node)
+        assert node.function_return_type is not None, "No function return type"
+        if node.function_return_type.is_None_type():
+            checks, errors = none_return_type_completion(node)
+        else:
+            checks, errors = not_none_return_type_completion(node)
 
-        class AssertionCompletion(BaseModel):
-            requirement: str
-            check: Check = Field(description="The check to perform.")
-            error: str | None = Field(
-                description="An error message if the assertion is inconsistent with the requirements."
-            )
-
-        class AssertionsCompletion(BaseModel):
-            assertions: List[AssertionCompletion]
-
-        completion = assistant.completion(AssertionsCompletion)
-
-        assert completion, "No completion from assistant"
-
-        checks = {x.requirement: x.check for x in completion.assertions}
         new_node = node.update(assertion_checks=checks, phase=Phase.assertions_code)
 
-        failures = [x for x in completion.assertions if x.error]
-        if failures:
-            for check in failures:
+        if errors:
+            for assertion, error in errors.items():
                 new_node = new_node.warn(
                     phase=Phase.assertions_code,
-                    message=f"**{check.requirement}**: {check.error}",
+                    message=f"**{assertion}**: {error}",
                 )
             return new_node
 
@@ -80,8 +127,8 @@ def compile_assertions(
 
 def assertions_assistant(node: Node):
 
-    assert node.function_parameters, "No function parameters"
-    assert node.function_return_type, "No function return type"
+    assert node.function_parameters is not None, "No function parameters"
+    assert node.function_return_type is not None, "No function return type"
 
     parameter_types = {param.name: param.type for param in node.function_parameters}
     parameter_type_str = "\n".join(

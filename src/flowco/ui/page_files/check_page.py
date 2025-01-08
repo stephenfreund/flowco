@@ -1,7 +1,9 @@
+import textwrap
 from typing import List, Tuple
 import pandas as pd
 import streamlit as st
-from flowco.dataflow.dfg import Geometry, Node
+from flowco.builder.build import BuildEngine
+from flowco.dataflow.dfg import DataFlowGraph, Geometry, Node
 from flowco.dataflow.phase import Phase
 from flowco.ui.dialogs.data_files import data_files_dialog
 from flowco.ui.page_files.build_page import BuildPage
@@ -10,6 +12,7 @@ from flowco.ui.ui_page import UIPage
 from flowco.ui.ui_util import (
     phase_for_last_shown_part,
     set_session_state,
+    show_code,
     show_requirements,
 )
 from flowco.util.config import config
@@ -51,28 +54,84 @@ class CheckPage(BuildPage):
         return Phase.assertions_checked
 
     @st.dialog("Edit Checks", width="large")
-    def edit_checks(self, node: Node):
+    def edit_checks(self, node_id: str):
+
         ui_page: UIPage = st.session_state.ui_page
+        node = st.session_state.tmp_dfg[node_id]
+        buttons = st.empty()
+        st.write("### Checks")
         editable_df = st.data_editor(
-            pd.DataFrame({"checks": (node.assertions or [])}, dtype=str),
+            pd.DataFrame({"checks": st.session_state.tmp_assertions}, dtype=str),
             key="edit_checks",
             num_rows="dynamic",
             use_container_width=True,
         )
 
-        if st.button("Ok"):
-            text = list(editable_df["checks"])
-            ui_page.page().user_edit_node_assertions(node.id, text)
-            st.rerun()
+        new_assertions = list([x for x in editable_df["checks"] if x])
+        if new_assertions != node.assertions or node.phase < Phase.assertions_code:
+            dfg = st.session_state.tmp_dfg
+            node = dfg[node_id]
+            dfg = dfg.with_node(node.update(assertions=new_assertions))
+            dfg = dfg.reduce_phases_to_below_target(node.id, Phase.assertions_code)
+            st.session_state.tmp_dfg = dfg
+
+        dfg = st.session_state.tmp_dfg
+        if show_code() and dfg[node_id].phase < Phase.assertions_code:
+            with st.spinner("Generating validation steps..."):
+                build_config = ui_page.page().base_build_config(repair=False)
+                engine = BuildEngine.get_builder()
+                for build_updated in engine.build_with_worklist(
+                    build_config, dfg, Phase.assertions_code, node_id
+                ):
+                    dfg = build_updated.new_graph
+                st.session_state.tmp_dfg = dfg
+
+        with buttons.container():
+            if st.button("Save"):
+                ui_page.page().update_dfg(st.session_state.tmp_dfg)
+                st.session_state.force_update = True
+                st.rerun()
+
+        if show_code():
+            node = st.session_state.tmp_dfg[node_id]
+            st.write("### Validation Steps")
+            if node.assertion_checks:
+
+                for message in node.messages or []:
+                    if message.phase == Phase.assertions_code:
+                        if message.level == "error":
+                            st.error(f"{message.text}")
+                        else:
+                            st.warning(f"{message.text}")
+
+                for assertion in node.assertions or []:
+                    check = node.assertion_checks.get(assertion, None)
+                    if check:
+                        st.write(f"* **{assertion}**")
+                        if check.type == "quantitative":
+                            code = check.code
+                            if code:
+                                st.code(textwrap.indent("\n".join(code), "    "))
+                            else:
+                                st.write("    *Code not available*")
+                        else:
+                            st.write(f"    *{check.requirement}*")
+
+    def edit_node(self, node_id: str):
+        ui_page: UIPage = st.session_state.ui_page
+        with ui_page.page():
+            st.session_state.tmp_dfg = ui_page.dfg()
+            st.session_state.tmp_assertions = ui_page.dfg()[node_id].assertions or []
+            self.edit_checks(node_id)
 
     def show_node_details(self, node: Node):
         st.write("**Checks**")
         st.write("\n".join(["* " + x for x in (node.assertions or [])]))
-        if st.button(
-            ":material/edit_note:",
-            disabled=not self.graph_is_editable(),
-            help="Edit node checks",
-        ):
-            self.edit_checks(node)
+        # if st.button(
+        #     ":material/edit_note:",
+        #     disabled=not self.graph_is_editable(),
+        #     help="Edit node checks",
+        # ):
+        #     self.edit_checks(node)
 
         super().show_node_details(node)

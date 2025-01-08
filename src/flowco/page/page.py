@@ -533,3 +533,11 @@ class Page(BaseModel, extra="allow"):
             self.update_dfg(
                 self.dfg.reduce_phases_to_below_target(node.id, Phase.assertions_code)
             )
+
+    @atomic_method
+    def user_build_node_to_phase(
+        self, node_id: str, phase: Phase, repair=False
+    ) -> None:
+        builder = BuildEngine.get_builder()
+        for _ in self.build(builder, phase, repair=repair, target_node_id=node_id):
+            pass

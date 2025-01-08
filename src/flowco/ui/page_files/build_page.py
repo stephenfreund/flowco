@@ -144,6 +144,9 @@ class BuildPage(FlowcoPage):
         super().auto_update()
 
     def edit_node(self, node_id: str):
+        edit_node(node_id)
+
+    def prepare_node_for_edit(self, node_id: str):
         ui_page: UIPage = st.session_state.ui_page
         # Refresh before editing!
         if ui_page.dfg()[node_id].phase < phase_for_last_shown_part():
@@ -156,7 +159,7 @@ class BuildPage(FlowcoPage):
                 )
                 st.session_state.builder_progress = 0
         else:
-            edit_node(node_id)
+            self.edit_node(node_id)
 
     def toggle_building(self, force=True):
         ui_page: UIPage = st.session_state.ui_page
@@ -289,16 +292,16 @@ class BuildPage(FlowcoPage):
         cols = st.columns(4)
         with cols[0]:
             if st.button(
-                ":material/edit_note: Notes",
+                ":material/edit_note:",
                 disabled=not self.graph_is_editable(),
                 help="Edit the description of the diagram",
             ):
                 self.edit_description()
 
-        with cols[2]:
-            if st.button(
-                ":material/code:",
-                disabled=not self.graph_is_editable(),
-                help="Edit the diagram as a Flowthon program",
-            ):
-                self.edit_flowthon()
+        # with cols[2]:
+        #     if st.button(
+        #         ":material/code:",
+        #         disabled=not self.graph_is_editable(),
+        #         help="Edit the diagram as a Flowthon program",
+        #     ):
+        #         self.edit_flowthon()

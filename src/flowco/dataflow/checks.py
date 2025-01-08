@@ -7,7 +7,7 @@ from flowco.page.output import ResultValue
 class QuantitiveCheck(BaseModel):
     type: Literal["quantitative"]
     code: List[str] = Field(
-        description="A unittest function to verify the code meets the requirement.  The code is stored as a list of source lines."
+        description="Code to run to verify the this requirement is met.  The code is stored as a list of source lines."
     )
 
 

@@ -1,3 +1,4 @@
+import black
 from collections import OrderedDict
 from json import dumps
 import difflib
@@ -342,3 +343,14 @@ def md_to_html(md):
             "md_in_html",  # Allows Markdown inside HTML blocks
         ],
     )
+
+
+def black_format(code: List[str], line_length=70):
+    code_block = "\n".join(code)
+    try:
+        formatted_code = black.format_str(
+            code_block, mode=black.Mode(line_length=line_length)
+        )
+    except Exception as e:
+        formatted_code = code_block
+    return formatted_code.split("\n")
