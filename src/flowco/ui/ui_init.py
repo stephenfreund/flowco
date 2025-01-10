@@ -63,7 +63,7 @@ css = """
 .st-key-node_code .stCode *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_checks .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-right-panel .stCode *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
-.st-key-right-panel p,
+.st-key-right-panel p, ul, ol, li
 .st-key-right-panel .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6)
  {
     font-size: 12px !important;
@@ -317,6 +317,17 @@ div:has(> div > .st-key-right-panel) {
 .st-key-right-panel .stButton * {
     font-size: 16px !important;
 }
+
+.st-key-lock button[data-testid="stBaseButton-segmented_control"],
+.st-key-lock button[data-testid="stBaseButton-segmented_controlActive"] {
+    padding: 4px;
+}
+
+.st-key-lock .stColumn {
+    width: fit-content !important;
+    flex: unset !important;
+}
+
 """
 
 

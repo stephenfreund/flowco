@@ -29,7 +29,9 @@ from flowco.dataflow.dfg import DataFlowGraph, Parameter, Node
 def requirements(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
     with logger("Requirements step"):
 
-        old_preconditions = node.preconditions
+        if node.is_locked and node.requirements is not None:
+            return check_precondition_shortcurcuit(pass_config, graph, node)
+
         # Compute inputs
         node = node.update(
             function_parameters=create_parameters(graph, node),
@@ -43,12 +45,7 @@ def requirements(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> N
 
         diff_instructions = cache_prompt(Phase.requirements, node, "requirements")
 
-        if not config.x_shortcurcuit_requirements:
-            node = check_precondition_consistency(node)
-        else:
-            node = check_precondition_shortcurcuit(node, old_preconditions)
-            if node.phase == Phase.requirements:
-                return node.update(cache=node.cache.update(Phase.requirements, node))
+        node = check_precondition_consistency(node)
 
         # TODO - this is wonky.  need to regenerate if you add the first successor..
 
@@ -233,63 +230,67 @@ def check_precondition_consistency(node: Node) -> Node:
 
 
 def check_precondition_shortcurcuit(
-    node: Node, old_preconditions: Dict[str, List[str]]
+        pass_config: PassConfig, graph: DataFlowGraph, node: Node
 ) -> Node:
     with logger("Preconditions shortcurcuit checks"):
 
-        class Warning(BaseModel):
-            inconsistencies: List[str] = Field(
-                description="Inconsistencies in the preconditions.",
-            )
-            no_inconsistencies: bool = Field(
-                description="Whether the preconditions are consistent.",
-            )
-            semantic_implications: List[str] = Field(
-                description="Semantic implications of change from the old to the new preconditions.",
-            )
-            no_semantic_implications: bool = Field(
-                description="Whether the preconditions have semantic implications.",
-            )
-            impact_on_postconditions: List[str] = Field(
-                description="Impact on postconditions of the change from the old to the new preconditions.",
-            )
-            no_impact_on_postconditions: bool = Field(
-                description="Whether the preconditions have impact on postconditions.",
+        new_preconditions = create_preconditions(pass_config, graph, node)
+
+        old_label = node.cache.get_in(Phase.requirements, node).get("label")
+        new_label = node.label
+
+        if new_preconditions != node.preconditions:
+
+            class Warning(BaseModel):
+                changes_to_preconditions: List[str] = Field(
+                    description="Inconsistencies in the preconditions.",
+                )
+                impacts_postconditions: bool = Field(
+                    description="Whether the preconditions have semantic implications for the postconditions.",
+                )
+                impacts_on_postconditions: List[str] = Field(
+                    description="Semantic implications of change from the old to the new preconditions.",
+                )
+                label_impacts_postconditions: bool = Field(
+                    description="Whether the label change has semantic implications for the postconditions.",
+                )
+                impact_of_label_change: str = Field(
+                    description="Semantic implications of the label change for the postconditions.",
+                )
+
+            assistant = OpenAIAssistant(
+                config.model,
+                interactive=False,
+                system_prompt_key="precondition-checks",
+                preconditions=json.dumps(new_preconditions),
+                old_preconditions=json.dumps(node.preconditions),
+                postconditions=json.dumps(node.requirements),
+                old_label=old_label,
+                new_label=new_label,
             )
 
-        assistant = OpenAIAssistant(
-            config.model,
-            interactive=False,
-            system_prompt_key="precondition-checks",
-            preconditions=json.dumps(node.preconditions),
-            old_preconditions=json.dumps(old_preconditions),
-            postconditions=json.dumps(node.requirements),
-        )
+            completion = assistant.completion(Warning)
 
-        completion = assistant.completion(Warning)
+            log(completion)
 
-        with logger("Precondition inconsistencies"):
-            if not completion.no_inconsistencies:
-                for warning in completion.inconsistencies:
-                    node = node.warn(
-                        phase=Phase.requirements,
-                        message=warning,
-                    )
+            if completion.impacts_postconditions:
+                changes = [ f"* {x}" for x in completion.changes_to_preconditions ]
+                impacts = [ f"* {x}" for x in completion.impacts_on_postconditions ]
+                message = f"Predecessors have change:\n" + "\n".join(changes) + "\n\nThis may impact the requirements:\n" + "\n".join(impacts)
+                node = node.warn(
+                    phase=Phase.requirements,
+                    message=message
+                )
+            if completion.label_impacts_postconditions:
+                message = f"Label has changed from '{old_label}' to '{new_label}'.  This may impact the requirements:\n" + completion.impact_of_label_change
+                node = node.warn(
+                    phase=Phase.requirements,
+                    message=message
+                )
+    
+        node = node.update(phase=Phase.requirements)
 
-        with logger("Semantic implications"):
-            if not completion.no_semantic_implications:
-                for t in completion.semantic_implications:
-                    log(t)
-
-        with logger("Impact on postconditions"):
-            if not completion.no_impact_on_postconditions:
-                for t in completion.impact_on_postconditions:
-                    log(t)
-            else:
-                log("No impact on postconditions.")
-                node = node.update(phase=Phase.requirements)
-
-    return node
+        return node
 
 
 def summarize_changes(node: Node, phase: Phase, diff_map: Dict[str, List[str]]):
@@ -476,6 +477,10 @@ def compile(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
                 node.function_computed_value is not None
             ), "Computed value must be defined."
 
+
+        if node.is_locked and node.code is not None:
+            return check_requirements_shortcurcuit(pass_config, graph, node)
+
         # Check cache
         if node.cache.matches_in_and_out(Phase.code, node):
             log("Using cache for code.")
@@ -540,6 +545,58 @@ def code_assistant(node: Node, diff_instructions, interactive=False):
 def code_completion_model():
     completion_model = node_completion_model("code")
     return completion_model
+
+ 
+
+def check_requirements_shortcurcuit(
+        pass_config: PassConfig, graph: DataFlowGraph, node: Node
+) -> Node:
+    with logger("Requirements shortcurcuit checks"):
+
+        if node.cache.matches_in_and_out(Phase.code, node):
+            log("Using cache for code.")
+            return node.update(phase=Phase.code)
+
+        if new_preconditions != node.preconditions:
+
+            class Warning(BaseModel):
+                changes_to_preconditions: List[str] = Field(
+                    description="Inconsistencies in the preconditions.",
+                )
+                impacts_postconditions: bool = Field(
+                    description="Whether the preconditions have semantic implications.",
+                )
+                impacts_on_postconditions: List[str] = Field(
+                    description="Semantic implications of change from the old to the new preconditions.",
+                )
+
+            assistant = OpenAIAssistant(
+                config.model,
+                interactive=False,
+                system_prompt_key="precondition-checks",
+                preconditions=json.dumps(node.preconditions),
+                old_preconditions=json.dumps(new_preconditions),
+                postconditions=json.dumps(node.requirements),
+            )
+
+            completion = assistant.completion(Warning)
+
+            log(completion)
+
+            if completion.impacts_postconditions:
+                changes = [ f"* {x}" for x in completion.changes_to_preconditions ]
+                impacts = [ f"* {x}" for x in completion.impacts_on_postconditions ]
+                message = f"Predecessors have change:\n" + "\n".join(changes) + "\n\nThis may impact the requirements:\n" + "\n".join(impacts)
+                node = node.warn(
+                    phase=Phase.requirements,
+                    message=message
+                )
+    
+        node = node.update(phase=Phase.requirements)
+
+        return node
+
+
 
 
 def interactive_code_assistant(

@@ -34,6 +34,9 @@ class CacheEntry(BaseModel):
     def matches_in_and_out(self, in_node: BaseModel) -> bool:
         return self.matches_in(in_node) and self.matches_out(in_node)
 
+    def get_in(self) -> Dict[str, Any]:
+        return self.in_values
+
     def invalidate(self):
         return self.model_copy(update={"valid": False})
 
@@ -118,6 +121,11 @@ class BuildCache(BaseModel):
         if phase not in self.caches:
             return False
         return self.caches[phase].matches_in_and_out(node)
+
+    def get_in(self, phase: Phase, node: BaseModel) -> Dict[str, Any]:
+        if phase not in self.caches:
+            return {}
+        return self.caches[phase].in_values
 
     def diff(self, phase: Phase, node: BaseModel) -> Dict[str, Any]:
         if phase not in self.caches:

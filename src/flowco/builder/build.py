@@ -196,7 +196,12 @@ class BuildEngine:
         node_ids: List[str] | str | None,
     ) -> Iterator[BuildUpdate]:
 
-        graph = graph.update(nodes=[node.update(messages=[]) for node in graph.nodes])
+        # TODO: Remove all messages for all phases >= target here!
+
+        # nodes = [ graph[node_id].lower_phase(phase=target_phase) for node_id in graph.nodes ]
+        # graph = graph.update(nodes=nodes)
+
+        # graph = graph.update(nodes=[node.update(messages=[]) for node in graph.nodes])
 
         if config.sequential:
             yield from self.build_with_worklist_sequential(
@@ -454,6 +459,9 @@ class BuildEngine:
 
                         try:
                             log(f"{node.pill}: {pass_to_reach_target.title()}")
+
+                            # TODO: Remove messages for phase here!
+
                             new_node = pass_to_reach_target.pass_function(
                                 pass_config, graph, node
                             )

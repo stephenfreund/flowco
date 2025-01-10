@@ -17,11 +17,11 @@ export interface DiagramNode {
     label: string;
     geometry: Geometry;
     output_geometry: Geometry;
+    is_locked: boolean;
 
     // Extended from dfg
     phase: number;
     has_messages: boolean;
-    is_locked: boolean;
     output?: DiagramOutput;
     build_status?: string;
 
@@ -553,6 +553,7 @@ export interface DiagramNodeUpdate {
     label: string;
     geometry: Geometry;
     output_geometry?: Geometry;
+    is_locked: boolean;
 }
 
 // the value for an edge is the pill.
@@ -611,7 +612,8 @@ export function convertMxGraphToDiagramUpdate(graph: mxGraph, original_version: 
                 } else {
                     output_geometry = undefined;
                 }
-                diagramUpdate.nodes[nodeId] = { id: nodeId, pill: pill, label: label, geometry: geometry, output_geometry: output_geometry };
+                const is_locked = rawLabel.is_locked;
+                diagramUpdate.nodes[nodeId] = { id: nodeId, pill: pill, label: label, geometry: geometry, output_geometry: output_geometry, is_locked: is_locked };
             }
         }
         // Non-vertex, non-edge cells are ignored as per interface requirements

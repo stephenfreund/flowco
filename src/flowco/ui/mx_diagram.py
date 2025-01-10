@@ -86,8 +86,8 @@ def from_dfg(dfg: DataFlowGraph) -> MxDiagram:
             geometry=node.geometry,
             phase=node.phase.value,  # Convert Phase enum to int
             has_messages=len(node.messages) > 0,
-            is_locked=random.choice([True, False]),
             output_geometry=node.output_geometry,
+            is_locked=node.is_locked,
             output=get_output(node),
             build_status=node.build_status,
             html=html,

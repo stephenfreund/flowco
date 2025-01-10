@@ -74,8 +74,8 @@ class Config:
 
         # experimental features
         self.x_no_descriptions = _flowco_get_env("x_no_descriptions", "1") != "0"
-        self.x_shortcurcuit_requirements = (
-            _flowco_get_env("x_shortcurcuit_requirements", "0") != "0"
+        self.x_lock_stops_updates = (
+            _flowco_get_env("lock_stops_updates", "0") != "0"
         )
         self.x_no_dfg_image_in_prompt = (
             _flowco_get_env("x_no_dfg_image_in_prompt", "0") != "0"
@@ -215,11 +215,11 @@ class Config:
             config=self,
         )
         parser.add_argument(
-            "--x_shortcurcuit_requirements",
+            "--x_lock_stops_updates",
             type=bool,
             nargs=0,
-            default=self.x_shortcurcuit_requirements,
-            help="Use the LLM to check for precondition changes",
+            default=self.x_lock_stops_updates,
+            help="Stop the LLM from making unsupervised updates",
             action=StoreTrueConfigAction,
             config=self,
         )

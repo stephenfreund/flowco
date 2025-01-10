@@ -1,4 +1,5 @@
 from __future__ import annotations
+import traceback
 import black
 from collections import deque
 import os
@@ -125,6 +126,11 @@ class Node(NodeLike, BaseModel):
         description="The geometry of the output of the node in the diagram.",
     )
 
+    is_locked: bool = Field(
+        default=False,
+        description="Whether the node is locked and cannot be modified by the LLM."
+    )
+
     # Update with pill
 
     function_name: str = Field(
@@ -241,6 +247,7 @@ class Node(NodeLike, BaseModel):
             and self.predecessors == other.predecessors
             and self.geometry == other.geometry
             and self.output_geometry == other.output_geometry
+            and self.is_locked == other.is_locked
             and self.requirements == other.requirements
             and self.function_return_type == other.function_return_type
             and self.algorithm == other.algorithm
@@ -322,11 +329,14 @@ class Node(NodeLike, BaseModel):
         # Set the phase at target, and remove anything filled in by later phases.
         # """
 
+        log("Borp", target_phase)
+        traceback.print_stack()
+
         # node be already be at phase or lower...
         target_phase = min(target_phase, self.phase)
 
         messages = [
-            message for message in self.messages or [] if message.phase <= target_phase
+            message for message in (self.messages or []) if message.phase < target_phase
         ]
 
         return self.update(phase=target_phase, messages=messages)
@@ -561,7 +571,8 @@ class DataFlowGraph(GraphLike, BaseModel):
                         pill=node["pill"],
                         label=node["label"],
                         geometry=Geometry(**node["geometry"]),
-                        output_geometry=Geometry(**node["output_geometry"]),
+                        output_geometry=Geometry(**node["output_geometry"]), 
+                        is_locked=node.get(node["is_locked"], False),
                         function_name=node["function_name"],
                         function_result_var=node["function_result_var"],
                         predecessors=node["predecessors"],

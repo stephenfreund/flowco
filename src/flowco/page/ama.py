@@ -1136,6 +1136,7 @@ class AskMeAnything:
                 label=x.label,
                 geometry=x.geometry,
                 output_geometry=x.output_geometry,
+                is_locked=x.is_locked,
             )
             for x in dfg.nodes
         } | {
@@ -1145,6 +1146,7 @@ class AskMeAnything:
                 label=label,
                 geometry=geometry,
                 output_geometry=output_geometry,
+                is_locked=False,
             )
         }
         edge_updates = {
@@ -1245,6 +1247,7 @@ class AskMeAnything:
                     label=x.label,
                     geometry=x.geometry,
                     output_geometry=x.output_geometry,
+                    is_locked=x.is_locked,
                 )
                 for x in dfg.nodes
                 if x.id != id
@@ -1297,6 +1300,7 @@ class AskMeAnything:
                     label=x.label,
                     geometry=x.geometry,
                     output_geometry=x.output_geometry,
+                    is_locked=x.is_locked,
                 )
                 for x in dfg.nodes
             },

@@ -30,9 +30,9 @@ def settings(ui_page: UIPage):
         config.x_no_descriptions = st.toggle(
             "Don't generate descriptions for each node", value=config.x_no_descriptions
         )
-        config.x_shortcurcuit_requirements = st.toggle(
+        config.x_lock_stops_updates = st.toggle(
             "Use the LLM to check for precondition changes",
-            value=config.x_shortcurcuit_requirements,
+            value=config.x_lock_stops_updates,
         )
         config.x_no_dfg_image_in_prompt = st.toggle(
             "Dont' send dataflow image in prompt", value=config.x_no_dfg_image_in_prompt

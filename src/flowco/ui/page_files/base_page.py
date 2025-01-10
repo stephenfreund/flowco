@@ -4,6 +4,7 @@ import uuid
 
 from flowco.page.ama import AskMeAnything
 from flowco.ui import ui_help
+from flowco.ui import ui_page
 from flowco.ui.authenticate import sign_out
 import numpy as np
 import pandas as pd
@@ -103,8 +104,29 @@ class FlowcoPage:
                 self.node_sidebar(node)
 
     def node_header(self, node):
+        ui_page: UIPage = st.session_state.ui_page
         with st.container(key="node_header"):
-            st.subheader(node.pill)
+            with st.container(key="lock"):
+                left, right = st.columns([1, 1], vertical_alignment="bottom")
+                with left:
+                    pressed = st.segmented_control(":material/lock:", [":material/lock:"], default=[":material/lock:"] if node.is_locked else None, label_visibility="collapsed", disabled=not self.graph_is_editable())
+                    if pressed and not node.is_locked:
+                        dfg = ui_page.dfg()
+                        ui_page.update_dfg(
+                            dfg.with_node(dfg[node.id].update(is_locked=True))
+                        )
+                        st.session_state.force_update = True
+                        st.rerun()
+                    elif not pressed and node.is_locked:
+                        dfg = ui_page.dfg()
+                        ui_page.update_dfg(
+                            dfg.with_node(dfg[node.id].update(is_locked=False))
+                        )
+                        st.session_state.force_update = True
+                        st.rerun()
+
+                with right:
+                    st.subheader(node.pill)
             st.caption(f"Status: {node.phase}")
 
     def masthead(self, node: Node | None = None):

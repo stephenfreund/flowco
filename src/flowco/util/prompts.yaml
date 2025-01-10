@@ -399,34 +399,68 @@ inconsistent-preconditions: |
     report redundancies or missing conditions.  
     If there are no contradictions, provide an empty list.
 
+# precondition-checks: |
+#     1. These are the new preconditions for a computation step:
+
+#     ```
+#     {preconditions}
+#     ```
+    
+#     Are there any contradictions in the preconditions?  Explain them.
+    
+#     Do not
+#     report redundancies or missing conditions.  
+
+#     2. These are the old preconditions for a computation step:
+
+#     ```
+#     {old_preconditions}
+#     ```
+
+#     Examine those old preconditions and identify any that are not implied
+#     by the new preconditions.  Id so, explain.
+
+#     3. Here are the postconditions for the computation step:
+
+#     ```
+#     {postconditions}
+#     ```
+
+#     Do the changes to the preconditions affect the postconditions?  If so, explain how.
+
 precondition-checks: |
     1. These are the new preconditions for a computation step:
 
     ```
     {preconditions}
     ```
-    
-    Explain any inconsistencies.  Do not
-    report redundancies or missing conditions.  
-    If there are no inconsistencies, provide an empty list.
 
-    2. These are the old preconditions for a computation step:
+    These are the old preconditions for a computation step:
 
     ```
     {old_preconditions}
     ```
 
-    Do the new preconditions semantically imply the old preconditions?
-    If they do not, explain how they do not.  If they do, provide an empty list.
+    Examine the new preconditions and identify any changes from the old.
 
-    3. Here are the postconditions for the computation step:
+    2. Here are the postconditions for the computation step:
 
     ```
     {postconditions}
     ```
 
-    Do the changes in the preconditions affect the postconditions?  If so, explain how.
-    If the changes do not affect the requirements, provide an empty list.
+    Do the changes to the preconditions affect the postconditions?  If so, explain how.
+
+    3.  Here is the old label for the computation step:
+    ```
+    {old_label}
+    ```
+    Here is the new label for the computation step:
+    ```
+    {new_label}
+    ```
+    Do the changes to label impact affect the relevance of the postconditions?  If so, explain how.
+
 
 
 algorithm: |

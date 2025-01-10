@@ -182,7 +182,7 @@ class BuildPage(FlowcoPage):
         if builder is None:
             st.session_state.builder = Builder(
                 ui_page.page(),
-                None if node_specific else st.session_state.selected_node,
+                None if not node_specific else st.session_state.selected_node,
                 target_phase=self.build_target_phase(),
                 passes_key=passes_key,
                 force=force,

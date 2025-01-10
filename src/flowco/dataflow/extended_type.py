@@ -41,7 +41,7 @@ class IntType(BaseType):
         return "int"
 
     def matches_value(self, value: Any) -> bool:
-        return isinstance(value, int) and not isinstance(
+        return (isinstance(value, int) or isinstance(value, np.int64)) and not isinstance(
             value, bool
         )  # bool is subclass of int
 
