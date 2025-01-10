@@ -1,6 +1,6 @@
 import json
 import textwrap
-from typing import List, Optional
+from typing import List
 
 from nbclient.exceptions import CellExecutionError
 from pydantic import Field, BaseModel
@@ -15,7 +15,6 @@ from flowco.builder.graph_completions import (
 )
 from flowco.dataflow.checks import (
     CheckOutcomes,
-    Check,
     QualitativeCheck,
     QuantitiveCheck,
 )
@@ -46,7 +45,7 @@ def none_return_type_completion(node):
             description="A description of the requirement for this test."
         )
         error: str | None = Field(
-            description="An error message if the assertion is inconsistent with the requirements."
+            description="An error message if the requirements do not guarantee the assertion."
         )
 
     class AssertionsCompletion(BaseModel):
@@ -57,13 +56,12 @@ def none_return_type_completion(node):
     assert completion, "No completion from assistant"
 
     checks = {
-        a: QualitativeCheck(type="qualitative", requirement=x.qualitative_analysis)
+        a: QualitativeCheck(
+            type="qualitative", requirement=x.qualitative_analysis, warning=x.error
+        )
         for a, x in zip(node.assertions, completion.assertions)
     }
-    errors = {
-        a: x.error for a, x in zip(node.assertions, completion.assertions) if x.error
-    }
-    return checks, errors
+    return checks
 
 
 def not_none_return_type_completion(node):
@@ -73,7 +71,7 @@ def not_none_return_type_completion(node):
             description="Code to run to verify the this requirement is met.  The code is stored as a list of source lines."
         )
         error: str | None = Field(
-            description="An error message if the assertion is inconsistent with the requirements."
+            description="An error message if the requirements do not guarantee the assertion."
         )
 
     class AssertionsCompletion(BaseModel):
@@ -84,13 +82,12 @@ def not_none_return_type_completion(node):
     assert completion, "No completion from assistant"
 
     checks = {
-        a: QuantitiveCheck(type="quantitative", code=black_format(x.code))
+        a: QuantitiveCheck(
+            type="quantitative", code=black_format(x.code), warning=x.error
+        )
         for a, x in zip(node.assertions, completion.assertions)
     }
-    errors = {
-        a: x.error for a, x in zip(node.assertions, completion.assertions) if x.error
-    }
-    return checks, errors
+    return checks
 
 
 @node_pass(required_phase=Phase.run_checked, target_phase=Phase.assertions_code)
@@ -115,18 +112,19 @@ def compile_assertions(
 
         assert node.function_return_type is not None, "No function return type"
         if node.function_return_type.is_None_type():
-            checks, errors = none_return_type_completion(node)
+            checks = none_return_type_completion(node)
         else:
-            checks, errors = not_none_return_type_completion(node)
+            checks = not_none_return_type_completion(node)
 
         new_node = node.update(assertion_checks=checks, phase=Phase.assertions_code)
 
-        if errors:
-            for assertion, error in errors.items():
-                new_node = new_node.warn(
-                    phase=Phase.assertions_code,
-                    message=f"**{assertion}**: {error}",
-                )
+        if any([x.warning for x in checks.values()]):
+            for assertion, check in checks.items():
+                if check.warning:
+                    new_node = new_node.warn(
+                        phase=Phase.assertions_code,
+                        message=f"**Check '{assertion}'**: {check.warning}",
+                    )
             return new_node
 
         new_node = new_node.update(
@@ -161,6 +159,9 @@ def assertions_assistant(node: Node, suggest=False):
         else:
             prompt = "assertions-code"
 
+    # TODO: Think about whether we can reuse any cached code here.  Might be easier
+    # just to regenerate it every time...
+
     substitutions = {
         "system_prompt_key": ["system-prompt", prompt],
         "input_vars": parameter_type_str,
@@ -182,6 +183,25 @@ def assertions_assistant(node: Node, suggest=False):
 )
 def check_assertions(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
     try:
+        return _repair_assertions(pass_config, graph, node, max_retries=0)
+
+    except CellExecutionError as e:
+        warn(str(e))
+        node.error(
+            phase=Phase.assertions_checked, message=strip_ansi(str(e).split("\n")[-2])
+        )
+        return node
+
+
+@node_pass(
+    required_phase=Phase.assertions_code,
+    target_phase=Phase.assertions_checked,
+    pred_required_phase=Phase.assertions_code,
+)
+def repair_assertions(
+    pass_config: PassConfig, graph: DataFlowGraph, node: Node
+) -> Node:
+    try:
         return _repair_assertions(
             pass_config, graph, node, max_retries=pass_config.max_retries
         )
@@ -201,25 +221,38 @@ def _repair_assertions(
     retries = 0
     original = None
 
-    max_retries = 0
-
     while True:
         node = node.update(assertion_outcomes=CheckOutcomes())
-        node = session.get("shells", PythonShells).run_assertions(
-            pass_config.tables, graph, node
-        )
+        shells = session.get("shells", PythonShells)
+
+        if retries > 0:
+            # rerun if changes were made
+            result = shells.run_node(pass_config.tables, graph, node)
+            node = node.update(result=result)
+
+        node = shells.run_assertions(pass_config.tables, graph, node)
+
+        assert node.assertion_outcomes is not None, "No assertion outcomes"
+
         if original is None:
             original = node
 
         num_failed = len([x for x in node.assertion_outcomes.outcomes.values() if x])
         if num_failed == 0:
-            return node.update(phase=Phase.assertions_checked)
+            if original.requirements != node.requirements:
+                return node.update(phase=Phase.clean)
+            elif original.code != node.code:
+                return node.update(phase=Phase.code)
+            else:
+                return node.update(phase=Phase.assertions_checked)
 
-        # message(f"Failed {num_failed} assertions")
+        if retries >= max_retries:
+            if retries > 0:
+                original = original.error(
+                    phase=Phase.assertions_checked,
+                    message=f"**Unable to repair code.**  Verify the requirements ensure the assertions are met and try again.",
+                )
 
-        retries += 1
-
-        if retries > max_retries:
             for assertion, outcome in node.assertion_outcomes.outcomes.items():
                 if outcome is not None:
                     original = original.error(
@@ -227,6 +260,8 @@ def _repair_assertions(
                         message=f"**Check Failed: {assertion}**\n\n*{outcome}*",
                     )
             return original
+        else:
+            retries += 1
 
         message(f"Repair attempt {retries} of {config.retries}")
 
@@ -261,7 +296,8 @@ def _repair_assertions(
         )
 
         new_node = node_completion(
-            assistant, node_completion_model("code", include_explanation=True)
+            assistant,
+            node_completion_model("requirements", "code", include_explanation=True),
         )
 
         message(

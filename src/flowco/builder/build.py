@@ -572,10 +572,10 @@ class BuildEngine:
         return func
 
     @staticmethod
-    def get_builder() -> "BuildEngine":
-        with logger("Making build engine"):
+    def get_builder(passes_key: str | None = None) -> "BuildEngine":
+        with logger(f"Making build engine: {passes_key}"):
             builder = BuildEngine()
-            builder_passes = config.get_build_passes()
+            builder_passes = config.get_build_passes(passes_key=passes_key)
             for qual_name in builder_passes:
                 builder.add_pass(BuildEngine.import_function(qual_name))
             return builder

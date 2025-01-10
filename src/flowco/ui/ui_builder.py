@@ -41,14 +41,16 @@ class Builder:
         page: Page,
         node_ids: str | List[str] | None = None,
         target_phase: Phase = Phase.run_checked,
+        passes_key: str | None = None,
         force: bool = False,
+        repair: bool = True,
     ):
-        builder = BuildEngine.get_builder()
+        builder = BuildEngine.get_builder(passes_key=passes_key)
 
         p = builder.passes_by_target[target_phase]
         if force:
             page.clean(phase=p.required_phase())
-        build_config = page.base_build_config(True)
+        build_config = page.base_build_config(repair=repair)
 
         verb = (
             "Building"

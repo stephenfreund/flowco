@@ -278,12 +278,12 @@ class Config:
 
         return prompt.format_map(json_subs)
 
-    def get_build_passes(self) -> List[str]:
+    def get_build_passes(self, passes_key: str | None) -> List[str]:
         """
         Get the passes for the build process.  key is at least build/repair
         """
         return self.get_yaml(os.path.join(os.path.dirname(__file__), "builder.yaml"))[
-            self.builder
+            self.builder if passes_key is None else passes_key
         ]
 
     def get_build_passes_keys(self) -> List[str]:

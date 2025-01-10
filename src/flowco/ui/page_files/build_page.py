@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from typing import Literal
 import streamlit as st
 from flowco.dataflow.dfg import Geometry
 from flowco.dataflow.phase import Phase
@@ -6,7 +8,7 @@ from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_page import UIPage
 from flowco.ui.ui_util import phase_for_last_shown_part, set_session_state
 from flowco.util.config import config
-from flowco.util.output import debug
+from flowco.util.output import debug, log
 from flowco.ui.page_files.base_page import FlowcoPage
 
 import queue
@@ -30,15 +32,24 @@ else:
     from flowco.ui.dialogs.edit_node_no_alg import edit_node
 
 
+@dataclass
+class BuildButton:
+    label: str
+    action: Literal["Run", "Stop", "Update"]
+    passes_key: str | None = None
+    repair: bool = True
+    node_specific: bool = False
+
+
 class BuildPage(FlowcoPage):
 
     # Override for other pages
 
-    def update_button_label(self) -> str:
-        return ":material/refresh: Update"
+    def update_button(self) -> BuildButton:
+        return BuildButton(label=":material/refresh: Update", action="Update")
 
-    def run_button_label(self) -> str:
-        return ":material/play_circle: Run"
+    def run_button(self) -> BuildButton:
+        return BuildButton(label=":material/play_circle: Run", action="Run")
 
     def build_target_phase(self) -> Phase:
         return Phase.run_checked
@@ -55,15 +66,14 @@ class BuildPage(FlowcoPage):
         with st.container(key="button_bar"):
             cols = st.columns(8)
             with cols[1]:
+                if st.session_state.builder is None:
+                    run_button = self.run_button()
+                else:
+                    run_button = BuildButton(":material/stop_circle: Stop", "Stop")
                 st.button(
-                    (
-                        self.run_button_label()
-                        if st.session_state.builder is None
-                        else ":material/stop_circle: Stop"
-                    ),
+                    run_button.label,
                     on_click=lambda: set_session_state(
-                        "trigger_build_toggle",
-                        "Run" if st.session_state.builder is None else "Stop",
+                        "trigger_build_toggle", run_button
                     ),
                     disabled=st.session_state.ama_responding,
                     help=(
@@ -73,10 +83,11 @@ class BuildPage(FlowcoPage):
                     ),
                 )
             with cols[0]:
+                update_button = self.update_button()
                 st.button(
-                    self.update_button_label(),
+                    update_button.label,
                     on_click=lambda: set_session_state(
-                        "trigger_build_toggle", "Update"
+                        "trigger_build_toggle", update_button
                     ),
                     disabled=not self.graph_is_editable(),
                     help="Build and run any nodes that have changed since the last Run",
@@ -140,7 +151,7 @@ class BuildPage(FlowcoPage):
                     data_files_dialog()
 
     def auto_update(self):
-        self.toggle_building(force=False)
+        self.toggle_building(force=False, repair=True)
         super().auto_update()
 
     def edit_node(self, node_id: str):
@@ -155,21 +166,27 @@ class BuildPage(FlowcoPage):
                     ui_page.page(),
                     node_id,
                     target_phase=phase_for_last_shown_part(),
+                    passes_key=None,
                     force=False,
+                    repair=True,
                 )
                 st.session_state.builder_progress = 0
         else:
             self.edit_node(node_id)
 
-    def toggle_building(self, force=True):
+    def toggle_building(
+        self, node_specific=False, passes_key=None, force=True, repair=True
+    ):
         ui_page: UIPage = st.session_state.ui_page
         builder: Builder = st.session_state.builder
         if builder is None:
             st.session_state.builder = Builder(
                 ui_page.page(),
-                None,
+                None if node_specific else st.session_state.selected_node,
                 target_phase=self.build_target_phase(),
+                passes_key=passes_key,
                 force=force,
+                repair=repair,
             )
             st.session_state.builder_progress = 0
         else:
@@ -217,9 +234,14 @@ class BuildPage(FlowcoPage):
     def fini(self):
 
         if st.session_state.trigger_build_toggle is not None:
-            value = st.session_state.trigger_build_toggle
+            button = st.session_state.trigger_build_toggle
             st.session_state.trigger_build_toggle = None
-            self.toggle_building(value == "Run")
+            self.toggle_building(
+                node_specific=button.node_specific,
+                force=(button.action == "Run"),
+                repair=button.repair,
+                passes_key=button.passes_key,
+            )
             st.rerun()
 
         builder: Builder = st.session_state.builder

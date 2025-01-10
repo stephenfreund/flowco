@@ -98,12 +98,14 @@ class FlowcoPage:
             if node is None:
                 self.global_sidebar()
             else:
-                with st.container(key="node_header"):
-                    st.subheader(node.pill)
-                    st.caption(f"Status: {node.phase}")
-
+                self.node_header(node)
                 self.show_messages(node)
                 self.node_sidebar(node)
+
+    def node_header(self, node):
+        with st.container(key="node_header"):
+            st.subheader(node.pill)
+            st.caption(f"Status: {node.phase}")
 
     def masthead(self, node: Node | None = None):
         if node is None:

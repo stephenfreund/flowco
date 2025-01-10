@@ -362,6 +362,13 @@ class Node(NodeLike, BaseModel):
         ]
         return self.update(messages=messages)
 
+    def filter_messages(self, phase: Phase, level: str) -> List[NodeMessage]:
+        return [
+            message
+            for message in self.messages
+            if message.phase == phase and message.level == level
+        ]
+
     # def ask(self, phase: Phase, assistant: OpenAIAssistant) -> Node:
     #     return self.update(questions=NodeQuestions(phase=phase, assistant=assistant))
 

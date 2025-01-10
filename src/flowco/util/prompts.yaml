@@ -602,6 +602,8 @@ compile: |
 
     {diff}
 
+
+
 assertions-code: |
     Here are the input variables for a function:
     ```
@@ -623,18 +625,21 @@ assertions-code: |
     ```
     {requirements}
     ```    
-    Use a quantative check containing an assertion if possible.  Use this form and
-    no function definitions:
-    ```
-    ...
-    assert ..., "...message..."
-    ```
-    The assertion's error messages should targeted to non-programmers and 
-    provide detailed information about the failure,
-    including the expected value and observed value.
 
-    If an assertion is inconsistent with the postconditions or other assertions, indicate why in an
-    error message.  Otherwise, the error message should be empty.
+    For each requirement:
+        1.  Use a quantative check containing an assertion if possible.  Use this form and
+            no function definitions:
+            ```
+            ...
+            assert ..., "...message..."
+            ```
+            The assertion's error messages should targeted to non-programmers and 
+            provide detailed information about the failure,
+            including the expected value and observed value.
+
+        2.  If the postconditions do not ensure the requirement will be met for all
+            inputs matching the preconditions, provide a warning 
+            message indicating why.  Otherwise, the error message should be empty.
 
 suggest-assertions-code: |
     Here are the input variables for a function:
@@ -680,11 +685,12 @@ assertions-inspect: |
     ```
     {requirements}
     ```    
-    For eacn requirement, explain exactly what to look for in the visual representation of the output to 
+    For each requirement:
+        1. Explain exactly what to look for in the visual representation of the output to 
     verify that the requirement is met.
-
-    If a requirement is inconsistent with the postconditions or other assertions, indicate why in an
-    error message.  Otherwise, the error message should be empty.
+        2.  If the postconditions do not ensure the requirement will be met for all
+            inputs matching the preconditions, a warning message
+            indicating why.  Otherwise, the error message should be empty.
 
 
 suggest-assertions-inspect: |

@@ -111,7 +111,7 @@ class ProjectsPage(FlowcoPage):
         if current is not None:
             st.write(f"# {current}.flowco")
 
-            st.success("Select **Edit** above to modify or run the diagram.")
+            st.info("Select **Edit** above to modify or run the diagram.")
 
             with st.container(key="page_controls"):
                 cols = st.columns(4)

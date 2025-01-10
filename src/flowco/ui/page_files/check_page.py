@@ -5,12 +5,12 @@ from flowco.builder.assertions import suggest_assertions
 from flowco.builder.build import BuildEngine
 from flowco.dataflow.dfg import Node
 from flowco.dataflow.phase import Phase
-from flowco.ui.page_files.build_page import BuildPage
+from flowco.ui.page_files.build_page import BuildButton, BuildPage
 from flowco.ui.ui_page import UIPage
 from flowco.ui.ui_util import (
+    set_session_state,
     show_code,
 )
-from flowco.util.config import config
 
 
 import streamlit as st
@@ -24,14 +24,44 @@ class CheckPage(BuildPage):
 
     # Override for other pages
 
-    def update_button_label(self) -> str:
-        return ":material/refresh: Update"
+    def update_button(self) -> BuildButton:
+        return BuildButton(
+            label=":material/refresh: Update",
+            action="Update",
+            # passes_key="repair-checks-passes",
+        )
 
-    def run_button_label(self) -> str:
-        return ":material/play_circle: Check"
+    def run_button(self) -> BuildButton:
+        return BuildButton(
+            label=":material/play_circle: Check",
+            action="Run",
+            # passes_key="repair-checks-passes",
+        )
+
+    def fix_button(self) -> BuildButton:
+        return BuildButton(
+            label=":material/build: Fix",
+            action="Run",
+            passes_key="repair-checks-passes",
+        )
 
     def build_target_phase(self) -> Phase:
         return Phase.assertions_checked
+
+    def node_header(self, node: Node):
+        super().node_header(node)
+        assertion_failures = node.filter_messages(Phase.assertions_checked, "error")
+        if assertion_failures:
+            fix_button = self.fix_button()
+            st.button(
+                fix_button.label,
+                on_click=lambda: set_session_state("trigger_build_toggle", fix_button),
+                disabled=not self.graph_is_editable(),
+                help="Fix any errors in the checks",
+            )
+        else:
+            if node.phase >= Phase.assertions_checked:
+                st.success("All checks passed")
 
     @st.dialog("Edit Checks", width="large")
     def edit_checks(self, node_id: str):
@@ -57,7 +87,9 @@ class CheckPage(BuildPage):
                 st.session_state.tmp_dfg = dfg
 
         st.write("### Checks")
-        print(st.session_state.tmp_assertions)
+        st.session_state.tmp_assertions = [
+            x for x in st.session_state.tmp_assertions if x
+        ]
         editable_df = st.data_editor(
             pd.DataFrame({"checks": st.session_state.tmp_assertions}, dtype=str),
             key="edit_checks",
@@ -102,33 +134,29 @@ class CheckPage(BuildPage):
                             st.session_state.tmp_dfg = dfg
 
         dfg = st.session_state.tmp_dfg
-        if show_code():
-            if dfg[node_id].phase < Phase.assertions_code:
-                with st.spinner("Generating validation steps..."):
-                    ui_page: UIPage = st.session_state.ui_page
-                    build_config = ui_page.page().base_build_config(repair=False)
-                    engine = BuildEngine.get_builder()
-                    for build_updated in engine.build_with_worklist(
-                        build_config, dfg, Phase.assertions_code, node_id
-                    ):
-                        dfg = build_updated.new_graph
-                    st.session_state.tmp_dfg = dfg
 
-            node = st.session_state.tmp_dfg[node_id]
-            st.write("### Validation Steps")
-            if node.assertion_checks:
+        if dfg[node_id].phase < Phase.assertions_code:
+            with st.spinner("Generating validation steps..."):
+                ui_page: UIPage = st.session_state.ui_page
+                build_config = ui_page.page().base_build_config(repair=False)
+                engine = BuildEngine.get_builder()
+                for build_updated in engine.build_with_worklist(
+                    build_config, dfg, Phase.assertions_code, node_id
+                ):
+                    dfg = build_updated.new_graph
+                st.session_state.tmp_dfg = dfg
 
-                for message in node.messages or []:
-                    if message.phase == Phase.assertions_code:
-                        if message.level == "error":
-                            st.error(f"{message.text}")
-                        else:
-                            st.warning(f"{message.text}")
+        node = st.session_state.tmp_dfg[node_id]
+        if node.assertion_checks:
+            for assertion in node.assertions or []:
+                st.divider()
+                check = node.assertion_checks.get(assertion, None)
+                if check:
+                    st.write(f"**{assertion}**")
+                    if check.warning:
+                        st.warning(check.warning)
 
-                for assertion in node.assertions or []:
-                    check = node.assertion_checks.get(assertion, None)
-                    if check:
-                        st.write(f"* **{assertion}**")
+                    if show_code():
                         if check.type == "quantitative":
                             code = check.code
                             if code:
@@ -137,6 +165,8 @@ class CheckPage(BuildPage):
                                 st.write("    *Code not available*")
                         else:
                             st.write(f"    *{check.requirement}*")
+        else:
+            st.write("*No details available*")
 
     def edit_node(self, node_id: str):
         ui_page: UIPage = st.session_state.ui_page
@@ -147,12 +177,7 @@ class CheckPage(BuildPage):
 
     def show_node_details(self, node: Node):
         st.write("**Checks**")
+
         st.write("\n".join(["* " + x for x in (node.assertions or [])]))
-        # if st.button(
-        #     ":material/edit_note:",
-        #     disabled=not self.graph_is_editable(),
-        #     help="Edit node checks",
-        # ):
-        #     self.edit_checks(node)
 
         super().show_node_details(node)

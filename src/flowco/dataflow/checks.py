@@ -9,12 +9,20 @@ class QuantitiveCheck(BaseModel):
     code: List[str] = Field(
         description="Code to run to verify the this requirement is met.  The code is stored as a list of source lines."
     )
+    warning: Optional[str] = Field(
+        default=None,
+        description="A warning message if the check is not guaranteed by the requirements.",
+    )
 
 
 class QualitativeCheck(BaseModel):
     type: Literal["qualitative"]
     requirement: str = Field(
         description="A description of the requirement for this test."
+    )
+    warning: Optional[str] = Field(
+        default=None,
+        description="A warning message if the check is not guaranteed by the requirements.",
     )
 
 

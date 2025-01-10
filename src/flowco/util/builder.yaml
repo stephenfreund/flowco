@@ -7,19 +7,21 @@ node-passes:
     - flowco.builder.assertions.compile_assertions  
     - flowco.builder.assertions.check_assertions  
 
-full-passes:
-    - flowco.builder.new_passes.full_pass
-    - flowco.builder.passes.check_node_syntax
-    - flowco.builder.passes.check_run
-
-assertion-passes:
+repair-checks-passes:
     - flowco.builder.synthesize.requirements
     - flowco.builder.synthesize.algorithm
     - flowco.builder.synthesize.compile
     - flowco.builder.check_syntax.check_syntax
     - flowco.builder.check_run.check_run
     - flowco.builder.assertions.compile_assertions  
-    - flowco.builder.assertions.check_assertions  
+    - flowco.builder.assertions.repair_assertions  
+
+
+full-passes:
+    - flowco.builder.new_passes.full_pass
+    - flowco.builder.passes.check_node_syntax
+    - flowco.builder.passes.check_run
+
 
 
 # node-passes:

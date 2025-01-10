@@ -1,3 +1,4 @@
+import random
 from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
@@ -20,6 +21,7 @@ class DiagramNode(BaseModel):
 
     phase: int  # Using int to represent the Phase enum
     has_messages: bool
+    is_locked: bool
     build_status: Optional[str] = None
     output: Optional[DiagramOutput] = None
 
@@ -84,6 +86,7 @@ def from_dfg(dfg: DataFlowGraph) -> MxDiagram:
             geometry=node.geometry,
             phase=node.phase.value,  # Convert Phase enum to int
             has_messages=len(node.messages) > 0,
+            is_locked=random.choice([True, False]),
             output_geometry=node.output_geometry,
             output=get_output(node),
             build_status=node.build_status,

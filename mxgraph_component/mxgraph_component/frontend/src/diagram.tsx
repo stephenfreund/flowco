@@ -20,8 +20,8 @@ export interface DiagramNode {
 
     // Extended from dfg
     phase: number;
-    has_question: boolean;
     has_messages: boolean;
+    is_locked: boolean;
     output?: DiagramOutput;
     build_status?: string;
 
@@ -168,6 +168,27 @@ function update_overlays_for_node(graph: mxGraph, node: DiagramNode, vertex: mxC
         overlay.offset = new mx.mxPoint(50, -5);
         graph.addCellOverlay(vertex, overlay);
     }    
+    
+    // Add lock/unlock overlay based on node.locked property
+    if (node.is_locked) {
+        // Create an mxImage for the icon
+        const iconImage = new mx.mxImage("lock.png", 16,16);
+ 
+        const node_width = vertex.geometry.width;
+        const node_height = vertex.geometry.height;
+
+        const inset_factor = Math.min(node_width, node_height) / 15;
+
+        // Create the overlay with the icon image and tooltip
+        const iconOverlay = new mx.mxCellOverlay(iconImage, "This node is locked");
+        iconOverlay.align = mx.mxConstants.ALIGN_RIGHT; // Align to the right
+        iconOverlay.verticalAlign = mx.mxConstants.ALIGN_TOP; // Align to the top
+        iconOverlay.offset = new mx.mxPoint(-4 - inset_factor, 6 + inset_factor); // Adjust offset to position it correctly
+
+        // Add the overlay to the vertex
+        graph.addCellOverlay(vertex, iconOverlay);
+    }    
+
 
 }
 
