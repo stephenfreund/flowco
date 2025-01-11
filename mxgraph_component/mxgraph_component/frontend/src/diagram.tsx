@@ -1,7 +1,5 @@
-import { Streamlit } from 'streamlit-component-lib';
 import mx from './mxgraph';
-import { mxCell, mxGraph, mxGeometry, mxHierarchicalLayout, mxMorphing, mxEvent } from 'mxgraph';
-import { v4 as uuidv4 } from "uuid";
+import { mxCell, mxGraph } from 'mxgraph';
 
 export interface Geometry {
     x: number;
@@ -49,25 +47,25 @@ export interface mxDiagram {
     edges: { [key: string]: DiagramEdge };
 }
 
-function isGeometry(obj: any): obj is Geometry {
-    return (
-        typeof obj === "object" &&
-        obj !== null &&
-        typeof obj.x === "number" &&
-        typeof obj.y === "number" &&
-        typeof obj.width === "number" &&
-        typeof obj.height === "number"
-    );
-}
+// function isGeometry(obj: any): obj is Geometry {
+//     return (
+//         typeof obj === "object" &&
+//         obj !== null &&
+//         typeof obj.x === "number" &&
+//         typeof obj.y === "number" &&
+//         typeof obj.width === "number" &&
+//         typeof obj.height === "number"
+//     );
+// }
 
-function isDiagramOutput(obj: any): obj is DiagramOutput {
-    return (
-        typeof obj === "object" &&
-        obj !== null &&
-        typeof obj.outputId === "string" &&
-        typeof obj.outputType === "string"
-    );
-}
+// function isDiagramOutput(obj: any): obj is DiagramOutput {
+//     return (
+//         typeof obj === "object" &&
+//         obj !== null &&
+//         typeof obj.outputId === "string" &&
+//         typeof obj.outputType === "string"
+//     );
+// }
 
 export function isDiagramNode(obj: any): obj is DiagramNode {
     return (
@@ -103,8 +101,8 @@ function escapeHtml(text: string): string {
 
 
 export const node_style = 'html=1;shape=rectangle;whiteSpace=wrap;rounded=1;';
-export const node_hover_style = 'html=1;shape=rectangle;whiteSpace=wrap;rounded=1;shadow=1';
-const edge_style = 'endArrow=classic;html=1;rounded=0;labelBackgroundColor=white';
+export const node_hover_style = 'html=1;shape=rectangle;whiteSpace=wrap;rounded=1;shadow=1;';
+const edge_style = 'endArrow=classic;html=1;rounded=0;labelBackgroundColor=white;';
 const output_node_style_text = `html=1;shape=rectangle;whiteSpace=wrap;shadow=1;fillColor=#E8E8E8;strokeColor=#990000;align=left;verticalAlign=middle;spacing=5;fontFamily=monospace;`;
 const output_node_style_image = `html=1;shape=image;shadow=1;imageBackground=#E8E8E8;imageBorder=#990000;`;
 const output_edge_style = 'rounded=1;orthogonalLoop=1;dashed=1;strokeWidth=2;strokeColor=#990000;fillColor=#76608a;endArrow=block;endFill=0;edgeStyle=orthogonalEdgeStyle;curved=0;';
@@ -387,7 +385,7 @@ function layoutDiagram(graph: mxGraph) {
     try {
         console.log('layoutDiagram');
         // Use mxHierarchicalLayout for a nice hierarchical arrangement
-        const layout = new mx.mxHierarchicalLayout(graph, "west");
+        const layout = new mx.mxHierarchicalLayout(graph, "north");
         layout.execute(parent);
         
 

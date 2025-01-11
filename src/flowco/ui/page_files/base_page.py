@@ -107,9 +107,15 @@ class FlowcoPage:
         ui_page: UIPage = st.session_state.ui_page
         with st.container(key="node_header"):
             with st.container(key="lock"):
-                left, right = st.columns([1, 1], vertical_alignment="bottom")
+                left, right = st.columns([1, 8], vertical_alignment="bottom")
                 with left:
-                    pressed = st.segmented_control(":material/lock:", [":material/lock:"], default=[":material/lock:"] if node.is_locked else None, label_visibility="collapsed", disabled=not self.graph_is_editable())
+                    pressed = st.segmented_control(
+                        ":material/lock:",
+                        [":material/lock:"],
+                        default=[":material/lock:"] if node.is_locked else None,
+                        label_visibility="collapsed",
+                        disabled=not self.graph_is_editable(),
+                    )
                     if pressed and not node.is_locked:
                         dfg = ui_page.dfg()
                         ui_page.update_dfg(

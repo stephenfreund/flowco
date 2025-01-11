@@ -128,7 +128,7 @@ class Node(NodeLike, BaseModel):
 
     is_locked: bool = Field(
         default=False,
-        description="Whether the node is locked and cannot be modified by the LLM."
+        description="Whether the node is locked and cannot be modified by the LLM.",
     )
 
     # Update with pill
@@ -328,9 +328,6 @@ class Node(NodeLike, BaseModel):
         # """
         # Set the phase at target, and remove anything filled in by later phases.
         # """
-
-        log("Borp", target_phase)
-        traceback.print_stack()
 
         # node be already be at phase or lower...
         target_phase = min(target_phase, self.phase)
@@ -562,7 +559,6 @@ class DataFlowGraph(GraphLike, BaseModel):
             nodes = data.get("nodes", [])
             edges = data.get("edges", [])
 
-            # Process nodes to reset 'phase' and 'cache'
             new_nodes = []
             for node in nodes:
                 with logger(f"Node {node['id']}..."):
@@ -571,7 +567,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                         pill=node["pill"],
                         label=node["label"],
                         geometry=Geometry(**node["geometry"]),
-                        output_geometry=Geometry(**node["output_geometry"]), 
+                        output_geometry=Geometry(**node["output_geometry"]),
                         is_locked=node.get(node["is_locked"], False),
                         function_name=node["function_name"],
                         function_result_var=node["function_result_var"],
@@ -579,11 +575,12 @@ class DataFlowGraph(GraphLike, BaseModel):
                         assertions=node.get("assertions", None),
                         phase=Phase.clean,
                         cache=BuildCache(),
+                        requirements=node.get("requirements", None),
+                        code=node.get("code", None),
                     )
 
                     new_nodes.append(new_node)
 
-            # Create and return the new DataFlowGraph instance
             return cls(version=0, description=description, nodes=new_nodes, edges=edges)
 
     def ensure_valid(self):

@@ -429,19 +429,21 @@ inconsistent-preconditions: |
 #     Do the changes to the preconditions affect the postconditions?  If so, explain how.
 
 precondition-checks: |
-    1. These are the new preconditions for a computation step:
+    1. These are the new paramaters and preconditions for a computation step:
 
     ```
+    {parameters}
     {preconditions}
     ```
 
-    These are the old preconditions for a computation step:
+    These are the old parameters and preconditions for a computation step:
 
     ```
+    {old_parameters}
     {old_preconditions}
     ```
 
-    Examine the new preconditions and identify any changes from the old.
+    Examine the new parameters and preconditions and identify any changes from the old.
 
     2. Here are the postconditions for the computation step:
 
@@ -449,7 +451,7 @@ precondition-checks: |
     {postconditions}
     ```
 
-    Do the changes to the preconditions affect the postconditions?  If so, explain how.
+    Do the changes to the paramateres and preconditions affect the postconditions?  If so, explain how.
 
     3.  Here is the old label for the computation step:
     ```

@@ -41,7 +41,9 @@ class IntType(BaseType):
         return "int"
 
     def matches_value(self, value: Any) -> bool:
-        return (isinstance(value, int) or isinstance(value, np.int64)) and not isinstance(
+        return (
+            isinstance(value, int) or isinstance(value, np.int64)
+        ) and not isinstance(
             value, bool
         )  # bool is subclass of int
 
@@ -487,6 +489,9 @@ class ExtendedType(BaseModel):
         lines = [self.description] if include_description else []
         lines += self.the_type.to_markdown()
         return "\n".join(lines)
+
+    def to_description(self) -> str:
+        return self.description + ".  " + str(self.the_type)
 
     def __str__(self) -> str:
         """

@@ -1,12 +1,9 @@
 import { Streamlit, RenderData } from "streamlit-component-lib";
 import mx from './mxgraph';
-import { getCompletion } from "./completion";
-import { mxGraphModel, mxUtils, mxEvent, mxRectangle, mxCellState, mxVertexHandler, mxEdgeHandler, mxCell, mxCellEditor, mxHierarchicalLayout } from 'mxgraph';
+import { mxGraphModel, mxCellState, mxCell } from 'mxgraph';
 import { v4 as uuidv4 } from "uuid";
-import * as _ from "lodash";
 
-import { DiagramNode, DiagramEdge, mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, NodeValue, node_style, labelForEdge, toSnakeCase, node_hover_style, clean_color, isDiagramNode } from "./diagram";
-import { stat } from "fs";
+import { mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, node_style, labelForEdge, clean_color, isDiagramNode } from "./diagram";
 
 var currentDiagram: mxDiagram | undefined = undefined;
 var currentRefreshPhase = 0;
@@ -231,14 +228,6 @@ function dragLeave(evt: Event, state: mxCellState) {
   }
 }
 
-function getSelectedNode(): mxCell | null {
-  const cells = graph.getSelectionCells();
-  if (cells.length === 0) {
-    return null;
-  }
-  return cells[0];
-}
-
 
 // Override convertValueToString to handle custom types
 graph.convertValueToString = function (...args): string {
@@ -324,31 +313,23 @@ graph.labelChanged = function (cell, newValue, trigger): mxCell {
 
   if (isDiagramNode(cell.value)) {
     graph.setCellsEditable(false);
-    // getCompletion(
-    //   `Summarize the following text with two words.  
-    //   Capitalize each word and hyphenate them.  
-    //   Do not include any other text in your response.  
-    //   Do not use any of the following: ${collectNodePills().join(", ")}.
+    const value = cell.cloneValue();
+    value.label = newValue.trim();
+    value.pill = generateTwoWordSummary(newValue);
+    cell = mx.mxGraph.prototype.labelChanged.apply(this, [cell, value, trigger]);
 
-    //   Phrase: ${newValue}
-    //   `).then((completion) => {
-        const value = cell.cloneValue();
-        value.label = newValue.trim();
-        value.pill = generateTwoWordSummary(newValue);
-        cell = mx.mxGraph.prototype.labelChanged.apply(this, [cell, value, trigger]);
-
-        // change label of every outgoing edge to match the new label
-        graph.getModel().beginUpdate();
-        const edges = graph.getModel().getOutgoingEdges(cell);
-        edges.forEach(edge => {
-          mx.mxGraph.prototype.labelChanged.apply(this, [edge, labelForEdge(cell), trigger]);
-        });
-        // not ideal, but we must give the graph view up to date with the changes we're making to phases when
-        // this goes back to the driver.
-        cleanReachableNodes(cell);
-        graph.getModel().endUpdate();
-        graph.setCellsEditable(true);
-      // })
+    // change label of every outgoing edge to match the new label
+    graph.getModel().beginUpdate();
+    const edges = graph.getModel().getOutgoingEdges(cell);
+    edges.forEach(edge => {
+      mx.mxGraph.prototype.labelChanged.apply(this, [edge, labelForEdge(cell), trigger]);
+    });
+    // not ideal, but we must give the graph view up to date with the changes we're making to phases when
+    // this goes back to the driver.
+    cleanReachableNodes(cell);
+    graph.getModel().endUpdate();
+    graph.setCellsEditable(true);
+    streamlitResponse();
     return cell
   }
   return mx.mxGraph.prototype.labelChanged.apply(this, [cell, newValue, trigger]);
@@ -430,74 +411,33 @@ function shouldHandleHover(cell: mxCell): boolean {
 }
 
 
-
-// function showCustomBox(cell: any): void {
-//   if (cell.value && cell.value.html) {
-//     const state = graph.getView().getState(cell);
-//     const x = state.x + state.width * 2 / 3;
-//     const y = state.y + state.height * 2 / 3;
-//     const box = document.getElementById('customBox')!;
-//     box.style.left = `${x}px`;
-//     box.style.top = `${y}px`;
-//     box.style.display = 'block';
-//     box.style.fontSize = '12px';
-//     box.style.fontFamily = 'Arial';
-//     box.style.maxWidth = '600px';
-//     box.style.pointerEvents = 'none';
-//     box.style.backgroundColor = '#FAFAFA';
-//     box.style.borderRadius = '5px';
-//     box.style.boxShadow = '5px 5px 2.5px rgba(0, 0, 0, 0.3)';
-
-//     box.innerHTML = cell.value.html;
-
-//     // Resize all images inside the box
-//     const images = box.querySelectorAll('img');
-//     images.forEach((img) => {
-//       img.style.maxWidth = '450px';
-//       img.style.height = 'auto'; // Maintain aspect ratio
-//     });
-//   }
-// }
-
-// function hideCustomBox(): void {
-//     const box = document.getElementById('customBox')!;
-//     box.style.display = 'none';
-// }
-
-
 /**
  * Handles the hover event by calling hoverNode with the appropriate flag.
  * @param isEntering - True if entering hover, false if exiting.
  */
 function handleHover(isEntering: boolean): void {
-  let node: string | null = null;
-  if (isEntering && currentlyHoveredCell) {
-    node = currentlyHoveredCell?.id;
-    graph.toggleCellStyle("shadow", false, currentlyHoveredCell);
-    const currentSelectedCell = getSelectedNode();
-    // if (currentSelectedCell == null) {
-    //   showCustomBox(currentlyHoveredCell);
-    // }
-  } else {
-    if (currentlyHoveredCell) {
-      graph.toggleCellStyle("shadow", true, currentlyHoveredCell);
-      const currentSelectedCell = getSelectedNode();
-      // if (currentSelectedCell == null) {
-      //   hideCustomBox();
-      // }
+  if (!mouseDown) {
+    let node: string | null = null;
+    if (isEntering && currentlyHoveredCell) {
+      node = currentlyHoveredCell?.id;
+      graph.toggleCellStyle("shadow", false, currentlyHoveredCell);
+    } else {
+      if (currentlyHoveredCell) {
+        graph.toggleCellStyle("shadow", true, currentlyHoveredCell);
+      }
+      const cells = graph.getSelectionCells();
+      const selectedIds = cells.map(cell => cell.id);
+      node = selectedIds.length === 0 ? null : selectedIds[0];
     }
-    const cells = graph.getSelectionCells();
-    const selectedIds = cells.map(cell => cell.id);
-    node = selectedIds.length === 0 ? null : selectedIds[0];
+    console.log("Hovering: ", currentlyHoveredCell, node)
+    
+    const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, currentDiagram!.version));
+    Streamlit.setComponentValue({
+      command: "update",
+      diagram: diagram_str,
+      selected_node: node,
+    });
   }
-  console.log("Hovering: ", currentlyHoveredCell, node)
-  
-  const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, currentDiagram!.version));
-  Streamlit.setComponentValue({
-    command: "update",
-    diagram: diagram_str,
-    selected_node: node,
-  });
 }
 
 // Custom mouse listener
@@ -723,11 +663,6 @@ function addListeners() {
   // Add a listener for selection changes
   graph.getSelectionModel().addListener("change", (sender, evt) => {
     console.log("Selection Changed", graph.getSelectionCells())
-    // hideCustomBox();
-    const node = getSelectedNode();
-    // if (node) {
-    //   showCustomBox(node);
-    // }
     streamlitResponse();
   });
 
@@ -820,7 +755,7 @@ function addListeners() {
     if (event.key === 'Escape') {
       graph.clearSelection();
       streamlitResponse();
-    } else if (event.key == 'Enter') {
+    } else if (event.key === 'Enter') {
       const cell = graph.getSelectionCell();
       if (cell) {
         graph.startEditingAtCell(cell);

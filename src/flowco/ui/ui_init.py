@@ -268,7 +268,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
 }
 .st-key-right-panel {
     height: calc(100vh - 75px) !important;
-    margin-top: 3.25rem;
+    margin-top: 2.25rem;
     padding: 0rem;
     padding-top: 0.5rem !important;
     background-color: #F0F2F6 !important;
@@ -291,7 +291,7 @@ div:has(> div > .st-key-right-panel) {
 }
 
 .st-key-right-panel img {
-    max-width: 280px !important;
+    max-width: 200px !important;
 }
 
 .st-key-right_panel_width {
@@ -321,11 +321,6 @@ div:has(> div > .st-key-right-panel) {
 .st-key-lock button[data-testid="stBaseButton-segmented_control"],
 .st-key-lock button[data-testid="stBaseButton-segmented_controlActive"] {
     padding: 4px;
-}
-
-.st-key-lock .stColumn {
-    width: fit-content !important;
-    flex: unset !important;
 }
 
 """
