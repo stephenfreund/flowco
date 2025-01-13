@@ -573,7 +573,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                         label=node["label"],
                         geometry=Geometry(**node["geometry"]),
                         output_geometry=Geometry(**node["output_geometry"]),
-                        is_locked=node.get(node["is_locked"], False),
+                        is_locked=node.get("is_locked", False),
                         function_name=node["function_name"],
                         function_result_var=node["function_result_var"],
                         predecessors=node["predecessors"],

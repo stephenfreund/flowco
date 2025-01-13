@@ -338,11 +338,3 @@ class BuildPage(FlowcoPage):
             * **Delete edge:** Hover over edge and press trash can"""
             )
         )
-
-        # with cols[2]:
-        #     if st.button(
-        #         ":material/code:",
-        #         disabled=not self.graph_is_editable(),
-        #         help="Edit the diagram as a Flowthon program",
-        #     ):
-        #         self.edit_flowthon()
