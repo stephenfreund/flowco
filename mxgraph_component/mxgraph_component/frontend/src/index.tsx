@@ -315,7 +315,7 @@ graph.labelChanged = function (cell, newValue, trigger): mxCell {
     graph.setCellsEditable(false);
     const value = cell.cloneValue();
     value.label = newValue.trim();
-    value.pill = generateTwoWordSummary(newValue);
+    // value.pill = generateTwoWordSummary(newValue);
     cell = mx.mxGraph.prototype.labelChanged.apply(this, [cell, value, trigger]);
 
     // change label of every outgoing edge to match the new label
@@ -639,7 +639,8 @@ function addListeners() {
               pill: id,
               label: '...',
               geometry: new mx.mxRectangle(pt.x - width / 2, pt.y - height / 2, width, height),
-              phase: 0
+              phase: 0,
+              is_locked: false
             }
             const newCell = graph.insertVertex(parent, id, value, pt.x, pt.y, 160, 80, node_style);
             if (userLabel != null) {

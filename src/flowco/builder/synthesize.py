@@ -29,14 +29,6 @@ from flowco.dataflow.dfg import DataFlowGraph, Parameter, Node
 def requirements(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
     with logger("Requirements step"):
 
-        # if locked and requirements have not changed, shortcurcuit
-        # Otherweise, we are either not locked or the requirements have been changed
-        #   by the user.  In this case, we need to recompute the requirements.
-        if node.is_locked and node.requirements == node.cache.get_in(
-            Phase.requirements, node
-        ).get("requirements", None):
-            return check_precondition_shortcurcuit(pass_config, graph, node)
-
         # Compute inputs
         node = node.update(
             function_parameters=create_parameters(graph, node),
@@ -48,13 +40,13 @@ def requirements(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> N
             log("Using cache for requirements.")
             return node.update(phase=Phase.requirements)
 
-        diff_instructions = cache_prompt(Phase.requirements, node, "requirements")
+        if node.is_locked and node.requirements is not None:
+            return requirements_when_locked(node)
 
+        # TODO: Merge consistency and diffs completions...
         node = check_precondition_consistency(node)
 
-        # TODO - this is wonky.  need to regenerate if you add the first successor..
-
-        # Create assistant
+        diff_instructions = cache_prompt(Phase.requirements, node, "requirements")
         assistant = requirements_assistant(pass_config, graph, node, diff_instructions)
 
         with logger("requirements assistant"):
@@ -72,9 +64,10 @@ def requirements(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> N
         return new_node
 
 
-def get_requirements_completion(assistant) -> BaseModel | None:
+def get_requirements_completion(assistant) -> BaseModel:
     completion_model = requirements_completion_model()
     completion = assistant.completion(completion_model)
+    assert completion is not None, "Completion must be defined."
     return completion
 
 
@@ -234,18 +227,13 @@ def check_precondition_consistency(node: Node) -> Node:
     return node
 
 
-def check_precondition_shortcurcuit(
-    pass_config: PassConfig, graph: DataFlowGraph, node: Node
-) -> Node:
+def requirements_when_locked(node: Node) -> Node:
     with logger("Preconditions shortcurcuit checks"):
 
-        new_preconditions = create_preconditions(pass_config, graph, node)
-        new_parameters = create_parameters(graph, node)
+        old_inputs = node.cache.get_in(Phase.requirements, node)
+        current_inputs = node.model_dump(include=set(old_inputs.keys()))
 
-        old_label = node.cache.get_in(Phase.requirements, node).get("label")
-        new_label = node.label
-
-        if new_preconditions != node.preconditions:
+        if old_inputs != current_inputs:
 
             class Warning(BaseModel):
                 changes_to_preconditions: List[str] = Field(
@@ -267,14 +255,14 @@ def check_precondition_shortcurcuit(
             assistant = OpenAIAssistant(
                 config.model,
                 interactive=False,
-                system_prompt_key="precondition-checks",
-                parameters=json.dumps(new_parameters),
-                old_parameters=json.dumps(node.function_parameters),
-                preconditions=json.dumps(new_preconditions),
-                old_preconditions=json.dumps(node.preconditions),
+                system_prompt_key="locked-requirements-checks",
+                parameters=json.dumps(current_inputs["function_parameters"]),
+                old_parameters=json.dumps(old_inputs["function_parameters"]),
+                preconditions=json.dumps(current_inputs["preconditions"]),
+                old_preconditions=json.dumps(old_inputs["preconditions"]),
                 postconditions=json.dumps(node.requirements),
-                old_label=old_label,
-                new_label=new_label,
+                new_label=node.label,
+                old_label=old_inputs["label"],
             )
 
             completion = assistant.completion(Warning)
@@ -283,18 +271,15 @@ def check_precondition_shortcurcuit(
             log(completion)
 
             if completion.impacts_postconditions:
-                changes = [f"* {x}" for x in completion.changes_to_preconditions]
                 impacts = [f"* {x}" for x in completion.impacts_on_postconditions]
                 message = (
-                    f"Predecessors have change:\n"
-                    + "\n".join(changes)
-                    + "\n\nThis may impact the requirements:\n"
+                    f"Changes to the inputs may impact **requirements**:\n"
                     + "\n".join(impacts)
                 )
                 node = node.warn(phase=Phase.requirements, message=message)
             if completion.label_impacts_postconditions:
                 message = (
-                    f"Label has changed from '{old_label}' to '{new_label}'.  This may impact the requirements:\n"
+                    f"Label has changed from '{old_inputs['label']}' to '{node.label}'.  This may impact the requirements:\n"
                     + completion.impact_of_label_change
                 )
                 node = node.warn(phase=Phase.requirements, message=message)
@@ -488,21 +473,18 @@ def compile(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
             node.function_computed_value is not None
         ), "Computed value must be defined."
 
-        # shortcurcuit if locked and code has not changed
-        # otherwise, recompute
-        if node.is_locked and node.code == node.cache.get_in(Phase.code, node).get(
-            "code", None
-        ):
-            return check_requirements_shortcurcuit(pass_config, graph, node)
-
         # Check cache
         if node.cache.matches_in_and_out(Phase.code, node):
             log("Using cache for code.")
             return node.update(phase=Phase.code)
 
-        diff_instructions = cache_prompt(Phase.code, node, "code")
-
-        assistant = code_assistant(node, diff_instructions)
+        # shortcurcuit if locked and code has not changed
+        # otherwise, recompute
+        if node.is_locked and node.code is not None:
+            return compile_when_locked(node)
+        else:
+            diff_instructions = cache_prompt(Phase.code, node, "code")
+            assistant = code_assistant(node, diff_instructions)
 
         completion_model = code_completion_model()
         completion = assistant.completion(completion_model)
@@ -563,70 +545,137 @@ def code_completion_model():
     return completion_model
 
 
-def check_requirements_shortcurcuit(
-    pass_config: PassConfig, graph: DataFlowGraph, node: Node
-) -> Node:
-    with logger("Requirements shortcurcuit checks"):
+def compile_when_locked(node: Node) -> Node:
+    with logger("Compile shortcurcuit checks"):
 
-        # TODO: Make sure config.abstraction_level is set correctly, according to UI...
+        old_inputs = node.cache.get_in(Phase.code, node)
+        current_inputs = node.model_dump(include=set(old_inputs.keys()))
 
-        if node.cache.matches_in_and_out(Phase.code, node):
-            log("Using cache for code.")
-            return node.update(phase=Phase.code)
+        if old_inputs != current_inputs:
 
-        inputs = node.cache.get_in(Phase.code, node)
-
-        # if params are different, we need to recompute
-        # if return type is different, we need to recompute
-
-        # preconditions in way that affects code, we need to recompute
-        # if requirements are different in a way that affects the code, we need to recompute
-
-        # "preconditions",
-        # "requirements",
-        # "function_parameters",
-        # "function_return_type",
-
-        if new_preconditions != node.preconditions:
+            # "preconditions",
+            # "requirements",
+            # "function_parameters",
+            # "function_return_type",
 
             class Warning(BaseModel):
-                changes_to_preconditions: List[str] = Field(
-                    description="Inconsistencies in the preconditions.",
+                changes_to_preconditions_parameters: List[str] = Field(
+                    description="Changes to the parameters and preconditions",
                 )
-                impacts_postconditions: bool = Field(
-                    description="Whether the preconditions have semantic implications.",
+                precondition_and_parameter_changes_impact_code: bool = Field(
+                    description="Whether the changes to preconditions and parameters have semantic implications for the code.",
                 )
-                impacts_on_postconditions: List[str] = Field(
-                    description="Semantic implications of change from the old to the new preconditions.",
+                precondition_and_parameter_impacts_on_code: List[str] = Field(
+                    description="Semantic implications of change from the old to the new preconditions and parameters.",
+                )
+                changes_to_requirements_and_return_type: List[str] = Field(
+                    description="Changes to the requirements and return type",
+                )
+                requirements_and_return_type_changes_impact_code: bool = Field(
+                    description="Whether the changes to requirements and return type have semantic implications for the code.",
+                )
+                requirements_and_return_type_impacts_on_code: List[str] = Field(
+                    description="Semantic implications of change from the old to the new requirements and return type.",
                 )
 
             assistant = OpenAIAssistant(
                 config.model,
                 interactive=False,
-                system_prompt_key="precondition-checks",
-                preconditions=json.dumps(node.preconditions),
-                old_preconditions=json.dumps(new_preconditions),
-                postconditions=json.dumps(node.requirements),
+                system_prompt_key="locked-code-checks",
+                old=old_inputs
+                | {"code": node.cache.get_out(Phase.code, node).get("code", None)},
+                new=current_inputs | {"code": node.code},
             )
 
             completion = assistant.completion(Warning)
 
+            assert completion is not None, "Completion must be defined."
             log(completion)
 
-            if completion.impacts_postconditions:
-                changes = [f"* {x}" for x in completion.changes_to_preconditions]
-                impacts = [f"* {x}" for x in completion.impacts_on_postconditions]
+            change_types = []
+            full_impacts = []
+            if completion.precondition_and_parameter_changes_impact_code:
+                change_types += ["inputs"]
+                full_impacts += [
+                    f"* {x}"
+                    for x in completion.precondition_and_parameter_impacts_on_code
+                ]
+            if completion.requirements_and_return_type_changes_impact_code:
+                change_types += ["requirements"]
+                full_impacts += [
+                    f"* {x}"
+                    for x in completion.requirements_and_return_type_impacts_on_code
+                ]
+            if change_types:
                 message = (
-                    f"Predecessors have change:\n"
-                    + "\n".join(changes)
-                    + "\n\nThis may impact the requirements:\n"
-                    + "\n".join(impacts)
+                    f"Changes to the {' and '.join(change_types)} may impact the **code**:\n"
+                    + "\n".join(full_impacts)
                 )
-                node = node.warn(phase=Phase.requirements, message=message)
+                node = node.warn(phase=Phase.code, message=message)
 
-        node = node.update(phase=Phase.requirements)
+        node = node.update(phase=Phase.code)
 
         return node
+
+        # # TODO: Make sure config.abstraction_level is set correctly, according to UI...
+
+        # if node.cache.matches_in_and_out(Phase.code, node):
+        #     log("Using cache for code.")
+        #     return node.update(phase=Phase.code)
+
+        # inputs = node.cache.get_in(Phase.code, node)
+
+        # # if params are different, we need to recompute
+        # # if return type is different, we need to recompute
+
+        # # preconditions in way that affects code, we need to recompute
+        # # if requirements are different in a way that affects the code, we need to recompute
+
+        # # "preconditions",
+        # # "requirements",
+        # # "function_parameters",
+        # # "function_return_type",
+
+        # if new_preconditions != node.preconditions:
+
+        #     class Warning(BaseModel):
+        #         changes_to_preconditions: List[str] = Field(
+        #             description="Inconsistencies in the preconditions.",
+        #         )
+        #         impacts_postconditions: bool = Field(
+        #             description="Whether the preconditions have semantic implications.",
+        #         )
+        #         impacts_on_postconditions: List[str] = Field(
+        #             description="Semantic implications of change from the old to the new preconditions.",
+        #         )
+
+        #     assistant = OpenAIAssistant(
+        #         config.model,
+        #         interactive=False,
+        #         system_prompt_key="precondition-checks",
+        #         preconditions=json.dumps(node.preconditions),
+        #         old_preconditions=json.dumps(new_preconditions),
+        #         postconditions=json.dumps(node.requirements),
+        #     )
+
+        #     completion = assistant.completion(Warning)
+
+        #     log(completion)
+
+        #     if completion.impacts_postconditions:
+        #         changes = [f"* {x}" for x in completion.changes_to_preconditions]
+        #         impacts = [f"* {x}" for x in completion.impacts_on_postconditions]
+        #         message = (
+        #             f"Predecessors have change:\n"
+        #             + "\n".join(changes)
+        #             + "\n\nThis may impact the requirements:\n"
+        #             + "\n".join(impacts)
+        #         )
+        #         node = node.warn(phase=Phase.requirements, message=message)
+
+        # node = node.update(phase=Phase.requirements)
+
+        # return node
 
 
 def interactive_code_assistant(

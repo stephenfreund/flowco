@@ -127,6 +127,11 @@ class BuildCache(BaseModel):
             return {}
         return self.caches[phase].in_values
 
+    def get_out(self, phase: Phase, node: BaseModel) -> Dict[str, Any]:
+        if phase not in self.caches:
+            return {}
+        return self.caches[phase].out_values
+
     def diff(self, phase: Phase, node: BaseModel) -> Dict[str, Any]:
         if phase not in self.caches:
             return {}

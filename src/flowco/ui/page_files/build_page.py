@@ -26,10 +26,7 @@ from flowco.ui.ui_page import UIPage
 from code_editor import code_editor
 from flowthon.flowthon import FlowthonProgram
 
-if config.x_algorithm_phase:
-    from flowco.ui.dialogs.edit_node import edit_node
-else:
-    from flowco.ui.dialogs.edit_node_no_alg import edit_node
+from flowco.ui.dialogs.node_editor import edit_node
 
 
 @dataclass

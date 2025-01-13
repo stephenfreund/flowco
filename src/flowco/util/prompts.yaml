@@ -220,7 +220,7 @@ postconditions: |
     the inputs by name.  Not all inputs may be used.
 
     Create a return type for the function that meets the postconditions.  The 
-    return type must be an extended type except Any.
+    return type must be an extended type other than Any or None.
 
     The return type's specification
     should be detailed enough that users of the function can understand what
@@ -321,17 +321,11 @@ postconditions-no-descriptions: |
     the inputs by name.  Not all inputs may be used.
 
     Create a return type for the function that meets the postconditions.  The 
-    return type must be an extended type except Any.
+    return type must be an extended type except Any or None.
 
     The return type's specification
     should be detailed enough that users of the function can understand what
-    the function returns.  Do not include a specificaiton if the return
-    type is None.
-    
-    The type should reflect what is described in the specification.
-    The return type for functions generating plots should be None.
-
-    Assume the client has no other information about the function.
+    the function returns.
     
     If this function returns data from a file, use the column labels 
     and types found in that file.
@@ -340,6 +334,8 @@ postconditions-no-descriptions: |
     code for that step can be written later using only the preconditions 
     and postconditions.  Avoid contradictions or redundancies in the postconditions.
 
+    Assume the client has no other information about the function.
+    
     {diff}
 
 postconditions-for-sink-no-descriptions: |
@@ -428,8 +424,13 @@ inconsistent-preconditions: |
 
 #     Do the changes to the preconditions affect the postconditions?  If so, explain how.
 
-precondition-checks: |
-    1. These are the new paramaters and preconditions for a computation step:
+locked-requirements-checks: |
+    You are analyzing how changes to inputs affect the postconditions for a computation step.
+    Use simple English and avoid direct references to any programming concepts.  Be brief.
+    Refer to parameters as inputs, preconditions and input requirements, and postconditions as
+    output requirements.
+
+    1. These are the new parameters and preconditions for a computation step:
 
     ```
     {parameters}
@@ -443,7 +444,7 @@ precondition-checks: |
     {old_preconditions}
     ```
 
-    Examine the new parameters and preconditions and identify any changes from the old.
+    Examine the new parameters and preconditions and identify any changes from the old in a list of phrases of less than 10 words.
 
     2. Here are the postconditions for the computation step:
 
@@ -451,7 +452,7 @@ precondition-checks: |
     {postconditions}
     ```
 
-    Do the changes to the paramateres and preconditions affect the postconditions?  If so, explain how.
+    Do the changes to the parameters and preconditions invalidate any of the postconditions?  If so, list how in sentences of less than 12 words of the form "... may need to change because ..."  Do not consider anything beyond the explicit postconditions.
 
     3.  Here is the old label for the computation step:
     ```
@@ -461,8 +462,29 @@ precondition-checks: |
     ```
     {new_label}
     ```
-    Do the changes to label impact affect the relevance of the postconditions?  If so, explain how.
+    Do the changes to label impact affect the relevance of the postconditions?  If so, list how in sentences of less than 12 words of the form "... may need to change because ..."    Do not consider anything beyond the explicit postconditions.
 
+
+locked-code-checks: |
+    You are analyzing how changes to inputs and requirements affect the code for a computation step.
+    Use simple English and avoid direct references to any programming concepts.  Be brief.
+    Refer to parameters as inputs, preconditions and input requirements, and postconditions as
+    output requirements.
+
+    Here are the old parameters, preconditions, requirements, and return type:
+    ```
+    {old}
+    ```
+
+    Here are the new parameters, preconditions, requirements, and return type:
+    ```
+    {new}
+    ```
+
+    1. Describe the changes to the parameters and preconditions in a list of phrases of less than 10 words.
+    2  Do the changes to the parameters and preconditions affect the code?  If so, list how in sentences of less than 12 words of the form "... may need to change because ..."
+    3. Describe the changes to the requirements and return type in a list of phrases of less than 10 words.
+    4. Do the changes to the requirements and return type affect the code?  If so, list how in sentences of less than 12 words of the form "... may need to change because ..."
 
 
 algorithm: |
@@ -969,6 +991,74 @@ ama_modify: |
     1. Restate the request in your own words.  Break down tasks into smaller steps.
     2. Identify the necessary changes to the dataflow graph for those steps.
     3. For each change, explain the rationale behind it to the user and use a function call to make the change.
+
+ama_node_editor: |
+    You are an expert at statistical analysis and data science.  Help the
+    user modify a node in their dataflow-graph based computation.  
+    
+    The label, requirements, return type, and code must all be consistent with
+    each other and with the changes you make. Do not change the function name,
+    parameter names, or parameter types.
+
+    Explain your reasoning and provide a clear and concise answer in simple English.  
+    Nore more than 50 words.
+
+    You should:
+    1. Restate the request in your own words.  Break down tasks into smaller steps.
+    2. Identify the necessary changes to the node for those steps.
+    3. Use a function call to make the changes.
+
+ama_node_editor_no_code: |
+    You are an expert at statistical analysis and data science.  Help the
+    user modify a node in their dataflow-graph based computation.  
+    
+    The label, requirements, and return type must all be consistent with
+    each other and with the changes you make. 
+
+    Explain your reasoning and provide a clear and concise answer in simple English.  
+    Nore more than 50 words.
+
+    You should:
+    1. Restate the request in your own words.  Break down tasks into smaller steps.
+    2. Identify the necessary changes to the node for those steps.
+    3. Use a function call to make the changes.
+
+ama_node_editor_sync_no_code: |
+    You are an expert at statistical analysis and data science.  Help the
+    user modify a node in their dataflow-graph based computation.
+
+    For each inconsistency you find between the label and requirements, describe how to fix it in 10 words or less.   
+    
+    Examples:
+    ```
+    **Problem**: The **Label** says *x*, but the **Requirements** say *y*.
+    **Fix**: Change ...
+
+    **Problem**: The **Requirements** say *x*, but the **Requirements** say *y*.
+    **Fix**: Change ...
+    ```
+
+    Use a function call to make the changes.
+
+ama_node_editor_sync: |
+    You are an expert at statistical analysis and data science.  Help the
+    user modify a node in their dataflow-graph based computation.
+    
+    The label, requirements, return type, and code must all be consistent with
+    each other.
+
+    For each inconsistency you find between the label, requirements, and code describe how to fix it in 10 words or less.  
+
+    Examples:
+    ```
+    **Problem**: The **Label** says *x*, but the **Requirements** say *y*.
+    **Fix**: Change ...
+
+    **Problem**: The **Code** says *x*, but the **Requirements** say *y*.
+    **Fix**: Change ...
+    ```
+    
+    Use a function call to make the changes.
 
 add-bugs: |
     You are an assistant to take the code for a data science data flow computation

@@ -201,6 +201,9 @@ def check_assertions(pass_config: PassConfig, graph: DataFlowGraph, node: Node) 
 def repair_assertions(
     pass_config: PassConfig, graph: DataFlowGraph, node: Node
 ) -> Node:
+
+    # NOTE: This will modify the node, even if locked, by design!
+
     try:
         return _repair_assertions(
             pass_config, graph, node, max_retries=pass_config.max_retries
@@ -250,7 +253,7 @@ def _repair_assertions(
             if retries > 0:
                 original = original.error(
                     phase=Phase.assertions_checked,
-                    message=f"**Unable to repair code.**  Verify the requirements ensure the assertions are met and try again.",
+                    message=f"**Checks** failed and automatic repair didn not fix the problem.  Verify the requirements ensure the assertions are met and try again.",
                 )
 
             for assertion, outcome in node.assertion_outcomes.outcomes.items():

@@ -208,52 +208,43 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
     font-size: 12px !important;
 }
 
-.st-key-voice_input {
+.st-key-voice_input,
+.st-key-voice_input_node {
     margin-top: -3.6rem;
     margin-left: 0.1rem;
     width: 48px;
 
 }
 
-.st-key-ama_input {
+.st-key-ama_input,
+.st-key-ama_input_node {
     width: calc(200% - 48px);
     min-width: 400px;
 } 
 
-.st-key-voice_input * {
+.st-key-voice_input *,
+.st-key-voice_input_node * {
     height: 2.5rem !important;
     background-color: unset !important;
 }
 
 .st-key-voice_input [data-testid="stAudioInputWaveformTimeCode"],
-.st-key-voice_input [data-testid="stAudioInputWaveSurfer"] {
+.st-key-voice_input [data-testid="stAudioInputWaveSurfer"],
+.st-key-voice_input_node [data-testid="stAudioInputWaveformTimeCode"],
+.st-key-voice_input_node [data-testid="stAudioInputWaveSurfer"] {
+
     display: none;
 }
 
-.st-key-voice_input div > div > div:not(:nth-child(2)) {
+.st-key-voice_input div > div > div:not(:nth-child(2)),
+.st-key-voice_input_node div > div > div:not(:nth-child(2)) {
     display: none;
 }
 
-.st-key-voice_input > div > div > div > span:nth-child(2) {
+.st-key-voice_input > div > div > div > span:nth-child(2),
+.st-key-voice_input_node > div > div > div > span:nth-child(2) {
     display: none;
 }
-
-/* 
-.st-key-ama_columns .stColumn {
-    width: fit-content !important; 
-    flex: unset !important;
-} */
-/*
-.st-key-ama_input > div > div:first-child {
-    width: 48px;
-    flex: unset !important;
-}
-
-.st-key-ama_input > div > div:nth-child(2) {
-    width: calc(200% - 48px);
-    flex: unset !important;
-} */
-
 
 [aria-label="dialog"]:has(.st-key-code_editor) {
     width: 90% !important;

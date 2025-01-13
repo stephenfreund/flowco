@@ -754,7 +754,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                 ```
                 {label}
                 ```
-                Capitalize each word and hyphenate them.  
+                Title-case each word and hyphenate them, eg: `Make-Plot`.
                 Do not include any other text in your response.  
                 Do not use any of the following: {', '.join(exclude_pills)}.
                 """

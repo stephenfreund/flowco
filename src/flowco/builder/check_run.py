@@ -29,20 +29,32 @@ from nbclient.exceptions import CellExecutionError
 )
 def check_run(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
 
+    max_retries = pass_config.max_retries
+    if node.is_locked:
+        max_retries = 0
+
     try:
-        new_node = _repair_run(
-            pass_config, graph, node, max_retries=pass_config.max_retries
-        )
+        new_node = _repair_run(pass_config, graph, node, max_retries=max_retries)
         return new_node.update(phase=Phase.run_checked)
     except CellExecutionError as e:
-        warn(str(e))
-        node.error(phase=Phase.run_checked, message=strip_ansi(str(e).split("\n")[-2]))
+        if node.is_locked:
+            message = (
+                f"**Run** failed.  Unlock and run again to attempt automatic repair."
+            )
+        else:
+            message = f"**Run** failed, and automatic repair did not fix the problem.  Please fix the error manually or try running again."
+
+        error_line = strip_ansi(str(e).split("\n")[-2])
+        node = node.error(
+            phase=Phase.run_checked, message=f"{message}\n\nDetails: *{error_line}*"
+        )
+
         return node
 
 
 def _repair_run(
     pass_config: PassConfig, graph: DataFlowGraph, node: Node, max_retries: int
-) -> Optional[Node]:
+) -> Node:
     assistant = Assistant("repair-system")
     retries = 0
     stashed_error = None
@@ -54,7 +66,7 @@ def _repair_run(
             )
 
             with logger("Typechecking result"):
-                if result.result is not Node:
+                if result.result is not None:
                     return_value = result.result.to_value()
                     return_type = node.function_return_type
                     if not return_type.matches_value(return_value):
@@ -91,7 +103,7 @@ def _repair_run(
             if config.x_algorithm_phase:
                 node_fields.append("algorithm")
 
-            initial_node = make_node_like(node, node_like_model(*node_fields))
+            initial_node = make_node_like(node, node_like_model(node_fields))
 
             assistant.add_prompt_by_key(
                 "repair-node-run",

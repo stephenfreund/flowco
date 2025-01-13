@@ -45,11 +45,16 @@ def node_completion_model(
     return model
 
 
-def node_like_model(*to_include: str) -> type[NodeLike]:
+def node_like_model(to_include: List[str]) -> type[NodeLike]:
+
+    print(to_include)
+
     field_names = set(to_include) | {"id", "pill", "label", "predecessors"}
     assert field_names.issubset(
         Node.model_fields.keys()
     ), f"Fields {field_names.difference(Node.model_fields.keys())} is not in Node model fields."
+
+    print(field_names)
 
     kwargs = {
         name: (
@@ -61,6 +66,8 @@ def node_like_model(*to_include: str) -> type[NodeLike]:
         for name, field in Node.model_fields.items()
         if name in field_names and field.annotation is not None
     }
+
+    print(kwargs)
 
     return create_model("NodeLike", **kwargs)  # type: ignore
 
@@ -91,7 +98,7 @@ def node_completion(
 
 
 def graph_node_like_model(
-    node_like_model: type[NodeLike], *to_include: str
+    node_like_model: type[NodeLike], to_include: List[str]
 ) -> type[GraphLike]:
     field_names = set(to_include)
     assert field_names.issubset(DataFlowGraph.model_fields.keys() - {"nodes"})
@@ -141,7 +148,7 @@ def messages_for_graph(
     node_fields: List[str] = [],
 ) -> List[str | Dict[str, Any]]:
     initial_graph_model = graph_node_like_model(
-        node_like_model(*node_fields), *graph_fields
+        node_like_model(node_fields), graph_fields
     )
 
     initial_graph = make_graph_node_like(graph, initial_graph_model)
@@ -158,7 +165,7 @@ def messages_for_graph(
 def messages_for_node(
     node: Node, node_fields: List[str] = []
 ) -> List[str | Dict[str, Any]]:
-    initial_node_model = node_like_model(*node_fields)
+    initial_node_model = node_like_model(node_fields)
 
     initial_node = make_node_like(node, initial_node_model)
 
