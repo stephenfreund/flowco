@@ -1732,12 +1732,7 @@ class AskMeAnythingNode:
     def complete(
         self, prompt: str, node: Node, show_prompt: bool = True
     ) -> Iterable[str]:
-        # try:
         yield from self._complete(prompt, node, show_prompt)
-
-    # except Exception as e:
-    #     error(f"Error: {e}")
-    #     raise FlowcoError(f"Error: {e}")
 
     def _complete(
         self,
@@ -1771,10 +1766,11 @@ class AskMeAnythingNode:
                         "id",
                         "pill",
                         "label",
-                        "predecessors",
+                        "function_parameters",
                         "preconditions",
                         "requirements",
                         "function_return_type",
+                        "function_result_var",
                     ]
                     + (["code"] if self.show_code else [])
                 ),
@@ -1783,8 +1779,8 @@ class AskMeAnythingNode:
 
         if show_prompt:
             self.visible_messages += [VisibleMessage(role="user", content=prompt)]
-        else:
-            yield "Working...\n\n"
+
+        yield "Working...\n\n"
 
         self.assistant.add_message("user", prompt)
 

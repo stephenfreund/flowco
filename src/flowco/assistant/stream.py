@@ -1,3 +1,4 @@
+import textwrap
 import traceback
 from flowco.assistant.base import AssistantBase
 from flowco.assistant.trim import sandwich_tokens, trim_messages
@@ -210,6 +211,29 @@ class StreamingAssistantWithFunctionCalls(AssistantBase):
 
         add_cost(cost)
 
+    T = TypeVar("T", bound=BaseModel)
+
+    def model_completion(self, response_model: type[T]) -> T:
+        response, completion = (
+            self.instructor_client.chat.completions.create_with_completion(
+                model=config.model,
+                messages=self.messages,
+                response_model=response_model,
+                response_format={"type": "json_object"},
+                max_retries=tenacity.Retrying(
+                    stop=tenacity.stop_after_attempt(3),
+                    after=lambda e: log(
+                        f"Bad response, retrying up to limit:\n{textwrap.indent(str(e), prefix='    ')}"
+                    ),
+                ),  # type: ignore
+                temperature=0 if config.zero_temp else None,
+            )
+        )
+        self.add_message("assistant", response.model_dump_json(indent=2))  # type: ignore
+        # cost = litellm.completion_cost(completion)  # type: ignore
+        cost = 0
+        return response
+
     def _trim_conversation(self):
         old_len = litellm.utils.token_counter(self.model, messages=self.messages)
         log(f"Conversation has {old_len} tokens.")
@@ -238,7 +262,7 @@ class StreamingAssistantWithFunctionCalls(AssistantBase):
         try:
             for tool_call in tool_calls:
                 user_response, function_response = self._make_call(tool_call)
-                yield f"\n* **{user_response}.**\n\n"
+                yield f"\n**{user_response}.**\n\n"
                 if function_response is None:
                     make_response(tool_call, user_response)
                 elif isinstance(function_response, str):

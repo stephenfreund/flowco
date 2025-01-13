@@ -14,6 +14,7 @@ from flowco.dataflow import dfg_update
 from flowco.dataflow.dfg import Node
 from flowco.dataflow.phase import Phase
 from flowco.page.output import OutputType
+from flowco.ui.dialogs.node_editor import edit_node
 from flowco.ui.ui_dialogs import settings
 from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_util import (
@@ -28,12 +29,6 @@ from flowco.ui.ui_page import UIPage
 from flowco.util.config import config
 from flowco.util.costs import total_cost
 from flowco.util.config import AbstractionLevel
-
-
-if config.x_algorithm_phase:
-    from flowco.ui.dialogs.edit_node import edit_node
-else:
-    from flowco.ui.dialogs.edit_node_no_alg import edit_node
 
 
 class FlowcoPage:
@@ -126,7 +121,9 @@ class FlowcoPage:
                     elif not pressed and node.is_locked:
                         dfg = ui_page.dfg()
                         ui_page.update_dfg(
-                            dfg.with_node(dfg[node.id].update(is_locked=False))
+                            dfg.with_node(
+                                dfg[node.id].update(is_locked=False, phase=Phase.clean)
+                            )
                         )
                         st.session_state.force_update = True
                         st.rerun()

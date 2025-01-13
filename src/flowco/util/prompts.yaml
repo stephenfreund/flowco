@@ -1025,40 +1025,66 @@ ama_node_editor_no_code: |
 
 ama_node_editor_sync_no_code: |
     You are an expert at statistical analysis and data science.  Help the
-    user modify a node in their dataflow-graph based computation.
+    user analyze a node in their dataflow-graph based computation.
 
-    For each inconsistency you find between the label and requirements, describe how to fix it in 10 words or less.   
+    Here is the label:
+    ```
+    {label}
+    ```
+    Here are the requirements:
+    ```
+    {requirements}
+    ```
+
+    * The label describes what the computation produces.  It should not mention any variables.
+    * The requirements refine the label to more precisely describe the output of the computation and where it is stored.
+    * The return type is the type of the output.  
+    * The function_return_var and pill both refer to where the output is stored.
+
+    Determine whether the requirements directly contradict the label.  If so, explain how to fix it in 10 words or less.  
+    Only the label and requirements may be changed.  If no changes are needed, say "no changes".
     
     Examples:
     ```
-    **Problem**: The **Label** says *x*, but the **Requirements** say *y*.
-    **Fix**: Change ...
+    The **Label** says *x*, but the **Requirements** say *y*. Change ...
 
-    **Problem**: The **Requirements** say *x*, but the **Requirements** say *y*.
-    **Fix**: Change ...
+    All good! No changes needed.
     ```
-
-    Use a function call to make the changes.
 
 ama_node_editor_sync: |
     You are an expert at statistical analysis and data science.  Help the
-    user modify a node in their dataflow-graph based computation.
+    user analyze a node in their dataflow-graph based computation.
+
+    Here is the label:
+    ```
+    {label}
+    ```
+    Here are the requirements:
+    ```
+    {requirements}
+    ```
+    Here is the code:
+    ```
+    {code}
+    ```
+
+    * The label describes what the computation produces.  It should not mention any variables.
+    * The requirements refine the label to more precisely describe the output of the computation and where it is stored.
+    * The return type is the type of the output.  
+    * The function_return_var and pill both refer to where the output is stored.
+    * The code implements the computation described by the label and requirements.
+
+    Determine whether the requirements directly contradict the label.  If so, explain how to fix it in 10 words or less.
+    Determine whether the code implements the label and requirements.  If not, explain how to fix it in 10 words or less.
+    Only the label, requirements, code may be changed.  If no changes are needed, say "no changes".
     
-    The label, requirements, return type, and code must all be consistent with
-    each other.
-
-    For each inconsistency you find between the label, requirements, and code describe how to fix it in 10 words or less.  
-
     Examples:
     ```
-    **Problem**: The **Label** says *x*, but the **Requirements** say *y*.
-    **Fix**: Change ...
+    The **Code** says *x*, but the **Requirements** say *y*. Change ...
+    Ask me to make the change if you'd like!
 
-    **Problem**: The **Code** says *x*, but the **Requirements** say *y*.
-    **Fix**: Change ...
+    All good! No changes needed.
     ```
-    
-    Use a function call to make the changes.
 
 add-bugs: |
     You are an assistant to take the code for a data science data flow computation

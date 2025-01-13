@@ -76,7 +76,6 @@ def requirements_assistant(
     graph: DataFlowGraph,
     node: Node,
     diff_instructions: str,
-    interactive=False,
 ):
     if graph.successors(node.id):
         prompt = "postconditions"
@@ -88,7 +87,6 @@ def requirements_assistant(
 
     assistant = OpenAIAssistant(
         config.model,
-        interactive=interactive,
         system_prompt_key=["system-prompt", prompt],
         preconditions=json.dumps(node.preconditions),
         function_return_var=node.function_result_var,
@@ -140,63 +138,6 @@ def requirements_completion_model():
     return node_completion_model(*fields)
 
 
-def interactive_requirements_assistant(
-    pass_config: PassConfig,
-    graph: DataFlowGraph,
-    node: Node,
-    new_requirements: List[str],
-) -> Tuple[OpenAIAssistant, BaseModel]:
-
-    # clear all messages to start fresh.
-    node = node.update(messages=[])
-
-    # Compute inputs
-    assert node.function_parameters == create_parameters(
-        graph, node
-    ), f"Parameters not update to date: {node.function_parameters} != {create_parameters(graph, node)}"
-    preconditions = create_preconditions(pass_config, graph, node)
-    assert (
-        node.preconditions == preconditions
-    ), f"Preconditions not update to date: {node.preconditions} != {preconditions}"
-
-    with logger("Semantic diff"):
-        diff_strings = semantic_diff_strings(
-            "requirements", json.dumps(node.requirements), json.dumps(new_requirements)
-        )
-
-    newline = "\n"
-    diff_instructions = textwrap.dedent(
-        f"""\
-        The current requirements are:
-        ```
-        {newline.join([ f"* {x}" for x in node.requirements or []])}
-        ```
-        I want to change them to be:
-        ```
-        {newline.join([ f"* {x}" for x in new_requirements])}
-        ```
-        The key differences between the old and new are:
-        ```
-        {diff_strings}
-        ```
-        Improve that new list for clarity and precision.  If there are any ambiguiuties
-        or contradictions, ask for clarification.
-        """
-    )
-
-    # Verify preconditions are consistent
-    with logger("Preconditions checks"):
-        node = check_precondition_consistency(node)
-
-    assistant = requirements_assistant(
-        pass_config, graph.with_node(node), node, diff_instructions, interactive=True
-    )
-
-    completion_model = requirements_completion_model()
-
-    return assistant, completion_model
-
-
 def check_precondition_consistency(node: Node) -> Node:
     with logger("Preconditions checks"):
 
@@ -210,7 +151,6 @@ def check_precondition_consistency(node: Node) -> Node:
 
         assistant = OpenAIAssistant(
             config.model,
-            interactive=False,
             system_prompt_key="inconsistent-preconditions",
             preconditions=json.dumps(node.preconditions),
         )
@@ -254,7 +194,6 @@ def requirements_when_locked(node: Node) -> Node:
 
             assistant = OpenAIAssistant(
                 config.model,
-                interactive=False,
                 system_prompt_key="locked-requirements-checks",
                 parameters=json.dumps(current_inputs["function_parameters"]),
                 old_parameters=json.dumps(old_inputs["function_parameters"]),
@@ -363,13 +302,12 @@ def algorithm(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node
     return new_node
 
 
-def algorithm_assistant(node, diff_instructions, interactive=False):
+def algorithm_assistant(node, diff_instructions):
 
     assert config.x_algorithm_phase, "Algorithm phase must be enabled."
 
     assistant = OpenAIAssistant(
         config.model,
-        interactive=interactive,
         system_prompt_key=["system-prompt", "algorithm"],
         preconditions=json.dumps(node.preconditions),
         postconditions=json.dumps(node.requirements),
@@ -404,55 +342,6 @@ def algorithm_completion_model():
 
     completion_model = node_completion_model("algorithm")
     return completion_model
-
-
-def interactive_algorithm_assistant(
-    pass_config: PassConfig, graph: DataFlowGraph, node: Node, new_algorithm: List[str]
-) -> Tuple[OpenAIAssistant, BaseModel]:
-
-    assert config.x_algorithm_phase, "Algorithm phase must be enabled."
-
-    with logger("Algorithm step"):
-        assert node.function_parameters is not None, "Parameters must be defined."
-        assert node.preconditions is not None, "Preconditions must be defined."
-        assert node.requirements is not None, "Requirements must be defined."
-        assert node.description is not None, "Description must be defined."
-
-        if graph.successors(node.id):
-            assert node.function_return_type is not None, "Return type must be defined."
-            assert (
-                node.function_computed_value is not None
-            ), "Computed value must be defined."
-
-        newline = "\n"
-        diff_instructions = textwrap.dedent(
-            f"""\
-            The current algorithm is:
-            ```
-            {newline.join(node.algorithm)}
-            ```
-            I want to change it to something like:
-            ```
-            {newline.join(new_algorithm)}
-            ```
-            The key differences between the old and new algorithm are:
-            ```
-            {semantic_diff_strings("algorithm", json.dumps(node.algorithm), json.dumps(new_algorithm))}
-            ```
-            The algorithm must also conform to the requirements:
-            ```
-            {newline.join([ f"* {x}" for x in node.requirements])}
-            ```
-            Also improve that new algorithm for clarity and precision.  If there are any ambiguiuties
-            or contradictions, ask for clarification.
-            """
-        )
-
-        assistant = algorithm_assistant(node, diff_instructions, interactive=True)
-
-        completion_model = algorithm_completion_model()
-
-        return assistant, completion_model
 
 
 @node_pass(required_phase=Phase.algorithm, target_phase=Phase.code)
@@ -499,7 +388,7 @@ def compile(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
         return new_node
 
 
-def code_assistant(node: Node, diff_instructions, interactive=False):
+def code_assistant(node: Node, diff_instructions):
     parameter_types = {param.name: param.type for param in node.function_parameters}
     parameter_type_str = "\n".join(
         [
@@ -510,7 +399,6 @@ def code_assistant(node: Node, diff_instructions, interactive=False):
 
     assistant = OpenAIAssistant(
         config.model,
-        interactive=interactive,
         system_prompt_key=["system-prompt", "compile"],
         signature=node.signature_str(),
         parameter_types=parameter_type_str,
@@ -580,7 +468,6 @@ def compile_when_locked(node: Node) -> Node:
 
             assistant = OpenAIAssistant(
                 config.model,
-                interactive=False,
                 system_prompt_key="locked-code-checks",
                 old=old_inputs
                 | {"code": node.cache.get_out(Phase.code, node).get("code", None)},
@@ -678,69 +565,6 @@ def compile_when_locked(node: Node) -> Node:
         # return node
 
 
-def interactive_code_assistant(
-    pass_config: PassConfig, graph: DataFlowGraph, node: Node, new_code: List[str]
-) -> Tuple[OpenAIAssistant, BaseModel]:
-    with logger("Compile step"):
-
-        assert node.function_parameters is not None, "Parameters must be defined."
-        assert node.preconditions is not None, "Preconditions must be defined."
-        assert node.requirements is not None, "Requirements must be defined."
-        assert node.description is not None, "Description must be defined."
-
-        if config.x_algorithm_phase:
-            assert node.algorithm is not None, "Algorithm must be defined."
-
-        if graph.successors(node.id):
-            assert node.function_return_type is not None, "Return type must be defined."
-            assert (
-                node.function_computed_value is not None
-            ), "Computed value must be defined."
-
-        newline = "\n"
-        diff_instructions = textwrap.dedent(
-            f"""\
-            The current code is:
-            ```
-            {newline.join(node.code)}
-            ```
-            I want to change it to be:
-            ```
-            {newline.join(new_code)}
-            ```
-            The key differences between the old and new are:
-            ```
-            {semantic_diff_strings("code", json.dumps(node.code), json.dumps(new_code))}
-            ```
-            The code must also conform to the requirements:
-            ```
-            {newline.join([ f"* {x}" for x in node.requirements])}
-            ```
-            """
-            + (
-                f"""\
-            The code must also conform to the algorithm:
-            ```
-            {newline.join([ f"{x}" for x in node.algorithm])}
-            ```
-            """
-                if config.x_algorithm_phase and node.algorithm
-                else ""
-            )
-            + f"""\
-
-            Also improve that new code for clarity and precision.  If there are any ambiguiuties
-            or contradictions, ask for clarification.
-            """
-        )
-
-        assistant = code_assistant(node, diff_instructions, interactive=True)
-
-        completion_model = node_completion_model("code")
-
-        return assistant, completion_model
-
-
 #######################
 
 
@@ -814,7 +638,6 @@ def full_assistant(
     graph: DataFlowGraph,
     node: Node,
     diff: Dict[Phase, str],
-    interactive=False,
 ):
 
     assert config.x_algorithm_phase, "Algorithm phase must be enabled."
@@ -849,7 +672,6 @@ def full_assistant(
 
     assistant = OpenAIAssistant(
         config.model,
-        interactive=interactive,
         system_prompt_key=prompts,
         label=node.label,
         preconditions=json.dumps(node.preconditions),

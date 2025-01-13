@@ -1318,7 +1318,6 @@ class AskMeAnything:
     def classify_question(self, question: str) -> str:
         assistant: OpenAIAssistant = OpenAIAssistant(
             model="gpt-4o-mini",
-            interactive=False,
             system_prompt_key="classify_ama_prompt",
         )
         for message in self.visible_messages[-4:]:

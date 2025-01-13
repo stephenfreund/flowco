@@ -171,7 +171,7 @@ def assertions_assistant(node: Node, suggest=False):
         "requirements": json.dumps(node.assertions or [], indent=2),
     }
 
-    assistant = OpenAIAssistant(config.model, interactive=False, **substitutions)
+    assistant = OpenAIAssistant(config.model, **substitutions)
 
     return assistant
 
@@ -293,7 +293,7 @@ def _repair_assertions(
                 if outcome is not None
             ],
             context=json.dumps(
-                {x: v.to_text() for x, v in node.assertion_outcomes.context.items()},
+                {x: v.to_text() for x, v in node.assertion_outcomes.context.items()},  # type: ignore
                 indent=2,
             ),
         )

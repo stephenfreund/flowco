@@ -40,7 +40,7 @@ def node_completion_model(
             Field(description="Explanation of the completion."),
         )
 
-    model: BaseModel = create_model("NodeCompletion", **kwargs)  # type: ignore
+    model = create_model("NodeCompletion", **kwargs)  # type: ignore
     model.model_rebuild()
     return model
 
@@ -79,22 +79,9 @@ def make_node_like(node: Node, model: type[NodeLike]) -> NodeLike:
 U = TypeVar("U", bound=NodeLike)
 
 
-def node_completion(
-    assistant: Assistant, node_like_response_model: type[U], can_fail=False
-) -> U:
-
-    if can_fail:
-        node_like_response_model = extend_model_to_include_error_option(node_like_response_model)  # type: ignore
-
-        new_node = assistant.model_completion(node_like_response_model)
-        if new_node.result:
-            return new_node.result
-        else:
-            assert False, f"Error: {new_node.error}"
-
-    else:
-        new_node = assistant.model_completion(node_like_response_model)
-        return new_node
+def node_completion(assistant: Assistant, node_like_response_model: type[U]) -> U:
+    new_node = assistant.model_completion(node_like_response_model)
+    return new_node
 
 
 def graph_node_like_model(

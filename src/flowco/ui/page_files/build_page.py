@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import textwrap
 from typing import Literal
 import streamlit as st
 from flowco.dataflow.dfg import Geometry
@@ -320,6 +321,23 @@ class BuildPage(FlowcoPage):
                 help="Edit the description of the diagram",
             ):
                 self.edit_description()
+
+        st.divider()
+        st.write(
+            textwrap.dedent(
+                """\
+            ### Graph Operations
+            * **Scroll canvas:** Ctrl-Click (or Right-Click?) and drag
+            * **Select node:** Click on it
+            * **Create node:** Shift-click on canvas
+            * **Move node:** Click on it and drag
+            * **Edit node:** Hover over node and press pencil
+            * **Delete node:** Hover over node and press trash can
+            * **Add edge:** Hover over node and drag from the (+) icon to the other node
+            * **Add edge and node:** Hover over node and drag from the (+) icon to the other node
+            * **Delete edge:** Hover over edge and press trash can"""
+            )
+        )
 
         # with cols[2]:
         #     if st.button(

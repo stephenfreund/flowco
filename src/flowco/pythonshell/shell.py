@@ -312,7 +312,6 @@ class PythonShell:
 
         assistant = OpenAIAssistant(
             "gpt-4o",
-            interactive=False,
             system_prompt_key=["system-prompt", "inspect-output"],
             requirements=json.dumps(requirements, indent=2),
         )
