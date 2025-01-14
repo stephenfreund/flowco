@@ -97,17 +97,22 @@ class LoggingFile:
 class Output(threading.local):
 
     def __init__(
-        self, max_log_depth=10, file=LoggingFile(sys.stdout, "logging.txt"), prefix=None
+        self, max_log_depth=10, prefix=None
     ):
         self.max_log_depth = max_log_depth
         self.pending = None
         self.contexts = []
-        self.file = file
+        self.file = LoggingFile(sys.stdout, "logging.txt")
         self.lock = threading.RLock()
         self.prefix = prefix
+        self.log_timestamp()
 
-    def set_file(self, file):
-        self.file = file
+    def get_full_output(self, plain_text=True):
+        with open("logging.txt", "r") as f:
+            log = f.read()
+            if plain_text:
+                log = strip_ansi(log)
+            return log
 
     ###
 
@@ -280,10 +285,17 @@ class Output(threading.local):
         with self.lock:
             self._print("green", args, start="[", end="]")
 
+    def log_timestamp(self) -> str:
+        timestamp = time.strftime('%Y-%m-%d-%H-%M-%S')
+        self.log(f"Timestamp: {timestamp}")
+        return timestamp
+
 
 def log(*message):
     session.get("output", Output).log(*message)
 
+def log_timestamp():
+    return session.get("output", Output).log_timestamp()
 
 def message(*message):
     session.get("output", Output).message(*message)

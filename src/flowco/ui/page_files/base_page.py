@@ -1,4 +1,7 @@
+import json
+from pprint import pformat
 import time
+from flowco.session.session import session
 from openai import OpenAI
 import uuid
 
@@ -30,7 +33,7 @@ from flowco.util.config import config
 from flowco.util.costs import total_cost
 from flowco.util.config import AbstractionLevel
 from flowco.util.files import create_zip_in_memory
-from flowco.util.output import error
+from flowco.util.output import Output, error, log_timestamp
 
 
 class FlowcoPage:
@@ -310,27 +313,40 @@ class FlowcoPage:
         st.divider()
 
         if st.button("Panic Button", type="primary"):
+            ui_page = st.session_state.ui_page
+            flowco_name = ui_page.page().file_name
+            data_files = [ file for file in ui_page.page().tables.all_files() if file.endswith(".csv") ]
+            time_stamp = log_timestamp()
 
             @st.dialog("Download Log and Files", width="small")
             def download_files():
-                ui_page = st.session_state.ui_page
-                flowco_name = ui_page.page().file_name
-                data_files = ui_page.page().tables.all_files()
 
-                with st.spinner("Creating ZIP file..."):
-                    zip_data = create_zip_in_memory(
-                        ["logging.txt"] + [flowco_name] + data_files
-                    )
+                text = st.text_input(
+                    "Problem",
+                    placeholder = "Enter a description of the issue you encountered",
+                )
 
-                st.write("ZIP ready for download!")
+                if text:
+                    with st.spinner("Creating ZIP file..."):
+                        zip_data = create_zip_in_memory(
+                            [flowco_name] + data_files,
+                            additional_entries={
+                                "description.txt": text,
+                                "logging.txt": session.get("output", Output).get_full_output(),
+                                "session_state.json" : pformat(dict(st.session_state))
+                            },
+                        )
 
-                if st.download_button(
-                    label=":material/download:",
-                    data=zip_data,
-                    file_name=f"flowco_files.zip",
-                    help="Download the project and log",
-                ):
-                    st.rerun()
+                    st.write("ZIP ready for download!")
+
+
+                    if st.download_button(
+                        label=":material/download:",
+                        data=zip_data,
+                        file_name=f"flowco-{time_stamp}.zip",  # with timestamp
+                        help="Download the project and log",
+                    ):
+                        st.rerun()
 
             download_files()
 

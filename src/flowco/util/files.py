@@ -1,4 +1,5 @@
 import io
+from typing import Dict
 import zipfile
 
 import os
@@ -30,16 +31,7 @@ def setup_flowco_files():
         make_default_files()
 
 
-def create_zip_in_memory(files):
-    """
-    Create a ZIP archive containing specified files, and return it as bytes.
-
-    Parameters:
-    - files: List of file paths to include in the ZIP file.
-
-    Returns:
-    - zip_data: Bytes object containing the ZIP archive.
-    """
+def create_zip_in_memory(files, additional_entries: Dict[str, str] = {}):
     # Create an in-memory bytes buffer
     zip_buffer = io.BytesIO()
 
@@ -48,6 +40,8 @@ def create_zip_in_memory(files):
         for file in files:
             # Add file to the ZIP archive
             zipf.writestr(file, fs_read(file, use_cache=True))
+        for file, content in additional_entries.items():
+            zipf.writestr(file, content)
 
     # Retrieve the bytes of the ZIP archive
     zip_data = zip_buffer.getvalue()
