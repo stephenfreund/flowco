@@ -6,6 +6,7 @@ from openai import OpenAI
 import uuid
 
 from flowco.page.ama import AskMeAnything
+from flowco.session.session_file_system import fs_write
 from flowco.ui import ui_help
 from flowco.ui import ui_page
 from flowco.ui.authenticate import sign_out
@@ -43,15 +44,14 @@ class FlowcoPage:
             self.masthead()
             self.button_bar()
 
+            def fix():
+                if st.session_state.al is None:
+                    st.session_state.abstraction_level = "Requirements"
+                else:
+                    st.session_state.abstraction_level = st.session_state.al
+                st.session_state.force_update = True
+
             with st.container(key="controls"):
-
-                def fix():
-                    if st.session_state.al is None:
-                        st.session_state.abstraction_level = "Requirements"
-                    else:
-                        st.session_state.abstraction_level = st.session_state.al
-                    st.session_state.force_update = True
-
                 st.session_state.abstraction_level = st.segmented_control(
                     "Abstraction Level",
                     (
@@ -292,7 +292,7 @@ class FlowcoPage:
 
     def bottom_bar(self):
         ui_page: UIPage = st.session_state.ui_page
-        cols = st.columns([1, 1, 1])
+        cols = st.columns([2, 2.1, 3])
         with cols[0]:
             if st.button(":material/help: Help", disabled=not self.graph_is_editable()):
                 ui_help.help_dialog()
@@ -306,49 +306,51 @@ class FlowcoPage:
                 settings(ui_page)
 
         with cols[2]:
-            if st.button(":material/logout: Logout", help="Sign out"):
-                sign_out()
-                st.rerun()
+            if st.button(":material/bug_report: Report Bug", key="report_bug"):
+                self.report_bug()
 
-        st.divider()
+        if st.button(":material/logout: Logout", help="Sign out"):
+            sign_out()
+            st.rerun()
 
-        if st.button("Panic Button", type="primary"):
-            ui_page = st.session_state.ui_page
-            flowco_name = ui_page.page().file_name
-            data_files = [ file for file in ui_page.page().tables.all_files() if file.endswith(".csv") ]
-            time_stamp = log_timestamp()
+    def report_bug(self):
+        ui_page = st.session_state.ui_page
+        flowco_name = ui_page.page().file_name
+        data_files = [ file for file in ui_page.page().tables.all_files() if file.endswith(".csv") ]
+        time_stamp = log_timestamp()
+        file_name = f"flowco-{time_stamp}.zip"
 
-            @st.dialog("Download Log and Files", width="small")
-            def download_files():
+        @st.dialog("Report Bug", width="small")
+        def download_files():
 
-                text = st.text_input(
-                    "Problem",
-                    placeholder = "Enter a description of the issue you encountered",
-                )
+            text = st.text_input(
+                "Bug",
+                placeholder = "Enter a description of the issue",
+            )
 
-                if text:
-                    with st.spinner("Creating ZIP file..."):
-                        zip_data = create_zip_in_memory(
-                            [flowco_name] + data_files,
-                            additional_entries={
-                                "description.txt": text,
-                                "logging.txt": session.get("output", Output).get_full_output(),
-                                "session_state.json" : pformat(dict(st.session_state))
-                            },
-                        )
+            if text:
+                with st.spinner("Creating ZIP file..."):
+                    zip_data = create_zip_in_memory(
+                        [flowco_name] + data_files,
+                        additional_entries={
+                            "description.txt": text,
+                            "logging.txt": session.get("output", Output).get_full_output(),
+                            "session_state.json" : pformat(dict(st.session_state))
+                        },
+                    )
+                    fs_write(file_name, zip_data, "wb")
 
-                    st.write("ZIP ready for download!")
+                st.write("ZIP ready for download!")
 
+                if st.download_button(
+                    label=":material/download:",
+                    data=zip_data,
+                    file_name=file_name,  # with timestamp
+                    help="Download the project and log",
+                ):
+                    st.rerun()
 
-                    if st.download_button(
-                        label=":material/download:",
-                        data=zip_data,
-                        file_name=f"flowco-{time_stamp}.zip",  # with timestamp
-                        help="Download the project and log",
-                    ):
-                        st.rerun()
-
-            download_files()
+        download_files()        
 
     def button_bar(self):
         pass
