@@ -3,6 +3,7 @@ import re
 import sys
 import textwrap
 import time
+import traceback
 
 from httpx import get
 import termcolor
@@ -229,13 +230,27 @@ class Output(threading.local):
             self.write(f"{pad}{start}{message}{end}\n")
         self.pending = None
 
+    def _format_exception(self, e):
+        # Extract the traceback from the exception
+        tb = e.__traceback__
+
+        # Format the exception type, value, and traceback
+        formatted_exception = "\nException:\n"
+        formatted_exception += "".join(traceback.format_exception(type(e), e, tb))
+
+        return formatted_exception
+
     def _print(self, color, args, start="", end=""):
+
         self.flush()
         start_len = len(start)
         pad = self.get_prefixed_pad()
-        message = (" ".join([str(a) for a in args])).rstrip()
-        # start = termcolor.colored(start, color)
-        # end = termcolor.colored(end, color)
+
+        message = " ".join(
+            self.format_exception(a) if isinstance(a, Exception) else str(a)
+            for a in args
+        ).rstrip()
+
         lines = f"{start}{message}{termcolor.colored(end, color)}".split("\n")
         self.write(f"{pad}{termcolor.colored(lines[0], color)}")
         for line in lines[1:]:

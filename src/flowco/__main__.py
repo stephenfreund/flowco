@@ -403,7 +403,7 @@ def main(page: Optional[Page] = None, argv: List[str] = sys.argv[1:]):
         with session.get("stopper", Stopper):
             main_core(page=page, argv=argv)
     except FlowcoError as e:
-        error(f"Error: {e}")
+        error(e)
     finally:
         if call_count() == 1:
             message(f"Total cost: {total_cost():.2f} for 1 completion.")

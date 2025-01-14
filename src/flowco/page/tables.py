@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from flowco.dataflow.extended_type import ExtendedType
 from flowco.session.session_file_system import fs_read
-from flowco.util.output import log
+from flowco.util.output import error, log, warn
 
 import seaborn as sns
 
@@ -69,7 +69,7 @@ class GlobalTables(BaseModel):
         try:
             super().__init__(**data)
         except Exception as e:
-            log("repairing GlobalTables", e)
+            warn("Repairing GlobalTables", e)
             tables_dict = data.get("tables", {})
             data["tables"] = list(tables_dict.keys())
             super().__init__(**data)

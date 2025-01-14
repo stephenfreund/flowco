@@ -142,15 +142,15 @@ class StreamingAssistantWithFunctionCalls(AssistantBase, Iterable[str]):
             args = json.loads(tool_call.function.arguments)
             function = self._functions[name]
             user_message, result = function["function"](**args)
-            # result = remove_non_printable_chars(strip_ansi(result).expandtabs())
             log(name, args, "->", (user_message, result))
+            return user_message, result
         except KeyboardInterrupt as e:
             raise e
         except Exception as e:
             # likely to be an exception from the code we ran, not a bug...
             result = f"Exception in function call: {e}"
             warn(result)
-        return result
+        return result, result
 
     def stream(self, model: str = config.model) -> Iterator[str]:
         cost = 0
@@ -249,7 +249,7 @@ class StreamingAssistantWithFunctionCalls(AssistantBase, Iterable[str]):
                 yield f"\n{user_message}\n"
                 self.messages.append(response)
         except Exception as e:
-            error(f"An exception occurred while processing tool calls: {e}")
+            error(f"An exception occurred while processing tool calls", e)
 
     def cost(self):
         response = litellm.stream_chunk_builder(self.chunks, messages=self.messages)

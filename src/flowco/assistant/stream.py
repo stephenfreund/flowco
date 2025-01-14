@@ -297,9 +297,7 @@ class StreamingAssistantWithFunctionCalls(AssistantBase):
                     make_response(tool_call, content)
 
         except Exception as e:
-            error(
-                f"An exception occurred while processing tool calls: {e}\n{traceback.format_exc()}"
-            )
+            error(f"An exception occurred while processing tool calls", e)
 
     def replace_placeholders_with_base64_images(self, markdown: str) -> str:
         for key, image_url in self.image_cache.items():

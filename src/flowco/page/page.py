@@ -218,7 +218,7 @@ class Page(BaseModel, extra="allow"):
                 page = cls(**data)
                 page.ensure_valid()
             except ValidationError as e:
-                error(f"Page {file_name} is not valid: {e}.")
+                error(f"Page {file_name} is not valid", e)
                 error("Doing hard reset.")
 
                 if "dfg" not in data or data["dfg"] is None:

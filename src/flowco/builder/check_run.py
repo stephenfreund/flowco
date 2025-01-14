@@ -15,7 +15,7 @@ from flowco.pythonshell.shells import PythonShells
 from flowco.session.session import session
 from flowco.util.config import config
 from flowco.util.errors import FlowcoError
-from flowco.util.output import logger, message, warn
+from flowco.util.output import log, logger, message, warn
 from flowco.util.text import strip_ansi
 
 
@@ -44,6 +44,7 @@ def check_run(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node
         else:
             message = f"**Run** failed, and automatic repair did not fix the problem.  Please fix the error manually or try running again."
 
+        log(f"Run didn't work for {node.pill}", e)
         error_line = strip_ansi(str(e).split("\n")[-2])
         node = node.error(
             phase=Phase.run_checked, message=f"{message}\n\nDetails: *{error_line}*"

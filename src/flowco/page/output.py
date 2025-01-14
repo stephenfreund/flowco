@@ -248,7 +248,7 @@ class ResultValue(BaseModel):
         try:
             return type_ops.decode(self.pickle)
         except Exception as e:
-            error(f"Error decoding pickle: {e}")
+            error(f"Error decoding pickle", e)
             return None
 
     def to_text(self) -> str:

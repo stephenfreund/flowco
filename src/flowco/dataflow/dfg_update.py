@@ -191,5 +191,5 @@ def update_dataflow_graph(
         return new_graph
 
     except ValidationError as e:
-        error(f"Validation error: {e}")
+        error(f"Validation error", e)
         return current_graph

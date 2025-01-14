@@ -477,8 +477,7 @@ class BuildEngine:
                                     message=f"{pass_to_reach_target.title()} failed on `{node.pill}`",
                                 )
                         except Exception as e:
-                            error(f"Error processing node {node_id}: {e}")
-                            error(f"Full report: {traceback.format_exc()}")
+                            error(f"Error processing node {node_id}", e)
                             new_node = node.error(
                                 phase=target_phase,
                                 message=f"Internal Error: {e}\n```\n{traceback.format_exc()}\n```\n",

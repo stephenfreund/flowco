@@ -1357,7 +1357,7 @@ class AskMeAnything:
                 else:
                     raise ValueError(f"Unknown kind: {kind}")
         except Exception as e:
-            error(f"Error: {e}")
+            error(e)
             raise FlowcoError(f"Error: {e}")
 
     def _complete(

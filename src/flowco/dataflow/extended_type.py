@@ -528,13 +528,13 @@ class ExtendedType(BaseModel):
                 try:
                     element_type = infer_type_of_elements(val)
                     return ListType(element_type=element_type, length=len(val))
-                except AnyType:
+                except:
                     return AnyType()
             elif isinstance(val, set):
                 try:
                     element_type = infer_type_of_elements(val)
                     return SetType(element_type=element_type)
-                except AnyType:
+                except:
                     return AnyType()
             elif isinstance(val, tuple):
                 return TupleType(elements=[infer_type(item) for item in val])

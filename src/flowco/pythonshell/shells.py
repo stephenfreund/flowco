@@ -23,7 +23,7 @@ class PythonShells:
             try:
                 self.queue.put(PythonShell())
             except Exception as e:
-                print(f"Error loading PythonShell: {e}")
+                print(f"Error loading PythonShell", e)
 
         preloader = ThreadPoolExecutor(
             max_workers=4,

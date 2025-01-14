@@ -95,6 +95,7 @@ def decode(encoded_str: str) -> Any:
         value = pickle.loads(pickled_bytes)
         return value
     except Exception as e:
+        error(e)
         raise ValueError(f"Could not decode value: {e}")
 
 

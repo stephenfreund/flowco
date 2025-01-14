@@ -63,11 +63,11 @@ class PythonShell:
             self.client.start_new_kernel_client()
             self._init()
         except nb_exceptions.CellExecutionError as cee:
-            debug(f"Cell execution error during kernel setup: {cee}")
+            debug(f"Cell execution error during kernel setup:", cee)
             self.close()
             raise
         except Exception as e:
-            debug(f"Unexpected error during kernel setup: {e}")
+            debug(f"Unexpected error during kernel setup:", e)
             self.close()
             raise
 
@@ -132,7 +132,7 @@ class PythonShell:
                         image_binary = base64.b64decode(base64_image_data.split(",")[1])
                         images.append(Image.open(io.BytesIO(image_binary)))
                     except Exception as e:
-                        error(f"Error decoding image: {e}")
+                        error(f"Error decoding image", e)
 
         # Combine all images vertically into one image
         if images:
@@ -174,17 +174,10 @@ class PythonShell:
         cell = nbf.v4.new_code_cell(code)
         self.nb.cells.append(cell)
         index = len(self.nb.cells) - 1
-        try:
-            # debug(f"Executing cell {index}")
-            # debug(f"Cell code: {code}")
-            result = self.client.execute_cell(cell, index, store_history=False)
-            return result
-        except nb_exceptions.CellExecutionError as cee:
-            # error(f"Error executing cell {index}: {cee}")
-            raise cee
-        except Exception as e:
-            # error(f"Unexpected error executing cell {index}: {e}")
-            raise e
+        # debug(f"Executing cell {index}")
+        # debug(f"Cell code: {code}")
+        result = self.client.execute_cell(cell, index, store_history=False)
+        return result
 
     def load_tables(self, tables: GlobalTables):
         """
@@ -254,8 +247,7 @@ class PythonShell:
                 )
 
             except Exception as e:
-                error(f"Error evaluating node '{node.id}': {e}")
-                error(traceback.format_exc())
+                error(f"Error evaluating node '{node.id}'", e)
                 raise (e)
 
     def extract_assertion_error_message(self, error_log):
@@ -382,8 +374,7 @@ class PythonShell:
                 return node
 
             except Exception as e:
-                error(f"Error evaluating node '{node.id}': {e}")
-                error(traceback.format_exc())
+                error(f"Error evaluating node '{node.id}'", e)
                 raise (e)
 
     def run_count(self):
@@ -407,7 +398,7 @@ class PythonShell:
             if self.sandbox is not None:
                 self.sandbox.cleanup()
         except Exception as e:
-            print(f"Error shutting down kernel: {e} {traceback.format_exc()}")
+            print(f"Error shutting down kernel:", e)
 
     def __del__(self):
         """

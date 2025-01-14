@@ -91,7 +91,8 @@ def fetch_user_info_from_id_token(id_token_str):
         }
     except ValueError as e:
         # Invalid token
-        st.error(f"Invalid token: {e}")
+        st.error(f"Invalid token")
+        st.exception(e)
         return None
 
 

@@ -186,7 +186,7 @@ def check_assertions(pass_config: PassConfig, graph: DataFlowGraph, node: Node) 
         return _repair_assertions(pass_config, graph, node, max_retries=0)
 
     except CellExecutionError as e:
-        warn(str(e))
+        warn(e)
         node.error(
             phase=Phase.assertions_checked, message=strip_ansi(str(e).split("\n")[-2])
         )
@@ -210,7 +210,7 @@ def repair_assertions(
         )
 
     except CellExecutionError as e:
-        warn(str(e))
+        warn(e)
         node.error(
             phase=Phase.assertions_checked, message=strip_ansi(str(e).split("\n")[-2])
         )

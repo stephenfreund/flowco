@@ -29,6 +29,8 @@ from flowco.ui.ui_page import UIPage
 from flowco.util.config import config
 from flowco.util.costs import total_cost
 from flowco.util.config import AbstractionLevel
+from flowco.util.files import create_zip_in_memory
+from flowco.util.output import error
 
 
 class FlowcoPage:
@@ -218,6 +220,7 @@ class FlowcoPage:
                     )
             except Exception as e:
                 with empty.chat_message("assistant"):
+                    error(e)
                     st.error(f"An error occurred in AMA: {e}")
                     st.stop()
             finally:
@@ -303,6 +306,33 @@ class FlowcoPage:
             if st.button(":material/logout: Logout", help="Sign out"):
                 sign_out()
                 st.rerun()
+
+        st.divider()
+
+        if st.button("Panic Button", type="primary"):
+
+            @st.dialog("Download Log and Files", width="small")
+            def download_files():
+                ui_page = st.session_state.ui_page
+                flowco_name = ui_page.page().file_name
+                data_files = ui_page.page().tables.all_files()
+
+                with st.spinner("Creating ZIP file..."):
+                    zip_data = create_zip_in_memory(
+                        ["logging.txt"] + [flowco_name] + data_files
+                    )
+
+                st.write("ZIP ready for download!")
+
+                if st.download_button(
+                    label=":material/download:",
+                    data=zip_data,
+                    file_name=f"flowco_files.zip",
+                    help="Download the project and log",
+                ):
+                    st.rerun()
+
+            download_files()
 
     def button_bar(self):
         pass

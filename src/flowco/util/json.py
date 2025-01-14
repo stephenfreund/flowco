@@ -1,5 +1,7 @@
 import json
 
+from flowco.util.output import error
+
 
 class CustomJSONEncoder(json.JSONEncoder):
     def __init__(self, *args, **kwargs):
@@ -25,7 +27,8 @@ class CustomJSONEncoder(json.JSONEncoder):
         try:
             parsed_obj = json.loads(obj)
             return self._process_obj(parsed_obj)
-        except (json.JSONDecodeError, TypeError):
+        except (json.JSONDecodeError, TypeError) as e:
+            error("JSON Decode", e)
             return obj
 
 
