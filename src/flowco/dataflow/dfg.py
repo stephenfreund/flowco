@@ -1291,6 +1291,6 @@ def dataflow_graph_to_image(dfg: DataFlowGraph) -> str:
         try:
             os.remove(temp_file)
         except Exception as e:
-            error(f"Error deleting temporary file: {e}")
+            error(f"Error deleting temporary file", e)
 
     return base64_image
