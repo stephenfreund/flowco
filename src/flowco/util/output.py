@@ -96,9 +96,7 @@ class LoggingFile:
 
 class Output(threading.local):
 
-    def __init__(
-        self, max_log_depth=10, prefix=None
-    ):
+    def __init__(self, max_log_depth=10, prefix=None):
         self.max_log_depth = max_log_depth
         self.pending = None
         self.contexts = []
@@ -252,7 +250,7 @@ class Output(threading.local):
         pad = self.get_prefixed_pad()
 
         message = " ".join(
-            self.format_exception(a) if isinstance(a, Exception) else str(a)
+            self._format_exception(a) if isinstance(a, Exception) else str(a)
             for a in args
         ).rstrip()
 
@@ -286,7 +284,7 @@ class Output(threading.local):
             self._print("green", args, start="[", end="]")
 
     def log_timestamp(self) -> str:
-        timestamp = time.strftime('%Y-%m-%d-%H-%M-%S')
+        timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
         self.log(f"Timestamp: {timestamp}")
         return timestamp
 
@@ -294,8 +292,10 @@ class Output(threading.local):
 def log(*message):
     session.get("output", Output).log(*message)
 
+
 def log_timestamp():
     return session.get("output", Output).log_timestamp()
+
 
 def message(*message):
     session.get("output", Output).message(*message)
