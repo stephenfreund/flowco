@@ -13,7 +13,7 @@ from typing import Any
 
 from regex import E
 
-from flowco.util.output import log, logger
+from flowco.util.output import error, log, logger
 
 
 def str_to_type(type_str: str) -> type:
@@ -91,12 +91,8 @@ def decode(encoded_str: str) -> Any:
     # Decode the base64 string to bytes
     pickled_bytes = base64.b64decode(encoded_str.encode("utf-8"))
     # Deserialize the bytes back to a Python object
-    try:
-        value = pickle.loads(pickled_bytes)
-        return value
-    except Exception as e:
-        error(e)
-        raise ValueError(f"Could not decode value: {e}")
+    value = pickle.loads(pickled_bytes)
+    return value
 
 
 # Example Usage

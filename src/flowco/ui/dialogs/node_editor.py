@@ -146,7 +146,7 @@ class NodeEditor:
             key=f"editor_{title}",
             height=height,
             allow_reset=True,
-            response_mode="blur",
+            response_mode=["blur", "debounce"],
             props=props,
             options=options,
             info=info_bar,
@@ -154,11 +154,11 @@ class NodeEditor:
             focus=focus,
         )
         last_response = self.last_update.get(title, None)
-        if (
-            (last_response is None and response["id"] != "")
-            or last_response is not None
-            and last_response["id"] != response["id"]
+        if (last_response is None and response["id"] != "") or (
+            last_response is not None and last_response["id"] != response["id"]
         ):
+            # print(f"Last response: {last_response}")
+            # print(f"Current response: {response}")
             self.last_update[title] = response
             return Response(response["text"], response["type"] == "submit")
         else:
@@ -293,11 +293,11 @@ class NodeEditor:
         with st.container(key="edit_dialog"):
             self.node_component_editors()
 
-        print(
-            self.node.model_dump_json(
-                include=set(["label", "requirements", "return-type", "code"]), indent=2
-            )
-        )
+        # print(
+        #     self.node.model_dump_json(
+        #         include=set(["label", "requirements", "return-type", "code"]), indent=2
+        #     )
+        # )
 
         with top.container():
             left, middle, right = st.columns(3)
@@ -335,6 +335,7 @@ class NodeEditor:
 
             if rebuild:
                 self.regenerate()
+                st.rerun(scope="fragment")
 
             container = st.container(height=200, border=True, key="chat_container_node")
             with container:

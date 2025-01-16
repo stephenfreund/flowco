@@ -11,7 +11,7 @@ import nbformat as nbf
 from nbclient import NotebookClient, exceptions as nb_exceptions
 
 from flowco.assistant.openai import OpenAIAssistant
-from flowco.builder.type_ops import encode
+from flowco.builder.type_ops import decode, encode
 from flowco.dataflow.checks import CheckOutcomes, QualitativeCheck
 from flowco.dataflow.dfg import Node, DataFlowGraph
 from flowco.page.output import NodeResult, OutputType, ResultOutput, ResultValue
@@ -103,6 +103,10 @@ class PythonShell:
         encode_src = inspect.getsource(encode)
         self._run_cell(encode_src)
 
+        # Execute the encode function source code
+        decode_src = inspect.getsource(decode)
+        self._run_cell(decode_src)
+
     def run(self, code: str) -> EvalResult:
         execution_result = self._run_cell(code)
         stdout = ""
@@ -175,8 +179,9 @@ class PythonShell:
         self.nb.cells.append(cell)
         index = len(self.nb.cells) - 1
         # debug(f"Executing cell {index}")
-        # debug(f"Cell code: {code}")
-        result = self.client.execute_cell(cell, index, store_history=False)
+        # log(f"Cell code {index}:\n", code)
+        with logger(f"Executing cell {index}"):
+            result = self.client.execute_cell(cell, index, store_history=False)
         return result
 
     def load_tables(self, tables: GlobalTables):
@@ -192,9 +197,20 @@ class PythonShell:
         for predecessor_id in node.predecessors:
             predecessor = dfg[predecessor_id]
             with logger(f"Retrieving predecessor result for {predecessor_id}"):
-                repr_val, _ = predecessor.result.result.to_repr()
-                self._run_cell(f"{predecessor.function_result_var} = {repr_val}")
-                arguments.append(predecessor.function_result_var)
+                with logger("Loading predecessor result into PythonShell"):
+                    with logger("Running cell"):
+                        # repr_val, _ = predecessor.result.result.to_repr()
+                        # self._run_cell(
+                        #     f"{predecessor.function_result_var} = {repr_val}"
+                        # )
+                        assert predecessor.result is not None
+                        assert predecessor.result.result is not None
+                        self._run_cell(
+                            f'{predecessor.function_result_var} = decode("""{predecessor.result.result.pickle}""")'
+                        )
+
+                    with logger("Appending argument"):
+                        arguments.append(predecessor.function_result_var)
 
         return arguments
 
