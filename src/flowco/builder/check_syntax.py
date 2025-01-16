@@ -159,7 +159,7 @@ def _repair_node_syntax(node: Node, max_retries: int) -> Node:
                         m = f"**Code** creation failed, and automatic repair did not fix the problem.  Please fix the error manually or try running again."
 
                 return original.error(
-                    Phase.code,
+                    Phase.runnable,
                     message=f"{m}\n\nDetails: *{e}*",
                 )
 
