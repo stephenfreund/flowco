@@ -274,10 +274,27 @@ class FlowcoPage:
                 and not node.function_return_type.is_None_type()
             ):
                 value = node.result.result.to_value()
-                if type(value) == np.ndarray or type(value) == list:
+                if (
+                    type(value) == np.ndarray
+                    or type(value) == list
+                    or type(value) == pd.Series
+                ):
                     value = pd.DataFrame(value)
                 if type(value) == pd.DataFrame:
                     st.dataframe(value, height=200)
+                elif type(value) == dict:
+                    for k, v in value.items():
+                        st.write(f"{k}:")
+                        if (
+                            type(v) == np.ndarray
+                            or type(v) == list
+                            or type(v) == pd.Series
+                        ):
+                            v = pd.DataFrame(v)
+                        if type(v) == pd.DataFrame:
+                            st.dataframe(v, height=200)
+                        else:
+                            st.write(v)
                 else:
                     st.write(value)
             elif node.result.output is not None:
@@ -316,7 +333,9 @@ class FlowcoPage:
     def report_bug(self):
         ui_page = st.session_state.ui_page
         flowco_name = ui_page.page().file_name
-        data_files = [ file for file in ui_page.page().tables.all_files() if file.endswith(".csv") ]
+        data_files = [
+            file for file in ui_page.page().tables.all_files() if file.endswith(".csv")
+        ]
         time_stamp = log_timestamp()
         file_name = f"flowco-{time_stamp}.zip"
 
@@ -325,7 +344,7 @@ class FlowcoPage:
 
             text = st.text_input(
                 "Bug",
-                placeholder = "Enter a description of the issue",
+                placeholder="Enter a description of the issue",
             )
 
             if text:
@@ -334,8 +353,10 @@ class FlowcoPage:
                         [flowco_name] + data_files,
                         additional_entries={
                             "description.txt": text,
-                            "logging.txt": session.get("output", Output).get_full_output(),
-                            "session_state.json" : pformat(dict(st.session_state))
+                            "logging.txt": session.get(
+                                "output", Output
+                            ).get_full_output(),
+                            "session_state.json": pformat(dict(st.session_state)),
                         },
                     )
                     fs_write(file_name, zip_data, "wb")
@@ -350,7 +371,7 @@ class FlowcoPage:
                 ):
                     st.rerun()
 
-        download_files()        
+        download_files()
 
     def button_bar(self):
         pass

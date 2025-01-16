@@ -10,7 +10,7 @@ from flowco.util.files import setup_flowco_files
 import streamlit as st
 
 from flowco.util.costs import CostTracker
-from flowco.util.output import Output, error
+from flowco.util.output import Output, error, log_timestamp
 
 from flowco.session.session import StreamlitSession, session
 from flowco.util.stopper import Stopper
@@ -39,6 +39,7 @@ def init_service():
             shells=PythonShells(),
             filesystem=SessionFileSystem(f"file://{page_path}"),
         )
+        log_timestamp()
         setup_flowco_files()
         if page_file is not None:
             set_ui_page(UIPage(page_file))

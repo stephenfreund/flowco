@@ -22,7 +22,7 @@ from flowco.session.session import session
 from flowco.session.session_file_system import SessionFileSystem
 from flowco.util.config import AbstractionLevel, config
 from flowco.util.costs import CostTracker, call_count, total_cost
-from flowco.util.output import Output, error, log, message, logger
+from flowco.util.output import Output, error, log, log_timestamp, message, logger
 
 from flowco.util.errors import FlowcoError
 from flowco.util.stopper import Stopper
@@ -398,6 +398,7 @@ def main(page: Optional[Page] = None, argv: List[str] = sys.argv[1:]):
         shells=PythonShells(),
         filesystem=SessionFileSystem(f"file://{os.getcwd()}"),
     )
+    log_timestamp()
 
     try:
         with session.get("stopper", Stopper):

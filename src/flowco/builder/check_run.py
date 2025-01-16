@@ -116,7 +116,10 @@ def _repair_run(
             )
 
             new_node = node_completion(
-                assistant, node_completion_model("code", include_explanation=True)
+                assistant,
+                node_completion_model(
+                    "code", "function_return_type", include_explanation=True
+                ),
             )
 
             message(

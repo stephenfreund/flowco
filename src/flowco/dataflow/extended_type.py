@@ -451,6 +451,29 @@ class NumpyNdarrayType(BaseType):
         return all(self.element_type.matches_value(elem) for elem in value.flat)
 
 
+class ClassType(BaseType):
+    type: Literal["class"]  # = "class"
+    name: str = Field(description="The name of the class.")
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "class"
+        super().__init__(**data)
+
+    def to_python_type(self) -> str:
+        return self.name
+
+    def to_markdown(self, indent: int = 0) -> List[str]:
+        spaces = "  " * indent
+        return [f"{spaces}- **Class** {self.name}"]
+
+    def __str__(self) -> str:
+        return self.name
+
+    def matches_value(self, value: Any) -> bool:
+        return isinstance(value, type)
+
+
 # Update TypeRepresentation to use the updated classes
 TypeRepresentation = Union[
     IntType,

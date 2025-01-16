@@ -95,7 +95,7 @@ def _check_node_syntax(node: Node) -> None:
             )
     except SyntaxError as e:
         raise FlowcoError(
-            f"The function return type is not a valid Python type.  The type must be `{return_type}`."
+            f"The function return type is not a valid Python type.  The type must be `{return_type}`, not `{ast.unparse(function_def.returns)}. {signature_message()}"
         )
     if len(function_def.args.args) != len(node.function_parameters):
         raise FlowcoError(
@@ -187,8 +187,13 @@ def _repair_node_syntax(node: Node, max_retries: int) -> Tuple[Node, bool]:
             )
 
             new_node = node_completion(
-                assistant, node_completion_model("code", include_explanation=True)
+                assistant,
+                node_completion_model(
+                    "code", "function_return_type", include_explanation=True
+                ),
             )
+
+            print(new_node)
 
             message(
                 "\n".join(

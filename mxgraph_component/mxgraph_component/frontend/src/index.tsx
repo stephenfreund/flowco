@@ -550,7 +550,8 @@ graph.connectionHandler.createTargetVertex = function (evt, source) {
     pill: vertex.id,
     label: "...",
     geometry: vertex.geometry,
-    phase: 0
+    phase: 0,
+    is_locked: false    
   }
   vertex.setStyle(node_style);
 

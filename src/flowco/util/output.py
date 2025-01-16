@@ -103,7 +103,6 @@ class Output(threading.local):
         self.file = LoggingFile(sys.stdout, "logging.txt")
         self.lock = threading.RLock()
         self.prefix = prefix
-        self.log_timestamp()
 
     def get_full_output(self, plain_text=True):
         with open("logging.txt", "r") as f:
