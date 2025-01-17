@@ -23,7 +23,10 @@ def st_pages():
         CheckPage().main()
 
     def test_main():
-        st.write("Test")
+        st.session_state.current_page = "test"
+        st.write("")
+        st.write("")
+        st.write("This space for rent.")
 
     def projects_main():
         st.session_state.current_page = "projects"
@@ -46,7 +49,7 @@ def st_pages():
                 check_main,
                 title="Check",
             ),
-            st.Page(test_main, title="Test"),
+            # st.Page(test_main, title="Test"),
         ]
     else:
         if st.session_state.current_page == "build":
