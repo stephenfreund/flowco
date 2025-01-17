@@ -34,8 +34,9 @@ def data_files_dialog():
                     include = st.checkbox(name, value=(tables.contains(file)))
                 with cols[1]:
                     with st.popover("Show"):
-                        df = pd.read_csv(StringIO(fs_read(file)))
-                        st.write(f"First 10 rows of {name} (out of {len(df)})")
+                        content = fs_read(file).split("\n")
+                        df = pd.read_csv(StringIO("\n".join(content[0:11])))
+                        st.write(f"First 10 rows of {name} (out of ~{len(content)-1})")
                         st.dataframe(
                             df.head(10),
                             selection_mode="single",
