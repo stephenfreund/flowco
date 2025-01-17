@@ -625,31 +625,24 @@ algorithm: |
 #     ```
 
 compile: |
-    Write the code for this step as a single function.  It must match the following.
-    ```
-    # put all imports here
-    def {signature}:
-        ...
-    ```
+    Write the code for this step as a single function.
 
     The parameters have the following types:
     ```
     {parameter_types}
     ```
 
-    Write the code for this step as a single function with the given
-    name, parameters, and return type.  
+    Write the function body for this step.
     
     The code should:
 
     * Implement the requirements as a pure function.
-    * Include types for parameters and return values.  
     * Return a value consistent with the return type.
     * Have no side effects.
     * Be optimized for readability, clarity, and simplicity.
     * Do not include pydoc strings.
     
-    You may only import matplotlib, seaborn, numpy, sklearn, scipy, and pandas.  Uses seaborn for all plots, with
+    You may only import matplotlib, seaborn, numpy, sklearn, scipy, statsmodels, and pandas.  Uses seaborn for all plots, with
     no changes to the base style.  Do not call `plt.close()`.  Do not call `plt.show()`.  Do not save plots to disk.
 
     Do not include other functions.
@@ -660,6 +653,11 @@ compile: |
 
     {diff}
 
+    The code must begin with the following lines:
+    ```
+    # put all imports here
+    def {signature}:
+    ```
 
 
 assertions-code: |

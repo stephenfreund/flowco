@@ -47,14 +47,10 @@ def node_completion_model(
 
 def node_like_model(to_include: List[str]) -> type[NodeLike]:
 
-    print(to_include)
-
     field_names = set(to_include) | {"id", "pill", "label", "predecessors"}
     assert field_names.issubset(
         Node.model_fields.keys()
     ), f"Fields {field_names.difference(Node.model_fields.keys())} is not in Node model fields."
-
-    print(field_names)
 
     kwargs = {
         name: (
@@ -66,8 +62,6 @@ def node_like_model(to_include: List[str]) -> type[NodeLike]:
         for name, field in Node.model_fields.items()
         if name in field_names and field.annotation is not None
     }
-
-    print(kwargs)
 
     return create_model("NodeLike", **kwargs)  # type: ignore
 

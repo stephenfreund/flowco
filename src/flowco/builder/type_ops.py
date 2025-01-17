@@ -96,6 +96,21 @@ def decode(encoded_str: str) -> Any:
     return value
 
 
+def convert_np_float64(obj: Any) -> Any:
+    if isinstance(obj, dict):
+        return {k: convert_np_float64(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_np_float64(element) for element in obj]
+    elif isinstance(obj, tuple):
+        return tuple(convert_np_float64(element) for element in obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, np.float64):
+        return float(obj)
+    else:
+        return obj
+
+
 # Example Usage
 if __name__ == "__main__":
     # Example data

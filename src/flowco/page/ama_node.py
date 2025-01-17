@@ -893,7 +893,20 @@ class AskMeAnythingNode:
 
         return (
             f"Updated {mod_str} for {node.pill}",
-            node.model_dump_json(indent=2),
+            node.model_dump_json(
+                include=set(
+                    [
+                        "id",
+                        "pill",
+                        "label",
+                        "predecessors",
+                        "requirements",
+                        "function_return_type",
+                        "code",
+                    ]
+                ),
+                indent=2,
+            ),
         )
 
     def update_node_requirements(
@@ -1726,7 +1739,20 @@ class AskMeAnythingNode:
 
         return (
             f"Updated {mod_str} for {node.pill}",
-            node.model_dump_json(indent=2),
+            node.model_dump_json(
+                include=set(
+                    [
+                        "id",
+                        "pill",
+                        "label",
+                        "predecessors",
+                        "requirements",
+                        "function_return_type",
+                        "code",
+                    ]
+                ),
+                indent=2,
+            ),
         )
 
     def complete(

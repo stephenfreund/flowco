@@ -386,6 +386,10 @@ function layoutDiagram(graph: mxGraph) {
         console.log('layoutDiagram');
         // Use mxHierarchicalLayout for a nice hierarchical arrangement
         const layout = new mx.mxHierarchicalLayout(graph, "north");
+        layout.interRankCellSpacing = 35;
+        layout.disableEdgeStyle = true;
+        layout.edgeStyle = 3;
+        
         layout.execute(parent);
         
 

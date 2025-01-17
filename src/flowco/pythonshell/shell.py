@@ -15,7 +15,7 @@ import nbformat as nbf
 from nbclient import NotebookClient, exceptions as nb_exceptions
 
 from flowco.assistant.openai import OpenAIAssistant
-from flowco.builder.type_ops import decode, encode
+from flowco.builder.type_ops import convert_np_float64, decode, encode
 from flowco.dataflow.checks import CheckOutcomes, QualitativeCheck
 from flowco.dataflow.dfg import Node, DataFlowGraph
 from flowco.page.output import NodeResult, OutputType, ResultOutput, ResultValue
@@ -104,13 +104,10 @@ class PythonShell:
         )
         self._run_cell(import_code)
 
-        # Execute the encode function source code
-        encode_src = inspect.getsource(encode)
-        self._run_cell(encode_src)
-
-        # Execute the encode function source code
-        decode_src = inspect.getsource(decode)
-        self._run_cell(decode_src)
+        imported_functions = [encode, decode, convert_np_float64]
+        for function in imported_functions:
+            src = inspect.getsource(function)
+            self._run_cell(src)
 
     def reset(self) -> None:
         """
@@ -191,9 +188,9 @@ class PythonShell:
         index = len(self.nb.cells) - 1
         # debug(f"Executing cell {index}")
         # log(f"Cell code {index}:\n", code)
-        with logger(f"Executing cell {index}"):
-            log("Code: ", code[:40])
-            result = self.client.execute_cell(cell, index, store_history=False)
+        # with logger(f"Executing cell {index}"):
+        #     log("Code: ", code[:40])
+        result = self.client.execute_cell(cell, index, store_history=False)
         return result
 
     def load_tables(self, tables: GlobalTables):
@@ -297,7 +294,9 @@ class PythonShell:
                     result = self.run(code)
 
                 with logger("Capturing output"):
-                    text = self.run(f"pprint.pp({node.function_result_var})").stdout
+                    text = self.run(
+                        f"pprint.pp(convert_np_float64({node.function_result_var}))"
+                    ).stdout
                     pickle_result = self.run(
                         f"print(encode({node.function_result_var}))"
                     ).stdout
