@@ -191,10 +191,10 @@ class BuildPage(FlowcoPage):
             builder.stop()
 
     def get_builder_updates(self):
-        builder: Builder = st.session_state.builder
         ui_page: UIPage = st.session_state.ui_page
-        if builder is not None:
-            while not builder.empty():
+        if st.session_state.builder is not None:
+            while not st.session_state.builder.empty():
+                builder: Builder = st.session_state.builder
                 try:
                     build_update = builder.get()
                     if build_update.steps_total > 0:
