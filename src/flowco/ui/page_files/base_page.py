@@ -45,7 +45,7 @@ class FlowcoPage:
             self.button_bar()
 
             def fix():
-                if st.session_state.al is None:
+                if "al" not in st.session_state or st.session_state.al is None:
                     st.session_state.abstraction_level = "Requirements"
                 else:
                     st.session_state.abstraction_level = st.session_state.al
