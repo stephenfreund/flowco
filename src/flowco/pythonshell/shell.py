@@ -1,10 +1,14 @@
 import inspect
 import json
+import os
 import re
+from tempfile import NamedTemporaryFile, TemporaryDirectory, TemporaryFile
 import textwrap
 import io
 import base64
 import traceback
+import uuid
+import seaborn as sns
 from typing import Any, Dict, List
 from PIL import Image
 import nbformat as nbf
@@ -17,6 +21,7 @@ from flowco.dataflow.dfg import Node, DataFlowGraph
 from flowco.page.output import NodeResult, OutputType, ResultOutput, ResultValue
 from flowco.page.tables import GlobalTables
 from flowco.pythonshell.sandbox import Sandbox
+from flowco.session.session_file_system import fs_read
 from flowco.util.output import debug, error, log, logger, message
 from pydantic import BaseModel
 
@@ -107,6 +112,12 @@ class PythonShell:
         decode_src = inspect.getsource(decode)
         self._run_cell(decode_src)
 
+    def reset(self) -> None:
+        """
+        Reset the PythonShell to its initial state.
+        """
+        self.sandbox.restore()
+
     def run(self, code: str) -> EvalResult:
         execution_result = self._run_cell(code)
         stdout = ""
@@ -181,6 +192,7 @@ class PythonShell:
         # debug(f"Executing cell {index}")
         # log(f"Cell code {index}:\n", code)
         with logger(f"Executing cell {index}"):
+            log("Code: ", code[:40])
             result = self.client.execute_cell(cell, index, store_history=False)
         return result
 
@@ -188,29 +200,60 @@ class PythonShell:
         """
         Load table definitions into the PythonShell.
         """
-        for table_def in tables.function_defs():
-            self._run_cell(table_def)
+        # for table_def in tables.function_defs():
+        #     self._run_cell(table_def)
+        function_defs = []
+        for file_path in tables.tables:
+            with logger(f"Loading table '{file_path}'"):
+                with logger("Reading file"):
+                    content = tables.table_contents(file_path)
+
+                with logger("Writing to Sandbox"):
+                    file_name = self.sandbox.temporary_file(file_path)
+                    with open(file_name, "w") as f:
+                        f.write(content)
+
+                function_defs += [
+                    f"def {tables.table_name(file_path)}_table() -> pd.DataFrame:\n    return pd.read_csv('{file_name}')\n"
+                ]
+
+        with logger("Running cell"):
+            self._run_cell("\n".join(function_defs))
 
     def load_parameters(self, dfg: DataFlowGraph, node: Node) -> List[str]:
         # Prepare arguments from predecessor nodes
         arguments = []
-        for predecessor_id in node.predecessors:
-            predecessor = dfg[predecessor_id]
-            with logger(f"Retrieving predecessor result for {predecessor_id}"):
-                with logger("Loading predecessor result into PythonShell"):
-                    with logger("Running cell"):
-                        # repr_val, _ = predecessor.result.result.to_repr()
-                        # self._run_cell(
-                        #     f"{predecessor.function_result_var} = {repr_val}"
-                        # )
-                        assert predecessor.result is not None
-                        assert predecessor.result.result is not None
-                        self._run_cell(
-                            f'{predecessor.function_result_var} = decode("""{predecessor.result.result.pickle}""")'
-                        )
+        code = []
+
+        with TemporaryDirectory(dir=self.sandbox_dir) as temp_dir:
+            temp_files = []
+
+            for predecessor_id in node.predecessors:
+                predecessor = dfg[predecessor_id]
+                with logger(f"Retrieving predecessor result for {predecessor_id}"):
+                    with logger("Loading predecessor result into PythonShell"):
+                        with logger("Getting value"):
+                            # Create temp file within the temporary directory
+                            temp_file_path = os.path.join(
+                                temp_dir, uuid.uuid4().hex + ".pickle"
+                            )
+                            with open(temp_file_path, "wb") as f:
+                                assert predecessor.result is not None
+                                assert predecessor.result.result is not None
+
+                                f.write(predecessor.result.result.pickle.encode())
+
+                            # Prepare the code to decode the temp file
+                            code.append(
+                                f"{predecessor.function_result_var} = decode(open('{temp_file_path}', 'rb').read().decode())"
+                            )
 
                     with logger("Appending argument"):
                         arguments.append(predecessor.function_result_var)
+
+            with logger("Running cell"):
+                self._run_cell("\n".join(code))
+            # TemporaryDirectory and its contents are automatically cleaned up here
 
         return arguments
 
@@ -240,23 +283,26 @@ class PythonShell:
 
         with logger(f"Evaluating node '{node.id}'"):
             try:
-                self.load_tables(tables)
-                arguments = self.load_parameters(dfg, node)
+                with logger("Loading tables"):
+                    self.load_tables(tables)
+                with logger("Loading parameters"):
+                    arguments = self.load_parameters(dfg, node)
 
-                # Execute the node's code
-                self._run_cell("\n".join(node.code))
+                with logger("Running node code"):
+                    self._run_cell("\n".join(node.code))
 
-                # Construct and execute the function call
-                code = f"{node.function_result_var} = {node.function_name}({', '.join(arguments)})"
-                result = self.run(code)
+                with logger("Calling function"):
+                    # Construct and execute the function call
+                    code = f"{node.function_result_var} = {node.function_name}({', '.join(arguments)})"
+                    result = self.run(code)
 
-                # Retrieve the string representation and encoded pickle of the result
-                text = self.run(f"pprint.pp({node.function_result_var})").stdout
-                pickle_result = self.run(
-                    f"print(encode({node.function_result_var}))"
-                ).stdout
+                with logger("Capturing output"):
+                    text = self.run(f"pprint.pp({node.function_result_var})").stdout
+                    pickle_result = self.run(
+                        f"print(encode({node.function_result_var}))"
+                    ).stdout
 
-                output = result.as_result_output()
+                    output = result.as_result_output()
 
                 return NodeResult(
                     result=ResultValue(text=text, pickle=pickle_result), output=output

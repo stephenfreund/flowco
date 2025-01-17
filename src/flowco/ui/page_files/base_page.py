@@ -361,7 +361,7 @@ class FlowcoPage:
                     )
                     fs_write(file_name, zip_data, "wb")
 
-                st.write("ZIP ready for download!")
+                st.write("Saved on server.  Click below to download bug files locally.")
 
                 if st.download_button(
                     label=":material/download:",

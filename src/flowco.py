@@ -48,7 +48,7 @@ def init_service():
         key = st.context.cookies["_streamlit_xsrf"].split("|")[-1]
 
         session.set(
-            output=Output(prefix=key),
+            output=Output(prefix=f"{key}_{st.session_state.user_email}"),
             costs=CostTracker(),
             stopper=Stopper(),
             shells=python_shells(),

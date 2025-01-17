@@ -17,6 +17,9 @@ class Sandbox:
     def get_sandbox_path(self):
         return self.sandbox_dir.name
 
+    def temporary_file(self, filename: str):
+        return os.path.join(self.sandbox_dir.name, filename)
+
     def __enter__(self):
         log(f"Entering sandbox {self.sandbox_dir.name}")
         self.sandbox_dir.__enter__()
