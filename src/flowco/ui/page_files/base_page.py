@@ -225,14 +225,13 @@ class FlowcoPage:
                 with empty.chat_message("assistant"):
                     error(e)
                     st.error(f"An error occurred in AMA: {e}")
-                    st.stop()
+                    # TODO: think about how to report error and continue in a more graceful way.
             finally:
-                time.sleep(1)
                 st.session_state.ama_responding = False
                 if dfg != page.dfg:
                     st.session_state.force_update = True
                     self.auto_update()
-                st.rerun()  # TODO: This could be in a callback!
+                st.rerun()  # TODO: This could be in a callback!  But should be okay...
 
     def auto_update(self):
         pass
