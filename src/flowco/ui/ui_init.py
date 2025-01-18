@@ -109,11 +109,11 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
     padding: 0rem;
 }
 
+
 .st-key-button_bar .stHorizontalBlock {
     gap: 0rem !important;
     
 }
-
 .st-key-undo {
     margin-left: 1rem !important;
     padding-left: 1rem !important;
@@ -123,6 +123,16 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
 .st-key-button_bar .stColumn {
     width: fit-content !important;
     flex: unset !important;
+}
+
+.st-key-zoom_button_bar .stHorizontalBlock {
+    gap: 0rem !important;
+    
+}
+.st-key-zoom_button_bar .stColumn {
+    width: fit-content !important;
+    flex: unset !important;
+    font-size: 16px !important;
 }
 
 /* Edit Dialog */
@@ -350,6 +360,7 @@ def st_init(page_config=True):
 
         st.session_state.force_update = False
         st.session_state.clear_graph = False
+        st.session_state.zoom = None
 
         st.session_state.abstraction_level = config.abstraction_level
 

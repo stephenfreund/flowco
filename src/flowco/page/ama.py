@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import traceback
 from typing import Iterable, List, Literal, Tuple
 from flowco.assistant.openai import OpenAIAssistant
 from flowco.assistant.stream import StreamingAssistantWithFunctionCalls
@@ -27,6 +28,7 @@ from flowco.dataflow.dfg_update import (
 class VisibleMessage(BaseModel):
     role: str
     content: str
+    is_error: bool = False
 
 
 class QuestionKind(BaseModel):
@@ -40,6 +42,11 @@ class AskMeAnything:
 
     def __init__(self, page: Page):
         self.page = page
+        self.reset()
+        self.visible_messages = []
+
+    def reset(self):
+        """Reset internals"""
         self.assistant = StreamingAssistantWithFunctionCalls(
             [],
             ["system-prompt", "ama_general"],
@@ -47,7 +54,6 @@ class AskMeAnything:
         )
         self.shell = None
         self.completion_dfg = None
-        self.visible_messages = []
 
     def python_eval(self, code: str) -> ReturnType:
         """
@@ -1358,7 +1364,13 @@ class AskMeAnything:
                     raise ValueError(f"Unknown kind: {kind}")
         except Exception as e:
             error(e)
-            raise FlowcoError(f"Error: {e}")
+            self.visible_messages += [
+                VisibleMessage(
+                    role="assistant",
+                    content=f"Error: {e}\n{traceback.format_exc()}",
+                    is_error=True,
+                )
+            ]
 
     def _complete(
         self, system_prompt, functions, prompt: str, selected_node: str | None = None

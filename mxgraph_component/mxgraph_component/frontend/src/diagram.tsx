@@ -394,20 +394,7 @@ function layoutDiagram(graph: mxGraph) {
         
 
         // Calculate the left-most and top-most node positions
-        const cells = graph.getChildCells(parent, true, true);
-        if (cells.length > 0) {
-            let minX = Infinity, minY = Infinity;
-            for (const cell of cells) {
-                const bounds = cell.geometry
-                if (bounds) {
-                    minX = Math.min(minX, bounds.x);
-                    minY = Math.min(minY, bounds.y);
-                }
-                console.log(minX, minY);
-            }
-            // Set the view translation to inset the nodes by 20 pixels
-            graph.view.setTranslate(-minX + 20, -minY + 20);
-        }
+        resetNodeTranslation(graph);
 
     } catch (error) {
         console.error("Error applying layout:", error);
@@ -425,6 +412,24 @@ function layoutDiagram(graph: mxGraph) {
     graph.refresh();
 }
   
+
+export function resetNodeTranslation(graph: mxGraph) {
+    const parent = graph.getDefaultParent();
+    const cells = graph.getChildCells(parent, true, true);
+    if (cells.length > 0) {
+        let minX = Infinity, minY = Infinity;
+        for (const cell of cells) {
+            const bounds = cell.geometry;
+            if (bounds) {
+                minX = Math.min(minX, bounds.x);
+                minY = Math.min(minY, bounds.y);
+            }
+            console.log(minX, minY);
+        }
+        // Set the view translation to inset the nodes by 20 pixels
+        graph.view.setTranslate(-minX + 20, -minY + 20);
+    }
+}
 
 export function updateDiagram(graph: mxGraph, diagram: mxDiagram): void {
     const model = graph.getModel();

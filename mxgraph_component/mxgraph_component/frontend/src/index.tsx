@@ -3,7 +3,7 @@ import mx from './mxgraph';
 import { mxGraphModel, mxCellState, mxCell } from 'mxgraph';
 import { v4 as uuidv4 } from "uuid";
 
-import { mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, node_style, labelForEdge, clean_color, isDiagramNode } from "./diagram";
+import { mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, node_style, labelForEdge, clean_color, isDiagramNode, resetNodeTranslation } from "./diagram";
 
 var currentDiagram: mxDiagram | undefined = undefined;
 var currentRefreshPhase = 0;
@@ -12,6 +12,65 @@ var currentRefreshPhase = 0;
 const graphContainer = document.querySelector("#graph-container") as HTMLDivElement;
 const graph = new mx.mxGraph(graphContainer);
 
+// Define zoom factors and limits
+const ZOOM_IN_FACTOR = 1.1;  // 10% zoom in
+const ZOOM_OUT_FACTOR = 0.9; // 10% zoom out
+const MIN_ZOOM = 0.5;        // 50%
+const MAX_ZOOM = 3.0;        // 300%
+
+
+/**
+ * Zoom In Function
+ */
+function zoomIn() {
+    let newScale = graph.view.scale * ZOOM_IN_FACTOR;
+    if (newScale > MAX_ZOOM) newScale = MAX_ZOOM;
+    graph.view.scale = newScale;
+    graph.refresh();
+}
+
+/**
+ * Zoom Out Function
+ */
+function zoomOut() {
+    let newScale = graph.view.scale * ZOOM_OUT_FACTOR;
+    if (newScale < MIN_ZOOM) newScale = MIN_ZOOM;
+    graph.view.scale = newScale;
+    sessionStorage.setItem("scale", JSON.stringify(graph.view.scale));
+    graph.refresh();
+}
+
+/**
+ * Reset Zoom Function
+ */
+function resetZoom() {
+    graph.view.scale = 1.0; // Reset to 100%
+    graph.view.translate = new mx.mxPoint(40, 60); // Reset pan
+    sessionStorage.setItem("scale", JSON.stringify(graph.view.scale));
+    graph.refresh();
+}
+
+function getZoomScale() {
+    return graph.view.scale;
+}
+
+function setZoomScale(scale: number) {
+    graph.view.scale = scale;
+    sessionStorage.setItem("scale", JSON.stringify(graph.view.scale));
+    graph.refresh();
+}
+
+function zoom(cmd: string) {
+  if (cmd == "in") {
+    zoomIn();
+  } else if (cmd == "out") {
+    zoomOut();
+  } else if (cmd == "reset") {
+    resetZoom();
+  } else {
+    console.log("Unknown zoom command: ", cmd);
+  }
+}
 
 var can_edit = true;
 graph.setPanning(true);
@@ -25,6 +84,95 @@ graph.setCellsSelectable(true);
 graph.setCellsEditable(true);
 graph.setCellsResizable(true);
 graph.setEnterStopsCellEditing(true);
+
+// Enable panning
+// graph.setPanning(true);
+graph.panningHandler.useLeftButtonForPanning = true;
+
+// Listen for mouse move events to update the cursor
+graph.container.addEventListener('mousemove', function(evt) {
+  var offset = mx.mxUtils.getOffset(graph.container);
+  var x = mx.mxEvent.getClientX(evt) - offset.x;
+  var y = mx.mxEvent.getClientY(evt) - offset.y;
+  var state = graph.view.getState(graph.getCellAt(x, y));
+  var cell = state ? state.cell : null;
+  var isShift = evt.shiftKey;
+
+  if (cell == null) {
+      if (isShift) {
+          graph.container.style.cursor = 'default';
+      } else {
+          graph.container.style.cursor = 'grab';
+      }
+  } else {
+      graph.container.style.cursor = 'default';
+  }
+});
+
+
+// // Optional: Change cursor to indicate panning
+// // graphContainer.style.cursor = 'grab';
+// // Function to update the cursor based on Shift key state
+// function updateCursor(isShiftPressed: boolean) {
+//   if (!isShiftPressed) {
+//       graphContainer.style.cursor = 'grab'; // Indicates panning mode
+//   } else {
+//       graphContainer.style.cursor = 'default'; // Normal cursor
+//   }
+// }
+
+// // Listen for keydown events
+// document.addEventListener('keydown', function(event) {
+//   console.log("Bo")
+//   if (event.key === 'Shift') {
+//       updateCursor(true);
+//   }
+// });
+
+// // Listen for keyup events
+// document.addEventListener('keyup', function(event) {
+//   if (event.key === 'Shift') {
+//       updateCursor(false);
+//   }
+// });
+
+// // Optional: Handle case when Shift is released outside the window
+// document.addEventListener('blur', function() {
+//   updateCursor(false);
+// });
+
+
+// graph.panningHandler.addListener().bindKey(107, function() {
+//   zoomIn();
+// }
+
+// // Implement Keyboard Shortcuts (Ctrl + + / Ctrl + - / Ctrl + 0)
+// graph.container.addEventListener('keypress', function(evt) {
+//   console.log("BEEP")
+//   if (evt.ctrlKey) {
+//       switch (evt.key) {
+//           case '+':
+//           case '=': // Some keyboards require Shift for '+'
+//               evt.preventDefault();
+//               zoomIn();
+//               break;
+//           case '-':
+//               evt.preventDefault();
+//               zoomOut();
+//               break;
+//           case '0':
+//               evt.preventDefault();
+//               resetZoom();
+//               resetNodeTranslation(graph);
+//               break;
+//           default:
+//               break;
+//       }
+//   }
+// });
+
+
+
 
 // Add this HTML somewhere in your page
 // <div id="customBox" style="position: absolute; display: none; background: #fff; border: 1px solid #000; padding: 10px; z-index: 1000;"></div>
@@ -589,8 +737,10 @@ function streamlitResponse(hover_node: string | null = null) {
       sessionStorage.setItem("selected_node", selected_node == null ? "" : selected_node);
       
       const translation = graph.view.translate;
-      console.log("Translation Save: ", translation)
       sessionStorage.setItem("translation", JSON.stringify(translation));
+
+      const scale = getZoomScale();
+      sessionStorage.setItem("scale", JSON.stringify(scale));
 
       const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, original_version));
       Streamlit.setComponentValue({
@@ -884,6 +1034,8 @@ function onRender(event: Event): void {
   console.log(diagram.version, currentDiagram?.version)
   if (initial_render || !data.args['editable'] || forced) {
     console.log("Initial render")
+    graph.view.setTranslate(40, 60);
+
     updateGraphWithDiagram(diagram)
     const stored_key = sessionStorage.getItem("key");
     if (key === stored_key) {
@@ -899,19 +1051,28 @@ function onRender(event: Event): void {
           graph.clearSelection();
         }
       }
-      const translation = JSON.parse(sessionStorage.getItem("translation") || "{}");
-      console.log("Translation: ", translation)
+      const scale = JSON.parse(sessionStorage.getItem("scale") || "1.0");
+      setZoomScale(scale);
+      const translation = JSON.parse(sessionStorage.getItem("translation") || "{ x: 40, y: 60 }");
       graph.view.setTranslate(translation.x, translation.y);
     } else {
       sessionStorage.setItem("key", key)
       sessionStorage.setItem("selected_node", "")
-      const translation = graph.view.translate;
-      console.log("Translation Save: ", translation)
-      sessionStorage.setItem("translation", JSON.stringify(translation));
     }
   } else {
     // updateGraphWithDiagram(diagram)
   }
+
+  console.log("Borp", data.args['zoom'])
+  if (data.args['zoom'] != null) {
+    console.log("Zooming", data.args['zoom'], graph.view.translate, graph.view.scale)
+    zoom(data.args['zoom']);
+  }
+
+
+  const translation = graph.view.translate;
+  sessionStorage.setItem("translation", JSON.stringify(translation));
+  sessionStorage.setItem("scale", JSON.stringify(getZoomScale()));
 
   if (data.args["selected_node"] === "<<<<<") {
     graph.clearSelection();

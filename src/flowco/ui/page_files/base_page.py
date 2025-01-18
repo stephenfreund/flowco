@@ -5,7 +5,7 @@ from flowco.session.session import session
 from openai import OpenAI
 import uuid
 
-from flowco.page.ama import AskMeAnything
+from flowco.page.ama import AskMeAnything, VisibleMessage
 from flowco.session.session_file_system import fs_write
 from flowco.ui import ui_help
 from flowco.ui import ui_page
@@ -22,6 +22,7 @@ from flowco.ui.dialogs.node_editor import edit_node
 from flowco.ui.ui_dialogs import settings
 from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_util import (
+    set_session_state,
     toggle,
 )
 import streamlit as st
@@ -34,7 +35,7 @@ from flowco.util.config import config
 from flowco.util.costs import total_cost
 from flowco.util.config import AbstractionLevel
 from flowco.util.files import create_zip_in_memory
-from flowco.util.output import Output, error, log_timestamp
+from flowco.util.output import Output, error, log, log_timestamp
 
 
 class FlowcoPage:
@@ -51,18 +52,50 @@ class FlowcoPage:
                     st.session_state.abstraction_level = st.session_state.al
                 st.session_state.force_update = True
 
-            with st.container(key="controls"):
-                st.session_state.abstraction_level = st.segmented_control(
-                    "Abstraction Level",
-                    (
-                        AbstractionLevel
-                        if config.x_algorithm_phase
-                        else [AbstractionLevel.spec, AbstractionLevel.code]
-                    ),
-                    key="al",
-                    default=st.session_state.abstraction_level,
-                    on_change=fix,
+            with st.container(key="zoom_button_bar"):
+                c1, spacer, c2, c3, c4 = st.columns(5, vertical_alignment="bottom")
+                with c1.container(key="controls"):
+                    st.session_state.abstraction_level = st.segmented_control(
+                        "Abstraction Level",
+                        (
+                            AbstractionLevel
+                            if config.x_algorithm_phase
+                            else [AbstractionLevel.spec, AbstractionLevel.code]
+                        ),
+                        key="al",
+                        default=st.session_state.abstraction_level,
+                        on_change=fix,
+                        disabled=not self.graph_is_editable(),
+                    )
+
+                def zoom(cmd):
+                    log("Zoom", cmd)
+                    st.session_state.zoom = cmd
+                    st.session_state.force_update = True
+
+                spacer.write(
+                    "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
+                    unsafe_allow_html=True,
+                )
+
+                c2.button(
+                    ":material/zoom_in:",
+                    key="zoom_in",
                     disabled=not self.graph_is_editable(),
+                    on_click=lambda cmd: zoom(cmd),
+                    args=("in",),
+                )
+                c3.button(
+                    ":material/zoom_out:",
+                    disabled=not self.graph_is_editable(),
+                    on_click=lambda cmd: zoom(cmd),
+                    args=("out",),
+                )
+                c4.button(
+                    ":material/zoom_out_map:",
+                    disabled=not self.graph_is_editable(),
+                    on_click=lambda cmd: zoom(cmd),
+                    args=("reset",),
                 )
 
         self.show_ama()
@@ -159,6 +192,13 @@ class FlowcoPage:
         with st.container(key="node_sidepanel"):
             self.show_node_details(node)
 
+    def write_ama_message(self, message: VisibleMessage):
+        with st.chat_message(message.role):
+            if not message.is_error:
+                st.markdown(message.content, unsafe_allow_html=True)
+            else:
+                st.error(message.content)
+
     def show_ama(self):
         page = st.session_state.ui_page.page()
         if st.session_state.ama is None or st.session_state.ama.page != page:
@@ -169,8 +209,7 @@ class FlowcoPage:
             container = st.container(height=height, border=True, key="chat_container")
             with container:
                 for message in st.session_state.ama.messages():
-                    with st.chat_message(message.role):
-                        st.markdown(message.content, unsafe_allow_html=True)
+                    self.write_ama_message(message)
 
             if st.audio_input(
                 "Record a voice message",
@@ -203,6 +242,7 @@ class FlowcoPage:
     def ama_completion(self, container, prompt):
         page = st.session_state.ui_page.page()
         dfg = page.dfg
+        ama: AskMeAnything = st.session_state.ama
         with container:
             with st.chat_message("user"):
                 st.markdown(prompt)
@@ -211,22 +251,12 @@ class FlowcoPage:
             try:
                 with empty.chat_message("assistant"):
                     response = st.write_stream(
-                        st.session_state.ama.complete(
-                            prompt, st.session_state.selected_node
-                        )
-                    )
-
-                with empty.chat_message("assistant"):
-                    st.markdown(
-                        st.session_state.ama.last_message().content,
-                        unsafe_allow_html=True,
+                        ama.complete(prompt, st.session_state.selected_node)
                     )
             except Exception as e:
-                with empty.chat_message("assistant"):
-                    error(e)
-                    st.error(f"An error occurred in AMA: {e}")
-                    # TODO: think about how to report error and continue in a more graceful way.
+                error(e)
             finally:
+                self.write_ama_message(ama.last_message())
                 st.session_state.ama_responding = False
                 if dfg != page.dfg:
                     st.session_state.force_update = True
@@ -426,12 +456,15 @@ class FlowcoPage:
             left, right = self.main_columns()
 
             with left:
+
+                force_update = st.session_state.force_update
                 result = mxgraph_component(
                     key=st.session_state.nonce,
                     diagram=st.session_state.ui_page.dfg_as_mx_diagram().model_dump(),
                     editable=self.graph_is_editable(),
                     selected_node=selected_node,
-                    dummy=uuid.uuid4().hex if st.session_state.force_update else None,
+                    zoom=st.session_state.zoom,
+                    dummy=uuid.uuid4().hex if force_update else None,
                     refresh_phase=self.refresh_phase().value,
                     clear=st.session_state.clear_graph,
                 )
@@ -445,6 +478,7 @@ class FlowcoPage:
 
                 st.session_state.force_update = False
                 st.session_state.clear_graph = False
+                st.session_state.zoom = None
 
                 if result["command"] == "edit":
                     if (
