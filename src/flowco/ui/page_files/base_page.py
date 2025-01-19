@@ -256,7 +256,7 @@ class FlowcoPage:
             except Exception as e:
                 error(e)
             finally:
-                self.write_ama_message(ama.last_message())
+                # self.write_ama_message(ama.last_message())
                 st.session_state.ama_responding = False
                 if dfg != page.dfg:
                     st.session_state.force_update = True
@@ -268,16 +268,17 @@ class FlowcoPage:
 
     # override and call super in subclasses
     def show_node_details(self, node):
-        st.write("**Output**")
-        if (
-            node.function_return_type is not None
-            and not node.function_return_type.is_None_type()
-        ):
-            st.caption(f"{node.function_return_type.description}")
-        self.show_output(node)
+        with st.container(border=True):
+            st.write("###### Output")
+            if (
+                node.function_return_type is not None
+                and not node.function_return_type.is_None_type()
+            ):
+                st.caption(f"{node.function_return_type.description}")
+            self.show_output(node)
 
-        st.write("**Requirements**")
-        with st.container(key="node_requirements"):
+        with st.container(key="node_requirements", border=True):
+            st.write("###### Requirements")
             st.write(
                 "\n".join(
                     [
@@ -290,8 +291,8 @@ class FlowcoPage:
             )
 
         if AbstractionLevel.show_code(st.session_state.abstraction_level):
-            st.write("**Code**")
-            with st.container(key="node_code"):
+            with st.container(key="node_code", border=True):
+                st.write("###### Code")
                 if node.code is not None:
                     st.code("\n".join(node.code))
 
@@ -303,34 +304,28 @@ class FlowcoPage:
                 and not node.function_return_type.is_None_type()
             ):
                 value = node.result.result.to_value()
-                if (
-                    type(value) == np.ndarray
-                    or type(value) == list
-                    or type(value) == pd.Series
-                ):
+                if type(value) in [np.ndarray, list, pd.Series]:
                     value = pd.DataFrame(value)
                 if type(value) == pd.DataFrame:
                     st.dataframe(value, height=200)
                 elif type(value) == dict:
                     for k, v in value.items():
-                        st.write(f"{k}:")
-                        if (
-                            type(v) == np.ndarray
-                            or type(v) == list
-                            or type(v) == pd.Series
-                        ):
+                        st.write(f"**{k}**:")
+                        if type(v) in [np.ndarray, list, pd.Series]:
                             v = pd.DataFrame(v)
                         if type(v) == pd.DataFrame:
                             st.dataframe(v, height=200)
                         else:
                             st.write(v)
+                elif type(value) == str:
+                    st.write(f"```{value}\n```")
                 else:
                     st.write(value)
             elif node.result.output is not None:
                 output = node.result.output
                 if output is not None:
                     if output.output_type == OutputType.text:
-                        st.write(output.data)
+                        st.text(f"```{output.data}\n```")
                     elif output.output_type == OutputType.image:
                         base64encoded = output.data.split(",", maxsplit=1)
                         image_data = base64encoded[0] + ";base64," + base64encoded[1]

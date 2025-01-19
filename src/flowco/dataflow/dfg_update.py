@@ -90,8 +90,8 @@ def update_dataflow_graph(
                 output_geometry = node.output_geometry
             if output_geometry is None:
                 output_geometry = node.geometry.translate(
-                    node_update.geometry.width + 100, 0
-                ).resize(200, 150)
+                    node_update.geometry.width + 60, 0
+                ).resize(120, 80)
 
             node.output_geometry = output_geometry
 
@@ -113,7 +113,7 @@ def update_dataflow_graph(
                 output_geometry=node_update.output_geometry
                 or node_update.geometry.translate(
                     node_update.geometry.width + 100, 0
-                ).resize(200, 150),
+                ).resize(120, 80),
                 is_locked=node_update.is_locked,
             )
             new_nodes_dict[node_update.id] = new_node

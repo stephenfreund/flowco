@@ -614,7 +614,7 @@ TypeRepresentation = Union[
     OptionalType,
     ListType,
     TypedDictType,
-    TupleType,
+    # TupleType,
     SetType,
     PDDataFrameType,
     PDSeriesType,

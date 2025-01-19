@@ -88,7 +88,7 @@ class AskMeAnything:
 
         result = session.get("shells", PythonShells).run(init_code + "\n" + code)
         result_output = result.as_result_output()
-        return "Finished running code", result_output.to_prompt()
+        return "Okay, I ran some code", result_output.to_prompt()
 
     def inspect(self, id: str) -> ReturnType:
         """
@@ -514,51 +514,6 @@ class AskMeAnything:
             }
             """
 
-            # """
-            # {
-            #     "name": "update_node",
-            #     "description": "Modify a node in the diagram.  You must preserve consistency between the pill, label, requirements, algorithm, and code.  Use null for node parts you don't want to modify.  If you wish to modify the return type for the node, leave the algorithm and code blank.",
-            #     "parameters": {
-            #         "type": "object",
-            #         "properties": {
-            #             "id": {
-            #                 "type": "string",
-            #                 "description": "The id of the node to modify"
-            #             },
-            #             "pill": {
-            #                 "type": "string",
-            #                 "description": "The pill of the node.  Two words, hyphenated and title-case.  Keep in sync with the label, requirements, algorithm, and code."
-            #             },
-            #             "label": {
-            #                 "type": "string",
-            #                 "description": "The new label of the node.  Keep in sync with the requirements, algorithm, and code."
-            #             },
-            #             "requirements": {
-            #                 "type": "array",
-            #                 "items": {
-            #                     "type": "string"
-            #                 },
-            #                 "description": "A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well."
-            #             },
-            #             "algorithm": {
-            #                 "type": "array",
-            #                 "items": {
-            #                     "type": "string"
-            #                 },
-            #                 "description": "The algorithm for the node.  Only modify if there is already an algorithm."
-            #             },
-            #             "code": {
-            #                 "type": "array",
-            #                 "items": {
-            #                     "type": "string"
-            #                 },
-            #                 "description": "The code for the node.  Only modify if there is already an code.  The code should be a list of strings, one for each line of code.  The signature must match the original version."
-            #             }
-            #         },
-            #         "required": ["id" ]
-            #     }
-            # }
-            # """
             log(f"update_node: {id}, {requirements}, {algorithm}, {code}")
             dfg = self.page.dfg
 
@@ -626,7 +581,7 @@ class AskMeAnything:
             mod_str = ", ".join(reversed(mods))
 
             return (
-                f"Updated {mod_str} for {node.pill}",
+                f"I updated {mod_str} for {node.pill}",
                 node.model_dump_json(indent=2),
             )
 
@@ -1074,7 +1029,7 @@ class AskMeAnything:
             mod_str = ", ".join(reversed(mods))
 
             return (
-                f"Updated {mod_str} for {node.pill}",
+                f"I updated {mod_str} for {node.pill}",
                 node.model_dump_json(indent=2),
             )
 
@@ -1134,7 +1089,7 @@ class AskMeAnything:
 
         pill = dfg.make_pill(label)
         geometry = Geometry(x=0, y=0, width=0, height=0)
-        output_geometry = geometry.translate(geometry.width + 100, 0).resize(200, 150)
+        output_geometry = geometry.translate(geometry.width + 100, 0).resize(120, 80)
         node_updates = {
             x.id: DiagramNodeUpdate(
                 id=x.id,
@@ -1176,8 +1131,12 @@ class AskMeAnything:
         self.page.update_dfg(dfg)
 
         src_pills = ", ".join(predecessors)
+        if src_pills:
+            message = f"I add a new node {node.pill}, and connected these nodes to it: {src_pills}"
+        else:
+            message = f"I add a new node {node.pill}"
         return (
-            f"Added new node {node.pill}.  Connected it to {src_pills}",
+            message,
             node.model_dump_json(indent=2),
         )
 
@@ -1216,7 +1175,7 @@ class AskMeAnything:
         edge = dfg.edge_for_nodes(src_id, dst_id)
 
         return (
-            f"Added new edge from {src_id} to {dst_id}",
+            f"I added a new edge from {src_id} to {dst_id}",
             edge.model_dump_json(indent=2),
         )
 
@@ -1267,7 +1226,7 @@ class AskMeAnything:
 
         dfg = update_dataflow_graph(dfg, dfg_update)
         self.page.update_dfg(dfg)
-        return (f"Removed node {node.pill}", None)
+        return (f"I removed node {node.pill}", None)
 
     def remove_edge(self, id: str) -> ReturnType:
         """
@@ -1319,7 +1278,10 @@ class AskMeAnything:
 
         dfg = update_dataflow_graph(dfg, dfg_update)
         self.page.update_dfg(dfg)
-        return (f"Removed edge from {edge_to_remove.src} to {edge_to_remove.dst}", None)
+        return (
+            f"I removed edge from {edge_to_remove.src} to {edge_to_remove.dst}",
+            None,
+        )
 
     def classify_question(self, question: str) -> str:
         assistant: OpenAIAssistant = OpenAIAssistant(
@@ -1411,6 +1373,7 @@ class AskMeAnything:
                 "pill",
                 "label",
                 "requirements",
+                # "function_return_type", include???
                 "code",
             ]
 

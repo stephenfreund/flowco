@@ -262,7 +262,7 @@ class StreamingAssistantWithFunctionCalls(AssistantBase):
         try:
             for tool_call in tool_calls:
                 user_response, function_response = self._make_call(tool_call)
-                yield f"\n**{user_response}.**\n\n"
+                yield f"\n**:red[{user_response}].**\n\n"
                 if function_response is None:
                     make_response(tool_call, user_response)
                 elif isinstance(function_response, str):

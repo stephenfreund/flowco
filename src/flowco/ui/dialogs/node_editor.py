@@ -293,12 +293,6 @@ class NodeEditor:
         with st.container(key="edit_dialog"):
             self.node_component_editors()
 
-        # print(
-        #     self.node.model_dump_json(
-        #         include=set(["label", "requirements", "return-type", "code"]), indent=2
-        #     )
-        # )
-
         with top.container():
             left, middle, right = st.columns(3)
             with left:

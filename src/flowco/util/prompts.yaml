@@ -985,6 +985,11 @@ ama_modify: |
     Each node will be implemented as a single function that takes the incoming data and returns the outgoing data.
     Do not write code.  Only modify the graph.
 
+    Instructions:
+    1. Identify the necessary changes to the dataflow graph for the request.
+    2. For each change, use a function call to make the change.
+
+skip: |
     You should:
     1. Restate the request in your own words.  Break down tasks into smaller steps.
     2. Identify the necessary changes to the dataflow graph for those steps.

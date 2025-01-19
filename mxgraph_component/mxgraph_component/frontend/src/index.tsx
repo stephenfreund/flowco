@@ -187,6 +187,20 @@ graphContainer.addEventListener('contextmenu', (event) => {
   event.preventDefault();
 });
 
+
+
+/// these don't get triggered reliably - not sure why...
+// graphContainer.addEventListener("focus", () => {
+//   console.log("Focus")
+//   streamlitResponse()
+// });
+
+// graphContainer.addEventListener("blur", () => {
+//   console.log("Blur")
+//   streamlitResponse()
+// });
+
+
 // Ensure the graph container is focusable
 graphContainer.setAttribute('tabindex', '0');
 

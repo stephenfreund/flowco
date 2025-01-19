@@ -61,6 +61,7 @@ class BuildPage(FlowcoPage):
                     st.session_state.builder_progress,
                     st.session_state.builder.get_message(),
                 )
+
         with st.container(key="button_bar"):
             cols = st.columns(8)
             with cols[1]:
@@ -306,12 +307,37 @@ class BuildPage(FlowcoPage):
     def global_sidebar(self):
         ui_page: UIPage = st.session_state.ui_page
 
-        st.write("### Notes")
-        description = ui_page.dfg().description
-        if description:
-            st.write(description)
-        else:
-            st.write("*Add notes here*")
+        with st.popover("Pinned Outputs"):
+            nodes = ui_page.dfg().topological_sort()
+            pills = [ui_page.dfg()[node].pill for node in nodes]
+            st.pills(
+                "Pills",
+                nodes,
+                default=st.session_state.pinned_nodes,
+                key="pinned_nodes_pills",
+                format_func=lambda id: ui_page.dfg()[id].pill,
+                selection_mode="multi",
+                label_visibility="collapsed",
+                on_change=lambda: set_session_state(
+                    "pinned_nodes", st.session_state.pinned_nodes_pills
+                ),
+            )
+
+        if st.session_state.pinned_nodes:
+            with st.container(border=True):
+                for node_id in st.session_state.pinned_nodes:
+                    if node_id in ui_page.dfg().node_ids():
+                        node = ui_page.dfg()[node_id]
+                        st.write(f"###### {node.pill}")
+                        super().show_output(node)
+
+        with st.container(border=True):
+            st.write("###### Notes")
+            description = ui_page.dfg().description
+            if description:
+                st.write(description)
+            else:
+                st.write("*Add notes here*")
 
         cols = st.columns(4)
         with cols[0]:
