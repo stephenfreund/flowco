@@ -1,8 +1,4 @@
-import os
-import uuid
 import streamlit as st
-
-from flowco.util.config import config
 
 css = """
 .stMainBlockContainer {
@@ -327,14 +323,14 @@ div:has(> div > .st-key-right-panel) {
 """
 
 
-# @st.cache_resource
-def custom_css():
-    script_path = os.path.abspath(__file__)
-    script_dir = os.path.dirname(script_path)
-    filename = "special.css"
-    file_path = os.path.join(script_dir, filename)
-    with open(file_path, "r") as file:
-        return file.read()
+# # @st.cache_resource
+# def custom_css():
+#     script_path = os.path.abspath(__file__)
+#     script_dir = os.path.dirname(script_path)
+#     filename = "special.css"
+#     file_path = os.path.join(script_dir, filename)
+#     with open(file_path, "r") as file:
+#         return file.read()
 
 
 def st_init(page_config=True):
@@ -344,6 +340,9 @@ def st_init(page_config=True):
     st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
     if "init" not in st.session_state:
+        import uuid
+
+        from flowco.util.config import config
 
         st.session_state.init = True
         st.session_state.last_sequence_number = -1

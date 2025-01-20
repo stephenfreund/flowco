@@ -44,14 +44,20 @@ class FlowcoPage:
         with st.container(key="masthead"):
             self.masthead()
             self.button_bar()
+            self.second_bar()
 
-            def fix():
-                if "al" not in st.session_state or st.session_state.al is None:
-                    st.session_state.abstraction_level = "Requirements"
-                else:
-                    st.session_state.abstraction_level = st.session_state.al
-                st.session_state.force_update = True
+        self.show_ama()
 
+    def second_bar(self):
+
+        def fix():
+            if "al" not in st.session_state or st.session_state.al is None:
+                st.session_state.abstraction_level = "Requirements"
+            else:
+                st.session_state.abstraction_level = st.session_state.al
+            st.session_state.force_update = True
+
+        with st.container():
             with st.container(key="zoom_button_bar"):
                 c1, spacer, c2, c3, c4 = st.columns(5, vertical_alignment="bottom")
                 with c1.container(key="controls"):
@@ -74,7 +80,7 @@ class FlowcoPage:
                     st.session_state.force_update = True
 
                 spacer.write(
-                    "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
+                    "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
                     unsafe_allow_html=True,
                 )
 
@@ -97,8 +103,6 @@ class FlowcoPage:
                     on_click=lambda cmd: zoom(cmd),
                     args=("reset",),
                 )
-
-        self.show_ama()
 
     def right_panel(self):
         ui_page: UIPage = st.session_state.ui_page
@@ -333,26 +337,29 @@ class FlowcoPage:
 
     def bottom_bar(self):
         ui_page: UIPage = st.session_state.ui_page
-        cols = st.columns([2, 2.1, 3])
-        with cols[0]:
-            if st.button(":material/help: Help", disabled=not self.graph_is_editable()):
-                ui_help.help_dialog()
+        with st.container():
+            cols = st.columns([2, 2.1, 3])
+            with cols[0]:
+                if st.button(
+                    ":material/help: Help", disabled=not self.graph_is_editable()
+                ):
+                    ui_help.help_dialog()
 
-        with cols[1]:
-            if st.button(
-                ":material/settings: Settings",
-                help="Change settings",
-                disabled=not self.graph_is_editable(),
-            ):
-                settings(ui_page)
+            with cols[1]:
+                if st.button(
+                    ":material/settings: Settings",
+                    help="Change settings",
+                    disabled=not self.graph_is_editable(),
+                ):
+                    settings(ui_page)
 
-        with cols[2]:
-            if st.button(":material/bug_report: Report Bug", key="report_bug"):
-                self.report_bug()
+            with cols[2]:
+                if st.button(":material/bug_report: Report Bug", key="report_bug"):
+                    self.report_bug()
 
-        if st.button(":material/logout: Logout", help="Sign out"):
-            sign_out()
-            st.rerun()
+            if st.button(":material/logout: Logout", help="Sign out"):
+                sign_out()
+                st.rerun()
 
     def report_bug(self):
         ui_page = st.session_state.ui_page
