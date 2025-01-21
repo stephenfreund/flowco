@@ -26,21 +26,24 @@ class CheckPage(BuildPage):
 
     def update_button(self) -> BuildButton:
         return BuildButton(
-            label=":material/refresh: Update",
+            label="Update",
+            icon=":material/refresh:",
             action="Update",
             # passes_key="repair-checks-passes",
         )
 
     def run_button(self) -> BuildButton:
         return BuildButton(
-            label=":material/play_circle: Check",
+            label="Check",
+            icon=":material/play_circle:",
             action="Run",
             # passes_key="repair-checks-passes",
         )
 
     def fix_button(self) -> BuildButton:
         return BuildButton(
-            label=":material/build: Fix",
+            label="Fix",
+            icon=":material/build:",
             action="Run",
             passes_key="repair-checks-passes",
         )
@@ -108,14 +111,18 @@ class CheckPage(BuildPage):
         with buttons.container():
             c1, c2, c3 = st.columns(3)
             with c1:
-                if st.button("Save"):
+                if st.button("Save", icon=":material/save:"):
                     ui_page: UIPage = st.session_state.ui_page
                     ui_page.page().update_dfg(st.session_state.tmp_dfg)
                     st.session_state.force_update = True
                     st.rerun(scope="app")
 
             with c2:
-                st.button("Suggest", on_click=make_suggestions)
+                st.button(
+                    "Suggest",
+                    icon=":material/format_list_bulleted:",
+                    on_click=make_suggestions,
+                )
 
             with c3:
                 if show_code():

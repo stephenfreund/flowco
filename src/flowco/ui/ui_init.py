@@ -311,7 +311,7 @@ div:has(> div > .st-key-right-panel) {
     font-size: 12px !important;
 }
 
-.st-key-right-panel .stButton * {
+.st-key-right-panel-size-button .stButton * {
     font-size: 16px !important;
 }
 

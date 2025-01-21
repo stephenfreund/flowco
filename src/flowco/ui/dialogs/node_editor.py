@@ -296,14 +296,19 @@ class NodeEditor:
         with top.container():
             left, middle, right = st.columns(3)
             with left:
-                if st.button("Save", disabled=self.pending_ama is not None):
+                if st.button(
+                    "Save",
+                    icon=":material/save:",
+                    disabled=self.pending_ama is not None,
+                ):
                     with st.spinner("Saving..."):
                         self.save()
                         st.session_state.force_update = True
                         st.rerun(scope="app")
             with middle:
                 if st.button(
-                    ":material/check: Check",
+                    "Check",
+                    icon=":material/check:",
                     disabled=self.pending_ama is not None,
                 ):
                     self.pending_ama = PendingAMA(
@@ -323,7 +328,8 @@ class NodeEditor:
                     )
             with right:
                 rebuild = st.button(
-                    ":material/manufacturing: Regenerate",
+                    "Regenerate",
+                    icon=":material/manufacturing:",
                     disabled=self.pending_ama is not None,
                 )
 

@@ -117,7 +117,8 @@ class ProjectsPage(FlowcoPage):
                 cols = st.columns(4)
                 with cols[0]:
                     st.button(
-                        ":material/clear_all:",
+                        label="",
+                        icon=":material/clear_all:",
                         help="Reset all generated content from each node",
                         on_click=lambda: confirm(
                             f"Are you sure you want to reset {current}?  This will clear all generated content from each node.",
@@ -126,19 +127,22 @@ class ProjectsPage(FlowcoPage):
                     )
                 with cols[1]:
                     st.button(
-                        ":material/file_copy:",
+                        label="",
+                        icon=":material/file_copy:",
                         help=f"Duplicate project",
                         on_click=self.dup_project,
                     )
                 with cols[2]:
                     st.button(
-                        ":material/download:",
+                        label="",
+                        icon=":material/download:",
                         help=f"Download project",
                         on_click=self.download_files,
                     )
                 with cols[3]:
                     st.button(
-                        ":material/delete:",
+                        label="",
+                        icon=":material/delete:",
                         help="Delete project",
                         on_click=lambda: confirm(
                             f"Are you sure you want to delete {current}?",

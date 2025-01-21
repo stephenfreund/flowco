@@ -33,6 +33,7 @@ from flowco.ui.dialogs.node_editor import edit_node
 @dataclass
 class BuildButton:
     label: str
+    icon: str
     action: Literal["Run", "Stop", "Update"]
     passes_key: str | None = None
     repair: bool = True
@@ -44,13 +45,13 @@ class BuildPage(FlowcoPage):
     # Override for other pages
 
     def update_button(self) -> BuildButton:
-        return BuildButton(label=":material/refresh: Update", action="Update")
+        return BuildButton(label="Update", icon=":material/refresh:", action="Update")
 
     def run_button(self) -> BuildButton:
-        return BuildButton(label=":material/play_circle: Run", action="Run")
+        return BuildButton(label="Run", icon=":material/play_circle:", action="Run")
 
     def stop_button(self) -> BuildButton:
-        return BuildButton(label=":material/stop_circle: Stop", action="Stop")
+        return BuildButton(label="Stop", icon=":material/stop_circle:", action="Stop")
 
     def build_target_phase(self) -> Phase:
         return Phase.run_checked
@@ -73,6 +74,7 @@ class BuildPage(FlowcoPage):
                         update_button = self.update_button()
                         st.button(
                             update_button.label,
+                            icon=update_button.icon,
                             on_click=lambda: set_session_state(
                                 "trigger_build_toggle", update_button
                             ),
@@ -86,6 +88,7 @@ class BuildPage(FlowcoPage):
                             run_button = self.stop_button()
                         st.button(
                             run_button.label,
+                            icon=run_button.icon,
                             on_click=lambda: set_session_state(
                                 "trigger_build_toggle", run_button
                             ),
@@ -99,13 +102,14 @@ class BuildPage(FlowcoPage):
 
                     with cols[2]:
                         st.write(
-                            "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
+                            "<span>&nbsp;</span>",
                             unsafe_allow_html=True,
                         )
 
                     with cols[3]:
                         st.button(
-                            ":material/undo:",
+                            label="",
+                            icon=":material/undo:",
                             disabled=(
                                 not self.graph_is_editable()
                                 or not st.session_state.ui_page.can_undo()
@@ -115,7 +119,8 @@ class BuildPage(FlowcoPage):
                         )
                     with cols[4]:
                         st.button(
-                            ":material/redo:",
+                            label="",
+                            icon=":material/redo:",
                             disabled=(
                                 not self.graph_is_editable()
                                 or not st.session_state.ui_page.can_redo()
@@ -125,12 +130,13 @@ class BuildPage(FlowcoPage):
                         )
                     with cols[5]:
                         st.write(
-                            "<span>&nbsp;&nbsp;&nbsp;</span>",
+                            "<span>&nbsp;</span>",
                             unsafe_allow_html=True,
                         )
                     with cols[6]:
                         if st.button(
-                            ":material/network_node:",
+                            label="",
+                            icon=":material/network_node:",
                             help="Layout the diagram",
                             disabled=not self.graph_is_editable(),
                         ):
@@ -152,7 +158,8 @@ class BuildPage(FlowcoPage):
                             st.rerun()
                     with cols[7]:
                         if st.button(
-                            ":material/table_view:",
+                            label="",
+                            icon=":material/table_view:",
                             disabled=not self.graph_is_editable(),
                             help="Manage data files for the diagram",
                         ):
@@ -161,6 +168,7 @@ class BuildPage(FlowcoPage):
                     run_button = self.stop_button()
                     st.button(
                         run_button.label,
+                        icon=run_button.icon,
                         on_click=lambda: set_session_state(
                             "trigger_build_toggle", run_button
                         ),
@@ -369,9 +377,11 @@ class BuildPage(FlowcoPage):
         cols = st.columns(4)
         with cols[0]:
             if st.button(
-                ":material/edit_note:",
+                label="",
+                icon=":material/edit_note:",
                 disabled=not self.graph_is_editable(),
                 help="Edit the description of the diagram",
+                key="edit_description",
             ):
                 self.edit_description()
 

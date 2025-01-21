@@ -85,20 +85,23 @@ class FlowcoPage:
                 )
 
                 c2.button(
-                    ":material/zoom_in:",
+                    label="",
+                    icon=":material/zoom_in:",
                     key="zoom_in",
                     disabled=not self.graph_is_editable(),
                     on_click=lambda cmd: zoom(cmd),
                     args=("in",),
                 )
                 c3.button(
-                    ":material/zoom_out:",
+                    label="",
+                    icon=":material/zoom_out:",
                     disabled=not self.graph_is_editable(),
                     on_click=lambda cmd: zoom(cmd),
                     args=("out",),
                 )
                 c4.button(
-                    ":material/zoom_out_map:",
+                    label="",
+                    icon=":material/zoom_out_map:",
                     disabled=not self.graph_is_editable(),
                     on_click=lambda cmd: zoom(cmd),
                     args=("reset",),
@@ -128,11 +131,12 @@ class FlowcoPage:
                 if st.session_state.wide_right_panel
                 else ":material/chevron_left:"
             )
-            if st.button(symbol, key="right_panel_width"):
-                st.session_state.wide_right_panel = (
-                    not st.session_state.wide_right_panel
-                )
-                st.rerun()
+            with st.container(key="right-panel-size-button"):
+                if st.button(label="", icon=symbol, key="right_panel_width"):
+                    st.session_state.wide_right_panel = (
+                        not st.session_state.wide_right_panel
+                    )
+                    st.rerun()
             if node is None:
                 self.global_sidebar()
             else:
@@ -337,29 +341,36 @@ class FlowcoPage:
 
     def bottom_bar(self):
         ui_page: UIPage = st.session_state.ui_page
-        with st.container():
+        with st.container(key="bottom_bar"):
             cols = st.columns([2, 2.1, 3])
+            cols = st.columns(4)
             with cols[0]:
                 if st.button(
-                    ":material/help: Help", disabled=not self.graph_is_editable()
+                    label="",
+                    icon=":material/help:",
+                    disabled=not self.graph_is_editable(),
                 ):
                     ui_help.help_dialog()
 
             with cols[1]:
                 if st.button(
-                    ":material/settings: Settings",
+                    label="",
+                    icon=":material/settings:",
                     help="Change settings",
                     disabled=not self.graph_is_editable(),
                 ):
                     settings(ui_page)
 
             with cols[2]:
-                if st.button(":material/bug_report: Report Bug", key="report_bug"):
+                if st.button(
+                    label="Report Bug", icon=":material/bug_report:", key="report_bug"
+                ):
                     self.report_bug()
 
-            if st.button(":material/logout: Logout", help="Sign out"):
-                sign_out()
-                st.rerun()
+            with cols[3]:
+                if st.button(label="Logout", icon=":material/logout:", help="Sign out"):
+                    sign_out()
+                    st.rerun()
 
     def report_bug(self):
         ui_page = st.session_state.ui_page
