@@ -288,7 +288,7 @@ div:has(> div > .st-key-right-panel) {
 }
 
 .st-key-right-panel img {
-    max-width: 200px !important;
+/*    max-width: 200px !important; */
 }
 
 .st-key-right_panel_width {

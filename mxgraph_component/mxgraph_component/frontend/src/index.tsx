@@ -1004,6 +1004,27 @@ function updateGraphWithDiagram(diagram: mxDiagram) {
 
 /*****/
 
+// graph.addListener('doubleClick', function(sender, evt) {
+//   var cell = evt.getProperty('cell');
+
+//   if (cell != null && graph.getModel().isVertex(cell)) {
+//     var style = graph.getCellStyle(cell);
+//     if (cell.id.startsWith('output-') && ((style['shape'] === 'image') || style['image'])) {
+//       // Prevent the default double-click behavior (like editing the label)
+//       evt.consume();
+//       const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, currentDiagram!.version));
+//       Streamlit.setComponentValue({
+//         command: "output",
+//         diagram: diagram_str,
+//         selected_node: cell.id.substring(7),
+//       });
+//     }
+//   }
+// });
+
+
+/*****/
+
 function clearGraph() {
   var model = graph.getModel();
   model.beginUpdate();
