@@ -157,7 +157,6 @@ class StreamingAssistantWithFunctionCalls(AssistantBase, Iterable[str]):
 
         while True:
             self._trim_conversation()
-            print(json.dumps(self.messages, indent=2))
             stream = litellm.completion(
                 model=model,
                 messages=self.messages,
