@@ -13,9 +13,9 @@ const graphContainer = document.querySelector("#graph-container") as HTMLDivElem
 const graph = new mx.mxGraph(graphContainer);
 
 // Define zoom factors and limits
-const ZOOM_IN_FACTOR = 1.1;  // 10% zoom in
-const ZOOM_OUT_FACTOR = 0.9; // 10% zoom out
-const MIN_ZOOM = 0.5;        // 50%
+const ZOOM_IN_FACTOR = 1.4;  // 10% zoom in
+const ZOOM_OUT_FACTOR = 0.6; // 10% zoom out
+const MIN_ZOOM = 0.25;        // 25%
 const MAX_ZOOM = 3.0;        // 300%
 
 
