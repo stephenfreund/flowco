@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from flowco.dataflow.dfg import DataFlowGraph, Node, Geometry
 from flowco.util.config import config, AbstractionLevel
+from flowco.util.output import log
 from flowco.util.text import md_to_html
 
 
@@ -25,7 +26,7 @@ class DiagramNode(BaseModel):
     build_status: Optional[str] = None
     output: Optional[DiagramOutput] = None
 
-    html: str = ""
+    # html: str = ""
 
 
 class DiagramEdge(BaseModel):
@@ -45,7 +46,26 @@ class MxDiagram(BaseModel):
     )
 
 
-def get_output(node: Node) -> Optional[DiagramOutput]:
+class UIImageCache:
+    def __init__(self):
+        self._cache = {}
+
+    def get(self, key: str):
+        if key in self._cache:
+            return self._cache[key]
+        return None
+
+    def put(self, key: str, value):
+        self._cache[key] = value
+
+    def clear(self):
+        self._cache = {}
+
+
+@staticmethod
+def get_output(
+    node: Node, image_cache: UIImageCache | None = None
+) -> Optional[DiagramOutput]:
     if node.result is not None:
         if (
             node.function_return_type is not None
@@ -63,13 +83,23 @@ def get_output(node: Node) -> Optional[DiagramOutput]:
 
         image_url = node.result.output_image()
         if image_url is not None:
-            return DiagramOutput(output_type="image", data=image_url)
+            if image_cache is None:
+                return DiagramOutput(output_type="image", data=image_url)
+            else:
+                if image_cache.get(node.id) == image_url:
+                    log(f"Using cached image for node {node.id}")
+                    return DiagramOutput(output_type="image", data="cached")
+                else:
+                    log(f"Adding image to cache for node {node.id}")
+                    image_cache.put(node.id, image_url)
+                    return DiagramOutput(output_type="image", data=image_url)
 
     return None
 
 
 @staticmethod
-def from_dfg(dfg: DataFlowGraph) -> MxDiagram:
+def from_dfg(dfg: DataFlowGraph, image_cache: UIImageCache | None) -> MxDiagram:
+
     # Create a mapping from node id to Node for easy lookup
     node_dict = {node.id: node for node in dfg.nodes}
 
@@ -88,9 +118,9 @@ def from_dfg(dfg: DataFlowGraph) -> MxDiagram:
             has_messages=len(node.messages) > 0,
             output_geometry=node.output_geometry,
             is_locked=node.is_locked,
-            output=get_output(node),
+            output=get_output(node, image_cache),
             build_status=node.build_status,
-            html=html,
+            # html=html,
         )
         mx_nodes[node.id] = diagram_node
 

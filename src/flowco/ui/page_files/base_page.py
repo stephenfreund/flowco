@@ -55,7 +55,7 @@ class FlowcoPage:
                 st.session_state.abstraction_level = "Requirements"
             else:
                 st.session_state.abstraction_level = st.session_state.al
-            st.session_state.force_update = True
+                st.session_state.force_update = True
 
         with st.container():
             with st.container(key="zoom_button_bar"):
@@ -471,9 +471,22 @@ class FlowcoPage:
             with left:
 
                 force_update = st.session_state.force_update
+
+                cache = (
+                    st.session_state.image_cache
+                    if not config.x_no_image_cache
+                    else None
+                )
+
+                if force_update:
+                    st.session_state.image_cache.clear()
+
+                diagram = st.session_state.ui_page.dfg_as_mx_diagram(cache).model_dump()
+                log("mx_diagram size", len(json.dumps(diagram)))
+
                 result = mxgraph_component(
                     key=st.session_state.nonce,
-                    diagram=st.session_state.ui_page.dfg_as_mx_diagram().model_dump(),
+                    diagram=diagram,
                     editable=self.graph_is_editable(),
                     selected_node=selected_node,
                     zoom=st.session_state.zoom,

@@ -4,6 +4,7 @@ import { mxGraphModel, mxCellState, mxCell } from 'mxgraph';
 import { v4 as uuidv4 } from "uuid";
 
 import { mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, node_style, labelForEdge, clean_color, isDiagramNode, resetNodeTranslation } from "./diagram";
+import { clearImageCache } from "./cache";
 
 var currentDiagram: mxDiagram | undefined = undefined;
 var currentRefreshPhase = 0;
@@ -68,9 +69,58 @@ function zoom(cmd: string) {
   } else if (cmd == "reset") {
     resetZoom();
   } else {
-    console.log("Unknown zoom command: ", cmd);
+    // console.log("Unknown zoom command: ", cmd);
   }
 }
+
+let zoomedInContainer = document.getElementById("customBox")!;
+
+// Function to display zoomed-in content (with image handling)
+function showZoomedInContent(cell: mxCell) {
+  // zoomedInContainer.innerHTML = cell.value;  // Clear any previous content
+
+  const style = cell.style;
+
+  // Check if the style contains a background image
+  const imageMatch = style && style.match('image=data:image/png,\(.*\)');
+
+  if (imageMatch && imageMatch[1]) {
+    const imageUrl = imageMatch[1]; 
+    // console.log("Image URL", imageUrl)
+
+    // Create an <img> element and set the src to the extracted image URL
+    const imgElement = document.createElement('img');
+    imgElement.src = `data:image/png;base64,${imageUrl}`;
+    imgElement.style.maxWidth = '100%'; // Optional: set a maximum size for the image
+    zoomedInContainer.innerHTML = imgElement.outerHTML;
+  } else {
+    // If no image is found, display the cell value as text
+    zoomedInContainer.innerHTML = cell.value;
+  }
+
+
+  // Show the container and position it near the mouse
+  zoomedInContainer.style.display = "block";
+  zoomedInContainer.style.position = 'absolute';
+  zoomedInContainer.style.alignSelf = 'center';
+  zoomedInContainer.style.left = '10px;' // cell.geometry.x + cell.geometry.width + 10 + 'px';  // Position to the right of the cell
+  zoomedInContainer.style.margin = '10px';
+  zoomedInContainer.style.top =  '60px';  // Align with the top of the cell
+  zoomedInContainer.style.width = "800px";
+  zoomedInContainer.style.boxShadow = "0 0 10px rgba(0, 0, 0, 0.5)";
+  // zoomedInContainer.style.height = "80%";
+  zoomedInContainer.style.maxWidth = "100%";
+  // console.log("BB", zoomedInContainer)
+}
+
+function hideZoomedInContent() {
+  zoomedInContainer.style.display = 'none';
+}
+
+zoomedInContainer.addEventListener("mouseup", (event) => {
+  event.stopPropagation();
+  hideZoomedInContent();
+});
 
 var can_edit = true;
 graph.setPanning(true);
@@ -97,6 +147,8 @@ graph.container.addEventListener('mousemove', function(evt) {
   var state = graph.view.getState(graph.getCellAt(x, y));
   var cell = state ? state.cell : null;
   var isShift = evt.shiftKey;
+
+  hideZoomedInContent();
 
   if (cell == null) {
       if (isShift) {
@@ -220,7 +272,7 @@ class mxIconSet {
       // tset if the current cell and all predecessors have phase 1 or better.
       const upToDate = (cell: mxCell): boolean => {
         if (cell.value.phase < currentRefreshPhase) {
-          console.log('not up to date', cell.id, cell.value.phase, currentRefreshPhase)
+          // console.log('not up to date', cell.id, cell.value.phase, currentRefreshPhase)
           return false;
         }
         const incomingEdges = graph.getIncomingEdges(cell, graph.getDefaultParent());
@@ -230,7 +282,7 @@ class mxIconSet {
             return false;
           }
         }
-        console.log('up to date', cell.id, cell.value.phase, currentRefreshPhase)
+        // console.log('up to date', cell.id, cell.value.phase, currentRefreshPhase)
         return true;
       }
 
@@ -331,7 +383,7 @@ class mxIconSet {
       mx.mxEvent.addListener(deleteImg, 'mouseenter', mx.mxUtils.bind(this, (evt: MouseEvent) => {
         // Example: Change opacity on hover
         deleteImg.style.opacity = '0.7';
-        console.log("Beep")
+        // console.log("Beep")
 
         // Alternatively, you could change the image source to a hover version
         // deleteImg.src = "delete-hover.png";
@@ -344,7 +396,7 @@ class mxIconSet {
       mx.mxEvent.addListener(deleteImg, 'mouseleave', mx.mxUtils.bind(this, (evt: MouseEvent) => {
         // Reset opacity when not hovering
         deleteImg.style.opacity = '1.0';
-        console.log("UnBeep")
+        // console.log("UnBeep")
 
         // If you changed the image source, revert it back
         // deleteImg.src = "delete.png";
@@ -567,7 +619,7 @@ let currentlyHoveredCell: mxCell | null = null;
 function shouldHandleHover(cell: mxCell): boolean {
   if (graph.getModel().isVertex(cell)) {
     const id = cell.id; // Adjust based on how the name is stored
-    return !id.startsWith('output-');
+    return true
   }
   return false;
 }
@@ -582,23 +634,35 @@ function handleHover(isEntering: boolean): void {
     let node: string | null = null;
     if (isEntering && currentlyHoveredCell) {
       node = currentlyHoveredCell?.id;
+      if (node.startsWith("output-")) {
+        // console.log("BEEP")  
+        showZoomedInContent(currentlyHoveredCell);
+      }
       graph.toggleCellStyle("shadow", false, currentlyHoveredCell);
     } else {
       if (currentlyHoveredCell) {
+        node = currentlyHoveredCell?.id;
         graph.toggleCellStyle("shadow", true, currentlyHoveredCell);
+        if (node.startsWith("output-")) {
+          // console.log("BORP")  
+          hideZoomedInContent();
+        }
       }
       const cells = graph.getSelectionCells();
       const selectedIds = cells.map(cell => cell.id);
       node = selectedIds.length === 0 ? null : selectedIds[0];
     }
+
     console.log("Hovering: ", currentlyHoveredCell, node)
-    
-    const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, currentDiagram!.version));
-    Streamlit.setComponentValue({
-      command: "update",
-      diagram: diagram_str,
-      selected_node: node,
-    });
+
+    if (!(currentlyHoveredCell && currentlyHoveredCell.id.startsWith("output-"))) {
+      const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, currentDiagram!.version));
+      Streamlit.setComponentValue({
+        command: "update",
+        diagram: diagram_str,
+        selected_node: node,
+      });
+    }
   }
 }
 
@@ -747,7 +811,7 @@ function streamlitResponse(hover_node: string | null = null) {
 
     if (currentDiagram !== undefined) {
       const original_version = currentDiagram.version;
-      console.log("Setting Value: " + selected_node)
+      // console.log("Setting Value: " + selected_node)
       sessionStorage.setItem("selected_node", selected_node == null ? "" : selected_node);
       
       const translation = graph.view.translate;
@@ -828,7 +892,7 @@ function addListeners() {
 
   // Add a listener for selection changes
   graph.getSelectionModel().addListener("change", (sender, evt) => {
-    console.log("Selection Changed", graph.getSelectionCells())
+    console.log("Selection Changed", graph.getSelectionCells().map(cell => cell.id))
     streamlitResponse();
   });
 
@@ -965,7 +1029,7 @@ function generateTwoWordSummary(phrase: string): string {
     pill = titleCased.join('-');
   }
   const pills = collectNodePills()
-  console.log(pills)
+  // console.log(pills)
   if (pills.includes(pill)) {
     var pillNumber = 1;
     while (pills.includes(pill + "-" + pillNumber)) {
@@ -1048,6 +1112,13 @@ function onRender(event: Event): void {
   const data = (event as CustomEvent<RenderData>).detail;
   const initial_render = currentDiagram === undefined;
 
+  console.log("currentDiagram === undefined", initial_render)
+  console.log("forced", data.args["forced"])
+  console.log("clear", data.args["clear"])
+  console.log("!editable", !data.args["editable"])
+  console.log("Force", initial_render || !data.args['editable'] || data.args["forced"] || data.args["clear"])
+
+
   setEditable(false);
 
   let diagram = data.args["diagram"];
@@ -1059,23 +1130,24 @@ function onRender(event: Event): void {
     currentDiagram = undefined;
     sessionStorage.setItem("selected_node", "");
     sessionStorage.setItem("key", "");
+    // clearImageCache();
   }
+
 
   let forced = data.args["forced"] || data.args["clear"];
 
   currentRefreshPhase = data.args["refresh_phase"];
   // console.log(currentRefreshPhase)
   // console.log(data.args["selected_node"])
-  console.log(diagram.version, currentDiagram?.version)
+  // console.log(diagram.version, currentDiagram?.version)
   if (initial_render || !data.args['editable'] || forced) {
-    console.log("Initial render")
     graph.view.setTranslate(40, 60);
 
     updateGraphWithDiagram(diagram)
     const stored_key = sessionStorage.getItem("key");
     if (key === stored_key) {
       const selected_node = sessionStorage.getItem("selected_node")
-      console.log("Selected Node: ", selected_node)
+      // console.log("Selected Node: ", selected_node)
       if (selected_node !== null) {
         const model = graph.getModel();
         const cellToSelect = model.getCell(selected_node);
@@ -1098,9 +1170,9 @@ function onRender(event: Event): void {
     // updateGraphWithDiagram(diagram)
   }
 
-  console.log("Borp", data.args['zoom'])
+  // console.log("Borp", data.args['zoom'])
   if (data.args['zoom'] != null) {
-    console.log("Zooming", data.args['zoom'], graph.view.translate, graph.view.scale)
+    // console.log("Zooming", data.args['zoom'], graph.view.translate, graph.view.scale)
     zoom(data.args['zoom']);
   }
 
@@ -1114,7 +1186,7 @@ function onRender(event: Event): void {
     sessionStorage.setItem("selected_node", "");
   }
 
-  console.log("Selected Node: ", graph.getSelectionCells().map(cell => cell.id))
+  // console.log("Selected Node: ", graph.getSelectionCells().map(cell => cell.id))
 
   setEditable(data.args["editable"]);
 

@@ -31,6 +31,10 @@ def settings(ui_page: UIPage):
         make_default_files()
 
     with st.expander("Experimental Features"):
+        config.x_no_image_cache = st.toggle(
+            "Don't cache images", value=config.x_no_image_cache
+        )
+
         config.x_no_descriptions = st.toggle(
             "Don't generate descriptions for each node", value=config.x_no_descriptions
         )

@@ -1,5 +1,7 @@
 import streamlit as st
 
+from flowco.ui.mx_diagram import UIImageCache
+
 css = """
 .stMainBlockContainer {
     padding: 0rem;
@@ -360,6 +362,8 @@ def st_init(page_config=True):
         st.session_state.force_update = False
         st.session_state.clear_graph = False
         st.session_state.zoom = None
+
+        st.session_state.image_cache = UIImageCache()
 
         st.session_state.abstraction_level = config.abstraction_level
 

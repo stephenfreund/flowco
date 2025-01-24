@@ -1,4 +1,3 @@
-from typing import List
 import streamlit as st
 import os
 
@@ -6,9 +5,8 @@ import os
 from flowco import __main__
 
 from flowco.page.page import Page, PageListener
-from flowco.page.tables import GlobalTables
 from flowco.ui import mx_diagram
-from flowco.ui.mx_diagram import MxDiagram
+from flowco.ui.mx_diagram import MxDiagram, UIImageCache
 from flowco.dataflow.dfg import DataFlowGraph, Node
 from flowco.util.config import config
 from flowco.util.output import logger
@@ -21,12 +19,6 @@ def load_ui_page(file_name: str):
         if dir == "":
             dir = "."
         page: Page = Page.create(file_name)
-        # for file in os.listdir(dir):
-        #     if file.endswith(".csv"):
-        #         table_name = GlobalTables.file_name_to_var(file)
-        #         with open(file, "r") as f:
-        #             contents = f.read()
-        #             page.add_table(table_name, contents)
 
     ui_page = UIPage(file_name)
     return ui_page
@@ -53,8 +45,8 @@ class UIPage(PageListener):
     def dfg(self):
         return self._page.dfg
 
-    def dfg_as_mx_diagram(self) -> MxDiagram:
-        return mx_diagram.from_dfg(self.dfg())
+    def dfg_as_mx_diagram(self, image_cache: UIImageCache) -> MxDiagram:
+        return mx_diagram.from_dfg(self.dfg(), image_cache)
 
     def node(self, node_id: str) -> Node | None:
         return self.dfg().get_node(node_id)
@@ -91,4 +83,5 @@ def set_ui_page(ui_page: UIPage):
         with logger("closing current page"):
             page = st.session_state.ui_page.page()
     st.session_state.ui_page = ui_page
+    st.session_state.image_cache.clear()
     # st.rerun()
