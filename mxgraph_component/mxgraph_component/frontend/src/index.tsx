@@ -162,73 +162,6 @@ graph.container.addEventListener('mousemove', function(evt) {
 });
 
 
-// // Optional: Change cursor to indicate panning
-// // graphContainer.style.cursor = 'grab';
-// // Function to update the cursor based on Shift key state
-// function updateCursor(isShiftPressed: boolean) {
-//   if (!isShiftPressed) {
-//       graphContainer.style.cursor = 'grab'; // Indicates panning mode
-//   } else {
-//       graphContainer.style.cursor = 'default'; // Normal cursor
-//   }
-// }
-
-// // Listen for keydown events
-// document.addEventListener('keydown', function(event) {
-//   console.log("Bo")
-//   if (event.key === 'Shift') {
-//       updateCursor(true);
-//   }
-// });
-
-// // Listen for keyup events
-// document.addEventListener('keyup', function(event) {
-//   if (event.key === 'Shift') {
-//       updateCursor(false);
-//   }
-// });
-
-// // Optional: Handle case when Shift is released outside the window
-// document.addEventListener('blur', function() {
-//   updateCursor(false);
-// });
-
-
-// graph.panningHandler.addListener().bindKey(107, function() {
-//   zoomIn();
-// }
-
-// // Implement Keyboard Shortcuts (Ctrl + + / Ctrl + - / Ctrl + 0)
-// graph.container.addEventListener('keypress', function(evt) {
-//   console.log("BEEP")
-//   if (evt.ctrlKey) {
-//       switch (evt.key) {
-//           case '+':
-//           case '=': // Some keyboards require Shift for '+'
-//               evt.preventDefault();
-//               zoomIn();
-//               break;
-//           case '-':
-//               evt.preventDefault();
-//               zoomOut();
-//               break;
-//           case '0':
-//               evt.preventDefault();
-//               resetZoom();
-//               resetNodeTranslation(graph);
-//               break;
-//           default:
-//               break;
-//       }
-//   }
-// });
-
-
-
-
-// Add this HTML somewhere in your page
-// <div id="customBox" style="position: absolute; display: none; background: #fff; border: 1px solid #000; padding: 10px; z-index: 1000;"></div>
-
 
 function setEditable(editable: boolean) {
   can_edit = editable;
@@ -238,19 +171,6 @@ function setEditable(editable: boolean) {
 graphContainer.addEventListener('contextmenu', (event) => {
   event.preventDefault();
 });
-
-
-
-/// these don't get triggered reliably - not sure why...
-// graphContainer.addEventListener("focus", () => {
-//   console.log("Focus")
-//   streamlitResponse()
-// });
-
-// graphContainer.addEventListener("blur", () => {
-//   console.log("Blur")
-//   streamlitResponse()
-// });
 
 
 // Ensure the graph container is focusable
@@ -272,7 +192,6 @@ class mxIconSet {
       // tset if the current cell and all predecessors have phase 1 or better.
       const upToDate = (cell: mxCell): boolean => {
         if (cell.value.phase < currentRefreshPhase) {
-          // console.log('not up to date', cell.id, cell.value.phase, currentRefreshPhase)
           return false;
         }
         const incomingEdges = graph.getIncomingEdges(cell, graph.getDefaultParent());
@@ -282,7 +201,6 @@ class mxIconSet {
             return false;
           }
         }
-        // console.log('up to date', cell.id, cell.value.phase, currentRefreshPhase)
         return true;
       }
 
@@ -345,7 +263,47 @@ class mxIconSet {
 
       graph.container.appendChild(deleteImg);
       this.images.push(deleteImg);
+
+
+      // if state.cell has any outgoing edges that do not have empty labels, show output.
+      const children = graph.getModel().getOutgoingEdges(state.cell);
+      const showOutput = children.some(child => child.value !== '');
+      if (showOutput) {
+        // Create Delete Icon
+        const showOutputImg: HTMLImageElement = state.cell.value.force_show_output ? mx.mxUtils.createImage("visible.png") : mx.mxUtils.createImage("visible_off.png")
+        showOutputImg.setAttribute('title', 'Show Output');
+        Object.assign(showOutputImg.style, {
+          position: 'absolute',
+          cursor: 'pointer',
+          width: '16px',
+          height: '16px',
+          left: `${state.x + state.width/2 - 8}px`,
+          top: `${state.y + state.height - 18}px`
+        });
+
+        // Add event listeners for Delete Icon
+        mx.mxEvent.addListener(showOutputImg, 'click', mx.mxUtils.bind(this, (evt: MouseEvent) => {
+          const node_value = this.state.cell.value 
+          node_value.force_show_output = !node_value.force_show_output;
+
+          const output_node = graph.getModel().getCell(`output-${this.state.cell.id}`);
+          if (output_node) {
+            graph.toggleCells(node_value.force_show_output, [output_node], true);
+          }
+
+          streamlitResponse();
+          mx.mxEvent.consume(evt);
+          this.destroy();
+          graph.refresh();
+        }));
+        graph.container.appendChild(showOutputImg);
+        this.images.push(showOutputImg);
+      }
+
+
+
     } else if (state.cell.isEdge()) {
+
       const deleteImg: HTMLImageElement = mx.mxUtils.createImage("delete.png");
       deleteImg.setAttribute('title', 'Delete');
       
@@ -379,34 +337,13 @@ class mxIconSet {
         this.destroy();
       }));
 
-      // Add event listener for Mouse Over (Hover In)
       mx.mxEvent.addListener(deleteImg, 'mouseenter', mx.mxUtils.bind(this, (evt: MouseEvent) => {
-        // Example: Change opacity on hover
         deleteImg.style.opacity = '0.7';
-        // console.log("Beep")
-
-        // Alternatively, you could change the image source to a hover version
-        // deleteImg.src = "delete-hover.png";
-
-        // Or add a CSS class for more complex styling
-        // deleteImg.classList.add('delete-icon-hover');
       }));
 
-      // Add event listener for Mouse Out (Hover Out)
       mx.mxEvent.addListener(deleteImg, 'mouseleave', mx.mxUtils.bind(this, (evt: MouseEvent) => {
-        // Reset opacity when not hovering
         deleteImg.style.opacity = '1.0';
-        // console.log("UnBeep")
-
-        // If you changed the image source, revert it back
-        // deleteImg.src = "delete.png";
-
-        // Or remove the CSS class
-        // deleteImg.classList.remove('delete-icon-hover');
       }));
-
-
-
 
       graph.container.appendChild(deleteImg);
       this.images.push(deleteImg);
@@ -450,7 +387,7 @@ graph.convertValueToString = function (...args): string {
   const value: any = cell.value;
 
   if (isDiagramNode(value)) {
-    return `<span style="font-size:12px;"><b>${value.pill}</b><br></span> ${value.label}`;
+    return `<span style="font-size:14px;"><b>${value.pill}</b><br></span> ${value.label}`;
   }
 
   // Default label rendering for non-custom types
@@ -777,7 +714,8 @@ graph.connectionHandler.createTargetVertex = function (evt, source) {
     label: "...",
     geometry: vertex.geometry,
     phase: 0,
-    is_locked: false    
+    is_locked: false,
+    force_show_output: false    
   }
   vertex.setStyle(node_style);
 
@@ -869,7 +807,8 @@ function addListeners() {
               label: '...',
               geometry: new mx.mxRectangle(pt.x - width / 2, pt.y - height / 2, width, height),
               phase: 0,
-              is_locked: false
+              is_locked: false,
+              force_show_output: false
             }
             const newCell = graph.insertVertex(parent, id, value, pt.x, pt.y, 160, 80, node_style);
             if (userLabel != null) {

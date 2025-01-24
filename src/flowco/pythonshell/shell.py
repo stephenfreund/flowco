@@ -295,7 +295,7 @@ class PythonShell:
 
                 with logger("Capturing output"):
                     text = self.run(
-                        f"pprint.pp(convert_np_float64({node.function_result_var}))"
+                        f"pprint.pp(convert_np_float64({node.function_result_var}), indent=2, compact=False, sort_dicts=True, underscore_numbers=True)"
                     ).stdout
                     pickle_result = self.run(
                         f"print(encode({node.function_result_var}))"
