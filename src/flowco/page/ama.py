@@ -81,8 +81,11 @@ class AskMeAnything:
                 and node.function_return_type is not None
                 and not node.function_return_type.is_None_type()
             ):
-                value, _ = result.result.to_repr()
-                init_code += f"{node.function_result_var} = {value}\n"
+                try:
+                    value, _ = result.result.to_repr()
+                    init_code += f"{node.function_result_var} = {value}\n"
+                except Exception as e:  
+                    error(e)
 
         init_code += "\n".join(self.page.tables.function_defs())
 
@@ -141,11 +144,7 @@ class AskMeAnything:
             """\
             {"name": "update_node",
             "strict": true,
-            "parameters": {"$defs": {"AnyType": {"properties": {"type": {"const": "Any", "title": "Type", "type": "string"
-                                }
-                            }, "required": ["type"
-                            ], "title": "AnyType", "type": "object", "additionalProperties": false
-                        }, "BoolType": {"properties": {"type": {"const": "bool", "title": "Type", "type": "string"
+            "parameters": {"$defs": {"BoolType": {"properties": {"type": {"const": "bool", "title": "Type", "type": "string"
                                 }
                             }, "required": ["type"
                             ], "title": "BoolType", "type": "object", "additionalProperties": false
@@ -156,8 +155,6 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/StrType"
                                         },
-                                        {"$ref": "#/$defs/AnyType"
-                                        },
                                         {"$ref": "#/$defs/NoneType"
                                         },
                                         {"$ref": "#/$defs/FloatType"
@@ -167,8 +164,6 @@ class AskMeAnything:
                                         {"$ref": "#/$defs/ListType"
                                         },
                                         {"$ref": "#/$defs/TypedDictType"
-                                        },
-                                        {"$ref": "#/$defs/TupleType"
                                         },
                                         {"$ref": "#/$defs/SetType"
                                         },
@@ -199,8 +194,6 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/StrType"
                                         },
-                                        {"$ref": "#/$defs/AnyType"
-                                        },
                                         {"$ref": "#/$defs/NoneType"
                                         },
                                         {"$ref": "#/$defs/FloatType"
@@ -210,8 +203,6 @@ class AskMeAnything:
                                         {"$ref": "#/$defs/ListType"
                                         },
                                         {"$ref": "#/$defs/TypedDictType"
-                                        },
-                                        {"$ref": "#/$defs/TupleType"
                                         },
                                         {"$ref": "#/$defs/SetType"
                                         },
@@ -234,8 +225,6 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/StrType"
                                         },
-                                        {"$ref": "#/$defs/AnyType"
-                                        },
                                         {"$ref": "#/$defs/NoneType"
                                         },
                                         {"$ref": "#/$defs/FloatType"
@@ -245,8 +234,6 @@ class AskMeAnything:
                                         {"$ref": "#/$defs/ListType"
                                         },
                                         {"$ref": "#/$defs/TypedDictType"
-                                        },
-                                        {"$ref": "#/$defs/TupleType"
                                         },
                                         {"$ref": "#/$defs/SetType"
                                         },
@@ -278,8 +265,6 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/StrType"
                                         },
-                                        {"$ref": "#/$defs/AnyType"
-                                        },
                                         {"$ref": "#/$defs/NoneType"
                                         },
                                         {"$ref": "#/$defs/FloatType"
@@ -289,8 +274,6 @@ class AskMeAnything:
                                         {"$ref": "#/$defs/ListType"
                                         },
                                         {"$ref": "#/$defs/TypedDictType"
-                                        },
-                                        {"$ref": "#/$defs/TupleType"
                                         },
                                         {"$ref": "#/$defs/SetType"
                                         },
@@ -318,8 +301,6 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/StrType"
                                         },
-                                        {"$ref": "#/$defs/AnyType"
-                                        },
                                         {"$ref": "#/$defs/NoneType"
                                         },
                                         {"$ref": "#/$defs/FloatType"
@@ -329,8 +310,6 @@ class AskMeAnything:
                                         {"$ref": "#/$defs/ListType"
                                         },
                                         {"$ref": "#/$defs/TypedDictType"
-                                        },
-                                        {"$ref": "#/$defs/TupleType"
                                         },
                                         {"$ref": "#/$defs/SetType"
                                         },
@@ -358,8 +337,6 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/StrType"
                                         },
-                                        {"$ref": "#/$defs/AnyType"
-                                        },
                                         {"$ref": "#/$defs/NoneType"
                                         },
                                         {"$ref": "#/$defs/FloatType"
@@ -369,8 +346,6 @@ class AskMeAnything:
                                         {"$ref": "#/$defs/ListType"
                                         },
                                         {"$ref": "#/$defs/TypedDictType"
-                                        },
-                                        {"$ref": "#/$defs/TupleType"
                                         },
                                         {"$ref": "#/$defs/SetType"
                                         },
@@ -392,8 +367,6 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/StrType"
                                         },
-                                        {"$ref": "#/$defs/AnyType"
-                                        },
                                         {"$ref": "#/$defs/NoneType"
                                         },
                                         {"$ref": "#/$defs/FloatType"
@@ -403,8 +376,6 @@ class AskMeAnything:
                                         {"$ref": "#/$defs/ListType"
                                         },
                                         {"$ref": "#/$defs/TypedDictType"
-                                        },
-                                        {"$ref": "#/$defs/TupleType"
                                         },
                                         {"$ref": "#/$defs/SetType"
                                         },
@@ -422,41 +393,6 @@ class AskMeAnything:
                                 }
                             }, "required": ["type"
                             ], "title": "StrType", "type": "object", "additionalProperties": false
-                        }, "TupleType": {"properties": {"type": {"const": "Tuple", "title": "Type", "type": "string"
-                                }, "elements": {"items": {"anyOf": [
-                                            {"$ref": "#/$defs/IntType"
-                                            },
-                                            {"$ref": "#/$defs/BoolType"
-                                            },
-                                            {"$ref": "#/$defs/StrType"
-                                            },
-                                            {"$ref": "#/$defs/AnyType"
-                                            },
-                                            {"$ref": "#/$defs/NoneType"
-                                            },
-                                            {"$ref": "#/$defs/FloatType"
-                                            },
-                                            {"$ref": "#/$defs/OptionalType"
-                                            },
-                                            {"$ref": "#/$defs/ListType"
-                                            },
-                                            {"$ref": "#/$defs/TypedDictType"
-                                            },
-                                            {"$ref": "#/$defs/TupleType"
-                                            },
-                                            {"$ref": "#/$defs/SetType"
-                                            },
-                                            {"$ref": "#/$defs/PDDataFrameType"
-                                            },
-                                            {"$ref": "#/$defs/PDSeriesType"
-                                            },
-                                            {"$ref": "#/$defs/NumpyNdarrayType"
-                                            }
-                                        ]
-                                    }, "title": "Elements", "type": "array"
-                                }
-                            }, "required": ["type", "elements"
-                            ], "title": "TupleType", "type": "object", "additionalProperties": false
                         }, "TypedDictType": {"properties": {"type": {"const": "TypedDict", "title": "Type", "type": "string"
                                 }, "name": {"description": "A unique name for the dictionary type. This is used to generate a unique TypedDict name.", "title": "Name", "type": "string"
                                 }, "items": {"description": "A list of key-value pairs where the key is the key name and the value is the type of the key.", "items": {"$ref": "#/$defs/KeyType"
@@ -476,8 +412,6 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/StrType"
                                         },
-                                        {"$ref": "#/$defs/AnyType"
-                                        },
                                         {"$ref": "#/$defs/NoneType"
                                         },
                                         {"$ref": "#/$defs/FloatType"
@@ -487,8 +421,6 @@ class AskMeAnything:
                                         {"$ref": "#/$defs/ListType"
                                         },
                                         {"$ref": "#/$defs/TypedDictType"
-                                        },
-                                        {"$ref": "#/$defs/TupleType"
                                         },
                                         {"$ref": "#/$defs/SetType"
                                         },
@@ -599,11 +531,7 @@ class AskMeAnything:
             """\
             {"name": "update_node",
             "strict": true,
-            "parameters": {"$defs": {"AnyType": {"properties": {"type": {"const": "Any", "title": "Type", "type": "string"
-                                }
-                            }, "required": ["type"
-                            ], "title": "AnyType", "type": "object", "additionalProperties": false
-                        }, "BoolType": {"properties": {"type": {"const": "bool", "title": "Type", "type": "string"
+            "parameters": {"$defs": {"BoolType": {"properties": {"type": {"const": "bool", "title": "Type", "type": "string"
                                 }
                             }, "required": ["type"
                             ], "title": "BoolType", "type": "object", "additionalProperties": false
@@ -614,8 +542,6 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/StrType"
                                         },
-                                        {"$ref": "#/$defs/AnyType"
-                                        },
                                         {"$ref": "#/$defs/NoneType"
                                         },
                                         {"$ref": "#/$defs/FloatType"
@@ -625,8 +551,6 @@ class AskMeAnything:
                                         {"$ref": "#/$defs/ListType"
                                         },
                                         {"$ref": "#/$defs/TypedDictType"
-                                        },
-                                        {"$ref": "#/$defs/TupleType"
                                         },
                                         {"$ref": "#/$defs/SetType"
                                         },
@@ -657,8 +581,6 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/StrType"
                                         },
-                                        {"$ref": "#/$defs/AnyType"
-                                        },
                                         {"$ref": "#/$defs/NoneType"
                                         },
                                         {"$ref": "#/$defs/FloatType"
@@ -668,8 +590,6 @@ class AskMeAnything:
                                         {"$ref": "#/$defs/ListType"
                                         },
                                         {"$ref": "#/$defs/TypedDictType"
-                                        },
-                                        {"$ref": "#/$defs/TupleType"
                                         },
                                         {"$ref": "#/$defs/SetType"
                                         },
@@ -692,8 +612,6 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/StrType"
                                         },
-                                        {"$ref": "#/$defs/AnyType"
-                                        },
                                         {"$ref": "#/$defs/NoneType"
                                         },
                                         {"$ref": "#/$defs/FloatType"
@@ -703,8 +621,6 @@ class AskMeAnything:
                                         {"$ref": "#/$defs/ListType"
                                         },
                                         {"$ref": "#/$defs/TypedDictType"
-                                        },
-                                        {"$ref": "#/$defs/TupleType"
                                         },
                                         {"$ref": "#/$defs/SetType"
                                         },
@@ -736,8 +652,6 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/StrType"
                                         },
-                                        {"$ref": "#/$defs/AnyType"
-                                        },
                                         {"$ref": "#/$defs/NoneType"
                                         },
                                         {"$ref": "#/$defs/FloatType"
@@ -747,8 +661,6 @@ class AskMeAnything:
                                         {"$ref": "#/$defs/ListType"
                                         },
                                         {"$ref": "#/$defs/TypedDictType"
-                                        },
-                                        {"$ref": "#/$defs/TupleType"
                                         },
                                         {"$ref": "#/$defs/SetType"
                                         },
@@ -776,8 +688,6 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/StrType"
                                         },
-                                        {"$ref": "#/$defs/AnyType"
-                                        },
                                         {"$ref": "#/$defs/NoneType"
                                         },
                                         {"$ref": "#/$defs/FloatType"
@@ -787,8 +697,6 @@ class AskMeAnything:
                                         {"$ref": "#/$defs/ListType"
                                         },
                                         {"$ref": "#/$defs/TypedDictType"
-                                        },
-                                        {"$ref": "#/$defs/TupleType"
                                         },
                                         {"$ref": "#/$defs/SetType"
                                         },
@@ -816,8 +724,6 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/StrType"
                                         },
-                                        {"$ref": "#/$defs/AnyType"
-                                        },
                                         {"$ref": "#/$defs/NoneType"
                                         },
                                         {"$ref": "#/$defs/FloatType"
@@ -827,8 +733,6 @@ class AskMeAnything:
                                         {"$ref": "#/$defs/ListType"
                                         },
                                         {"$ref": "#/$defs/TypedDictType"
-                                        },
-                                        {"$ref": "#/$defs/TupleType"
                                         },
                                         {"$ref": "#/$defs/SetType"
                                         },
@@ -850,8 +754,6 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/StrType"
                                         },
-                                        {"$ref": "#/$defs/AnyType"
-                                        },
                                         {"$ref": "#/$defs/NoneType"
                                         },
                                         {"$ref": "#/$defs/FloatType"
@@ -861,8 +763,6 @@ class AskMeAnything:
                                         {"$ref": "#/$defs/ListType"
                                         },
                                         {"$ref": "#/$defs/TypedDictType"
-                                        },
-                                        {"$ref": "#/$defs/TupleType"
                                         },
                                         {"$ref": "#/$defs/SetType"
                                         },
@@ -880,41 +780,6 @@ class AskMeAnything:
                                 }
                             }, "required": ["type"
                             ], "title": "StrType", "type": "object", "additionalProperties": false
-                        }, "TupleType": {"properties": {"type": {"const": "Tuple", "title": "Type", "type": "string"
-                                }, "elements": {"items": {"anyOf": [
-                                            {"$ref": "#/$defs/IntType"
-                                            },
-                                            {"$ref": "#/$defs/BoolType"
-                                            },
-                                            {"$ref": "#/$defs/StrType"
-                                            },
-                                            {"$ref": "#/$defs/AnyType"
-                                            },
-                                            {"$ref": "#/$defs/NoneType"
-                                            },
-                                            {"$ref": "#/$defs/FloatType"
-                                            },
-                                            {"$ref": "#/$defs/OptionalType"
-                                            },
-                                            {"$ref": "#/$defs/ListType"
-                                            },
-                                            {"$ref": "#/$defs/TypedDictType"
-                                            },
-                                            {"$ref": "#/$defs/TupleType"
-                                            },
-                                            {"$ref": "#/$defs/SetType"
-                                            },
-                                            {"$ref": "#/$defs/PDDataFrameType"
-                                            },
-                                            {"$ref": "#/$defs/PDSeriesType"
-                                            },
-                                            {"$ref": "#/$defs/NumpyNdarrayType"
-                                            }
-                                        ]
-                                    }, "title": "Elements", "type": "array"
-                                }
-                            }, "required": ["type", "elements"
-                            ], "title": "TupleType", "type": "object", "additionalProperties": false
                         }, "TypedDictType": {"properties": {"type": {"const": "TypedDict", "title": "Type", "type": "string"
                                 }, "name": {"description": "A unique name for the dictionary type. This is used to generate a unique TypedDict name.", "title": "Name", "type": "string"
                                 }, "items": {"description": "A list of key-value pairs where the key is the key name and the value is the type of the key.", "items": {"$ref": "#/$defs/KeyType"
@@ -934,8 +799,6 @@ class AskMeAnything:
                                         },
                                         {"$ref": "#/$defs/StrType"
                                         },
-                                        {"$ref": "#/$defs/AnyType"
-                                        },
                                         {"$ref": "#/$defs/NoneType"
                                         },
                                         {"$ref": "#/$defs/FloatType"
@@ -945,8 +808,6 @@ class AskMeAnything:
                                         {"$ref": "#/$defs/ListType"
                                         },
                                         {"$ref": "#/$defs/TypedDictType"
-                                        },
-                                        {"$ref": "#/$defs/TupleType"
                                         },
                                         {"$ref": "#/$defs/SetType"
                                         },
