@@ -18,7 +18,7 @@ class DiagramNodeUpdate(BaseModel):
     geometry: Geometry
     output_geometry: Optional[Geometry] = None
     is_locked: bool
-    is_output_visible: bool
+    force_show_output: bool
 
 
 class DiagramEdgeUpdate(BaseModel):
@@ -97,7 +97,7 @@ def update_dataflow_graph(
             node.output_geometry = output_geometry
 
             node.is_locked = node_update.is_locked
-            node.is_output_visible = node_update.is_output_visible
+            node.force_show_output = node_update.force_show_output
 
         else:
             pill = node_update.pill
@@ -117,7 +117,7 @@ def update_dataflow_graph(
                     node_update.geometry.width + 100, 0
                 ).resize(120, 80),
                 is_locked=node_update.is_locked,
-                is_output_visible=node_update.is_output_visible,
+                force_show_output=node_update.force_show_output,
             )
             new_nodes_dict[node_update.id] = new_node
             log(f"Inserted new node: {node_id}")

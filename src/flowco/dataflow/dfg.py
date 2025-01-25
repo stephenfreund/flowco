@@ -131,7 +131,7 @@ class Node(NodeLike, BaseModel):
         description="Whether the node is locked and cannot be modified by the LLM.",
     )
 
-    is_output_visible: bool = Field(
+    force_show_output: bool = Field(
         default=True,
         description="Whether the output of the node is visible in the diagram.",
     )
@@ -253,7 +253,7 @@ class Node(NodeLike, BaseModel):
             and self.geometry == other.geometry
             and self.output_geometry == other.output_geometry
             and self.is_locked == other.is_locked
-            and self.is_output_visible == other.is_output_visible
+            and self.force_show_output == other.force_show_output
             and self.requirements == other.requirements
             and self.function_return_type == other.function_return_type
             and self.algorithm == other.algorithm
@@ -580,7 +580,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                         geometry=Geometry(**node["geometry"]),
                         output_geometry=Geometry(**node["output_geometry"]),
                         is_locked=node.get("is_locked", False),
-                        is_output_visible=node.get("is_output_visible", True),
+                        force_show_output=node.get("force_show_output", False),
                         function_name=node["function_name"],
                         function_result_var=node["function_result_var"],
                         predecessors=node["predecessors"],

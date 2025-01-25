@@ -746,8 +746,8 @@ class FlowthonProgram(BaseModel):
                     predecessors=[],
                     geometry=Geometry(x=0, y=0, width=0, height=0),
                     output_geometry=Geometry(x=0, y=0, width=0, height=0),
-                    is_locked=False, # TODO --> what to do here???
-                    is_output_visible=False, # TODO --> what to do here???
+                    is_locked=False,  # TODO --> what to do here???
+                    force_show_output=False,  # TODO --> what to do here???
                     function_name=pill_to_function_name(node.pill),
                     function_result_var=pill_to_result_var_name(node.pill),
                     requirements=node.requirements,
