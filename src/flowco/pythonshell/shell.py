@@ -36,7 +36,7 @@ class EvalResult(BaseModel):
     def as_result_output(self) -> ResultOutput | None:
         if self.plot is not None:
             return ResultOutput(output_type=OutputType.image, data=self.plot)
-        elif self.stdout is not None:
+        elif self.stdout is not None and len(self.stdout) > 0:
             return ResultOutput(output_type=OutputType.text, data=self.stdout)
         elif self.outputs is not None:
             return ResultOutput(
@@ -120,6 +120,8 @@ class PythonShell:
         stdout = ""
         outputs = []
         images = []
+
+        print(execution_result.get("outputs", []))
 
         for msg in execution_result.get("outputs", []):
             msg_type = msg.get("output_type", "")

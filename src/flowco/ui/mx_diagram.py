@@ -88,10 +88,10 @@ def get_output(
                 return DiagramOutput(output_type="image", data=image_url)
             else:
                 if image_cache.get(node.id) == image_url:
-                    log(f"Using cached image for node {node.id}")
+                    # log(f"Using cached image for node {node.id}")
                     return DiagramOutput(output_type="image", data="cached")
                 else:
-                    log(f"Adding image to cache for node {node.id}")
+                    # log(f"Adding image to cache for node {node.id}")
                     image_cache.put(node.id, image_url)
                     return DiagramOutput(output_type="image", data=image_url)
 

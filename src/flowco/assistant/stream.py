@@ -1,3 +1,4 @@
+import pprint
 import textwrap
 import traceback
 from flowco.assistant.base import AssistantBase
@@ -128,16 +129,20 @@ class StreamingAssistantWithFunctionCalls(AssistantBase):
     def _make_call(self, tool_call) -> Tuple[str, str | Dict[str, Any] | None]:
         name = tool_call.function.name
         try:
-            args = json.loads(tool_call.function.arguments)
-            function = self._functions[name]
-            user_response, result = function["function"](**args)
+            with logger(f"Calling function {name}"):
+                args = json.loads(tool_call.function.arguments)
+                log(f"Arguments: {pprint.pformat(args)}")
+                function = self._functions[name]
+                user_response, result = function["function"](**args)
+                log(f"User response: {user_response}")
+                log(f"Function call result: {result}")
         except KeyboardInterrupt as e:
+            warn(f"Keyboard interrupt in function call: {e}")
             raise e
         except Exception as e:
             # likely to be an exception from the code we ran, not a bug...
             result = f"Exception in function call: {e}\n{traceback.format_exc()}"
-            warn(result)
-            warn(traceback.format_exc())
+            warn(e)
             user_response = "An error occurred while processing the tool call."
 
         return user_response, result
@@ -262,7 +267,7 @@ class StreamingAssistantWithFunctionCalls(AssistantBase):
         try:
             for tool_call in tool_calls:
                 user_response, function_response = self._make_call(tool_call)
-                yield f"\n**:red[{user_response}].**\n\n"
+                yield f"\n\n{user_response}\n\n"
                 if function_response is None:
                     make_response(tool_call, user_response)
                 elif isinstance(function_response, str):

@@ -98,7 +98,7 @@ class ProjectsPage(FlowcoPage):
         current = self.get_current_project_name()
 
         st.write("# Projects")
-        st.pills(
+        selected = st.pills(
             "Select a project",
             names + [":material/add:", ":material/upload:"],
             key="project_name",
@@ -174,7 +174,9 @@ class ProjectsPage(FlowcoPage):
     def download_files(self):
         ui_page = st.session_state.ui_page
         flowco_name = ui_page.page().file_name
-        data_files = ui_page.page().tables.all_files()
+        data_files = [
+            x for x in ui_page.page().tables.all_files() if x.endswith(".csv")
+        ]
 
         with st.spinner("Creating ZIP file..."):
             zip_data = create_zip_in_memory([flowco_name] + data_files)
@@ -205,4 +207,4 @@ class ProjectsPage(FlowcoPage):
                 st.session_state.selected_node = "<<<<<"
                 st.session_state.force_update = True
                 st.session_state.clear_graph = True
-                # st.rerun()
+                st.rerun()  # warning: hack -- this is in a callback, so technically a no op.

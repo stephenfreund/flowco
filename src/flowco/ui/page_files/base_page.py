@@ -324,11 +324,11 @@ class FlowcoPage:
                         if type(v) == pd.DataFrame:
                             st.dataframe(v, height=200)
                         else:
-                            st.write(v)
+                            st.code(v)
                 elif type(value) == str:
                     st.write(f"```{value}\n```")
                 else:
-                    st.write(value)
+                    st.code(value)
             elif node.result.output is not None:
                 output = node.result.output
                 if output is not None:
@@ -482,7 +482,7 @@ class FlowcoPage:
                     st.session_state.image_cache.clear()
 
                 diagram = st.session_state.ui_page.dfg_as_mx_diagram(cache).model_dump()
-                log("mx_diagram size", len(json.dumps(diagram)))
+                # log("mx_diagram size", len(json.dumps(diagram)))
 
                 result = mxgraph_component(
                     key=st.session_state.nonce,

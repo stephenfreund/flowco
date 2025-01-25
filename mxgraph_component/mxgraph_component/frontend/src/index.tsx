@@ -270,16 +270,16 @@ class mxIconSet {
       const showOutput = children.some(child => child.value !== '');
       if (showOutput) {
         // Create Delete Icon
-        const showOutputImg: HTMLImageElement = state.cell.value.force_show_output ? mx.mxUtils.createImage("visible.png") : mx.mxUtils.createImage("visible_off.png")
+        const showOutputImg: HTMLImageElement = state.cell.value.force_show_output ? mx.mxUtils.createImage("visible_filled.png") : mx.mxUtils.createImage("visible.png")
         showOutputImg.setAttribute('title', 'Show Output');
         Object.assign(showOutputImg.style, {
           position: 'absolute',
           cursor: 'pointer',
           width: '16px',
           height: '16px',
-          left: `${state.x + state.width/2 - 8}px`,
-          top: `${state.y + state.height - 18}px`
-        });
+          left: `${state.x + state.width - 16 - 8}px`,
+          top: `${state.y + 2}px`
+          });
 
         // Add event listeners for Delete Icon
         mx.mxEvent.addListener(showOutputImg, 'click', mx.mxUtils.bind(this, (evt: MouseEvent) => {

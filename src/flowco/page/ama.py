@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import traceback
-from typing import Iterable, List, Literal, Tuple
+from typing import Any, Dict, Iterable, List, Literal, Tuple
 from flowco.assistant.openai import OpenAIAssistant
 from flowco.assistant.stream import StreamingAssistantWithFunctionCalls
 from flowco.builder.graph_completions import messages_for_graph
@@ -23,6 +23,7 @@ from flowco.dataflow.dfg_update import (
     DiagramNodeUpdate,
     update_dataflow_graph,
 )
+from flowco.util.text import strip_ansi
 
 
 class VisibleMessage(BaseModel):
@@ -35,7 +36,7 @@ class QuestionKind(BaseModel):
     kind: Literal["Explain"] | Literal["Modify"]
 
 
-ReturnType = Tuple[str, str | None]
+ReturnType = Tuple[str, str | Dict[str, Any] | None]
 
 
 class AskMeAnything:
@@ -86,9 +87,29 @@ class AskMeAnything:
 
         init_code += "\n".join(self.page.tables.function_defs())
 
-        result = session.get("shells", PythonShells).run(init_code + "\n" + code)
-        result_output = result.as_result_output()
-        return "Okay, I ran some code", result_output.to_prompt()
+        shell_code = f"{init_code}\n{code}"
+        with logger("python_eval"):
+            try:
+                log(f"Code:\n{shell_code}")
+                result = session.get("shells", PythonShells).run(shell_code)
+                result_output = result.as_result_output()
+                if result_output is not None:
+                    log(f"Result:\n{result_output}")
+                    return f"**:blue[Okay, I ran some code:]**\n```\n{code}\n```\n", (
+                        result_output.to_prompt() if result_output is not None else None
+                    )
+                else:
+                    return (
+                        f"**:blue[Okay, I ran some code:]**\n```\n{code}\n```\n. It produced no output",
+                        None,
+                    )
+            except Exception as e:
+                error(f"Error running code: {e}")
+                e_str = strip_ansi(str(e).splitlines()[-1])
+                return (
+                    f"**:red[I had an error running this code:]**\n```\n{code}\n```\n\n**:red[Error:]**\n```\n{e_str}\n```\n",
+                    e_str,
+                )
 
     def inspect(self, id: str) -> ReturnType:
         """
@@ -109,22 +130,24 @@ class AskMeAnything:
         """
         log(f"inspect: {id}")
         if id not in self.page.dfg.node_ids():
-            return (f"Node {id} does not exist", None)
+            return (f"**:red[Node {id} does not exist]**", None)
         node = self.page.dfg[id]
         result = node.result
         if result is None:
-            return (f"Node {node.pill} has no result right now", None)
+            return (f"**:red[No output or result for {node.pill}]**", None)
         else:
             if result.output is not None:
                 return (
-                    f"Inspected the output for {node.pill}",
+                    f"**:blue[I inspected the output for {node.pill}]**",
                     result.output.to_prompt(),
                 )
-            else:
+            elif result.result is not None:
                 return (
-                    f"Inspected the result for {node.pill}",
+                    f"**:blue[I inspected the result for {node.pill}]**",
                     result.result.to_prompt(),
                 )
+            else:
+                return (f"**:red[No output or result for {node.pill}]**", None)
 
     if config.x_algorithm_phase:
 
@@ -518,7 +541,7 @@ class AskMeAnything:
             dfg = self.page.dfg
 
             if dfg[id] is None:
-                return (f"Node {id} does not exist", None)
+                return (f"**:red[Node {id} does not exist]**", None)
 
             node = dfg[id]
             mods = []
@@ -581,7 +604,7 @@ class AskMeAnything:
             mod_str = ", ".join(reversed(mods))
 
             return (
-                f"I updated {mod_str} for {node.pill}",
+                f"**:blue[I updated {mod_str} for {node.pill}]**",
                 node.model_dump_json(indent=2),
             )
 
@@ -973,7 +996,7 @@ class AskMeAnything:
             dfg = self.page.dfg
 
             if dfg[id] is None:
-                return (f"Node {id} does not exist", None)
+                return (f"**:red[Node {id} does not exist]**", None)
 
             node = dfg[id]
             mods = []
@@ -992,7 +1015,10 @@ class AskMeAnything:
 
             if function_return_type:
                 function_return_type = ExtendedType.model_validate(function_return_type)
-                if function_return_type != node.function_return_type:
+                if (
+                    node.function_return_type is not None
+                    and function_return_type != node.function_return_type
+                ):
                     log(
                         f"Updating function_return_type from {node.function_return_type.to_markdown(True)} to {function_return_type.to_markdown(True)}"
                     )
@@ -1029,7 +1055,7 @@ class AskMeAnything:
             mod_str = ", ".join(reversed(mods))
 
             return (
-                f"I updated {mod_str} for {node.pill}",
+                f"**:blue[I updated {mod_str} for {node.pill}]**",
                 node.model_dump_json(indent=2),
             )
 
@@ -1081,11 +1107,11 @@ class AskMeAnything:
         pill = "tmp-pill"
 
         if dfg.node_for_pill(pill) is not None:
-            return (f"Node with pill {pill} already exists", None)
+            return (f"**:red[Node with pill {pill} already exists]**", None)
 
         for pred in predecessors:
             if dfg[pred] is None:
-                return (f"predecessor {pred} does not exist", None)
+                return (f"**:red[predecessor {pred} does not exist]**", None)
 
         pill = dfg.make_pill(label)
         geometry = Geometry(x=0, y=0, width=0, height=0)
@@ -1138,7 +1164,7 @@ class AskMeAnything:
         else:
             message = f"I add a new node {node.pill}"
         return (
-            message,
+            f"**:blue[{message}]**",
             node.model_dump_json(indent=2),
         )
 
@@ -1168,7 +1194,7 @@ class AskMeAnything:
 
         for id in [src_id, dst_id]:
             if dfg[id] is None:
-                return (f"Node {id} does not exist", None)
+                return (f"**:red[Node {id} does not exist]", None)
 
         dfg = dfg.with_new_edge(src_id, dst_id)
         self.page.update_dfg(dfg)
@@ -1177,7 +1203,7 @@ class AskMeAnything:
         edge = dfg.edge_for_nodes(src_id, dst_id)
 
         return (
-            f"I added a new edge from {src_id} to {dst_id}",
+            f"**:blue[I added a new edge from {src_id} to {dst_id}]**",
             edge.model_dump_json(indent=2),
         )
 
@@ -1202,7 +1228,7 @@ class AskMeAnything:
         dfg = self.page.dfg
 
         if dfg[id] is None:
-            return (f"Node {id} does not exist", None)
+            return (f"**:red[Node {id} does not exist]**", None)
 
         node = dfg[id]
         dfg_update = mxDiagramUpdate(
@@ -1229,7 +1255,7 @@ class AskMeAnything:
 
         dfg = update_dataflow_graph(dfg, dfg_update)
         self.page.update_dfg(dfg)
-        return (f"I removed node {node.pill}", None)
+        return (f"**:blue[I removed node {node.pill}]**", None)
 
     def remove_edge(self, id: str) -> ReturnType:
         """
@@ -1255,7 +1281,7 @@ class AskMeAnything:
 
         if edge_to_remove is None:
             return (
-                "Edge has already been removed",
+                "**:red[Edge has already been removed]**",
                 f"{{ success: false, message: 'Edge {id} does not exist' }}",
             )
 
@@ -1283,7 +1309,7 @@ class AskMeAnything:
         dfg = update_dataflow_graph(dfg, dfg_update)
         self.page.update_dfg(dfg)
         return (
-            f"I removed edge from {edge_to_remove.src} to {edge_to_remove.dst}",
+            f"**:blue[I removed edge from {edge_to_remove.src} to {edge_to_remove.dst}]**",
             None,
         )
 

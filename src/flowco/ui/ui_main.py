@@ -65,3 +65,15 @@ except Exception as e:
     print(traceback.format_exc())
     st.error(e)
     st.exception(e)
+    print("Restarting Session Components...")
+    if os.path.isdir(st.session_state.args.page):
+        page_path = os.path.abspath(st.session_state.args.page)
+    else:
+        page_path = os.path.abspath(os.path.dirname(st.session_state.args.page))
+    session.set(
+        output=Output(),
+        costs=CostTracker(),
+        stopper=Stopper(),
+        shells=PythonShells(),
+        filesystem=SessionFileSystem(f"file://{page_path}"),
+    )
