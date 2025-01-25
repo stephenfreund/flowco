@@ -1046,12 +1046,19 @@ class DataFlowGraph(GraphLike, BaseModel):
             result = node.result
             if result is not None:
                 if result.result is not None:
-                    repr, clipped = result.result.to_repr(10)
+
+                    # guard against the result value being something we can't handle
+                    try:
+                        repr, clipped = result.result.to_repr(10)
+                    except Exception as e:
+                        error(e)
+                        repr, clipped = str(result.result), False
+
                     if clipped:
                         messages.append(
                             {
                                 "type": "text",
-                                "text": f"The variable `{node.function_result_var}` has this value.  We show only the first 10 elements have any aggregate value:\n```\n{repr}\n```",
+                                "text": f"The variable `{node.function_result_var}` has this value.  We show only the first 10 elements of any aggregate value:\n```\n{repr}\n```",
                             }
                         )
                     else:

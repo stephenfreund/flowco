@@ -219,12 +219,12 @@ postconditions: |
     The postconditions should refer to the output as `{function_return_var}` and 
     the inputs by name.  Not all inputs may be used.
 
-    Create a return type for the function that meets the postconditions.  The 
-    return type must be an extended type other than Any or None.
+    Create a return type for the function that meets the postconditions.  If
+    the function generates a plot, the return type should be None.
 
     The return type's specification
     should be detailed enough that users of the function can understand what
-    the function returns.  Do not include a specificaiton if the return
+    the function returns.  Do not include a specificaton if the return
     type is None.
     
     The type should reflect what is described in the specification.
