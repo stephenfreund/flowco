@@ -300,10 +300,10 @@ class FlowcoPage:
 
         if AbstractionLevel.show_code(st.session_state.abstraction_level):
             with st.container(key="node_type", border=True):
-                st.write("###### Extended Type")
+                st.write("###### Inferred Output Type")
                 if node.function_return_type is not None:
                     st.code(node.function_return_type)
-                    st.write(node.function_return_type.to_markdown())
+                    st.write(node.function_return_type.type_schema())
 
             with st.container(key="node_code", border=True):
                 st.write("###### Code")

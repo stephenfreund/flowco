@@ -1,3 +1,4 @@
+import json
 import textwrap
 from typing import Optional
 from flowco.assistant.assistant import Assistant
@@ -66,6 +67,8 @@ def _repair_run(
                 pass_config.tables, graph, node
             )
 
+            node = node.update(result=result)
+
             with logger("Typechecking result"):
                 if result.result is not None:
                     return_value = result.result.to_value()
@@ -75,7 +78,7 @@ def _repair_run(
                     else:
                         ValueError("No return type for function")
 
-            return node.update(result=result)
+            return node
         except Exception as e:
             if stashed_error is None:
                 stashed_error = e
@@ -109,11 +112,17 @@ def _repair_run(
             assistant.add_prompt_by_key(
                 "repair-node-run",
                 error=strip_ansi(str(e)),
+                signature=node.signature_str(),
             )
 
             assistant.add_json_object(
                 "Here is the offending node", initial_node.model_dump()
             )
+
+            if node.result is not None:
+                assistant.add_message(
+                    role="user", content=node.result.to_prompt_messages()
+                )
 
             new_node = node_completion(
                 assistant,

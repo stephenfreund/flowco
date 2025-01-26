@@ -1,3 +1,4 @@
+from typing import Any, Dict, List
 from flowco.util.output import debug, warn
 
 import instructor
@@ -28,7 +29,7 @@ class AssistantBase:
                 )
 
     def add_message(
-        self, role: str, content: str | dict[str, any] | list[str | dict[str, any]]
+        self, role: str, content: str | Dict[str, Any] | List[str | Dict[str, Any]]
     ):
         debug(
             "Add Message: " + json.dumps({"role": role, "content": content}, indent=2)

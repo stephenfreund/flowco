@@ -7,6 +7,7 @@ from flowco.util.output import error, log, warn
 from flowco.util.costs import add_cost
 from typing import (
     Any,
+    Callable,
     Dict,
     Iterable,
     Iterator,
@@ -112,14 +113,19 @@ class StreamingAssistantWithFunctionCalls(AssistantBase):
         self.model = config.model
         self.image_cache = {}
 
-    def _add_function(self, function):
+    def _add_function(self, function: Callable | Tuple[Callable, Dict[str, Any]]):
         """
         Add a new function to the list of function tools.
         The function should have the necessary json spec as its docstring
         """
-        schema = json.loads(function.__doc__)
-        assert "name" in schema, "Bad JSON in docstring for function tool."
-        self._functions[schema["name"]] = {"function": function, "schema": schema}
+        if not isinstance(function, Tuple):
+            schema = json.loads(function.__doc__)
+            assert "name" in schema, "Bad JSON in docstring for function tool."
+            self._functions[schema["name"]] = {"function": function, "schema": schema}
+        else:
+            function, schema = function
+            assert "name" in schema, "Bad JSON in docstring for function tool."
+            self._functions[schema["name"]] = {"function": function, "schema": schema}
 
     def set_functions(self, functions):
         self._functions = {}

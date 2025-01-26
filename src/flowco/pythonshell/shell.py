@@ -239,7 +239,10 @@ class PythonShell:
                             with open(temp_file_path, "wb") as f:
                                 assert predecessor.result is not None
                                 assert predecessor.result.result is not None
-
+                                # log(
+                                #     "Type of pickle:",
+                                #     type(decode(predecessor.result.result.pickle)),
+                                # )
                                 f.write(predecessor.result.result.pickle.encode())
 
                             # Prepare the code to decode the temp file
@@ -250,8 +253,10 @@ class PythonShell:
                     with logger("Appending argument"):
                         arguments.append(predecessor.function_result_var)
 
-            with logger("Running cell"):
-                self._run_cell("\n".join(code))
+            with logger("Running cell to load parameters"):
+                code_str = "\n".join(code)
+                # log(f"Code to load parameters:\n{code_str}")
+                self._run_cell(code_str)
             # TemporaryDirectory and its contents are automatically cleaned up here
 
         return arguments
@@ -299,6 +304,7 @@ class PythonShell:
                     text = self.run(
                         f"pprint.pp(convert_np_float64({node.function_result_var}), indent=2, compact=False, sort_dicts=True, underscore_numbers=True)"
                     ).stdout
+                with logger("Capturing pickle"):
                     pickle_result = self.run(
                         f"print(encode({node.function_result_var}))"
                     ).stdout

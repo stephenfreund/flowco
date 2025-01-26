@@ -1,15 +1,30 @@
 from __future__ import annotations
-from typing import Any, Iterable, Set, Tuple, Union, Dict, List, Literal, TypedDict
-import numpy as np
-import pandas as pd
+import pprint
+from typing import Any, Iterable, Set, Tuple, Union, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field
 from abc import abstractmethod
+import numpy as np
+import pandas as pd
 
-from typing import Any, List, Union, Iterable, Optional, Literal
-from pydantic import BaseModel, Field
-from abc import abstractmethod
-import numpy as np
-import pandas as pd
+from flowco.builder import type_ops
+
+# Define TypeRepresentation before using it in classes
+TypeRepresentation = Union[
+    "IntType",
+    "BoolType",
+    "StrType",
+    "NoneType",
+    "FloatType",
+    "OptionalType",
+    "ListType",
+    "TypedDictType",
+    "DictType",
+    # "TupleType",
+    "SetType",
+    "PDDataFrameType",
+    "PDSeriesType",
+    "NumpyNdarrayType",
+]
 
 
 # Base class for all type representations with required methods
@@ -31,9 +46,20 @@ class BaseType(BaseModel):
         """
         pass
 
+    @abstractmethod
+    def type_schema(self) -> Dict[str, Any]:
+        """Generate a JSON schema representation of the type."""
+        pass
+
+
+# Implementing each type class without default descriptions and with __init__ methods
+
 
 class IntType(BaseType):
-    type: Literal["int"]  # = "int"
+    type: Literal["int"]
+    description: str = Field(
+        ..., description="A human-readable description of the type."  # Required field
+    )
 
     def __init__(self, **data):
         if "type" not in data:
@@ -45,7 +71,7 @@ class IntType(BaseType):
 
     def to_markdown(self, indent: int = 0) -> List[str]:
         spaces = "  " * indent
-        return [f"{spaces}- **Integer**"]
+        return [f"{spaces}- **Integer**: {self.description}"]
 
     def __str__(self) -> str:
         return "int"
@@ -57,9 +83,15 @@ class IntType(BaseType):
             return
         raise ValueError(f"Expected int, got {type(value).__name__}")
 
+    def type_schema(self) -> Dict[str, Any]:
+        return {"type": "integer", "description": self.description}
+
 
 class BoolType(BaseType):
-    type: Literal["bool"]  # = "bool"
+    type: Literal["bool"]
+    description: str = Field(
+        ..., description="A human-readable description of the type."  # Required field
+    )
 
     def __init__(self, **data):
         if "type" not in data:
@@ -71,7 +103,7 @@ class BoolType(BaseType):
 
     def to_markdown(self, indent: int = 0) -> List[str]:
         spaces = "  " * indent
-        return [f"{spaces}- **Boolean**"]
+        return [f"{spaces}- **Boolean**: {self.description}"]
 
     def __str__(self) -> str:
         return "bool"
@@ -81,9 +113,15 @@ class BoolType(BaseType):
             return
         raise ValueError(f"Expected bool, got {type(value).__name__}")
 
+    def type_schema(self) -> Dict[str, Any]:
+        return {"type": "boolean", "description": self.description}
+
 
 class StrType(BaseType):
-    type: Literal["str"]  # = "str"
+    type: Literal["str"]
+    description: str = Field(
+        ..., description="A human-readable description of the type."  # Required field
+    )
 
     def __init__(self, **data):
         if "type" not in data:
@@ -95,7 +133,7 @@ class StrType(BaseType):
 
     def to_markdown(self, indent: int = 0) -> List[str]:
         spaces = "  " * indent
-        return [f"{spaces}- **String**"]
+        return [f"{spaces}- **String**: {self.description}"]
 
     def __str__(self) -> str:
         return "str"
@@ -105,9 +143,15 @@ class StrType(BaseType):
             return
         raise ValueError(f"Expected str, got {type(value).__name__}")
 
+    def type_schema(self) -> Dict[str, Any]:
+        return {"type": "string", "description": self.description}
+
 
 class AnyType(BaseType):
-    type: Literal["Any"]  # = "Any"
+    type: Literal["Any"]
+    description: str = Field(
+        ..., description="A human-readable description of the type."  # Required field
+    )
 
     def __init__(self, **data):
         if "type" not in data:
@@ -119,7 +163,7 @@ class AnyType(BaseType):
 
     def to_markdown(self, indent: int = 0) -> List[str]:
         spaces = "  " * indent
-        return [f"{spaces}- **Any**"]
+        return [f"{spaces}- **Any**: {self.description}"]
 
     def __str__(self) -> str:
         return "Any"
@@ -127,9 +171,19 @@ class AnyType(BaseType):
     def check_value(self, value: Any) -> None:
         return  # Always matches
 
+    def type_schema(self) -> Dict[str, Any]:
+        return {
+            "type": "Any",
+            "description": self.description,
+            # No type constraint
+        }
+
 
 class NoneType(BaseType):
-    type: Literal["None"]  # = "None"
+    type: Literal["None"]
+    description: str = Field(
+        ..., description="A human-readable description of the type."  # Required field
+    )
 
     def __init__(self, **data):
         if "type" not in data:
@@ -141,7 +195,7 @@ class NoneType(BaseType):
 
     def to_markdown(self, indent: int = 0) -> List[str]:
         spaces = "  " * indent
-        return [f"{spaces}- **None**"]
+        return [f"{spaces}- **None**: {self.description}"]
 
     def __str__(self) -> str:
         return "None"
@@ -151,9 +205,15 @@ class NoneType(BaseType):
             return
         raise ValueError(f"Expected None, got {type(value).__name__}")
 
+    def type_schema(self) -> Dict[str, Any]:
+        return {"type": "None", "description": self.description}
+
 
 class FloatType(BaseType):
-    type: Literal["float"]  # = "float"
+    type: Literal["float"]
+    description: str = Field(
+        ..., description="A human-readable description of the type."  # Required field
+    )
 
     def __init__(self, **data):
         if "type" not in data:
@@ -165,7 +225,7 @@ class FloatType(BaseType):
 
     def to_markdown(self, indent: int = 0) -> List[str]:
         spaces = "  " * indent
-        return [f"{spaces}- **Float**"]
+        return [f"{spaces}- **Float**: {self.description}"]
 
     def __str__(self) -> str:
         return "float"
@@ -175,10 +235,16 @@ class FloatType(BaseType):
             return
         raise ValueError(f"Expected float, got {type(value).__name__}")
 
+    def type_schema(self) -> Dict[str, Any]:
+        return {"type": "float", "description": self.description}
+
 
 class OptionalType(BaseType):
-    type: Literal["Optional"]  # = "Optional"
-    wrapped_type: "TypeRepresentation"
+    type: Literal["Optional"]
+    wrapped_type: TypeRepresentation
+    description: str = Field(
+        ..., description="A human-readable description of the type."  # Required field
+    )
 
     def __init__(self, **data):
         if "type" not in data:
@@ -192,8 +258,8 @@ class OptionalType(BaseType):
         spaces = "  " * indent
         wrapped_markdown = self.wrapped_type.to_markdown(indent + 1)
         if len(wrapped_markdown) == 1:
-            return [f"{spaces}- **Optional** of {wrapped_markdown[0].strip('- ')}"]
-        return [f"{spaces}- **Optional**:"] + wrapped_markdown
+            return [f"{spaces}- **Optional**: {self.description}"]
+        return [f"{spaces}- **Optional**: {self.description}"] + wrapped_markdown
 
     def __str__(self) -> str:
         return f"Optional[{self.wrapped_type}]"
@@ -203,14 +269,25 @@ class OptionalType(BaseType):
             return
         self.wrapped_type.check_value(value)
 
+    def type_schema(self) -> Dict[str, Any]:
+        return {
+            "anyOf": [NoneType().type_schema(), self.wrapped_type.type_schema()],
+            "description": self.description,
+        }
+
 
 class KeyType(BaseModel):
     key: str
-    type: "TypeRepresentation"
-    description: str = Field(description="What this key represents.")
+    type: TypeRepresentation
+    description: str = Field(
+        ..., description="A description of what this key represents."  # Required field
+    )
 
     def to_python_type(self) -> str:
         return self.type.to_python_type()
+
+    def __init__(self, **data):
+        super().__init__(**data)
 
     def to_markdown(self, indent: int = 0) -> List[str]:
         spaces = "  " * indent
@@ -227,13 +304,23 @@ class KeyType(BaseModel):
     def check_value(self, value: Any) -> None:
         self.type.check_value(value)
 
+    def type_schema(self) -> Dict[str, Any]:
+        return {
+            "key": self.key,
+            "type": self.type.type_schema(),
+            "description": self.description,
+        }
+
 
 class ListType(BaseType):
-    type: Literal["List"]  # = "List"
-    element_type: "TypeRepresentation"
+    type: Literal["List"]
+    element_type: TypeRepresentation
     length: Optional[int] = Field(
-        # default=None,
+        None,  # No default value; can be omitted to indicate arbitrary length
         description="The expected length of the list. If None, the length can be arbitrary.",
+    )
+    description: str = Field(
+        ..., description="A human-readable description of the type."  # Required field
     )
 
     def __init__(self, **data):
@@ -246,10 +333,14 @@ class ListType(BaseType):
 
     def to_markdown(self, indent: int = 0) -> List[str]:
         spaces = "  " * indent
+        if self.length is not None:
+            desc = f"{self.description} Expected length: {self.length}."
+        else:
+            desc = self.description
         element_markdown = self.element_type.to_markdown(indent + 1)
         if len(element_markdown) == 1:
-            return [f"{spaces}- **List** of {element_markdown[0].strip('- ')}"]
-        return [f"{spaces}- **List**:"] + element_markdown
+            return [f"{spaces}- **List**: {desc}"]
+        return [f"{spaces}- **List**: {desc}"] + element_markdown
 
     def __str__(self) -> str:
         return f"List[{self.element_type}]"
@@ -267,14 +358,29 @@ class ListType(BaseType):
             except ValueError as ve:
                 raise ValueError(f"List element at index {index}: {ve}") from ve
 
+    def type_schema(self) -> Dict[str, Any]:
+        schema = {
+            "type": "list",
+            "items": self.element_type.type_schema(),
+            "description": self.description,
+        }
+        if self.length is not None:
+            schema["length"] = self.length
+        return schema
+
 
 class TypedDictType(BaseType):
-    type: Literal["TypedDict"]  # = "TypedDict"
+    type: Literal["TypedDict"]
     name: str = Field(
-        description="A unique name for the dictionary type. This is used to generate a unique TypedDict name."
+        ...,  # Required field
+        description="A unique name for the dictionary type. This is used to generate a unique TypedDict name.",
     )
     items: List[KeyType] = Field(
-        description="A list of key-value pairs where the key is the key name and the value is the type of the key."
+        ...,  # Required field
+        description="A list of key-value pairs where the key is the key name and the value is the type of the key.",
+    )
+    description: str = Field(
+        ..., description="A human-readable description of the type."  # Required field
     )
 
     def __init__(self, **data):
@@ -291,7 +397,7 @@ class TypedDictType(BaseType):
         if not self.items:
             return ["- **Dictionary** (empty)"]
         spaces = "  " * indent
-        desc = [f"{spaces}- **Dictionary** with keys:"]
+        desc = [f"{spaces}- **Dictionary** with keys: {self.description}"]
         for item in self.items:
             desc.extend(item.to_markdown(indent + 1))
         return desc
@@ -306,238 +412,38 @@ class TypedDictType(BaseType):
             raise ValueError(f"Expected dict, got {type(value).__name__}")
         for item in self.items:
             if item.key not in value:
-                raise ValueError(f"Missing key '{item.key}' in dictionary")
+                raise ValueError(
+                    f"Missing key '{item.key}' in dictionary with keys {value.keys()}"
+                )
             try:
                 item.type.check_value(value[item.key])
             except ValueError as ve:
                 raise ValueError(f"Key '{item.key}': {ve}") from ve
 
-
-class TupleType(BaseType):
-    type: Literal["Tuple"]  # = "Tuple"
-    elements: List["TypeRepresentation"]
-
-    def __init__(self, **data):
-        if "type" not in data:
-            data["type"] = "Tuple"
-        super().__init__(**data)
-
-    def to_python_type(self) -> str:
-        elements_str = ", ".join([elem.to_python_type() for elem in self.elements])
-        return f"Tuple[{elements_str}]"
-
-    def to_markdown(self, indent: int = 0) -> List[str]:
-        spaces = "  " * indent
-        desc = [f"{spaces}- **Tuple** containing:"]
-        for elem in self.elements:
-            desc.extend(elem.to_markdown(indent + 1))
-        return desc
-
-    def __str__(self) -> str:
-        elements_str = ", ".join([str(elem) for elem in self.elements])
-        return f"Tuple[{elements_str}]"
-
-    def check_value(self, value: Any) -> None:
-        if not isinstance(value, tuple):
-            raise ValueError(f"Expected tuple, got {type(value).__name__}")
-        if len(value) != len(self.elements):
-            raise ValueError(
-                f"Expected tuple of length {len(self.elements)}, got length {len(value)}"
-            )
-        for index, (elem_type, elem_value) in enumerate(zip(self.elements, value)):
-            try:
-                elem_type.check_value(elem_value)
-            except ValueError as ve:
-                raise ValueError(f"Tuple element at index {index}: {ve}") from ve
-
-
-class SetType(BaseType):
-    type: Literal["Set"]  # = "Set"
-    element_type: "TypeRepresentation"
-
-    def __init__(self, **data):
-        if "type" not in data:
-            data["type"] = "Set"
-        super().__init__(**data)
-
-    def to_python_type(self) -> str:
-        return f"Set[{self.element_type.to_python_type()}]"
-
-    def to_markdown(self, indent: int = 0) -> List[str]:
-        spaces = "  " * indent
-        element_markdown = self.element_type.to_markdown(indent + 1)
-        if len(element_markdown) == 1:
-            return [f"{spaces}- **Set** of {element_markdown[0].strip('- ')}"]
-        return [f"{spaces}- **Set**:"] + element_markdown
-
-    def __str__(self) -> str:
-        return f"Set[{self.element_type}]"
-
-    def check_value(self, value: Any) -> None:
-        if not isinstance(value, set):
-            raise ValueError(f"Expected set, got {type(value).__name__}")
-        for elem in value:
-            try:
-                self.element_type.check_value(elem)
-            except ValueError as ve:
-                raise ValueError(f"Set element '{elem}': {ve}") from ve
-
-
-class PDDataFrameType(BaseType):
-    type: Literal["pd.DataFrame"]  # = "pd.DataFrame"
-    columns: List[KeyType] = Field(
-        description="A list of key-value pairs where the key is the column name and the value is the type of the column."
-    )
-
-    def __init__(self, **data):
-        if "type" not in data:
-            data["type"] = "pd.DataFrame"
-        super().__init__(**data)
-
-    def to_python_type(self) -> str:
-        return "pd.DataFrame"
-
-    def to_markdown(self, indent: int = 0) -> List[str]:
-        spaces = "  " * indent
-        desc = [f"{spaces}- **Pandas DataFrame** with columns:"]
-        for col in self.columns:
-            desc.extend(col.to_markdown(indent + 1))
-        return desc
-
-    def __str__(self) -> str:
-        column_types = ", ".join([f"{col}" for col in self.columns])
-        return f"pd.DataFrame[{column_types}]"
-
-    def check_value(self, value: Any) -> None:
-        if not isinstance(value, pd.DataFrame):
-            raise ValueError(f"Expected pd.DataFrame, got {type(value).__name__}")
-        for col in self.columns:
-            if col.key not in value.columns:
-                raise ValueError(f"Missing column '{col.key}' in DataFrame")
-            for index, item in value[col.key].items():
-                try:
-                    col.type.check_value(item)
-                except ValueError as ve:
-                    raise ValueError(
-                        f"DataFrame column '{col.key}', row {index}: {ve}"
-                    ) from ve
-
-
-class PDSeriesType(BaseType):
-    type: Literal["pd.Series"]  # = "pd.Series"
-    element_type: "TypeRepresentation"
-
-    def __init__(self, **data):
-        if "type" not in data:
-            data["type"] = "pd.Series"
-        super().__init__(**data)
-
-    def to_python_type(self) -> str:
-        return "pd.Series"
-
-    def to_markdown(self, indent: int = 0) -> List[str]:
-        spaces = "  " * indent
-        element_markdown = self.element_type.to_markdown(indent + 1)
-        if len(element_markdown) == 1:
-            return [f"{spaces}- **Pandas Series** of {element_markdown[0].strip('- ')}"]
-        return [f"{spaces}- **Pandas Series**:"] + element_markdown
-
-    def __str__(self) -> str:
-        return f"pd.Series[{self.element_type}]"
-
-    def check_value(self, value: Any) -> None:
-        if not isinstance(value, pd.Series):
-            raise ValueError(f"Expected pd.Series, got {type(value).__name__}")
-        for index, item in value.items():
-            try:
-                self.element_type.check_value(item)
-            except ValueError as ve:
-                raise ValueError(f"Pandas Series at index {index}: {ve}") from ve
-
-
-class NumpyNdarrayType(BaseType):
-    type: Literal["np.ndarray"]  # = "np.ndarray"
-    element_type: "TypeRepresentation"
-    length: Optional[int] = Field(
-        # default=None,
-        description="The expected length of the array. If None, the length can be arbitrary.",
-    )
-
-    def __init__(self, **data):
-        if "type" not in data:
-            data["type"] = "np.ndarray"
-        super().__init__(**data)
-
-    def to_python_type(self) -> str:
-        return "np.ndarray"
-
-    def to_markdown(self, indent: int = 0) -> List[str]:
-        spaces = "  " * indent
-        element_markdown = self.element_type.to_markdown(indent + 1)
-        if len(element_markdown) == 1:
-            return [f"{spaces}- **NumPy ndarray** of {element_markdown[0].strip('- ')}"]
-        return [f"{spaces}- **NumPy ndarray**:"] + element_markdown
-
-    def __str__(self) -> str:
-        return f"np.ndarray[{self.element_type}]"
-
-    def check_value(self, value: Any) -> None:
-        if not isinstance(value, np.ndarray):
-            raise ValueError(f"Expected np.ndarray, got {type(value).__name__}")
-        if self.length is not None and value.size != self.length:
-            raise ValueError(
-                f"Expected ndarray of size {self.length}, got size {value.size}"
-            )
-        for index, elem in enumerate(value.flat):
-            try:
-                self.element_type.check_value(elem)
-            except ValueError as ve:
-                raise ValueError(f"ndarray element at flat index {index}: {ve}") from ve
-
-
-class ClassType(BaseType):
-    type: Literal["class"]  # = "class"
-    name: str = Field(description="The name of the class.")
-
-    def __init__(self, **data):
-        if "type" not in data:
-            data["type"] = "class"
-        super().__init__(**data)
-
-    def to_python_type(self) -> str:
-        return self.name
-
-    def to_markdown(self, indent: int = 0) -> List[str]:
-        spaces = "  " * indent
-        return [f"{spaces}- **Class** {self.name}"]
-
-    def __str__(self) -> str:
-        return self.name
-
-    def check_value(self, value: Any) -> None:
-        # Assuming 'name' is the class name, you might need a mapping to actual classes
-        # For demonstration, we'll check if the value is an instance of any class
-        if isinstance(value, type):
-            return
-        raise ValueError(f"Expected type '{self.name}', got {type(value).__name__}")
+    def type_schema(self) -> Dict[str, Any]:
+        properties = {item.key: item.type.type_schema() for item in self.items}
+        return {
+            "type": "typed_dict",
+            "properties": properties,
+            "description": self.description,
+        }
 
 
 class DictType(BaseType):
-    type: Literal["Dict"]  # = "Dict"
-    key_type: "TypeRepresentation" = Field(
-        description="The type of the dictionary keys."
+    type: Literal["Dict"]
+    key_type: TypeRepresentation = Field(
+        ..., description="The type of the dictionary keys."  # Required field
     )
-    value_type: "TypeRepresentation" = Field(
-        description="The type of the dictionary values."
+    value_type: TypeRepresentation = Field(
+        ..., description="The type of the dictionary values."  # Required field
     )
-    key_description: Optional[str] = Field(
-        description="A description of what the dictionary keys represent."
-    )
-    value_description: Optional[str] = Field(
-        description="A description of what the dictionary values represent.",
+    description: str = Field(
+        ..., description="A human-readable description of the type."  # Required field
     )
 
     def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "Dict"
         super().__init__(**data)
 
     def to_python_type(self) -> str:
@@ -545,21 +451,8 @@ class DictType(BaseType):
 
     def to_markdown(self, indent: int = 0) -> List[str]:
         spaces = "  " * indent
-        key_markdown = self.key_type.to_markdown(indent + 1)
-        value_markdown = self.value_type.to_markdown(indent + 1)
-        desc = [f"{spaces}- **Dict** with:"]
-
-        if self.key_description:
-            desc.append(f"{spaces}  - **Keys**: {self.key_description}")
-        else:
-            desc += [f"{spaces}  - **Keys**:"] + key_markdown
-
-        if self.value_description:
-            desc.append(f"{spaces}  - **Values**: {self.value_description}")
-        else:
-            desc += [f"{spaces}  - **Values**:"] + value_markdown
-
-        return desc
+        desc = f"{self.description}"
+        return [f"{spaces}- **Dict**: {desc}"]
 
     def __str__(self) -> str:
         return f"Dict[{self.key_type}, {self.value_type}]"
@@ -577,31 +470,305 @@ class DictType(BaseType):
             except ValueError as ve:
                 raise ValueError(f"Dictionary value for key '{k}': {ve}") from ve
 
+    def type_schema(self) -> Dict[str, Any]:
+        schema = {
+            "type": "dict",
+            "keys": self.key_type.type_schema(),
+            "values": self.value_type.type_schema(),
+            "description": self.description,
+        }
+        return schema
 
-# Update TypeRepresentation to include DictType
-TypeRepresentation = Union[
-    IntType,
-    BoolType,
-    StrType,
-    AnyType,
-    NoneType,
-    FloatType,
-    OptionalType,
-    ListType,
-    TypedDictType,
-    DictType,  # Newly added
-    # TupleType,
-    SetType,
-    PDDataFrameType,
-    PDSeriesType,
-    NumpyNdarrayType,
-]
+
+# class TupleType(BaseType):
+#     type: Literal["Tuple"]
+#     elements: List[TypeRepresentation]
+#     description: str = Field(
+#         ..., description="A human-readable description of the type."  # Required field
+#     )
+
+#     def __init__(self, **data):
+#         if "type" not in data:
+#             data["type"] = "Tuple"
+#         super().__init__(**data)
+
+#     def to_python_type(self) -> str:
+#         elements_str = ", ".join([elem.to_python_type() for elem in self.elements])
+#         return f"Tuple[{elements_str}]"
+
+#     def to_markdown(self, indent: int = 0) -> List[str]:
+#         spaces = "  " * indent
+#         desc = f"{self.description}"
+#         desc += f" Elements count: {len(self.elements)}."
+#         desc_list = [f"{spaces}- **Tuple**: {desc}"]
+#         for elem in self.elements:
+#             desc_list.extend(elem.to_markdown(indent + 1))
+#         return desc_list
+
+#     def __str__(self) -> str:
+#         elements_str = ", ".join([str(elem) for elem in self.elements])
+#         return f"Tuple[{elements_str}]"
+
+#     def check_value(self, value: Any) -> None:
+#         if not isinstance(value, tuple):
+#             raise ValueError(f"Expected tuple, got {type(value).__name__}")
+#         if len(value) != len(self.elements):
+#             raise ValueError(
+#                 f"Expected tuple of length {len(self.elements)}, got length {len(value)}"
+#             )
+#         for index, (elem_type, elem_value) in enumerate(zip(self.elements, value)):
+#             try:
+#                 elem_type.check_value(elem_value)
+#             except ValueError as ve:
+#                 raise ValueError(f"Tuple element at index {index}: {ve}") from ve
+
+#     def type_schema(self) -> Dict[str, Any]:
+#         return {
+#             "type": "array",
+#             "items": [elem.type_schema() for elem in self.elements],
+#             "minItems": len(self.elements),
+#             "maxItems": len(self.elements),
+#             "description": self.description,
+#         }
+
+
+class SetType(BaseType):
+    type: Literal["Set"]
+    element_type: TypeRepresentation
+    description: str = Field(
+        ..., description="A human-readable description of the type."  # Required field
+    )
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "Set"
+        super().__init__(**data)
+
+    def to_python_type(self) -> str:
+        return f"Set[{self.element_type.to_python_type()}]"
+
+    def to_markdown(self, indent: int = 0) -> List[str]:
+        spaces = "  " * indent
+        desc = f"{self.description}"
+        element_markdown = self.element_type.to_markdown(indent + 1)
+        if len(element_markdown) == 1:
+            return [f"{spaces}- **Set**: {desc}"]
+        return [f"{spaces}- **Set**: {desc}"] + element_markdown
+
+    def __str__(self) -> str:
+        return f"Set[{self.element_type}]"
+
+    def check_value(self, value: Any) -> None:
+        if not isinstance(value, set):
+            raise ValueError(f"Expected set, got {type(value).__name__}")
+        for elem in value:
+            try:
+                self.element_type.check_value(elem)
+            except ValueError as ve:
+                raise ValueError(f"Set element '{elem}': {ve}") from ve
+
+    def type_schema(self) -> Dict[str, Any]:
+        return {
+            "type": "set",
+            "items": self.element_type.type_schema(),
+            "description": self.description,
+        }
+
+
+class PDDataFrameType(BaseType):
+    type: Literal["pd.DataFrame"]
+    columns: List[KeyType] = Field(
+        ...,  # Required field
+        description="A list of key-value pairs where the key is the column name and the value is the type of the elements in each column.",
+    )
+    description: str = Field(
+        ..., description="A human-readable description of the type."  # Required field
+    )
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "pd.DataFrame"
+        super().__init__(**data)
+
+    def to_python_type(self) -> str:
+        return "pd.DataFrame"
+
+    def to_markdown(self, indent: int = 0) -> List[str]:
+        if not self.columns:
+            return [f"- **Pandas DataFrame** (empty): {self.description}"]
+        spaces = "  " * indent
+        desc = [f"{spaces}- **Pandas DataFrame**: {self.description}"]
+        for col in self.columns:
+            desc.extend(col.to_markdown(indent + 1))
+        return desc
+
+    def __str__(self) -> str:
+        column_types = ", ".join([f"{col}" for col in self.columns])
+        return f"pd.DataFrame[{column_types}]"
+
+    def check_value(self, value: Any) -> None:
+        if not isinstance(value, pd.DataFrame):
+            raise ValueError(f"Expected pd.DataFrame, got {type(value).__name__}")
+        df_columns = value.columns.to_list()
+        print(value)
+        if not value.empty:
+            for col in self.columns:
+                if col.key not in df_columns:
+                    raise ValueError(
+                        f"Missing column '{col.key}' in DataFrame with columns {value.columns}"
+                    )
+                for index, item in enumerate(value[col.key]):
+                    try:
+                        col.type.check_value(item)
+                    except ValueError as ve:
+                        raise ValueError(
+                            f"DataFrame column '{col.key}', row {index} has value {item}: {ve}"
+                        ) from ve
+
+    def type_schema(self) -> Dict[str, Any]:
+        properties = {col.key: col.type.type_schema() for col in self.columns}
+        required = [col.key for col in self.columns]
+        return {
+            "type": "dataframe",
+            "properties": properties,
+            "description": self.description,
+        }
+
+
+class PDSeriesType(BaseType):
+    type: Literal["pd.Series"]
+    element_type: TypeRepresentation
+    description: str = Field(
+        ..., description="A human-readable description of the type."  # Required field
+    )
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "pd.Series"
+        super().__init__(**data)
+
+    def to_python_type(self) -> str:
+        return "pd.Series"
+
+    def to_markdown(self, indent: int = 0) -> List[str]:
+        spaces = "  " * indent
+        return [f"{spaces}- **Pandas Series**: {self.description}"]
+
+    def __str__(self) -> str:
+        return f"pd.Series[{self.element_type}]"
+
+    def check_value(self, value: Any) -> None:
+        if not isinstance(value, pd.Series):
+            raise ValueError(f"Expected pd.Series, got {type(value).__name__}")
+        for index, item in value.items():
+            try:
+                self.element_type.check_value(item)
+            except ValueError as ve:
+                raise ValueError(f"Pandas Series at index {index}: {ve}") from ve
+
+    def type_schema(self) -> Dict[str, Any]:
+        return {
+            "type": "series",
+            "items": self.element_type.type_schema(),
+            "description": self.description,
+        }
+
+
+class NumpyNdarrayType(BaseType):
+    type: Literal["np.ndarray"]
+    element_type: TypeRepresentation
+    length: Optional[int] = Field(
+        None,  # No default value; can be omitted to indicate arbitrary length
+        description="The expected length of the array. If None, the length can be arbitrary.",
+    )
+    description: str = Field(
+        ..., description="A human-readable description of the type."  # Required field
+    )
+
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "np.ndarray"
+        super().__init__(**data)
+
+    def to_python_type(self) -> str:
+        return "np.ndarray"
+
+    def to_markdown(self, indent: int = 0) -> List[str]:
+        spaces = "  " * indent
+        desc = f"{self.description}"
+        if self.length is not None:
+            desc += f" Expected length: {self.length}."
+        element_markdown = self.element_type.to_markdown(indent + 1)
+        return [f"{spaces}- **NumPy ndarray**: {desc}"] + element_markdown
+
+    def __str__(self) -> str:
+        return f"np.ndarray[{self.element_type}]"
+
+    def check_value(self, value: Any) -> None:
+        if not isinstance(value, np.ndarray):
+            raise ValueError(f"Expected np.ndarray, got {type(value).__name__}")
+        if self.length is not None and value.size != self.length:
+            raise ValueError(
+                f"Expected ndarray of size {self.length}, got size {value.size}"
+            )
+        for index, elem in enumerate(value.flat):
+            try:
+                self.element_type.check_value(elem)
+            except ValueError as ve:
+                raise ValueError(f"ndarray element at flat index {index}: {ve}") from ve
+
+    def type_schema(self) -> Dict[str, Any]:
+        schema = {
+            "type": "array",
+            "items": self.element_type.type_schema(),
+            "description": self.description,
+        }
+        if self.length is not None:
+            schema["length"] = self.length
+        return schema
+
+
+# class ClassType(BaseType):
+#     type: Literal["class"]
+#     name: str = Field(..., description="The name of the class.")  # Required field
+#     description: str = Field(
+#         ..., description="A human-readable description of the type."  # Required field
+#     )
+
+#     def __init__(self, **data):
+#         if "type" not in data:
+#             data["type"] = "class"
+#         super().__init__(**data)
+
+#     def to_python_type(self) -> str:
+#         return self.name
+
+#     def to_markdown(self, indent: int = 0) -> List[str]:
+#         spaces = "  " * indent
+#         return [f"{spaces}- **Class** {self.name}: {self.description}"]
+
+#     def __str__(self) -> str:
+#         return self.name
+
+#     def check_value(self, value: Any) -> None:
+#         # Assuming 'name' is the class name, you might need a mapping to actual classes
+#         # For demonstration, we'll check if the value is an instance of any class
+#         if isinstance(value, type):
+#             return
+#         raise ValueError(f"Expected type '{self.name}', got {type(value).__name__}")
+
+#     def type_schema(self) -> Dict[str, Any]:
+#         return {
+#             "description": self.description,
+#             "type": "object",  # Generic object; specific class schemas would require more details
+#         }
 
 
 class ExtendedType(BaseModel):
     the_type: TypeRepresentation
     description: str = Field(
-        description="A description of what this type represents. Indicate how to interpret each component of the type."
+        ...,  # Required field
+        description="A description of what this type represents. Indicate how to interpret each component of the type.",
     )
 
     def to_python_type(self) -> str:
@@ -633,47 +800,71 @@ class ExtendedType(BaseModel):
     @classmethod
     def from_value(cls, value) -> "ExtendedType":
 
-        def infer_type_of_elements(elements: Iterable) -> TypeRepresentation:
+        def infer_type_of_elements(elements: Iterable) -> "TypeRepresentation":
             element_types = [infer_type(item) for item in elements]
             unique_types = {et.model_dump_json() for et in element_types}
             if len(unique_types) == 1:
                 return element_types[0]
             else:
-                return AnyType()
+                return AnyType(
+                    description="Automatically inferred as Any due to mixed types."
+                )
 
-        def infer_type(val) -> TypeRepresentation:
+        def infer_type(val) -> "TypeRepresentation":
             if val is None:
-                return NoneType()
+                return NoneType(description="Automatically inferred as NoneType.")
             elif isinstance(val, bool):  # do before int
-                return BoolType()
+                return BoolType(description="Automatically inferred as BoolType.")
             elif isinstance(val, int) or isinstance(val, np.integer):
-                return IntType()
+                return IntType(description="Automatically inferred as IntType.")
             elif isinstance(val, float) or isinstance(val, np.float64):
-                return FloatType()
+                return FloatType(description="Automatically inferred as FloatType.")
             elif isinstance(val, str) or isinstance(val, np.str_):
-                return StrType()
+                return StrType(description="Automatically inferred as StrType.")
             elif isinstance(val, list):
                 try:
                     element_type = infer_type_of_elements(val)
-                    return ListType(element_type=element_type, length=len(val))
+                    return ListType(
+                        element_type=element_type,
+                        length=len(val),
+                        description="Automatically inferred as ListType.",
+                    )
                 except:
-                    return AnyType()
+                    return AnyType(
+                        description="Automatically inferred as AnyType due to error."
+                    )
             elif isinstance(val, set):
                 try:
                     element_type = infer_type_of_elements(val)
-                    return SetType(element_type=element_type)
+                    return SetType(
+                        element_type=element_type,
+                        description="Automatically inferred as SetType.",
+                    )
                 except:
-                    return AnyType()
-            elif isinstance(val, tuple):
-                return TupleType(elements=[infer_type(item) for item in val])
+                    return AnyType(
+                        description="Automatically inferred as AnyType due to error."
+                    )
+            # elif isinstance(val, tuple):
+            #     return TupleType(
+            #         elements=[infer_type(item) for item in val],
+            #         description="Automatically inferred as TupleType.",
+            #     )
             elif isinstance(val, dict):
                 # Decide between TypedDictType and DictType
                 if all(isinstance(k, str) for k in val.keys()):
                     items = [
-                        KeyType(key=k, type=infer_type(v), description="")
+                        KeyType(
+                            key=k,
+                            type=infer_type(v),
+                            description=f"Automatically inferred type for key '{k}'.",
+                        )
                         for k, v in val.items()
                     ]
-                    return TypedDictType(name="AutoGeneratedTypedDict", items=items)
+                    return TypedDictType(
+                        name="AutoGeneratedTypedDict",
+                        items=items,
+                        description="Automatically inferred as TypedDictType with string keys.",
+                    )
                 else:
                     # For heterogeneous keys, use DictType with key and value types inferred
                     key_type = infer_type_of_elements(val.keys())
@@ -681,31 +872,50 @@ class ExtendedType(BaseModel):
                     return DictType(
                         key_type=key_type,
                         value_type=value_type,
-                        key_description="",
-                        value_description="",
+                        description="Automatically inferred as DictType with mixed key types.",
                     )
             elif isinstance(val, pd.DataFrame):
-                # print(val.info())
                 if val.empty:
-                    return PDDataFrameType(columns=[])
+                    return PDDataFrameType(
+                        columns=[],
+                        description="Automatically inferred as empty PDDataFrameType.",
+                    )
                 columns = [
-                    KeyType(key=col, type=infer_type(val[col].iloc[0]), description="")
+                    KeyType(
+                        key=col,
+                        type=infer_type(val[col].iloc[0]),
+                        description=f"Automatically inferred type for column '{col}'.",
+                    )
                     for col in val.columns
                 ]
-                return PDDataFrameType(columns=columns)
+                return PDDataFrameType(
+                    columns=columns,
+                    description="Automatically inferred as PDDataFrameType.",
+                )
             elif isinstance(val, pd.Series):
                 if val.empty:
-                    element = AnyType()
+                    element = AnyType(
+                        description="Automatically inferred as AnyType due to empty Series."
+                    )
                 else:
                     element = infer_type(val.iloc[0])
-                return PDSeriesType(element_type=element)
+                return PDSeriesType(
+                    element_type=element,
+                    description="Automatically inferred as PDSeriesType.",
+                )
             elif isinstance(val, np.ndarray):
                 if val.size == 0:
-                    element = AnyType()
+                    element = AnyType(
+                        description="Automatically inferred as AnyType due to empty ndarray."
+                    )
                 else:
                     element = infer_type(val.flat[0])
-                return NumpyNdarrayType(element_type=element, length=val.size)
-            return AnyType()
+                return NumpyNdarrayType(
+                    element_type=element,
+                    length=val.size,
+                    description="Automatically inferred as NumpyNdarrayType.",
+                )
+            return AnyType(description="Automatically inferred as AnyType.")
 
         return cls(
             the_type=infer_type(value), description="Automatically generated type"
@@ -717,24 +927,33 @@ class ExtendedType(BaseModel):
         Raises:
             ValueError: If the value does not conform to the type.
         """
-        self.the_type.check_value(value)
+        try:
+            self.the_type.check_value(value)
+        except Exception as e:
+            raise ValueError(f"The output value does not conform to type: {e}") from e
+
+    def type_schema(self) -> Dict[str, Any]:
+        """
+        Generates a JSON schema for the ExtendedType.
+        """
+        return {"description": self.description, "type": self.the_type.type_schema()}
 
 
 # -----------------------
 # Update Forward References
 # -----------------------
 
+# Re-defining TypeRepresentation with updated classes
 TypeRepresentation = Union[
     IntType,
     BoolType,
     StrType,
-    AnyType,
     NoneType,
     FloatType,
     OptionalType,
     ListType,
     TypedDictType,
-    DictType,  # Newly added
+    DictType,
     # TupleType,
     SetType,
     PDDataFrameType,
@@ -754,7 +973,7 @@ KeyType.model_rebuild()
 ListType.model_rebuild()
 TypedDictType.model_rebuild()
 DictType.model_rebuild()  # Newly added
-TupleType.model_rebuild()
+# TupleType.model_rebuild()
 SetType.model_rebuild()
 PDDataFrameType.model_rebuild()
 PDSeriesType.model_rebuild()

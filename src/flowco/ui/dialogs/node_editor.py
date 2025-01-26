@@ -205,6 +205,13 @@ class NodeEditor:
                 )
 
         if show_code():
+
+            st.write("###### Inferred Output Type")
+            extended_type = self.node.function_return_type
+            if extended_type is not None:
+                st.caption(extended_type.description)
+                st.write(extended_type.type_schema()["type"])
+
             code_python = "\n".join(self.node.code or [])
             code_response = self.component_editor("Code", code_python, "python", 30)
             if code_response is not None:
