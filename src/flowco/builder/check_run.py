@@ -36,7 +36,7 @@ def check_run(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node
     try:
         new_node = _repair_run(pass_config, graph, node, max_retries=max_retries)
         return new_node.update(phase=Phase.run_checked)
-    except CellExecutionError as e:
+    except Exception as e:
         if node.is_locked:
             message = (
                 f"**Run** failed.  Unlock and run again to attempt automatic repair."
@@ -45,7 +45,7 @@ def check_run(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node
             message = f"**Run** failed, and automatic repair did not fix the problem.  Please fix the error manually or try running again."
 
         log(f"Run didn't work for {node.pill}", e)
-        error_line = strip_ansi(str(e).split("\n")[-2])
+        error_line = strip_ansi("\n".join(str(e).split("\n")[-2:]))
         node = node.error(
             phase=Phase.run_checked, message=f"{message}\n\nDetails: *{error_line}*"
         )
@@ -117,11 +117,10 @@ def _repair_run(
 
             new_node = node_completion(
                 assistant,
-                node_completion_model(
-                    "code", "function_return_type", include_explanation=True
-                ),
+                node_completion_model("code", include_explanation=True),
             )
 
+            message("\n".join(["New Code"] + new_node.code))
             message(
                 "\n".join(
                     textwrap.wrap(

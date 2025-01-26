@@ -1298,13 +1298,17 @@ def dataflow_graph_to_image(dfg: DataFlowGraph) -> str:
                 color="red",  # Example edge color
             )
 
-    png_data = dot.pipe(format="png")
-    base64_image = base64.b64encode(png_data).decode("utf-8")
+    try:
+        png_data = dot.pipe(format="png")
+        base64_image = base64.b64encode(png_data).decode("utf-8")
 
-    for temp_file in temp_files:
-        try:
-            os.remove(temp_file)
-        except Exception as e:
-            error(f"Error deleting temporary file", e)
+        for temp_file in temp_files:
+            try:
+                os.remove(temp_file)
+            except Exception as e:
+                error(f"Error deleting temporary file", e)
 
-    return base64_image
+        return base64_image
+    except Exception as e:
+        error(f"Error generating image", e)
+        return ""

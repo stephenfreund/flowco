@@ -18,7 +18,7 @@ def data_files_dialog():
     )
     if uploaded_files is not None:
         for uploaded_file in uploaded_files:
-            print(uploaded_file.name)
+            # print(uploaded_file.name)
             fs_write(uploaded_file.name, uploaded_file.getvalue().decode("utf-8"))
 
     ui_page: UIPage = st.session_state.ui_page

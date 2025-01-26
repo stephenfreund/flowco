@@ -121,7 +121,7 @@ class PythonShell:
         outputs = []
         images = []
 
-        print(execution_result.get("outputs", []))
+        # print(execution_result.get("outputs", []))
 
         for msg in execution_result.get("outputs", []):
             msg_type = msg.get("output_type", "")
