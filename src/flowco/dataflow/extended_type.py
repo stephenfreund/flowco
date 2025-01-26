@@ -1,8 +1,15 @@
+from __future__ import annotations
 from typing import Any, Iterable, Set, Tuple, Union, Dict, List, Literal, TypedDict
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, Field
 from abc import abstractmethod
+
+from typing import Any, List, Union, Iterable, Optional, Literal
+from pydantic import BaseModel, Field
+from abc import abstractmethod
+import numpy as np
+import pandas as pd
 
 
 # Base class for all type representations with required methods
@@ -17,8 +24,11 @@ class BaseType(BaseModel):
         raise NotImplementedError("__str__ method not implemented.")
 
     @abstractmethod
-    def matches_value(self, value: Any) -> bool:
-        """Validate whether the given value conforms to the type."""
+    def check_value(self, value: Any) -> None:
+        """Validate whether the given value conforms to the type.
+        Raises:
+            ValueError: If the value does not conform to the type.
+        """
         pass
 
 
@@ -40,12 +50,12 @@ class IntType(BaseType):
     def __str__(self) -> str:
         return "int"
 
-    def matches_value(self, value: Any) -> bool:
-        return (
-            isinstance(value, int) or isinstance(value, np.int64)
-        ) and not isinstance(
+    def check_value(self, value: Any) -> None:
+        if (isinstance(value, int) or isinstance(value, np.integer)) and not isinstance(
             value, bool
-        )  # bool is subclass of int
+        ):
+            return
+        raise ValueError(f"Expected int, got {type(value).__name__}")
 
 
 class BoolType(BaseType):
@@ -66,8 +76,10 @@ class BoolType(BaseType):
     def __str__(self) -> str:
         return "bool"
 
-    def matches_value(self, value: Any) -> bool:
-        return isinstance(value, bool)
+    def check_value(self, value: Any) -> None:
+        if isinstance(value, bool):
+            return
+        raise ValueError(f"Expected bool, got {type(value).__name__}")
 
 
 class StrType(BaseType):
@@ -88,8 +100,10 @@ class StrType(BaseType):
     def __str__(self) -> str:
         return "str"
 
-    def matches_value(self, value: Any) -> bool:
-        return isinstance(value, str)
+    def check_value(self, value: Any) -> None:
+        if isinstance(value, str):
+            return
+        raise ValueError(f"Expected str, got {type(value).__name__}")
 
 
 class AnyType(BaseType):
@@ -110,8 +124,8 @@ class AnyType(BaseType):
     def __str__(self) -> str:
         return "Any"
 
-    def matches_value(self, value: Any) -> bool:
-        return True
+    def check_value(self, value: Any) -> None:
+        return  # Always matches
 
 
 class NoneType(BaseType):
@@ -132,8 +146,10 @@ class NoneType(BaseType):
     def __str__(self) -> str:
         return "None"
 
-    def matches_value(self, value: Any) -> bool:
-        return value is None
+    def check_value(self, value: Any) -> None:
+        if value is None:
+            return
+        raise ValueError(f"Expected None, got {type(value).__name__}")
 
 
 class FloatType(BaseType):
@@ -154,8 +170,10 @@ class FloatType(BaseType):
     def __str__(self) -> str:
         return "float"
 
-    def matches_value(self, value: Any) -> bool:
-        return isinstance(value, float)
+    def check_value(self, value: Any) -> None:
+        if isinstance(value, float):
+            return
+        raise ValueError(f"Expected float, got {type(value).__name__}")
 
 
 class OptionalType(BaseType):
@@ -180,10 +198,10 @@ class OptionalType(BaseType):
     def __str__(self) -> str:
         return f"Optional[{self.wrapped_type}]"
 
-    def matches_value(self, value: Any) -> bool:
+    def check_value(self, value: Any) -> None:
         if value is None:
-            return True
-        return self.wrapped_type.matches_value(value)
+            return
+        self.wrapped_type.check_value(value)
 
 
 class KeyType(BaseModel):
@@ -206,15 +224,16 @@ class KeyType(BaseModel):
     def __str__(self) -> str:
         return f"{self.key}: {self.type}"
 
-    def matches_value(self, value: Any) -> bool:
-        return self.type.matches_value(value)
+    def check_value(self, value: Any) -> None:
+        self.type.check_value(value)
 
 
 class ListType(BaseType):
     type: Literal["List"]  # = "List"
     element_type: "TypeRepresentation"
-    length: int | None = Field(
-        description="The expected length of the list. If None, the length can be arbitrary."
+    length: Optional[int] = Field(
+        # default=None,
+        description="The expected length of the list. If None, the length can be arbitrary.",
     )
 
     def __init__(self, **data):
@@ -235,12 +254,18 @@ class ListType(BaseType):
     def __str__(self) -> str:
         return f"List[{self.element_type}]"
 
-    def matches_value(self, value: Any) -> bool:
+    def check_value(self, value: Any) -> None:
         if not isinstance(value, list):
-            return False
+            raise ValueError(f"Expected list, got {type(value).__name__}")
         if self.length is not None and len(value) != self.length:
-            return False
-        return all(self.element_type.matches_value(elem) for elem in value)
+            raise ValueError(
+                f"Expected list of length {self.length}, got length {len(value)}"
+            )
+        for index, elem in enumerate(value):
+            try:
+                self.element_type.check_value(elem)
+            except ValueError as ve:
+                raise ValueError(f"List element at index {index}: {ve}") from ve
 
 
 class TypedDictType(BaseType):
@@ -259,8 +284,8 @@ class TypedDictType(BaseType):
 
     def to_python_type(self) -> str:
         elems = [f"'{item.key}': {item.type.to_python_type()}" for item in self.items]
-        map = ", ".join(elems)
-        return f"TypedDict('{self.name}', {{{map}}})"
+        map_str = ", ".join(elems)
+        return f"TypedDict('{self.name}', {{{map_str}}})"
 
     def to_markdown(self, indent: int = 0) -> List[str]:
         if not self.items:
@@ -273,18 +298,19 @@ class TypedDictType(BaseType):
 
     def __str__(self) -> str:
         elems = [f"'{item.key}': {item.type.to_python_type()}" for item in self.items]
-        map = ", ".join(elems)
-        return f"TypedDict('{self.name}', {{{map}}})"
+        map_str = ", ".join(elems)
+        return f"TypedDict('{self.name}', {{{map_str}}})"
 
-    def matches_value(self, value: Any) -> bool:
+    def check_value(self, value: Any) -> None:
         if not isinstance(value, dict):
-            return False
+            raise ValueError(f"Expected dict, got {type(value).__name__}")
         for item in self.items:
             if item.key not in value:
-                return False
-            if not item.type.matches_value(value[item.key]):
-                return False
-        return True
+                raise ValueError(f"Missing key '{item.key}' in dictionary")
+            try:
+                item.type.check_value(value[item.key])
+            except ValueError as ve:
+                raise ValueError(f"Key '{item.key}': {ve}") from ve
 
 
 class TupleType(BaseType):
@@ -311,14 +337,18 @@ class TupleType(BaseType):
         elements_str = ", ".join([str(elem) for elem in self.elements])
         return f"Tuple[{elements_str}]"
 
-    def matches_value(self, value: Any) -> bool:
+    def check_value(self, value: Any) -> None:
         if not isinstance(value, tuple):
-            return False
+            raise ValueError(f"Expected tuple, got {type(value).__name__}")
         if len(value) != len(self.elements):
-            return False
-        return all(
-            elem_type.matches_value(v) for elem_type, v in zip(self.elements, value)
-        )
+            raise ValueError(
+                f"Expected tuple of length {len(self.elements)}, got length {len(value)}"
+            )
+        for index, (elem_type, elem_value) in enumerate(zip(self.elements, value)):
+            try:
+                elem_type.check_value(elem_value)
+            except ValueError as ve:
+                raise ValueError(f"Tuple element at index {index}: {ve}") from ve
 
 
 class SetType(BaseType):
@@ -343,10 +373,14 @@ class SetType(BaseType):
     def __str__(self) -> str:
         return f"Set[{self.element_type}]"
 
-    def matches_value(self, value: Any) -> bool:
+    def check_value(self, value: Any) -> None:
         if not isinstance(value, set):
-            return False
-        return all(self.element_type.matches_value(elem) for elem in value)
+            raise ValueError(f"Expected set, got {type(value).__name__}")
+        for elem in value:
+            try:
+                self.element_type.check_value(elem)
+            except ValueError as ve:
+                raise ValueError(f"Set element '{elem}': {ve}") from ve
 
 
 class PDDataFrameType(BaseType):
@@ -374,17 +408,19 @@ class PDDataFrameType(BaseType):
         column_types = ", ".join([f"{col}" for col in self.columns])
         return f"pd.DataFrame[{column_types}]"
 
-    def matches_value(self, value: Any) -> bool:
+    def check_value(self, value: Any) -> None:
         if not isinstance(value, pd.DataFrame):
-            return False
+            raise ValueError(f"Expected pd.DataFrame, got {type(value).__name__}")
         for col in self.columns:
             if col.key not in value.columns:
-                return False
-            # Check each element in the column
-            for item in value[col.key]:
-                if not col.type.matches_value(item):
-                    return False
-        return True
+                raise ValueError(f"Missing column '{col.key}' in DataFrame")
+            for index, item in value[col.key].items():
+                try:
+                    col.type.check_value(item)
+                except ValueError as ve:
+                    raise ValueError(
+                        f"DataFrame column '{col.key}', row {index}: {ve}"
+                    ) from ve
 
 
 class PDSeriesType(BaseType):
@@ -409,20 +445,22 @@ class PDSeriesType(BaseType):
     def __str__(self) -> str:
         return f"pd.Series[{self.element_type}]"
 
-    def matches_value(self, value: Any) -> bool:
+    def check_value(self, value: Any) -> None:
         if not isinstance(value, pd.Series):
-            return False
-        for item in value:
-            if not self.element_type.matches_value(item):
-                return False
-        return True
+            raise ValueError(f"Expected pd.Series, got {type(value).__name__}")
+        for index, item in value.items():
+            try:
+                self.element_type.check_value(item)
+            except ValueError as ve:
+                raise ValueError(f"Pandas Series at index {index}: {ve}") from ve
 
 
 class NumpyNdarrayType(BaseType):
     type: Literal["np.ndarray"]  # = "np.ndarray"
     element_type: "TypeRepresentation"
-    length: int | None = Field(
-        description="The expected length of the list. If None, the length can be arbitrary."
+    length: Optional[int] = Field(
+        # default=None,
+        description="The expected length of the array. If None, the length can be arbitrary.",
     )
 
     def __init__(self, **data):
@@ -443,12 +481,18 @@ class NumpyNdarrayType(BaseType):
     def __str__(self) -> str:
         return f"np.ndarray[{self.element_type}]"
 
-    def matches_value(self, value: Any) -> bool:
+    def check_value(self, value: Any) -> None:
         if not isinstance(value, np.ndarray):
-            return False
+            raise ValueError(f"Expected np.ndarray, got {type(value).__name__}")
         if self.length is not None and value.size != self.length:
-            return False
-        return all(self.element_type.matches_value(elem) for elem in value.flat)
+            raise ValueError(
+                f"Expected ndarray of size {self.length}, got size {value.size}"
+            )
+        for index, elem in enumerate(value.flat):
+            try:
+                self.element_type.check_value(elem)
+            except ValueError as ve:
+                raise ValueError(f"ndarray element at flat index {index}: {ve}") from ve
 
 
 class ClassType(BaseType):
@@ -470,21 +514,82 @@ class ClassType(BaseType):
     def __str__(self) -> str:
         return self.name
 
-    def matches_value(self, value: Any) -> bool:
-        return isinstance(value, type)
+    def check_value(self, value: Any) -> None:
+        # Assuming 'name' is the class name, you might need a mapping to actual classes
+        # For demonstration, we'll check if the value is an instance of any class
+        if isinstance(value, type):
+            return
+        raise ValueError(f"Expected type '{self.name}', got {type(value).__name__}")
 
 
-# Update TypeRepresentation to use the updated classes
+class DictType(BaseType):
+    type: Literal["Dict"]  # = "Dict"
+    key_type: "TypeRepresentation" = Field(
+        description="The type of the dictionary keys."
+    )
+    value_type: "TypeRepresentation" = Field(
+        description="The type of the dictionary values."
+    )
+    key_description: Optional[str] = Field(
+        description="A description of what the dictionary keys represent."
+    )
+    value_description: Optional[str] = Field(
+        description="A description of what the dictionary values represent.",
+    )
+
+    def __init__(self, **data):
+        super().__init__(**data)
+
+    def to_python_type(self) -> str:
+        return f"Dict[{self.key_type.to_python_type()}, {self.value_type.to_python_type()}]"
+
+    def to_markdown(self, indent: int = 0) -> List[str]:
+        spaces = "  " * indent
+        key_markdown = self.key_type.to_markdown(indent + 1)
+        value_markdown = self.value_type.to_markdown(indent + 1)
+        desc = [f"{spaces}- **Dict** with:"]
+
+        if self.key_description:
+            desc.append(f"{spaces}  - **Keys**: {self.key_description}")
+        else:
+            desc += [f"{spaces}  - **Keys**:"] + key_markdown
+
+        if self.value_description:
+            desc.append(f"{spaces}  - **Values**: {self.value_description}")
+        else:
+            desc += [f"{spaces}  - **Values**:"] + value_markdown
+
+        return desc
+
+    def __str__(self) -> str:
+        return f"Dict[{self.key_type}, {self.value_type}]"
+
+    def check_value(self, value: Any) -> None:
+        if not isinstance(value, dict):
+            raise ValueError(f"Expected dict, got {type(value).__name__}")
+        for k, v in value.items():
+            try:
+                self.key_type.check_value(k)
+            except ValueError as ve:
+                raise ValueError(f"Dictionary key '{k}': {ve}") from ve
+            try:
+                self.value_type.check_value(v)
+            except ValueError as ve:
+                raise ValueError(f"Dictionary value for key '{k}': {ve}") from ve
+
+
+# Update TypeRepresentation to include DictType
 TypeRepresentation = Union[
     IntType,
     BoolType,
     StrType,
-    # AnyType,
+    AnyType,
     NoneType,
     FloatType,
     OptionalType,
     ListType,
     TypedDictType,
+    DictType,  # Newly added
     # TupleType,
     SetType,
     PDDataFrameType,
@@ -545,7 +650,7 @@ class ExtendedType(BaseModel):
                 return IntType()
             elif isinstance(val, float) or isinstance(val, np.float64):
                 return FloatType()
-            elif isinstance(val, str):
+            elif isinstance(val, str) or isinstance(val, np.str_):
                 return StrType()
             elif isinstance(val, list):
                 try:
@@ -562,11 +667,23 @@ class ExtendedType(BaseModel):
             elif isinstance(val, tuple):
                 return TupleType(elements=[infer_type(item) for item in val])
             elif isinstance(val, dict):
-                items = [
-                    KeyType(key=k, type=infer_type(v), description="")
-                    for k, v in val.items()
-                ]
-                return TypedDictType(name="AutoGeneratedTypedDict", items=items)
+                # Decide between TypedDictType and DictType
+                if all(isinstance(k, str) for k in val.keys()):
+                    items = [
+                        KeyType(key=k, type=infer_type(v), description="")
+                        for k, v in val.items()
+                    ]
+                    return TypedDictType(name="AutoGeneratedTypedDict", items=items)
+                else:
+                    # For heterogeneous keys, use DictType with key and value types inferred
+                    key_type = infer_type_of_elements(val.keys())
+                    value_type = infer_type_of_elements(val.values())
+                    return DictType(
+                        key_type=key_type,
+                        value_type=value_type,
+                        key_description="",
+                        value_description="",
+                    )
             elif isinstance(val, pd.DataFrame):
                 # print(val.info())
                 if val.empty:
@@ -594,11 +711,13 @@ class ExtendedType(BaseModel):
             the_type=infer_type(value), description="Automatically generated type"
         )
 
-    def matches_value(self, value: Any) -> bool:
+    def check_value(self, value: Any) -> None:
         """
         Determines whether the given value conforms to the current type.
+        Raises:
+            ValueError: If the value does not conform to the type.
         """
-        return self.the_type.matches_value(value)
+        self.the_type.check_value(value)
 
 
 # -----------------------
@@ -615,6 +734,7 @@ TypeRepresentation = Union[
     OptionalType,
     ListType,
     TypedDictType,
+    DictType,  # Newly added
     # TupleType,
     SetType,
     PDDataFrameType,
@@ -633,6 +753,7 @@ OptionalType.model_rebuild()
 KeyType.model_rebuild()
 ListType.model_rebuild()
 TypedDictType.model_rebuild()
+DictType.model_rebuild()  # Newly added
 TupleType.model_rebuild()
 SetType.model_rebuild()
 PDDataFrameType.model_rebuild()

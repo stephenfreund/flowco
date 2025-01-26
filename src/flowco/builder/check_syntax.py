@@ -188,12 +188,8 @@ def _repair_node_syntax(node: Node, max_retries: int) -> Tuple[Node, bool]:
 
             new_node = node_completion(
                 assistant,
-                node_completion_model(
-                    "code", "function_return_type", include_explanation=True
-                ),
+                node_completion_model("code", include_explanation=True),
             )
-
-            print(new_node)
 
             message(
                 "\n".join(

@@ -275,7 +275,7 @@ class FlowcoPage:
         pass
 
     # override and call super in subclasses
-    def show_node_details(self, node):
+    def show_node_details(self, node: Node):
         with st.container(border=True):
             st.write("###### Output")
             if (
@@ -299,6 +299,12 @@ class FlowcoPage:
             )
 
         if AbstractionLevel.show_code(st.session_state.abstraction_level):
+            with st.container(key="node_type", border=True):
+                st.write("###### Extended Type")
+                if node.function_return_type is not None:
+                    st.code(node.function_return_type)
+                    st.write(node.function_return_type.to_markdown())
+
             with st.container(key="node_code", border=True):
                 st.write("###### Code")
                 if node.code is not None:

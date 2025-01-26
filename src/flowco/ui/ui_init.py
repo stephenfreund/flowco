@@ -59,6 +59,8 @@ css = """
 .st-key-node_algorithm .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_code .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_code .stCode *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
+.st-key-node_type .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
+.st-key-node_type .stCode *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_checks .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-right-panel .stCode *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-right-panel p, ul, ol, li

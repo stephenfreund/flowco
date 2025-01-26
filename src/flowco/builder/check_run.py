@@ -70,10 +70,10 @@ def _repair_run(
                 if result.result is not None:
                     return_value = result.result.to_value()
                     return_type = node.function_return_type
-                    if not return_type.matches_value(return_value):
-                        raise FlowcoError(
-                            f"Return value {return_value} does not match expected type {return_type}."
-                        )
+                    if return_type is not None:
+                        return_type.check_value(return_value)
+                    else:
+                        ValueError("No return type for function")
 
             return node.update(result=result)
         except Exception as e:
