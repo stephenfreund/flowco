@@ -84,7 +84,7 @@ class IntType(BaseType):
         raise ValueError(f"Expected int, got {type(value).__name__}")
 
     def type_schema(self) -> Dict[str, Any]:
-        return {"type": "integer", "description": self.description}
+        return {"int": self.description}
 
 
 class BoolType(BaseType):
@@ -114,7 +114,7 @@ class BoolType(BaseType):
         raise ValueError(f"Expected bool, got {type(value).__name__}")
 
     def type_schema(self) -> Dict[str, Any]:
-        return {"type": "boolean", "description": self.description}
+        return {"boolean": self.description}
 
 
 class StrType(BaseType):
@@ -144,7 +144,7 @@ class StrType(BaseType):
         raise ValueError(f"Expected str, got {type(value).__name__}")
 
     def type_schema(self) -> Dict[str, Any]:
-        return {"type": "string", "description": self.description}
+        return {"string": self.description}
 
 
 class AnyType(BaseType):
@@ -173,8 +173,7 @@ class AnyType(BaseType):
 
     def type_schema(self) -> Dict[str, Any]:
         return {
-            "type": "Any",
-            "description": self.description,
+            "Any": self.description,
             # No type constraint
         }
 
@@ -206,7 +205,7 @@ class NoneType(BaseType):
         raise ValueError(f"Expected None, got {type(value).__name__}")
 
     def type_schema(self) -> Dict[str, Any]:
-        return {"type": "None", "description": self.description}
+        return {"None": self.description}
 
 
 class FloatType(BaseType):
@@ -236,7 +235,7 @@ class FloatType(BaseType):
         raise ValueError(f"Expected float, got {type(value).__name__}")
 
     def type_schema(self) -> Dict[str, Any]:
-        return {"type": "float", "description": self.description}
+        return {"float": self.description}
 
 
 class OptionalType(BaseType):
@@ -271,7 +270,7 @@ class OptionalType(BaseType):
 
     def type_schema(self) -> Dict[str, Any]:
         return {
-            "anyOf": [NoneType().type_schema(), self.wrapped_type.type_schema()],
+            "either": [NoneType().type_schema(), self.wrapped_type.type_schema()],
             "description": self.description,
         }
 
@@ -360,8 +359,7 @@ class ListType(BaseType):
 
     def type_schema(self) -> Dict[str, Any]:
         schema = {
-            "type": "list",
-            "items": self.element_type.type_schema(),
+            "list of": self.element_type.type_schema(),
             "description": self.description,
         }
         if self.length is not None:
@@ -423,8 +421,7 @@ class TypedDictType(BaseType):
     def type_schema(self) -> Dict[str, Any]:
         properties = {item.key: item.type.type_schema() for item in self.items}
         return {
-            "type": "typed_dict",
-            "properties": properties,
+            "record": properties,
             "description": self.description,
         }
 
@@ -472,9 +469,10 @@ class DictType(BaseType):
 
     def type_schema(self) -> Dict[str, Any]:
         schema = {
-            "type": "dict",
-            "keys": self.key_type.type_schema(),
-            "values": self.value_type.type_schema(),
+            "dictionary": {
+                "keys": self.key_type.type_schema(),
+                "values": self.value_type.type_schema(),
+            },
             "description": self.description,
         }
         return schema
@@ -569,8 +567,7 @@ class SetType(BaseType):
 
     def type_schema(self) -> Dict[str, Any]:
         return {
-            "type": "set",
-            "items": self.element_type.type_schema(),
+            "set": self.element_type.type_schema(),
             "description": self.description,
         }
 
@@ -627,10 +624,8 @@ class PDDataFrameType(BaseType):
 
     def type_schema(self) -> Dict[str, Any]:
         properties = {col.key: col.type.type_schema() for col in self.columns}
-        required = [col.key for col in self.columns]
         return {
-            "type": "dataframe",
-            "properties": properties,
+            "dataframe": properties,
             "description": self.description,
         }
 
@@ -668,8 +663,7 @@ class PDSeriesType(BaseType):
 
     def type_schema(self) -> Dict[str, Any]:
         return {
-            "type": "series",
-            "items": self.element_type.type_schema(),
+            "series of ": self.element_type.type_schema(),
             "description": self.description,
         }
 
@@ -719,8 +713,7 @@ class NumpyNdarrayType(BaseType):
 
     def type_schema(self) -> Dict[str, Any]:
         schema = {
-            "type": "array",
-            "items": self.element_type.type_schema(),
+            "array of": self.element_type.type_schema(),
             "description": self.description,
         }
         if self.length is not None:
