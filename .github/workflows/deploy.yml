@@ -1,9 +1,13 @@
 name: Deploy to AWS ECS
 
+# on:
+#   push:
+#     branches:
+#       - aws  # Trigger deployment on push to the aws branch
+
 on:
-  push:
-    branches:
-      - aws  # Trigger deployment on push to the aws branch
+  release:
+    types: [published]
 
 jobs:
   build-and-deploy:
