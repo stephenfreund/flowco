@@ -1,5 +1,6 @@
 from __future__ import annotations
 import pprint
+import textwrap
 from typing import Any, Iterable, Set, Tuple, Union, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field
 from abc import abstractmethod
@@ -84,7 +85,7 @@ class IntType(BaseType):
         raise ValueError(f"Expected int, got {type(value).__name__}")
 
     def type_schema(self) -> Dict[str, Any]:
-        return {"int": self.description}
+        return {"type": "int", "description": self.description}
 
 
 class BoolType(BaseType):
@@ -114,7 +115,7 @@ class BoolType(BaseType):
         raise ValueError(f"Expected bool, got {type(value).__name__}")
 
     def type_schema(self) -> Dict[str, Any]:
-        return {"boolean": self.description}
+        return {"type": "bool", "description": self.description}
 
 
 class StrType(BaseType):
@@ -144,7 +145,7 @@ class StrType(BaseType):
         raise ValueError(f"Expected str, got {type(value).__name__}")
 
     def type_schema(self) -> Dict[str, Any]:
-        return {"string": self.description}
+        return {"type": "str", "description": self.description}
 
 
 class AnyType(BaseType):
@@ -173,7 +174,8 @@ class AnyType(BaseType):
 
     def type_schema(self) -> Dict[str, Any]:
         return {
-            "Any": self.description,
+            "type": "Any",
+            "description": self.description,
             # No type constraint
         }
 
@@ -205,7 +207,7 @@ class NoneType(BaseType):
         raise ValueError(f"Expected None, got {type(value).__name__}")
 
     def type_schema(self) -> Dict[str, Any]:
-        return {"None": self.description}
+        return {"type": "None", "description": self.description}
 
 
 class FloatType(BaseType):
@@ -235,7 +237,7 @@ class FloatType(BaseType):
         raise ValueError(f"Expected float, got {type(value).__name__}")
 
     def type_schema(self) -> Dict[str, Any]:
-        return {"float": self.description}
+        return {"type": "float", "description": self.description}
 
 
 class OptionalType(BaseType):
@@ -270,7 +272,8 @@ class OptionalType(BaseType):
 
     def type_schema(self) -> Dict[str, Any]:
         return {
-            "either": [NoneType().type_schema(), self.wrapped_type.type_schema()],
+            "type": "optional",
+            "wrapped": self.wrapped_type.type_schema(),
             "description": self.description,
         }
 
@@ -359,7 +362,8 @@ class ListType(BaseType):
 
     def type_schema(self) -> Dict[str, Any]:
         schema = {
-            "list of": self.element_type.type_schema(),
+            "type": "list",
+            "items": self.element_type.type_schema(),
             "description": self.description,
         }
         if self.length is not None:
@@ -421,7 +425,8 @@ class TypedDictType(BaseType):
     def type_schema(self) -> Dict[str, Any]:
         properties = {item.key: item.type.type_schema() for item in self.items}
         return {
-            "record": properties,
+            "type": "typed_dict",
+            "properties": properties,
             "description": self.description,
         }
 
@@ -469,10 +474,9 @@ class DictType(BaseType):
 
     def type_schema(self) -> Dict[str, Any]:
         schema = {
-            "dictionary": {
-                "keys": self.key_type.type_schema(),
-                "values": self.value_type.type_schema(),
-            },
+            "type": "dict",
+            "keys": self.key_type.type_schema(),
+            "values": self.value_type.type_schema(),
             "description": self.description,
         }
         return schema
@@ -567,7 +571,8 @@ class SetType(BaseType):
 
     def type_schema(self) -> Dict[str, Any]:
         return {
-            "set": self.element_type.type_schema(),
+            "type": "set",
+            "items": self.element_type.type_schema(),
             "description": self.description,
         }
 
@@ -624,8 +629,10 @@ class PDDataFrameType(BaseType):
 
     def type_schema(self) -> Dict[str, Any]:
         properties = {col.key: col.type.type_schema() for col in self.columns}
+        required = [col.key for col in self.columns]
         return {
-            "dataframe": properties,
+            "type": "dataframe",
+            "properties": properties,
             "description": self.description,
         }
 
@@ -663,7 +670,8 @@ class PDSeriesType(BaseType):
 
     def type_schema(self) -> Dict[str, Any]:
         return {
-            "series of ": self.element_type.type_schema(),
+            "type": "series",
+            "items": self.element_type.type_schema(),
             "description": self.description,
         }
 
@@ -713,7 +721,8 @@ class NumpyNdarrayType(BaseType):
 
     def type_schema(self) -> Dict[str, Any]:
         schema = {
-            "array of": self.element_type.type_schema(),
+            "type": "array",
+            "items": self.element_type.type_schema(),
             "description": self.description,
         }
         if self.length is not None:
@@ -930,6 +939,94 @@ class ExtendedType(BaseModel):
         Generates a JSON schema for the ExtendedType.
         """
         return {"description": self.description, "type": self.the_type.type_schema()}
+
+
+def schema_to_text(schema: Dict[str, Any]) -> str:
+    type_width = 60
+
+    def indent_lines(s):
+        lines = s.split("\n")
+        return "\n".join([" " + line for line in lines])
+
+    def process_schema(sch: Dict[str, Any], pre_comment: str = "") -> str:
+        lines = []
+
+        description = sch.get("description", "")
+
+        if sch["type"] == "Any":
+            lines.append(f"Any{pre_comment}  # {description}")
+        elif sch["type"] == "None":
+            lines.append(f"None{pre_comment}  # {description}")
+        elif sch["type"] == "float":
+            lines.append(f"float{pre_comment}  # {description}")
+        elif sch["type"] == "int":
+            lines.append(f"int{pre_comment}  # {description}")
+        elif sch["type"] == "str":
+            lines.append(f"str{pre_comment}  # {description}")
+        elif sch["type"] == "bool":
+            lines.append(f"bool{pre_comment}  # {description}")
+        elif sch["type"] == "optional":
+            wrapped = process_schema(sch["wrapped"])
+            # lines.append(f"{'Optional[':<{type_width}} # {description}")
+            lines.append("Optional[")
+            lines.append(f"{indent_lines(wrapped)}")
+            lines.append(f"]{pre_comment}")
+        elif sch["type"] == "dict":
+            # lines.append(f"{'Dict[':<{type_width}} # {description}")
+            lines.append(f"Dict[")
+            # Process keys
+            key_schema = sch["keys"]
+            key_str = process_schema(key_schema, pre_comment=",")
+            lines.append(f"{indent_lines(key_str)}")
+            # Process values
+            value_schema = sch["values"]
+            value_str = process_schema(value_schema)
+            lines.append(f"{indent_lines(value_str)}")
+            lines.append(f"]{pre_comment}")
+        elif sch["type"] == "typed_dict":
+            # lines.append(f"{'{':<{type_width}} # {description}")
+            lines.append("{")
+            properties = sch["properties"]
+            body = []
+            for key, prop_schema in properties.items():
+                prop_str = process_schema(prop_schema)
+                body.append(f"'{key}': {prop_str}")
+            lines.append(indent_lines("\n".join(body)))
+            lines.append(f"}}{pre_comment}")
+        elif sch["type"] == "dataframe":
+            # lines.append(f"{'DataFrame':<{type_width}} # {description}")
+            lines.append("DataFrame[")
+            properties = sch["properties"]
+            body = []
+            for key, prop_schema in properties.items():
+                prop_str = process_schema(prop_schema)
+                body.append(f"'{key}': {prop_str}")
+            lines.append(indent_lines("\n".join(body)))
+            lines.append(f"]{pre_comment}")
+        elif sch["type"] in ["array", "list", "set", "series"]:
+            kind = {
+                "array": "Array",
+                "list": "List",
+                "set": "Set",
+                "series": "Series",
+            }[sch["type"]]
+            items_schema = sch["items"]
+            items_str = process_schema(items_schema)
+            length = sch.get("length")
+            if length:
+                # lines.append(f"# {description} (length {length})")
+                lines.append(f"{kind}[ (length {length})")
+            else:
+                # lines.append(f"# {description}")
+                lines.append(f"{kind}[")
+            lines.append(f"{indent_lines(items_str)}")
+            lines.append(f"]{pre_comment}")
+        else:
+            lines.append(f"Any  # Unknown type: {description}")
+
+        return "\n".join(lines)
+
+    return process_schema(schema["type"])
 
 
 # -----------------------

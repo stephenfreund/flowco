@@ -1,6 +1,7 @@
 import json
 from pprint import pformat
 import time
+from flowco.dataflow.extended_type import schema_to_markdown, schema_to_text
 from flowco.session.session import session
 from openai import OpenAI
 import uuid
@@ -278,11 +279,11 @@ class FlowcoPage:
     def show_node_details(self, node: Node):
         with st.container(border=True):
             st.write("###### Output")
-            if (
-                node.function_return_type is not None
-                and not node.function_return_type.is_None_type()
-            ):
-                st.caption(f"{node.function_return_type.description}")
+            # if (
+            #     node.function_return_type is not None
+            #     and not node.function_return_type.is_None_type()
+            # ):
+            #     st.caption(f"{node.function_return_type.description}")
             self.show_output(node)
 
         with st.container(key="node_requirements", border=True):
@@ -298,13 +299,20 @@ class FlowcoPage:
                 )
             )
 
-        if AbstractionLevel.show_code(st.session_state.abstraction_level):
-            with st.container(key="node_type", border=True):
-                st.write("###### Inferred Output Type")
-                if node.function_return_type is not None:
-                    st.code(node.function_return_type)
-                    st.write(node.function_return_type.type_schema())
+        with st.container(key="node_type", border=True):
+            st.write("###### Output Type")
+            function_return_type = node.function_return_type
+            if function_return_type is not None:
+                if not function_return_type.is_None_type():
+                    st.caption(f"{function_return_type.description}")
 
+                # st.code(function_return_type)
+                # log(schema_to_markdown(function_return_type.type_schema()))
+                # st.markdown(schema_to_markdown(function_return_type.type_schema()))
+                # st.write(function_return_type.type_schema())
+                st.code(schema_to_text(function_return_type.type_schema()))
+
+        if AbstractionLevel.show_code(st.session_state.abstraction_level):
             with st.container(key="node_code", border=True):
                 st.write("###### Code")
                 if node.code is not None:
@@ -329,10 +337,20 @@ class FlowcoPage:
                             v = pd.DataFrame(v)
                         if type(v) == pd.DataFrame:
                             st.dataframe(v, height=200)
+                        elif type(v) == dict:
+                            st.json(v)
+                        elif type(v) == str:
+                            if v.startswith("{" or v.startswith("[")):
+                                st.json(v)
+                            else:
+                                st.code(v)
                         else:
                             st.code(v)
                 elif type(value) == str:
-                    st.write(f"```{value}\n```")
+                    if value.startswith("{" or value.startswith("[")):
+                        st.json(value)
+                    else:
+                        st.code(value)
                 else:
                     st.code(value)
             elif node.result.output is not None:

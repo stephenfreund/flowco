@@ -59,8 +59,6 @@ css = """
 .st-key-node_algorithm .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_code .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_code .stCode *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
-.st-key-node_type .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
-.st-key-node_type .stCode *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_checks .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-right-panel .stCode *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-right-panel p, ul, ol, li
@@ -68,8 +66,34 @@ css = """
  {
     font-size: 12px !important;
 }
+
 .st-key-right-panel h3 {
     font-size: 1.25rem !important;
+}
+
+.st-key-node_type .stCode *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
+.st-key-node_checks .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6)
+ {
+    font-size: 10px !important;
+}
+
+.st-key-node_type pre {
+    padding: 0.5rem !important;
+}
+
+.st-key-output_type_schema {
+    background: #FFFFFF !important;
+    gap: 0rem !important;
+}
+
+.st-key-output_type_schema .stCode pre {
+    background: #FFFFFF !important;
+}
+
+.st-key-output_type_schema h4 {
+    font-size: 14px;
+    font-family: "Source Sans Pro", sans-serif;
+    font-weight: 400;
 }
 
 header {

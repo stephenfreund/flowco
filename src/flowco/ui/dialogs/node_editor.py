@@ -9,6 +9,7 @@ import streamlit as st
 from flowco.builder.cache import BuildCache
 from flowco.builder.synthesize import algorithm, requirements, compile
 from flowco.dataflow.dfg import DataFlowGraph, Node
+from flowco.dataflow.extended_type import schema_to_text
 from flowco.dataflow.phase import Phase
 from flowco.page.ama_node import AskMeAnythingNode
 from flowco.page.page import Page
@@ -204,13 +205,14 @@ class NodeEditor:
                     False,
                 )
 
-        if show_code():
-
-            st.write("###### Inferred Output Type")
+        with st.container(key="output_type_schema"):
+            st.write("#### Output Type")
             extended_type = self.node.function_return_type
             if extended_type is not None:
                 st.caption(extended_type.description)
-                st.write(extended_type.type_schema()["type"])
+                st.code(schema_to_text(extended_type.type_schema()))
+
+        if show_code():
 
             code_python = "\n".join(self.node.code or [])
             code_response = self.component_editor("Code", code_python, "python", 30)
