@@ -1,8 +1,6 @@
-import os
-import uuid
 import streamlit as st
 
-from flowco.util.config import config
+from flowco.ui.mx_diagram import UIImageCache
 
 css = """
 .stMainBlockContainer {
@@ -68,8 +66,34 @@ css = """
  {
     font-size: 12px !important;
 }
+
 .st-key-right-panel h3 {
     font-size: 1.25rem !important;
+}
+
+.st-key-node_type .stCode *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
+.st-key-node_checks .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6)
+ {
+    font-size: 10px !important;
+}
+
+.st-key-node_type pre {
+    padding: 0.5rem !important;
+}
+
+.st-key-output_type_schema {
+    background: #FFFFFF !important;
+    gap: 0rem !important;
+}
+
+.st-key-output_type_schema .stCode pre {
+    background: #FFFFFF !important;
+}
+
+.st-key-output_type_schema h4 {
+    font-size: 14px;
+    font-family: "Source Sans Pro", sans-serif;
+    font-weight: 400;
 }
 
 header {
@@ -109,11 +133,11 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
     padding: 0rem;
 }
 
+
 .st-key-button_bar .stHorizontalBlock {
     gap: 0rem !important;
     
 }
-
 .st-key-undo {
     margin-left: 1rem !important;
     padding-left: 1rem !important;
@@ -123,6 +147,16 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
 .st-key-button_bar .stColumn {
     width: fit-content !important;
     flex: unset !important;
+}
+
+.st-key-zoom_button_bar .stHorizontalBlock {
+    gap: 0rem !important;
+    
+}
+.st-key-zoom_button_bar .stColumn {
+    width: fit-content !important;
+    flex: unset !important;
+    font-size: 16px !important;
 }
 
 /* Edit Dialog */
@@ -282,7 +316,7 @@ div:has(> div > .st-key-right-panel) {
 }
 
 .st-key-right-panel img {
-    max-width: 200px !important;
+/*    max-width: 200px !important; */
 }
 
 .st-key-right_panel_width {
@@ -305,7 +339,7 @@ div:has(> div > .st-key-right-panel) {
     font-size: 12px !important;
 }
 
-.st-key-right-panel .stButton * {
+.st-key-right-panel-size-button .stButton * {
     font-size: 16px !important;
 }
 
@@ -317,14 +351,14 @@ div:has(> div > .st-key-right-panel) {
 """
 
 
-# @st.cache_resource
-def custom_css():
-    script_path = os.path.abspath(__file__)
-    script_dir = os.path.dirname(script_path)
-    filename = "special.css"
-    file_path = os.path.join(script_dir, filename)
-    with open(file_path, "r") as file:
-        return file.read()
+# # @st.cache_resource
+# def custom_css():
+#     script_path = os.path.abspath(__file__)
+#     script_dir = os.path.dirname(script_path)
+#     filename = "special.css"
+#     file_path = os.path.join(script_dir, filename)
+#     with open(file_path, "r") as file:
+#         return file.read()
 
 
 def st_init(page_config=True):
@@ -334,6 +368,9 @@ def st_init(page_config=True):
     st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
     if "init" not in st.session_state:
+        import uuid
+
+        from flowco.util.config import config
 
         st.session_state.init = True
         st.session_state.last_sequence_number = -1
@@ -350,22 +387,14 @@ def st_init(page_config=True):
 
         st.session_state.force_update = False
         st.session_state.clear_graph = False
+        st.session_state.zoom = None
+
+        st.session_state.image_cache = UIImageCache()
 
         st.session_state.abstraction_level = config.abstraction_level
 
-        # st.session_state.show_requirements = True
-
-        # if config.x_algorithm_phase:
-        #     st.session_state.show_algorithm = True
-        # else:
-        #     st.session_state.show_algorithm = False
-
-        # st.session_state.show_code = True
-        # st.session_state.show_description = False
-        # st.session_state.show_output = True
-        # st.session_state.show_ama = True
-
         st.session_state.wide_right_panel = False
+        st.session_state.pinned_nodes = []
 
         st.session_state.current_page = None
 

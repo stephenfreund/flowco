@@ -1,3 +1,4 @@
+from tempfile import TemporaryFile
 from typing import *
 
 import json
@@ -13,7 +14,7 @@ from typing import Any
 
 from regex import E
 
-from flowco.util.output import log, logger
+from flowco.util.output import error, log, logger
 
 
 def str_to_type(type_str: str) -> type:
@@ -26,7 +27,7 @@ def str_to_type(type_str: str) -> type:
 
     try:
         t = eval(type_str)
-        log(f"Converted {type_str} to {t}")
+        #        log(f"Converted {type_str} to {t}")
         return t
     except Exception as e:
         raise SyntaxError(
@@ -47,9 +48,9 @@ def types_equal(type1_str: str, type2_str: str) -> bool:
         origin1, origin2 = get_origin(type1), get_origin(type2)
         args1, args2 = get_args(type1), get_args(type2)
 
-        log(f"Type1: {type1}, Type2: {type2}")
-        log(f"Origin1: {origin1}, Origin2: {origin2}")
-        log(f"Args1: {args1}, Args2: {args2}")
+        # log(f"Type1: {type1}, Type2: {type2}")
+        # log(f"Origin1: {origin1}, Origin2: {origin2}")
+        # log(f"Args1: {args1}, Args2: {args2}")
 
         if origin1 is None and origin2 is None:
             # Both types do not have generic parameters; compare them directly
@@ -61,10 +62,10 @@ def types_equal(type1_str: str, type2_str: str) -> bool:
             # One type has generic parameters while the other does not; they are not equal
             return False
 
-    with logger(f"Comparing '{type1_str}' and '{type2_str}'"):
-        result = check()
-        log(f"Result: {result}")
-        return result
+    # with logger(f"Comparing '{type1_str}' and '{type2_str}'"):
+    result = check()
+    # log(f"Result: {result}")
+    return result
 
 
 def encode(value: Any) -> str:
@@ -91,12 +92,23 @@ def decode(encoded_str: str) -> Any:
     # Decode the base64 string to bytes
     pickled_bytes = base64.b64decode(encoded_str.encode("utf-8"))
     # Deserialize the bytes back to a Python object
-    try:
-        value = pickle.loads(pickled_bytes)
-        return value
-    except Exception as e:
-        error(e)
-        raise ValueError(f"Could not decode value: {e}")
+    value = pickle.loads(pickled_bytes)
+    return value
+
+
+def convert_np_float64(obj: Any) -> Any:
+    if isinstance(obj, dict):
+        return {k: convert_np_float64(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_np_float64(element) for element in obj]
+    elif isinstance(obj, tuple):
+        return tuple(convert_np_float64(element) for element in obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, np.float64):
+        return float(obj)
+    else:
+        return obj
 
 
 # Example Usage
@@ -139,3 +151,10 @@ if __name__ == "__main__":
     print(str_to_type("plt.Axes"))
     print(str_to_type("None"))
     print(types_equal("None", "plt.Axes"))
+
+    encoded = encode("moo")
+    print(encoded)
+    with TemporaryFile() as f:
+        f.write(encoded.encode())
+        f.seek(0)
+        print(decode(f.read().decode()))

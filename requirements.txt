@@ -18,12 +18,6 @@ streamlit>=1.41.1
 deepdiff>=7.0.1
 streamlit_extras
 graphviz
-pandas
-seaborn
-matplotlib
-numpy
-scipy
-scikit-learn
 s3fs
 fsspec
 google-auth-oauthlib
@@ -31,3 +25,10 @@ markdown
 nbformat
 pydantic
 streamlit_code_editor
+pandas
+seaborn
+matplotlib
+numpy
+scipy
+scikit-learn
+statsmodels

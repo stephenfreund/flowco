@@ -1,11 +1,12 @@
 import json
 from pprint import pformat
 import time
+from flowco.dataflow.extended_type import schema_to_markdown, schema_to_text
 from flowco.session.session import session
 from openai import OpenAI
 import uuid
 
-from flowco.page.ama import AskMeAnything
+from flowco.page.ama import AskMeAnything, VisibleMessage
 from flowco.session.session_file_system import fs_write
 from flowco.ui import ui_help
 from flowco.ui import ui_page
@@ -22,6 +23,7 @@ from flowco.ui.dialogs.node_editor import edit_node
 from flowco.ui.ui_dialogs import settings
 from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_util import (
+    set_session_state,
     toggle,
 )
 import streamlit as st
@@ -34,7 +36,7 @@ from flowco.util.config import config
 from flowco.util.costs import total_cost
 from flowco.util.config import AbstractionLevel
 from flowco.util.files import create_zip_in_memory
-from flowco.util.output import Output, error, log_timestamp
+from flowco.util.output import Output, error, log, log_timestamp
 
 
 class FlowcoPage:
@@ -43,29 +45,68 @@ class FlowcoPage:
         with st.container(key="masthead"):
             self.masthead()
             self.button_bar()
-
-            def fix():
-                if st.session_state.al is None:
-                    st.session_state.abstraction_level = "Requirements"
-                else:
-                    st.session_state.abstraction_level = st.session_state.al
-                st.session_state.force_update = True
-
-            with st.container(key="controls"):
-                st.session_state.abstraction_level = st.segmented_control(
-                    "Abstraction Level",
-                    (
-                        AbstractionLevel
-                        if config.x_algorithm_phase
-                        else [AbstractionLevel.spec, AbstractionLevel.code]
-                    ),
-                    key="al",
-                    default=st.session_state.abstraction_level,
-                    on_change=fix,
-                    disabled=not self.graph_is_editable(),
-                )
+            self.second_bar()
 
         self.show_ama()
+
+    def second_bar(self):
+
+        def fix():
+            if "al" not in st.session_state or st.session_state.al is None:
+                st.session_state.abstraction_level = "Requirements"
+            else:
+                st.session_state.abstraction_level = st.session_state.al
+                st.session_state.force_update = True
+
+        with st.container():
+            with st.container(key="zoom_button_bar"):
+                c1, spacer, c2, c3, c4 = st.columns(5, vertical_alignment="bottom")
+                with c1.container(key="controls"):
+                    st.session_state.abstraction_level = st.segmented_control(
+                        "Abstraction Level",
+                        (
+                            AbstractionLevel
+                            if config.x_algorithm_phase
+                            else [AbstractionLevel.spec, AbstractionLevel.code]
+                        ),
+                        key="al",
+                        default=st.session_state.abstraction_level,
+                        on_change=fix,
+                        disabled=not self.graph_is_editable(),
+                    )
+
+                def zoom(cmd):
+                    log("Zoom", cmd)
+                    st.session_state.zoom = cmd
+                    st.session_state.force_update = True
+
+                spacer.write(
+                    "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
+                    unsafe_allow_html=True,
+                )
+
+                c2.button(
+                    label="",
+                    icon=":material/zoom_in:",
+                    key="zoom_in",
+                    disabled=not self.graph_is_editable(),
+                    on_click=lambda cmd: zoom(cmd),
+                    args=("in",),
+                )
+                c3.button(
+                    label="",
+                    icon=":material/zoom_out:",
+                    disabled=not self.graph_is_editable(),
+                    on_click=lambda cmd: zoom(cmd),
+                    args=("out",),
+                )
+                c4.button(
+                    label="",
+                    icon=":material/zoom_out_map:",
+                    disabled=not self.graph_is_editable(),
+                    on_click=lambda cmd: zoom(cmd),
+                    args=("reset",),
+                )
 
     def right_panel(self):
         ui_page: UIPage = st.session_state.ui_page
@@ -91,11 +132,12 @@ class FlowcoPage:
                 if st.session_state.wide_right_panel
                 else ":material/chevron_left:"
             )
-            if st.button(symbol, key="right_panel_width"):
-                st.session_state.wide_right_panel = (
-                    not st.session_state.wide_right_panel
-                )
-                st.rerun()
+            with st.container(key="right-panel-size-button"):
+                if st.button(label="", icon=symbol, key="right_panel_width"):
+                    st.session_state.wide_right_panel = (
+                        not st.session_state.wide_right_panel
+                    )
+                    st.rerun()
             if node is None:
                 self.global_sidebar()
             else:
@@ -159,6 +201,13 @@ class FlowcoPage:
         with st.container(key="node_sidepanel"):
             self.show_node_details(node)
 
+    def write_ama_message(self, message: VisibleMessage):
+        with st.chat_message(message.role):
+            if not message.is_error:
+                st.markdown(message.content, unsafe_allow_html=True)
+            else:
+                st.error(message.content)
+
     def show_ama(self):
         page = st.session_state.ui_page.page()
         if st.session_state.ama is None or st.session_state.ama.page != page:
@@ -169,8 +218,7 @@ class FlowcoPage:
             container = st.container(height=height, border=True, key="chat_container")
             with container:
                 for message in st.session_state.ama.messages():
-                    with st.chat_message(message.role):
-                        st.markdown(message.content, unsafe_allow_html=True)
+                    self.write_ama_message(message)
 
             if st.audio_input(
                 "Record a voice message",
@@ -203,6 +251,7 @@ class FlowcoPage:
     def ama_completion(self, container, prompt):
         page = st.session_state.ui_page.page()
         dfg = page.dfg
+        ama: AskMeAnything = st.session_state.ama
         with container:
             with st.chat_message("user"):
                 st.markdown(prompt)
@@ -211,44 +260,34 @@ class FlowcoPage:
             try:
                 with empty.chat_message("assistant"):
                     response = st.write_stream(
-                        st.session_state.ama.complete(
-                            prompt, st.session_state.selected_node
-                        )
-                    )
-
-                with empty.chat_message("assistant"):
-                    st.markdown(
-                        st.session_state.ama.last_message().content,
-                        unsafe_allow_html=True,
+                        ama.complete(prompt, st.session_state.selected_node)
                     )
             except Exception as e:
-                with empty.chat_message("assistant"):
-                    error(e)
-                    st.error(f"An error occurred in AMA: {e}")
-                    st.stop()
+                error(e)
             finally:
-                time.sleep(1)
+                # self.write_ama_message(ama.last_message())
                 st.session_state.ama_responding = False
                 if dfg != page.dfg:
                     st.session_state.force_update = True
                     self.auto_update()
-                st.rerun()  # TODO: This could be in a callback!
+                st.rerun()  # TODO: This could be in a callback!  But should be okay...
 
     def auto_update(self):
         pass
 
     # override and call super in subclasses
-    def show_node_details(self, node):
-        st.write("**Output**")
-        if (
-            node.function_return_type is not None
-            and not node.function_return_type.is_None_type()
-        ):
-            st.caption(f"{node.function_return_type.description}")
-        self.show_output(node)
+    def show_node_details(self, node: Node):
+        with st.container(border=True):
+            st.write("###### Output")
+            # if (
+            #     node.function_return_type is not None
+            #     and not node.function_return_type.is_None_type()
+            # ):
+            #     st.caption(f"{node.function_return_type.description}")
+            self.show_output(node)
 
-        st.write("**Requirements**")
-        with st.container(key="node_requirements"):
+        with st.container(key="node_requirements", border=True):
+            st.write("###### Requirements")
             st.write(
                 "\n".join(
                     [
@@ -260,9 +299,22 @@ class FlowcoPage:
                 )
             )
 
+        with st.container(key="node_type", border=True):
+            st.write("###### Output Type")
+            function_return_type = node.function_return_type
+            if function_return_type is not None:
+                if not function_return_type.is_None_type():
+                    st.caption(f"{function_return_type.description}")
+
+                # st.code(function_return_type)
+                # log(schema_to_markdown(function_return_type.type_schema()))
+                # st.markdown(schema_to_markdown(function_return_type.type_schema()))
+                # st.write(function_return_type.type_schema())
+                st.code(schema_to_text(function_return_type.type_schema()))
+
         if AbstractionLevel.show_code(st.session_state.abstraction_level):
-            st.write("**Code**")
-            with st.container(key="node_code"):
+            with st.container(key="node_code", border=True):
+                st.write("###### Code")
                 if node.code is not None:
                     st.code("\n".join(node.code))
 
@@ -274,17 +326,38 @@ class FlowcoPage:
                 and not node.function_return_type.is_None_type()
             ):
                 value = node.result.result.to_value()
-                if type(value) == np.ndarray or type(value) == list:
+                if type(value) in [np.ndarray, list, pd.Series]:
                     value = pd.DataFrame(value)
                 if type(value) == pd.DataFrame:
                     st.dataframe(value, height=200)
+                elif type(value) == dict:
+                    for k, v in value.items():
+                        st.write(f"**{k}**:")
+                        if type(v) in [np.ndarray, list, pd.Series]:
+                            v = pd.DataFrame(v)
+                        if type(v) == pd.DataFrame:
+                            st.dataframe(v, height=200)
+                        elif type(v) == dict:
+                            st.json(v)
+                        elif type(v) == str:
+                            if v.startswith("{" or v.startswith("[")):
+                                st.json(v)
+                            else:
+                                st.code(v)
+                        else:
+                            st.code(v)
+                elif type(value) == str:
+                    if value.startswith("{" or value.startswith("[")):
+                        st.json(value)
+                    else:
+                        st.code(value)
                 else:
-                    st.write(value)
+                    st.code(value)
             elif node.result.output is not None:
                 output = node.result.output
                 if output is not None:
                     if output.output_type == OutputType.text:
-                        st.write(output.data)
+                        st.text(f"```{output.data}\n```")
                     elif output.output_type == OutputType.image:
                         base64encoded = output.data.split(",", maxsplit=1)
                         image_data = base64encoded[0] + ";base64," + base64encoded[1]
@@ -292,31 +365,43 @@ class FlowcoPage:
 
     def bottom_bar(self):
         ui_page: UIPage = st.session_state.ui_page
-        cols = st.columns([2, 2.1, 3])
-        with cols[0]:
-            if st.button(":material/help: Help", disabled=not self.graph_is_editable()):
-                ui_help.help_dialog()
+        with st.container(key="bottom_bar"):
+            cols = st.columns([2, 2.1, 3])
+            cols = st.columns(4)
+            with cols[0]:
+                if st.button(
+                    label="",
+                    icon=":material/help:",
+                    disabled=not self.graph_is_editable(),
+                ):
+                    ui_help.help_dialog()
 
-        with cols[1]:
-            if st.button(
-                ":material/settings: Settings",
-                help="Change settings",
-                disabled=not self.graph_is_editable(),
-            ):
-                settings(ui_page)
+            with cols[1]:
+                if st.button(
+                    label="",
+                    icon=":material/settings:",
+                    help="Change settings",
+                    disabled=not self.graph_is_editable(),
+                ):
+                    settings(ui_page)
 
-        with cols[2]:
-            if st.button(":material/bug_report: Report Bug", key="report_bug"):
-                self.report_bug()
+            with cols[2]:
+                if st.button(
+                    label="Report Bug", icon=":material/bug_report:", key="report_bug"
+                ):
+                    self.report_bug()
 
-        if st.button(":material/logout: Logout", help="Sign out"):
-            sign_out()
-            st.rerun()
+            with cols[3]:
+                if st.button(label="Logout", icon=":material/logout:", help="Sign out"):
+                    sign_out()
+                    st.rerun()
 
     def report_bug(self):
         ui_page = st.session_state.ui_page
         flowco_name = ui_page.page().file_name
-        data_files = [ file for file in ui_page.page().tables.all_files() if file.endswith(".csv") ]
+        data_files = [
+            file for file in ui_page.page().tables.all_files() if file.endswith(".csv")
+        ]
         time_stamp = log_timestamp()
         file_name = f"flowco-{time_stamp}.zip"
 
@@ -325,7 +410,7 @@ class FlowcoPage:
 
             text = st.text_input(
                 "Bug",
-                placeholder = "Enter a description of the issue",
+                placeholder="Enter a description of the issue",
             )
 
             if text:
@@ -334,13 +419,15 @@ class FlowcoPage:
                         [flowco_name] + data_files,
                         additional_entries={
                             "description.txt": text,
-                            "logging.txt": session.get("output", Output).get_full_output(),
-                            "session_state.json" : pformat(dict(st.session_state))
+                            "logging.txt": session.get(
+                                "output", Output
+                            ).get_full_output(),
+                            "session_state.json": pformat(dict(st.session_state)),
                         },
                     )
                     fs_write(file_name, zip_data, "wb")
 
-                st.write("ZIP ready for download!")
+                st.write("Saved on server.  Click below to download bug files locally.")
 
                 if st.download_button(
                     label=":material/download:",
@@ -350,7 +437,7 @@ class FlowcoPage:
                 ):
                     st.rerun()
 
-        download_files()        
+        download_files()
 
     def button_bar(self):
         pass
@@ -406,12 +493,28 @@ class FlowcoPage:
             left, right = self.main_columns()
 
             with left:
+
+                force_update = st.session_state.force_update
+
+                cache = (
+                    st.session_state.image_cache
+                    if not config.x_no_image_cache
+                    else None
+                )
+
+                if force_update:
+                    st.session_state.image_cache.clear()
+
+                diagram = st.session_state.ui_page.dfg_as_mx_diagram(cache).model_dump()
+                # log("mx_diagram size", len(json.dumps(diagram)))
+
                 result = mxgraph_component(
                     key=st.session_state.nonce,
-                    diagram=st.session_state.ui_page.dfg_as_mx_diagram().model_dump(),
+                    diagram=diagram,
                     editable=self.graph_is_editable(),
                     selected_node=selected_node,
-                    dummy=uuid.uuid4().hex if st.session_state.force_update else None,
+                    zoom=st.session_state.zoom,
+                    dummy=uuid.uuid4().hex if force_update else None,
                     refresh_phase=self.refresh_phase().value,
                     clear=st.session_state.clear_graph,
                 )
@@ -425,6 +528,7 @@ class FlowcoPage:
 
                 st.session_state.force_update = False
                 st.session_state.clear_graph = False
+                st.session_state.zoom = None
 
                 if result["command"] == "edit":
                     if (

@@ -1,12 +1,14 @@
 import asyncio
 import queue
 import threading
+import time
 from flowco.dataflow.dfg import DataFlowGraph, Node
 from flowco.page.output import NodeResult
 from flowco.page.tables import GlobalTables
 from flowco.pythonshell.shell import EvalResult, PythonShell
 from concurrent.futures import ThreadPoolExecutor
 from flowco.session.session import session
+from flowco.util.output import logger
 
 
 class PythonShells:
@@ -38,7 +40,8 @@ class PythonShells:
             preloader.submit(load_shell)
 
     def _get_shell(self) -> PythonShell:
-        return self.queue.get()
+        with logger("PythonShell get"):
+            return self.queue.get()
 
     async def _restart_and_put(self, shell: PythonShell, session_data) -> None:
         setattr(threading.current_thread(), "flowco_session", session_data)
@@ -76,7 +79,7 @@ class PythonShells:
 
     def run_assertions(
         self, tables: GlobalTables, dfg: DataFlowGraph, node: Node
-    ) -> Node:
+    ) -> NodeResult:
         shell = self._get_shell()
         try:
             return shell.run_assertions(tables, dfg, node)

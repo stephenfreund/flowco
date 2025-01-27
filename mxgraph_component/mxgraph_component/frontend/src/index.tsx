@@ -3,7 +3,8 @@ import mx from './mxgraph';
 import { mxGraphModel, mxCellState, mxCell } from 'mxgraph';
 import { v4 as uuidv4 } from "uuid";
 
-import { mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, node_style, labelForEdge, clean_color, isDiagramNode } from "./diagram";
+import { mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, node_style, labelForEdge, clean_color, isDiagramNode, resetNodeTranslation } from "./diagram";
+import { clearImageCache } from "./cache";
 
 var currentDiagram: mxDiagram | undefined = undefined;
 var currentRefreshPhase = 0;
@@ -12,6 +13,114 @@ var currentRefreshPhase = 0;
 const graphContainer = document.querySelector("#graph-container") as HTMLDivElement;
 const graph = new mx.mxGraph(graphContainer);
 
+// Define zoom factors and limits
+const ZOOM_IN_FACTOR = 1.4;  // 10% zoom in
+const ZOOM_OUT_FACTOR = 0.6; // 10% zoom out
+const MIN_ZOOM = 0.25;        // 25%
+const MAX_ZOOM = 3.0;        // 300%
+
+
+/**
+ * Zoom In Function
+ */
+function zoomIn() {
+    let newScale = graph.view.scale * ZOOM_IN_FACTOR;
+    if (newScale > MAX_ZOOM) newScale = MAX_ZOOM;
+    graph.view.scale = newScale;
+    graph.refresh();
+}
+
+/**
+ * Zoom Out Function
+ */
+function zoomOut() {
+    let newScale = graph.view.scale * ZOOM_OUT_FACTOR;
+    if (newScale < MIN_ZOOM) newScale = MIN_ZOOM;
+    graph.view.scale = newScale;
+    sessionStorage.setItem("scale", JSON.stringify(graph.view.scale));
+    graph.refresh();
+}
+
+/**
+ * Reset Zoom Function
+ */
+function resetZoom() {
+    graph.view.scale = 1.0; // Reset to 100%
+    graph.view.translate = new mx.mxPoint(40, 60); // Reset pan
+    sessionStorage.setItem("scale", JSON.stringify(graph.view.scale));
+    graph.refresh();
+}
+
+function getZoomScale() {
+    return graph.view.scale;
+}
+
+function setZoomScale(scale: number) {
+    graph.view.scale = scale;
+    sessionStorage.setItem("scale", JSON.stringify(graph.view.scale));
+    graph.refresh();
+}
+
+function zoom(cmd: string) {
+  if (cmd == "in") {
+    zoomIn();
+  } else if (cmd == "out") {
+    zoomOut();
+  } else if (cmd == "reset") {
+    resetZoom();
+  } else {
+    // console.log("Unknown zoom command: ", cmd);
+  }
+}
+
+let zoomedInContainer = document.getElementById("customBox")!;
+
+// Function to display zoomed-in content (with image handling)
+function showZoomedInContent(cell: mxCell) {
+  // zoomedInContainer.innerHTML = cell.value;  // Clear any previous content
+
+  const style = cell.style;
+
+  // Check if the style contains a background image
+  const imageMatch = style && style.match('image=data:image/png,\(.*\)');
+
+  if (imageMatch && imageMatch[1]) {
+    const imageUrl = imageMatch[1]; 
+    // console.log("Image URL", imageUrl)
+
+    // Create an <img> element and set the src to the extracted image URL
+    const imgElement = document.createElement('img');
+    imgElement.src = `data:image/png;base64,${imageUrl}`;
+    imgElement.style.maxWidth = '100%'; // Optional: set a maximum size for the image
+    zoomedInContainer.innerHTML = imgElement.outerHTML;
+  } else {
+    // If no image is found, display the cell value as text
+    zoomedInContainer.innerHTML = cell.value;
+  }
+
+
+  // Show the container and position it near the mouse
+  zoomedInContainer.style.display = "block";
+  zoomedInContainer.style.position = 'absolute';
+  zoomedInContainer.style.alignSelf = 'center';
+  zoomedInContainer.style.left = '10px;' // cell.geometry.x + cell.geometry.width + 10 + 'px';  // Position to the right of the cell
+  zoomedInContainer.style.margin = '10px';
+  zoomedInContainer.style.top =  '60px';  // Align with the top of the cell
+  zoomedInContainer.style.width = "800px";
+  zoomedInContainer.style.boxShadow = "0 0 10px rgba(0, 0, 0, 0.5)";
+  // zoomedInContainer.style.height = "80%";
+  zoomedInContainer.style.maxWidth = "100%";
+  // console.log("BB", zoomedInContainer)
+}
+
+function hideZoomedInContent() {
+  zoomedInContainer.style.display = 'none';
+}
+
+zoomedInContainer.addEventListener("mouseup", (event) => {
+  event.stopPropagation();
+  hideZoomedInContent();
+});
 
 var can_edit = true;
 graph.setPanning(true);
@@ -26,8 +135,32 @@ graph.setCellsEditable(true);
 graph.setCellsResizable(true);
 graph.setEnterStopsCellEditing(true);
 
-// Add this HTML somewhere in your page
-// <div id="customBox" style="position: absolute; display: none; background: #fff; border: 1px solid #000; padding: 10px; z-index: 1000;"></div>
+// Enable panning
+// graph.setPanning(true);
+graph.panningHandler.useLeftButtonForPanning = true;
+
+// Listen for mouse move events to update the cursor
+graph.container.addEventListener('mousemove', function(evt) {
+  var offset = mx.mxUtils.getOffset(graph.container);
+  var x = mx.mxEvent.getClientX(evt) - offset.x;
+  var y = mx.mxEvent.getClientY(evt) - offset.y;
+  var state = graph.view.getState(graph.getCellAt(x, y));
+  var cell = state ? state.cell : null;
+  var isShift = evt.shiftKey;
+
+  hideZoomedInContent();
+
+  if (cell == null) {
+      if (isShift) {
+          graph.container.style.cursor = 'default';
+      } else {
+          graph.container.style.cursor = 'grab';
+      }
+  } else {
+      graph.container.style.cursor = 'default';
+  }
+});
+
 
 
 function setEditable(editable: boolean) {
@@ -38,6 +171,7 @@ function setEditable(editable: boolean) {
 graphContainer.addEventListener('contextmenu', (event) => {
   event.preventDefault();
 });
+
 
 // Ensure the graph container is focusable
 graphContainer.setAttribute('tabindex', '0');
@@ -58,7 +192,6 @@ class mxIconSet {
       // tset if the current cell and all predecessors have phase 1 or better.
       const upToDate = (cell: mxCell): boolean => {
         if (cell.value.phase < currentRefreshPhase) {
-          console.log('not up to date', cell.id, cell.value.phase, currentRefreshPhase)
           return false;
         }
         const incomingEdges = graph.getIncomingEdges(cell, graph.getDefaultParent());
@@ -68,7 +201,6 @@ class mxIconSet {
             return false;
           }
         }
-        console.log('up to date', cell.id, cell.value.phase, currentRefreshPhase)
         return true;
       }
 
@@ -131,7 +263,47 @@ class mxIconSet {
 
       graph.container.appendChild(deleteImg);
       this.images.push(deleteImg);
+
+
+      // if state.cell has any outgoing edges that do not have empty labels, show output.
+      const children = graph.getModel().getOutgoingEdges(state.cell);
+      const showOutput = children.some(child => child.value !== '');
+      if (showOutput) {
+        // Create Delete Icon
+        const showOutputImg: HTMLImageElement = state.cell.value.force_show_output ? mx.mxUtils.createImage("visible_filled.png") : mx.mxUtils.createImage("visible.png")
+        showOutputImg.setAttribute('title', 'Show Output');
+        Object.assign(showOutputImg.style, {
+          position: 'absolute',
+          cursor: 'pointer',
+          width: '16px',
+          height: '16px',
+          left: `${state.x + state.width - 16 - 8}px`,
+          top: `${state.y + 2}px`
+          });
+
+        // Add event listeners for Delete Icon
+        mx.mxEvent.addListener(showOutputImg, 'click', mx.mxUtils.bind(this, (evt: MouseEvent) => {
+          const node_value = this.state.cell.value 
+          node_value.force_show_output = !node_value.force_show_output;
+
+          const output_node = graph.getModel().getCell(`output-${this.state.cell.id}`);
+          if (output_node) {
+            graph.toggleCells(node_value.force_show_output, [output_node], true);
+          }
+
+          streamlitResponse();
+          mx.mxEvent.consume(evt);
+          this.destroy();
+          graph.refresh();
+        }));
+        graph.container.appendChild(showOutputImg);
+        this.images.push(showOutputImg);
+      }
+
+
+
     } else if (state.cell.isEdge()) {
+
       const deleteImg: HTMLImageElement = mx.mxUtils.createImage("delete.png");
       deleteImg.setAttribute('title', 'Delete');
       
@@ -165,34 +337,13 @@ class mxIconSet {
         this.destroy();
       }));
 
-      // Add event listener for Mouse Over (Hover In)
       mx.mxEvent.addListener(deleteImg, 'mouseenter', mx.mxUtils.bind(this, (evt: MouseEvent) => {
-        // Example: Change opacity on hover
         deleteImg.style.opacity = '0.7';
-        console.log("Beep")
-
-        // Alternatively, you could change the image source to a hover version
-        // deleteImg.src = "delete-hover.png";
-
-        // Or add a CSS class for more complex styling
-        // deleteImg.classList.add('delete-icon-hover');
       }));
 
-      // Add event listener for Mouse Out (Hover Out)
       mx.mxEvent.addListener(deleteImg, 'mouseleave', mx.mxUtils.bind(this, (evt: MouseEvent) => {
-        // Reset opacity when not hovering
         deleteImg.style.opacity = '1.0';
-        console.log("UnBeep")
-
-        // If you changed the image source, revert it back
-        // deleteImg.src = "delete.png";
-
-        // Or remove the CSS class
-        // deleteImg.classList.remove('delete-icon-hover');
       }));
-
-
-
 
       graph.container.appendChild(deleteImg);
       this.images.push(deleteImg);
@@ -236,7 +387,7 @@ graph.convertValueToString = function (...args): string {
   const value: any = cell.value;
 
   if (isDiagramNode(value)) {
-    return `<span style="font-size:12px;"><b>${value.pill}</b><br></span> ${value.label}`;
+    return `<span style="font-size:14px;"><b>${value.pill}</b><br></span> ${value.label}`;
   }
 
   // Default label rendering for non-custom types
@@ -405,7 +556,7 @@ let currentlyHoveredCell: mxCell | null = null;
 function shouldHandleHover(cell: mxCell): boolean {
   if (graph.getModel().isVertex(cell)) {
     const id = cell.id; // Adjust based on how the name is stored
-    return !id.startsWith('output-');
+    return true
   }
   return false;
 }
@@ -420,23 +571,35 @@ function handleHover(isEntering: boolean): void {
     let node: string | null = null;
     if (isEntering && currentlyHoveredCell) {
       node = currentlyHoveredCell?.id;
+      if (node.startsWith("output-")) {
+        // console.log("BEEP")  
+        showZoomedInContent(currentlyHoveredCell);
+      }
       graph.toggleCellStyle("shadow", false, currentlyHoveredCell);
     } else {
       if (currentlyHoveredCell) {
+        node = currentlyHoveredCell?.id;
         graph.toggleCellStyle("shadow", true, currentlyHoveredCell);
+        if (node.startsWith("output-")) {
+          // console.log("BORP")  
+          hideZoomedInContent();
+        }
       }
       const cells = graph.getSelectionCells();
       const selectedIds = cells.map(cell => cell.id);
       node = selectedIds.length === 0 ? null : selectedIds[0];
     }
+
     console.log("Hovering: ", currentlyHoveredCell, node)
-    
-    const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, currentDiagram!.version));
-    Streamlit.setComponentValue({
-      command: "update",
-      diagram: diagram_str,
-      selected_node: node,
-    });
+
+    if (!(currentlyHoveredCell && currentlyHoveredCell.id.startsWith("output-"))) {
+      const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, currentDiagram!.version));
+      Streamlit.setComponentValue({
+        command: "update",
+        diagram: diagram_str,
+        selected_node: node,
+      });
+    }
   }
 }
 
@@ -550,7 +713,9 @@ graph.connectionHandler.createTargetVertex = function (evt, source) {
     pill: vertex.id,
     label: "...",
     geometry: vertex.geometry,
-    phase: 0
+    phase: 0,
+    is_locked: false,
+    force_show_output: false    
   }
   vertex.setStyle(node_style);
 
@@ -584,12 +749,14 @@ function streamlitResponse(hover_node: string | null = null) {
 
     if (currentDiagram !== undefined) {
       const original_version = currentDiagram.version;
-      console.log("Setting Value: " + selected_node)
+      // console.log("Setting Value: " + selected_node)
       sessionStorage.setItem("selected_node", selected_node == null ? "" : selected_node);
       
       const translation = graph.view.translate;
-      console.log("Translation Save: ", translation)
       sessionStorage.setItem("translation", JSON.stringify(translation));
+
+      const scale = getZoomScale();
+      sessionStorage.setItem("scale", JSON.stringify(scale));
 
       const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, original_version));
       Streamlit.setComponentValue({
@@ -640,7 +807,8 @@ function addListeners() {
               label: '...',
               geometry: new mx.mxRectangle(pt.x - width / 2, pt.y - height / 2, width, height),
               phase: 0,
-              is_locked: false
+              is_locked: false,
+              force_show_output: false
             }
             const newCell = graph.insertVertex(parent, id, value, pt.x, pt.y, 160, 80, node_style);
             if (userLabel != null) {
@@ -663,7 +831,7 @@ function addListeners() {
 
   // Add a listener for selection changes
   graph.getSelectionModel().addListener("change", (sender, evt) => {
-    console.log("Selection Changed", graph.getSelectionCells())
+    console.log("Selection Changed", graph.getSelectionCells().map(cell => cell.id))
     streamlitResponse();
   });
 
@@ -800,7 +968,7 @@ function generateTwoWordSummary(phrase: string): string {
     pill = titleCased.join('-');
   }
   const pills = collectNodePills()
-  console.log(pills)
+  // console.log(pills)
   if (pills.includes(pill)) {
     var pillNumber = 1;
     while (pills.includes(pill + "-" + pillNumber)) {
@@ -839,6 +1007,27 @@ function updateGraphWithDiagram(diagram: mxDiagram) {
 
 /*****/
 
+// graph.addListener('doubleClick', function(sender, evt) {
+//   var cell = evt.getProperty('cell');
+
+//   if (cell != null && graph.getModel().isVertex(cell)) {
+//     var style = graph.getCellStyle(cell);
+//     if (cell.id.startsWith('output-') && ((style['shape'] === 'image') || style['image'])) {
+//       // Prevent the default double-click behavior (like editing the label)
+//       evt.consume();
+//       const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, currentDiagram!.version));
+//       Streamlit.setComponentValue({
+//         command: "output",
+//         diagram: diagram_str,
+//         selected_node: cell.id.substring(7),
+//       });
+//     }
+//   }
+// });
+
+
+/*****/
+
 function clearGraph() {
   var model = graph.getModel();
   model.beginUpdate();
@@ -862,6 +1051,13 @@ function onRender(event: Event): void {
   const data = (event as CustomEvent<RenderData>).detail;
   const initial_render = currentDiagram === undefined;
 
+  console.log("currentDiagram === undefined", initial_render)
+  console.log("forced", data.args["forced"])
+  console.log("clear", data.args["clear"])
+  console.log("!editable", !data.args["editable"])
+  console.log("Force", initial_render || !data.args['editable'] || data.args["forced"] || data.args["clear"])
+
+
   setEditable(false);
 
   let diagram = data.args["diagram"];
@@ -873,21 +1069,24 @@ function onRender(event: Event): void {
     currentDiagram = undefined;
     sessionStorage.setItem("selected_node", "");
     sessionStorage.setItem("key", "");
+    // clearImageCache();
   }
+
 
   let forced = data.args["forced"] || data.args["clear"];
 
   currentRefreshPhase = data.args["refresh_phase"];
   // console.log(currentRefreshPhase)
   // console.log(data.args["selected_node"])
-  console.log(diagram.version, currentDiagram?.version)
+  // console.log(diagram.version, currentDiagram?.version)
   if (initial_render || !data.args['editable'] || forced) {
-    console.log("Initial render")
+    graph.view.setTranslate(40, 60);
+
     updateGraphWithDiagram(diagram)
     const stored_key = sessionStorage.getItem("key");
     if (key === stored_key) {
       const selected_node = sessionStorage.getItem("selected_node")
-      console.log("Selected Node: ", selected_node)
+      // console.log("Selected Node: ", selected_node)
       if (selected_node !== null) {
         const model = graph.getModel();
         const cellToSelect = model.getCell(selected_node);
@@ -898,26 +1097,35 @@ function onRender(event: Event): void {
           graph.clearSelection();
         }
       }
-      const translation = JSON.parse(sessionStorage.getItem("translation") || "{}");
-      console.log("Translation: ", translation)
+      const scale = JSON.parse(sessionStorage.getItem("scale") || "1.0");
+      setZoomScale(scale);
+      const translation = JSON.parse(sessionStorage.getItem("translation") || "{ x: 40, y: 60 }");
       graph.view.setTranslate(translation.x, translation.y);
     } else {
       sessionStorage.setItem("key", key)
       sessionStorage.setItem("selected_node", "")
-      const translation = graph.view.translate;
-      console.log("Translation Save: ", translation)
-      sessionStorage.setItem("translation", JSON.stringify(translation));
     }
   } else {
     // updateGraphWithDiagram(diagram)
   }
+
+  // console.log("Borp", data.args['zoom'])
+  if (data.args['zoom'] != null) {
+    // console.log("Zooming", data.args['zoom'], graph.view.translate, graph.view.scale)
+    zoom(data.args['zoom']);
+  }
+
+
+  const translation = graph.view.translate;
+  sessionStorage.setItem("translation", JSON.stringify(translation));
+  sessionStorage.setItem("scale", JSON.stringify(getZoomScale()));
 
   if (data.args["selected_node"] === "<<<<<") {
     graph.clearSelection();
     sessionStorage.setItem("selected_node", "");
   }
 
-  console.log("Selected Node: ", graph.getSelectionCells().map(cell => cell.id))
+  // console.log("Selected Node: ", graph.getSelectionCells().map(cell => cell.id))
 
   setEditable(data.args["editable"]);
 

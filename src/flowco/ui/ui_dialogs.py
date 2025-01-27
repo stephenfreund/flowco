@@ -8,6 +8,7 @@ from flowco.ui.authenticate import cache
 from flowco.ui.ui_page import UIPage
 from flowco.util.config import config
 from flowco.util.config import AbstractionLevel
+from flowco.util.files import make_default_files
 from flowco.util.output import Output
 
 
@@ -26,7 +27,14 @@ def settings(ui_page: UIPage):
 
     config.retries = int(st.number_input("Repair retries", value=config.retries))
 
+    if st.button("Reset Demo Files"):
+        make_default_files()
+
     with st.expander("Experimental Features"):
+        config.x_no_image_cache = st.toggle(
+            "Don't cache images", value=config.x_no_image_cache
+        )
+
         config.x_no_descriptions = st.toggle(
             "Don't generate descriptions for each node", value=config.x_no_descriptions
         )

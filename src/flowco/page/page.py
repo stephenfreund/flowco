@@ -55,10 +55,10 @@ class UndoStack:
                 not self.undo_stack or not dfg.semantically_eq(self.undo_stack[-1])
             ):
                 with logger("Pushing to undo stack"):
-                    if not self.undo_stack:
-                        log("First push")
-                    else:
-                        log(f"Changes: {self.undo_stack[-1].diff(dfg).affected_paths}")
+                    # if not self.undo_stack:
+                    #     log("First push")
+                    # # else:
+                    # log(f"Changes: {self.undo_stack[-1].diff(dfg).affected_paths}")
                     self.undo_stack.append(dfg)
                     self.redo_stack.clear()
 

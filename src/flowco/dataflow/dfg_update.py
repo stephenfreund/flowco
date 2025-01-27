@@ -18,6 +18,7 @@ class DiagramNodeUpdate(BaseModel):
     geometry: Geometry
     output_geometry: Optional[Geometry] = None
     is_locked: bool
+    force_show_output: bool
 
 
 class DiagramEdgeUpdate(BaseModel):
@@ -90,12 +91,13 @@ def update_dataflow_graph(
                 output_geometry = node.output_geometry
             if output_geometry is None:
                 output_geometry = node.geometry.translate(
-                    node_update.geometry.width + 100, 0
-                ).resize(200, 150)
+                    node_update.geometry.width + 60, 0
+                ).resize(120, 80)
 
             node.output_geometry = output_geometry
 
             node.is_locked = node_update.is_locked
+            node.force_show_output = node_update.force_show_output
 
         else:
             pill = node_update.pill
@@ -113,8 +115,9 @@ def update_dataflow_graph(
                 output_geometry=node_update.output_geometry
                 or node_update.geometry.translate(
                     node_update.geometry.width + 100, 0
-                ).resize(200, 150),
+                ).resize(120, 80),
                 is_locked=node_update.is_locked,
+                force_show_output=node_update.force_show_output,
             )
             new_nodes_dict[node_update.id] = new_node
             log(f"Inserted new node: {node_id}")

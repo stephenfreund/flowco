@@ -10,7 +10,7 @@ from flowco.util.files import setup_flowco_files
 import streamlit as st
 
 from flowco.util.costs import CostTracker
-from flowco.util.output import Output, error
+from flowco.util.output import Output, error, log_timestamp
 
 from flowco.session.session import StreamlitSession, session
 from flowco.util.stopper import Stopper
@@ -39,6 +39,7 @@ def init_service():
             shells=PythonShells(),
             filesystem=SessionFileSystem(f"file://{page_path}"),
         )
+        log_timestamp()
         setup_flowco_files()
         if page_file is not None:
             set_ui_page(UIPage(page_file))
@@ -64,3 +65,15 @@ except Exception as e:
     print(traceback.format_exc())
     st.error(e)
     st.exception(e)
+    print("Restarting Session Components...")
+    if os.path.isdir(st.session_state.args.page):
+        page_path = os.path.abspath(st.session_state.args.page)
+    else:
+        page_path = os.path.abspath(os.path.dirname(st.session_state.args.page))
+    session.set(
+        output=Output(),
+        costs=CostTracker(),
+        stopper=Stopper(),
+        shells=PythonShells(),
+        filesystem=SessionFileSystem(f"file://{page_path}"),
+    )

@@ -219,16 +219,15 @@ postconditions: |
     The postconditions should refer to the output as `{function_return_var}` and 
     the inputs by name.  Not all inputs may be used.
 
-    Create a return type for the function that meets the postconditions.  The 
-    return type must be an extended type other than Any or None.
+    Create a return type for the function that meets the postconditions.  If
+    the function generates a plot, the return type should be None.
 
-    The return type's specification
-    should be detailed enough that users of the function can understand what
-    the function returns.  Do not include a specificaiton if the return
+    The return type's specification should be detailed enough that users of the function 
+    can understand what the function returns.  Do not include a specificaton if the return
     type is None.
     
     The type should reflect what is described in the specification.
-    The return type for functions generating plots should be None.
+    If the function generates plots, the return type should be None.
 
     Assume the client has no other information about the function.
     
@@ -625,31 +624,24 @@ algorithm: |
 #     ```
 
 compile: |
-    Write the code for this step as a single function.  It must match the following.
-    ```
-    # put all imports here
-    def {signature}:
-        ...
-    ```
+    Write the code for this step as a single function.
 
     The parameters have the following types:
     ```
     {parameter_types}
     ```
 
-    Write the code for this step as a single function with the given
-    name, parameters, and return type.  
+    Write the function body for this step.
     
     The code should:
 
     * Implement the requirements as a pure function.
-    * Include types for parameters and return values.  
     * Return a value consistent with the return type.
     * Have no side effects.
     * Be optimized for readability, clarity, and simplicity.
     * Do not include pydoc strings.
     
-    You may only import matplotlib, seaborn, numpy, sklearn, scipy, and pandas.  Uses seaborn for all plots, with
+    You may only import matplotlib, seaborn, numpy, sklearn, scipy, statsmodels, and pandas.  Uses seaborn for all plots, with
     no changes to the base style.  Do not call `plt.close()`.  Do not call `plt.show()`.  Do not save plots to disk.
 
     Do not include other functions.
@@ -660,6 +652,11 @@ compile: |
 
     {diff}
 
+    The code must begin with the following lines:
+    ```
+    # put all imports here
+    def {signature}:
+    ```
 
 
 assertions-code: |
@@ -987,6 +984,11 @@ ama_modify: |
     Each node will be implemented as a single function that takes the incoming data and returns the outgoing data.
     Do not write code.  Only modify the graph.
 
+    Instructions:
+    1. Identify the necessary changes to the dataflow graph for the request.
+    2. For each change, use a function call to make the change.
+
+skip: |
     You should:
     1. Restate the request in your own words.  Break down tasks into smaller steps.
     2. Identify the necessary changes to the dataflow graph for those steps.
@@ -1149,10 +1151,16 @@ repair-syntax: |
 
 repair-node-run: | 
     The dataflow graph failed to run.  Fix the node that caused the error.
+    The function siguature is:
+    ```
+    {signature}
+    ```
+    It is correct.  You may not change it.
     This is the error:
     ```
     {error}
     ```
+    
 
 
 repair-node-assertions: | 

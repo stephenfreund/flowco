@@ -14,19 +14,26 @@ from flowco.util.output import error
 def st_pages():
     def build_main():
         st.session_state.current_page = "build"
+        # st.session_state.image_cache.clear()
         # st.session_state.selected_node = "<<<<<"
         BuildPage().main()
 
     def check_main():
         st.session_state.current_page = "check"
+        # st.session_state.image_cache.clear()
         # st.session_state.selected_node = "<<<<<"
         CheckPage().main()
 
     def test_main():
-        st.write("Test")
+        st.session_state.current_page = "test"
+        # st.session_state.image_cache.clear()
+        st.write("")
+        st.write("")
+        st.write("This space for rent.")
 
     def projects_main():
         st.session_state.current_page = "projects"
+        # st.session_state.image_cache.clear()
         st.session_state.selected_node = "<<<<<"
         ProjectsPage().main()
 
@@ -46,7 +53,7 @@ def st_pages():
                 check_main,
                 title="Check",
             ),
-            st.Page(test_main, title="Test"),
+            # st.Page(test_main, title="Test"),
         ]
     else:
         if st.session_state.current_page == "build":

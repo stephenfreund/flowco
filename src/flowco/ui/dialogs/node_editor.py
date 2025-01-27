@@ -9,6 +9,7 @@ import streamlit as st
 from flowco.builder.cache import BuildCache
 from flowco.builder.synthesize import algorithm, requirements, compile
 from flowco.dataflow.dfg import DataFlowGraph, Node
+from flowco.dataflow.extended_type import schema_to_text
 from flowco.dataflow.phase import Phase
 from flowco.page.ama_node import AskMeAnythingNode
 from flowco.page.page import Page
@@ -146,7 +147,7 @@ class NodeEditor:
             key=f"editor_{title}",
             height=height,
             allow_reset=True,
-            response_mode="blur",
+            response_mode=["blur"],
             props=props,
             options=options,
             info=info_bar,
@@ -154,11 +155,11 @@ class NodeEditor:
             focus=focus,
         )
         last_response = self.last_update.get(title, None)
-        if (
-            (last_response is None and response["id"] != "")
-            or last_response is not None
-            and last_response["id"] != response["id"]
+        if (last_response is None and response["id"] != "") or (
+            last_response is not None and last_response["id"] != response["id"]
         ):
+            # print(f"Last response: {last_response}")
+            # print(f"Current response: {response}")
             self.last_update[title] = response
             return Response(response["text"], response["type"] == "submit")
         else:
@@ -204,7 +205,15 @@ class NodeEditor:
                     False,
                 )
 
+        with st.container(key="output_type_schema"):
+            st.write("#### Output Type")
+            extended_type = self.node.function_return_type
+            if extended_type is not None:
+                st.caption(extended_type.description)
+                st.code(schema_to_text(extended_type.type_schema()))
+
         if show_code():
+
             code_python = "\n".join(self.node.code or [])
             code_response = self.component_editor("Code", code_python, "python", 30)
             if code_response is not None:
@@ -293,23 +302,22 @@ class NodeEditor:
         with st.container(key="edit_dialog"):
             self.node_component_editors()
 
-        print(
-            self.node.model_dump_json(
-                include=set(["label", "requirements", "return-type", "code"]), indent=2
-            )
-        )
-
         with top.container():
             left, middle, right = st.columns(3)
             with left:
-                if st.button("Save", disabled=self.pending_ama is not None):
+                if st.button(
+                    "Save",
+                    icon=":material/save:",
+                    disabled=self.pending_ama is not None,
+                ):
                     with st.spinner("Saving..."):
                         self.save()
                         st.session_state.force_update = True
                         st.rerun(scope="app")
             with middle:
                 if st.button(
-                    ":material/check: Check",
+                    "Check",
+                    icon=":material/check:",
                     disabled=self.pending_ama is not None,
                 ):
                     self.pending_ama = PendingAMA(
@@ -329,12 +337,14 @@ class NodeEditor:
                     )
             with right:
                 rebuild = st.button(
-                    ":material/manufacturing: Regenerate",
+                    "Regenerate",
+                    icon=":material/manufacturing:",
                     disabled=self.pending_ama is not None,
                 )
 
             if rebuild:
                 self.regenerate()
+                st.rerun(scope="fragment")
 
             container = st.container(height=200, border=True, key="chat_container_node")
             with container:

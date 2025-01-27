@@ -59,6 +59,7 @@ def mxgraph_component(
     diagram: Dict[str, Any],
     editable: bool,
     selected_node: Optional[str] = None,
+    zoom: Optional[str] = None,
     refresh_phase: int = 0,
     dummy: Optional[str] = None,
     clear=False,
@@ -90,6 +91,7 @@ def mxgraph_component(
         editable=editable,
         selected_node=selected_node,
         refresh_phase=refresh_phase,
+        zoom=zoom,
         default={
             "command": "update",
             "diagram": json.dumps(diagram),
@@ -98,6 +100,7 @@ def mxgraph_component(
         },
         forced=dummy != None,
         clear=clear,
+        dummy=dummy,  # pass in to force update when dummy changes
     )
 
     # We could modify the value returned from the component if we wanted.

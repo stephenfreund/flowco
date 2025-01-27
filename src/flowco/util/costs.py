@@ -20,7 +20,7 @@ class CostTracker:
             return self._call_count
 
     def add_cost(self, amount, count=1):
-        log(f"Adding cost: {amount}")
+        log(f"Adding cost: {amount:.3f}")
         with CostTracker._lock:
             self._total_cost += amount
             self._call_count += count

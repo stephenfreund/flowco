@@ -1,6 +1,6 @@
 import ast
 import textwrap
-from typing import Optional
+from typing import Optional, Tuple
 
 
 from flowco.assistant.assistant import Assistant
@@ -29,18 +29,16 @@ def check_syntax(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> N
     if node.is_locked:
         max_retries = 0
 
-    new_node = _repair_node_syntax(node, max_retries=max_retries)
-    if new_node:
+    new_node, success = _repair_node_syntax(node, max_retries=max_retries)
+    if success:
         new_node = new_node.update(phase=Phase.runnable)
 
-        if config.diff:
-            diff = node.diff(new_node)
-            if diff:
-                message(diff)
+    if config.diff:
+        diff = node.diff(new_node)
+        if diff:
+            message(diff)
 
-        return new_node
-    else:
-        return node
+    return new_node
 
 
 def _check_node_syntax(node: Node) -> None:
@@ -97,7 +95,7 @@ def _check_node_syntax(node: Node) -> None:
             )
     except SyntaxError as e:
         raise FlowcoError(
-            f"The function return type is not a valid Python type.  The type must be `{return_type}`."
+            f"The function return type is not a valid Python type.  The type must be `{return_type}`, not `{ast.unparse(function_def.returns)}. {signature_message()}"
         )
     if len(function_def.args.args) != len(node.function_parameters):
         raise FlowcoError(
@@ -119,7 +117,7 @@ def _check_node_syntax(node: Node) -> None:
             )
 
 
-def _repair_node_syntax(node: Node, max_retries: int) -> Node:
+def _repair_node_syntax(node: Node, max_retries: int) -> Tuple[Node, bool]:
     assistant = Assistant("repair-system")
 
     original = node.model_copy()
@@ -130,7 +128,7 @@ def _repair_node_syntax(node: Node, max_retries: int) -> Node:
     while True:
         try:
             _check_node_syntax(node)
-            return node
+            return node, True
         except (SyntaxError, FlowcoError) as e:
             if stashed_error is None:
                 stashed_error = e
@@ -158,9 +156,12 @@ def _repair_node_syntax(node: Node, max_retries: int) -> Node:
                     else:
                         m = f"**Code** creation failed, and automatic repair did not fix the problem.  Please fix the error manually or try running again."
 
-                return original.error(
-                    Phase.code,
-                    message=f"{m}\n\nDetails: *{e}*",
+                return (
+                    original.error(
+                        Phase.runnable,
+                        message=f"{m}\n\nDetails: *{e}*",
+                    ),
+                    False,
                 )
 
             message(f"Repair attempt {retries} of {config.retries}")
@@ -186,7 +187,8 @@ def _repair_node_syntax(node: Node, max_retries: int) -> Node:
             )
 
             new_node = node_completion(
-                assistant, node_completion_model("code", include_explanation=True)
+                assistant,
+                node_completion_model("code", include_explanation=True),
             )
 
             message(

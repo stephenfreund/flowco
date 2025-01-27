@@ -16,8 +16,8 @@ class OutputType(str, enum.Enum):
 
 
 class ResultValue(BaseModel):
-    pickle: Any = Field(None, description="The value of the result, encoded by pickle")
-    text: str = Field("", description="The text representation of the result")
+    pickle: str = Field(description="The value of the result, encoded by pickle")
+    text: str = Field(description="The text representation of the result")
 
     def __str__(self) -> str:
         return f"ResultValue(pickle=..., text={self.text})"

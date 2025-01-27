@@ -1,3 +1,4 @@
+import json
 import textwrap
 from typing import Optional
 from flowco.assistant.assistant import Assistant
@@ -36,7 +37,7 @@ def check_run(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node
     try:
         new_node = _repair_run(pass_config, graph, node, max_retries=max_retries)
         return new_node.update(phase=Phase.run_checked)
-    except CellExecutionError as e:
+    except Exception as e:
         if node.is_locked:
             message = (
                 f"**Run** failed.  Unlock and run again to attempt automatic repair."
@@ -45,7 +46,7 @@ def check_run(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node
             message = f"**Run** failed, and automatic repair did not fix the problem.  Please fix the error manually or try running again."
 
         log(f"Run didn't work for {node.pill}", e)
-        error_line = strip_ansi(str(e).split("\n")[-2])
+        error_line = strip_ansi("\n".join(str(e).split("\n")[-2:]))
         node = node.error(
             phase=Phase.run_checked, message=f"{message}\n\nDetails: *{error_line}*"
         )
@@ -66,16 +67,18 @@ def _repair_run(
                 pass_config.tables, graph, node
             )
 
+            node = node.update(result=result)
+
             with logger("Typechecking result"):
                 if result.result is not None:
                     return_value = result.result.to_value()
                     return_type = node.function_return_type
-                    if not return_type.matches_value(return_value):
-                        raise FlowcoError(
-                            f"Return value {return_value} does not match expected type {return_type}."
-                        )
+                    if return_type is not None:
+                        return_type.check_value(return_value)
+                    else:
+                        ValueError("No return type for function")
 
-            return node.update(result=result)
+            return node
         except Exception as e:
             if stashed_error is None:
                 stashed_error = e
@@ -109,16 +112,24 @@ def _repair_run(
             assistant.add_prompt_by_key(
                 "repair-node-run",
                 error=strip_ansi(str(e)),
+                signature=node.signature_str(),
             )
 
             assistant.add_json_object(
                 "Here is the offending node", initial_node.model_dump()
             )
 
+            if node.result is not None:
+                assistant.add_message(
+                    role="user", content=node.result.to_prompt_messages()
+                )
+
             new_node = node_completion(
-                assistant, node_completion_model("code", include_explanation=True)
+                assistant,
+                node_completion_model("code", include_explanation=True),
             )
 
+            message("\n".join(["New Code"] + new_node.code))
             message(
                 "\n".join(
                     textwrap.wrap(

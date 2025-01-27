@@ -33,6 +33,7 @@ from flowco.ui.dialogs.node_editor import edit_node
 @dataclass
 class BuildButton:
     label: str
+    icon: str
     action: Literal["Run", "Stop", "Update"]
     passes_key: str | None = None
     repair: bool = True
@@ -44,10 +45,13 @@ class BuildPage(FlowcoPage):
     # Override for other pages
 
     def update_button(self) -> BuildButton:
-        return BuildButton(label=":material/refresh: Update", action="Update")
+        return BuildButton(label="Update", icon=":material/refresh:", action="Update")
 
     def run_button(self) -> BuildButton:
-        return BuildButton(label=":material/play_circle: Run", action="Run")
+        return BuildButton(label="Run", icon=":material/play_circle:", action="Run")
+
+    def stop_button(self) -> BuildButton:
+        return BuildButton(label="Stop", icon=":material/stop_circle:", action="Stop")
 
     def build_target_phase(self) -> Phase:
         return Phase.run_checked
@@ -61,92 +65,124 @@ class BuildPage(FlowcoPage):
                     st.session_state.builder_progress,
                     st.session_state.builder.get_message(),
                 )
-        with st.container(key="button_bar"):
-            cols = st.columns(8)
-            with cols[1]:
+
+        with st.container():
+            with st.container(key="button_bar"):
                 if st.session_state.builder is None:
-                    run_button = self.run_button()
-                else:
-                    run_button = BuildButton(":material/stop_circle: Stop", "Stop")
-                st.button(
-                    run_button.label,
-                    on_click=lambda: set_session_state(
-                        "trigger_build_toggle", run_button
-                    ),
-                    disabled=st.session_state.ama_responding,
-                    help=(
-                        "Build and run the whole diagram"
-                        if st.session_state.builder is None
-                        else "Stop building"
-                    ),
-                )
-            with cols[0]:
-                update_button = self.update_button()
-                st.button(
-                    update_button.label,
-                    on_click=lambda: set_session_state(
-                        "trigger_build_toggle", update_button
-                    ),
-                    disabled=not self.graph_is_editable(),
-                    help="Build and run any nodes that have changed since the last Run",
-                )
-
-            with cols[2]:
-                st.write(
-                    "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
-                    unsafe_allow_html=True,
-                )
-
-            with cols[3]:
-                st.button(
-                    ":material/undo:",
-                    disabled=(
-                        not self.graph_is_editable()
-                        or not st.session_state.ui_page.can_undo()
-                    ),
-                    on_click=lambda: st.session_state.ui_page.undo(),
-                    help="Undo the last change",
-                )
-            with cols[4]:
-                st.button(
-                    ":material/redo:",
-                    disabled=(
-                        not self.graph_is_editable()
-                        or not st.session_state.ui_page.can_redo()
-                    ),
-                    on_click=lambda: st.session_state.ui_page.redo(),
-                    help="Redo the last change",
-                )
-            with cols[5]:
-                st.write(
-                    "<span>&nbsp;&nbsp;&nbsp;</span>",
-                    unsafe_allow_html=True,
-                )
-            with cols[6]:
-                if st.button(
-                    ":material/network_node:",
-                    help="Layout the diagram",
-                    disabled=not self.graph_is_editable(),
-                ):
-                    ui_page = st.session_state.ui_page
-                    with ui_page.page():
-                        dfg = ui_page.dfg()
-                        dfg = dfg.update(
-                            nodes=[
-                                x.update(geometry=Geometry(x=0, y=0, width=0, height=0))
-                                for x in dfg.nodes
-                            ]
+                    cols = st.columns(8)
+                    with cols[0]:
+                        update_button = self.update_button()
+                        st.button(
+                            update_button.label,
+                            icon=update_button.icon,
+                            on_click=lambda: set_session_state(
+                                "trigger_build_toggle", update_button
+                            ),
+                            disabled=not self.graph_is_editable(),
+                            help="Build and run any nodes that have changed since the last Run",
                         )
-                        ui_page.update_dfg(dfg)
-                    st.session_state.force_update = True
-                    st.rerun()
-            with cols[7]:
-                if st.button(
-                    ":material/table_view:",
-                    disabled=not self.graph_is_editable(),
-                    help="Manage data files for the diagram",
-                ):
-                    data_files_dialog()
+                    with cols[1]:
+                        if st.session_state.builder is None:
+                            run_button = self.run_button()
+                        else:
+                            run_button = self.stop_button()
+                        st.button(
+                            run_button.label,
+                            icon=run_button.icon,
+                            on_click=lambda: set_session_state(
+                                "trigger_build_toggle", run_button
+                            ),
+                            disabled=st.session_state.ama_responding,
+                            help=(
+                                "Build and run the whole diagram"
+                                if st.session_state.builder is None
+                                else "Stop building"
+                            ),
+                        )
+
+                    with cols[2]:
+                        st.write(
+                            "<span>&nbsp;</span>",
+                            unsafe_allow_html=True,
+                        )
+
+                    with cols[3]:
+                        st.button(
+                            label="",
+                            icon=":material/undo:",
+                            disabled=(
+                                not self.graph_is_editable()
+                                or not st.session_state.ui_page.can_undo()
+                            ),
+                            on_click=lambda: st.session_state.ui_page.undo(),
+                            help="Undo the last change",
+                        )
+                    with cols[4]:
+                        st.button(
+                            label="",
+                            icon=":material/redo:",
+                            disabled=(
+                                not self.graph_is_editable()
+                                or not st.session_state.ui_page.can_redo()
+                            ),
+                            on_click=lambda: st.session_state.ui_page.redo(),
+                            help="Redo the last change",
+                        )
+                    with cols[5]:
+                        st.write(
+                            "<span>&nbsp;</span>",
+                            unsafe_allow_html=True,
+                        )
+                    with cols[6]:
+                        if st.button(
+                            label="",
+                            icon=":material/network_node:",
+                            help="Layout the diagram",
+                            disabled=not self.graph_is_editable(),
+                        ):
+                            ui_page = st.session_state.ui_page
+                            with ui_page.page():
+                                dfg = ui_page.dfg()
+                                dfg = dfg.update(
+                                    nodes=[
+                                        x.update(
+                                            geometry=Geometry(
+                                                x=0, y=0, width=0, height=0
+                                            )
+                                        )
+                                        for x in dfg.nodes
+                                    ]
+                                )
+                                ui_page.update_dfg(dfg)
+                            st.session_state.force_update = True
+                            st.rerun()
+                    with cols[7]:
+                        if st.button(
+                            label="",
+                            icon=":material/table_view:",
+                            disabled=not self.graph_is_editable(),
+                            help="Manage data files for the diagram",
+                        ):
+                            data_files_dialog()
+                else:
+                    run_button = self.stop_button()
+                    st.button(
+                        run_button.label,
+                        icon=run_button.icon,
+                        on_click=lambda: set_session_state(
+                            "trigger_build_toggle", run_button
+                        ),
+                        disabled=st.session_state.ama_responding,
+                        help=(
+                            "Build and run the whole diagram"
+                            if st.session_state.builder is None
+                            else "Stop building"
+                        ),
+                    )
+
+    def second_bar(self):
+        if st.session_state.builder is None:
+            super().second_bar()
 
     def auto_update(self):
         self.toggle_building(force=False, repair=True)
@@ -191,10 +227,10 @@ class BuildPage(FlowcoPage):
             builder.stop()
 
     def get_builder_updates(self):
-        builder: Builder = st.session_state.builder
         ui_page: UIPage = st.session_state.ui_page
-        if builder is not None:
-            while not builder.empty():
+        if st.session_state.builder is not None:
+            while not st.session_state.builder.empty():
+                builder: Builder = st.session_state.builder
                 try:
                     build_update = builder.get()
                     if build_update.steps_total > 0:
@@ -306,19 +342,46 @@ class BuildPage(FlowcoPage):
     def global_sidebar(self):
         ui_page: UIPage = st.session_state.ui_page
 
-        st.write("### Notes")
-        description = ui_page.dfg().description
-        if description:
-            st.write(description)
-        else:
-            st.write("*Add notes here*")
+        with st.popover("Pinned Outputs"):
+            nodes = ui_page.dfg().topological_sort()
+            pills = [ui_page.dfg()[node].pill for node in nodes]
+            st.pills(
+                "Pills",
+                nodes,
+                default=st.session_state.pinned_nodes,
+                key="pinned_nodes_pills",
+                format_func=lambda id: ui_page.dfg()[id].pill,
+                selection_mode="multi",
+                label_visibility="collapsed",
+                on_change=lambda: set_session_state(
+                    "pinned_nodes", st.session_state.pinned_nodes_pills
+                ),
+            )
+
+        if st.session_state.pinned_nodes:
+            with st.container(border=True):
+                for node_id in st.session_state.pinned_nodes:
+                    if node_id in ui_page.dfg().node_ids():
+                        node = ui_page.dfg()[node_id]
+                        st.write(f"###### {node.pill}")
+                        super().show_output(node)
+
+        with st.container(border=True):
+            st.write("###### Notes")
+            description = ui_page.dfg().description
+            if description:
+                st.write(description)
+            else:
+                st.write("*Add notes here*")
 
         cols = st.columns(4)
         with cols[0]:
             if st.button(
-                ":material/edit_note:",
+                label="",
+                icon=":material/edit_note:",
                 disabled=not self.graph_is_editable(),
                 help="Edit the description of the diagram",
+                key="edit_description",
             ):
                 self.edit_description()
 

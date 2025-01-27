@@ -1,5 +1,7 @@
+import { get } from 'lodash';
 import mx from './mxgraph';
 import { mxCell, mxGraph } from 'mxgraph';
+import { cacheImage, getCachedImage } from './cache';
 
 export interface Geometry {
     x: number;
@@ -16,6 +18,7 @@ export interface DiagramNode {
     geometry: Geometry;
     output_geometry: Geometry;
     is_locked: boolean;
+    force_show_output: boolean;
 
     // Extended from dfg
     phase: number;
@@ -23,8 +26,6 @@ export interface DiagramNode {
     output?: DiagramOutput;
     build_status?: string;
 
-    html: string;
-    
 }
 
 
@@ -47,25 +48,6 @@ export interface mxDiagram {
     edges: { [key: string]: DiagramEdge };
 }
 
-// function isGeometry(obj: any): obj is Geometry {
-//     return (
-//         typeof obj === "object" &&
-//         obj !== null &&
-//         typeof obj.x === "number" &&
-//         typeof obj.y === "number" &&
-//         typeof obj.width === "number" &&
-//         typeof obj.height === "number"
-//     );
-// }
-
-// function isDiagramOutput(obj: any): obj is DiagramOutput {
-//     return (
-//         typeof obj === "object" &&
-//         obj !== null &&
-//         typeof obj.outputId === "string" &&
-//         typeof obj.outputType === "string"
-//     );
-// }
 
 export function isDiagramNode(obj: any): obj is DiagramNode {
     return (
@@ -73,7 +55,7 @@ export function isDiagramNode(obj: any): obj is DiagramNode {
         obj !== null &&
         typeof obj.id === "string" &&
         typeof obj.pill === "string" &&
-        typeof obj.label === "string" 
+        typeof obj.label === "string"
     );
 }
 
@@ -100,10 +82,11 @@ function escapeHtml(text: string): string {
 }
 
 
+
 export const node_style = 'html=1;shape=rectangle;whiteSpace=wrap;rounded=1;';
 export const node_hover_style = 'html=1;shape=rectangle;whiteSpace=wrap;rounded=1;shadow=1;';
 const edge_style = 'endArrow=classic;html=1;rounded=0;labelBackgroundColor=white;';
-const output_node_style_text = `html=1;shape=rectangle;whiteSpace=wrap;shadow=1;fillColor=#E8E8E8;strokeColor=#990000;align=left;verticalAlign=middle;spacing=5;fontFamily=monospace;`;
+const output_node_style_text = `html=1;shape=rectangle;whiteSpace=wrap;shadow=1;fillColor=#E8E8E8;strokeColor=#990000;align=left;verticalAlign=middle;spacing=5;fontFamily=monospace;overflow=hidden;`;
 const output_node_style_image = `html=1;shape=image;shadow=1;imageBackground=#E8E8E8;imageBorder=#990000;`;
 const output_edge_style = 'rounded=1;orthogonalLoop=1;dashed=1;strokeWidth=2;strokeColor=#990000;fillColor=#76608a;endArrow=block;endFill=0;edgeStyle=orthogonalEdgeStyle;curved=0;';
 const phase_colors = [
@@ -113,14 +96,14 @@ const phase_colors = [
     '#fac4b3', // code
     '#fedebf', // runnable
     '#fef2d0', // run_checked
-    '#f5fbd5', 
-    '#ddf1da', 
+    '#f5fbd5',
+    '#ddf1da',
     '#c1e6db',
-    '#adcfe4', 
+    '#adcfe4',
     '#beb8d9'];
 
 function phase_to_color(phase: number): string {
-    console.log('phase', phase);
+    // console.log('phase', phase);
     if (phase < 0 || phase >= phase_colors.length) {
         return '#FFFFFF';
     } else {
@@ -148,15 +131,15 @@ function encodeSVG(svg: string): string {
 }
 
 function update_overlays_for_node(graph: mxGraph, node: DiagramNode, vertex: mxCell): void {
-    graph.removeCellOverlays(vertex);    
-    if (node.build_status != null) {    
-        console.log('build_status', node.build_status);
+    graph.removeCellOverlays(vertex);
+    if (node.build_status != null) {
+        // console.log('build_status', node.build_status);
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="50">
             <text x="10" y="25" font-family="Arial,Helvetica,sans-serif" font-size="20" fill="#333">${node.build_status}...
                           <animate attributeName="opacity" values="0.8;0.2;0.8" dur="2s" begin="0s" repeatCount="indefinite" />
                 </text>
           </svg>`;
-    
+
         const encodedSVG = encodeSVG(svg);
         const dataUri = `data:image/svg+xml;charset=UTF-8,${encodedSVG}`;
         const overlayImage = new mx.mxImage(dataUri, 200 * 0.5, 50 * 0.5);
@@ -165,13 +148,13 @@ function update_overlays_for_node(graph: mxGraph, node: DiagramNode, vertex: mxC
         overlay.verticalAlign = mx.mxConstants.ALIGN_TOP;
         overlay.offset = new mx.mxPoint(50, -5);
         graph.addCellOverlay(vertex, overlay);
-    }    
-    
+    }
+
     // Add lock/unlock overlay based on node.locked property
     if (node.is_locked) {
         // Create an mxImage for the icon
-        const iconImage = new mx.mxImage("lock.png", 16,16);
- 
+        const iconImage = new mx.mxImage("lock.png", 16, 16);
+
         const node_width = vertex.geometry.width;
         const node_height = vertex.geometry.height;
 
@@ -185,7 +168,7 @@ function update_overlays_for_node(graph: mxGraph, node: DiagramNode, vertex: mxC
 
         // Add the overlay to the vertex
         graph.addCellOverlay(vertex, iconOverlay);
-    }    
+    }
 
 
 }
@@ -214,13 +197,12 @@ function make_output_node(graph: mxGraph, node: DiagramNode): mxCell | undefined
 
     if (output !== undefined) {
         const style = output.output_type === 'text' ? output_node_style_text : output_node_style_image;
-        const label = output.output_type === 'text' ? output.data : '';
-        const image = output.output_type === 'image' ? output.data : '';
 
         const cellId = `output-${node.id}`;
         let vertex: mxCell;
 
         if (output.output_type === 'text') {
+            const label = output.data;
             vertex = graph.insertVertex(
                 graph.getDefaultParent(),
                 cellId,
@@ -232,6 +214,14 @@ function make_output_node(graph: mxGraph, node: DiagramNode): mxCell | undefined
                 style
             );
         } else if (output.output_type === 'image') {
+            var image = output.data;
+            if (image === 'cached') {
+                console.log("Using cached image for node", node.id, node.pill);
+                image = getCachedImage(node.id)!;
+            } else {
+                cacheImage(node.id, image);
+            }
+
             vertex = graph.insertVertex(
                 graph.getDefaultParent(),
                 cellId,
@@ -256,7 +246,7 @@ function make_output_node(graph: mxGraph, node: DiagramNode): mxCell | undefined
             vertex,
             output_edge_style
         );
-        console.log(cell);
+        // console.log(cell);
 
         return vertex;
     } else {
@@ -305,7 +295,7 @@ function update_node(graph: mxGraph, node: DiagramNode): void {
     // Update label
     graph.getModel().setValue(cell, node);
 
-    console.log('update node', node);
+    // console.log('update node', node);
 
     // Update style based on phase
     const style = style_for_node(node);
@@ -325,7 +315,7 @@ function update_node(graph: mxGraph, node: DiagramNode): void {
 }
 
 
-function update_output_node(graph: mxGraph, node: DiagramNode): void {
+function update_output_node(graph: mxGraph, node: DiagramNode): mxCell | undefined {
     const cell = graph.getModel().getCell(`output-${node.id}`);
     if (!cell) return;
     const output = node.output;
@@ -333,7 +323,14 @@ function update_output_node(graph: mxGraph, node: DiagramNode): void {
         if (output.output_type === 'text') {
             graph.getModel().setValue(cell, output.data);
         } else if (output.output_type === 'image') {
-            const style = output_node_style_image + `;image=${output.data}`;
+            var image = output.data;
+            if (image === 'cached') {
+                console.log("Using cached image for node", node.id, node.pill);
+                image = getCachedImage(node.id)!;
+            } else {
+                cacheImage(node.id, image);
+            }
+            const style = output_node_style_image + `;image=${image}`;
             graph.setCellStyle(style, [cell]);
         }
 
@@ -347,16 +344,19 @@ function update_output_node(graph: mxGraph, node: DiagramNode): void {
             graph.getModel().setGeometry(cell, newGeometry);
         }
     }
+    return cell;
 }
 
 function process_output_node(graph: mxGraph, node: DiagramNode, show: boolean): void {
-    if (node.output && show) {
+    if (node.output) {
         const cell = graph.getModel().getCell(`output-${node.id}`);
+        let output_cell: mxCell | undefined;
         if (cell) {
-            update_output_node(graph, node);
+            output_cell = update_output_node(graph, node);
         } else {
-            make_output_node(graph, node);
+            output_cell = make_output_node(graph, node);
         }
+        output_cell!.setVisible(show || node.force_show_output);
         // alt: graph.toggleCells(show, [cell], true);
     } else {
         const cell = graph.getModel().getCell(`output-${node.id}`);
@@ -380,53 +380,61 @@ function update_edge(graph: mxGraph, edge: DiagramEdge): void {
 function layoutDiagram(graph: mxGraph) {
     // Get the default parent for inserting cells
     const parent = graph.getDefaultParent();
-  
+
     graph.getModel().beginUpdate();
     try {
-        console.log('layoutDiagram');
+        // console.log('layoutDiagram');
         // Use mxHierarchicalLayout for a nice hierarchical arrangement
         const layout = new mx.mxHierarchicalLayout(graph, "north");
+        layout.interRankCellSpacing = 35;
+        layout.disableEdgeStyle = true;
+        layout.edgeStyle = 3;
+
         layout.execute(parent);
-        
+
 
         // Calculate the left-most and top-most node positions
-        const cells = graph.getChildCells(parent, true, true);
-        if (cells.length > 0) {
-            let minX = Infinity, minY = Infinity;
-            for (const cell of cells) {
-                const bounds = cell.geometry
-                if (bounds) {
-                    minX = Math.min(minX, bounds.x);
-                    minY = Math.min(minY, bounds.y);
-                }
-                console.log(minX, minY);
-            }
-            // Set the view translation to inset the nodes by 20 pixels
-            graph.view.setTranslate(-minX + 20, -minY + 20);
-        }
+        resetNodeTranslation(graph);
 
     } catch (error) {
         console.error("Error applying layout:", error);
     } finally {
         var morph = new mx.mxMorphing(graph);
-        morph.addListener('done', function()
-        {
+        morph.addListener('done', function () {
             graph.getModel().endUpdate();
         });
-        
+
         morph.startAnimation();
-// graph.getModel().endUpdate();
+        // graph.getModel().endUpdate();
     }
-  
+
     graph.refresh();
 }
-  
+
+
+export function resetNodeTranslation(graph: mxGraph) {
+    const parent = graph.getDefaultParent();
+    const cells = graph.getChildCells(parent, true, true);
+    if (cells.length > 0) {
+        let minX = Infinity, minY = Infinity;
+        for (const cell of cells) {
+            const bounds = cell.geometry;
+            if (bounds) {
+                minX = Math.min(minX, bounds.x);
+                minY = Math.min(minY, bounds.y);
+            }
+            // console.log(minX, minY);
+        }
+        // Set the view translation to inset the nodes by 20 pixels
+        graph.view.setTranslate(-minX + 20, -minY + 20);
+    }
+}
 
 export function updateDiagram(graph: mxGraph, diagram: mxDiagram): void {
     const model = graph.getModel();
-    
+
     model.beginUpdate();
-    console.log('updateDiagram', diagram);
+    // console.log('updateDiagram', diagram);
     try {
         const parent = graph.getDefaultParent();
 
@@ -440,15 +448,15 @@ export function updateDiagram(graph: mxGraph, diagram: mxDiagram): void {
             const cellId = node.id;
             let cell = model.getCell(cellId);
 
-            console.log(node.pill)
+            // console.log(node.pill)
 
             if (cell) {
                 // Update existing node
-                console.log('update node', node);
+                // console.log('update node', node);
                 update_node(graph, node);
             } else {
                 // Add new node
-                console.log('add node', node);
+                // console.log('add node', node);
                 cell = make_diagram_node(graph, node);
             }
         }
@@ -462,7 +470,7 @@ export function updateDiagram(graph: mxGraph, diagram: mxDiagram): void {
                 if (cell.isVertex() && !cellId.startsWith('output-')) {
                     const nodeId = cellId;
                     if (!existingNodeIds.has(nodeId)) {
-                        console.log('remove node', nodeId);
+                        // console.log('remove node', nodeId);
                         graph.removeCells([cell], true);
                         // remove the ocrresponding output node
                         const outputCell = model.getCell(`output-${nodeId}`);
@@ -527,7 +535,7 @@ export function updateDiagram(graph: mxGraph, diagram: mxDiagram): void {
         for (const nodeId in diagram.nodes) {
             const node = diagram.nodes[nodeId];
             if (node.geometry.x === 0 && node.geometry.y === 0 && node.geometry.width === 0 && node.geometry.height === 0) {
-                console.log(node.id, 'has 0,0,0,0 geometry');
+                // console.log(node.id, 'has 0,0,0,0 geometry');
                 node.geometry = { x: 0, y: 0, width: 120, height: 60 };
                 node.output_geometry = { x: 0, y: 0, width: 120, height: 120 };
                 update_node(graph, node);
@@ -552,6 +560,7 @@ export interface DiagramNodeUpdate {
     geometry: Geometry;
     output_geometry?: Geometry;
     is_locked: boolean;
+    force_show_output: boolean;
 }
 
 // the value for an edge is the pill.
@@ -611,7 +620,11 @@ export function convertMxGraphToDiagramUpdate(graph: mxGraph, original_version: 
                     output_geometry = undefined;
                 }
                 const is_locked = rawLabel.is_locked;
-                diagramUpdate.nodes[nodeId] = { id: nodeId, pill: pill, label: label, geometry: geometry, output_geometry: output_geometry, is_locked: is_locked };
+                const force_show_output = rawLabel.force_show_output;
+                diagramUpdate.nodes[nodeId] = {
+                    id: nodeId,
+                    pill: pill, label: label, geometry: geometry, output_geometry: output_geometry, is_locked: is_locked, force_show_output: force_show_output
+                };
             }
         }
         // Non-vertex, non-edge cells are ignored as per interface requirements

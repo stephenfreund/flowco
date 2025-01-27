@@ -18,7 +18,7 @@ def data_files_dialog():
     )
     if uploaded_files is not None:
         for uploaded_file in uploaded_files:
-            print(uploaded_file.name)
+            # print(uploaded_file.name)
             fs_write(uploaded_file.name, uploaded_file.getvalue().decode("utf-8"))
 
     ui_page: UIPage = st.session_state.ui_page
@@ -29,14 +29,16 @@ def data_files_dialog():
         for file in files:
             with flex_columns():
                 cols = st.columns([1, 3])
+                name = file_path_to_table_name(file)
                 with cols[0]:
-                    include = st.checkbox(
-                        file_path_to_table_name(file), value=(tables.contains(file))
-                    )
+                    include = st.checkbox(name, value=(tables.contains(file)))
                 with cols[1]:
                     with st.popover("Show"):
+                        content = fs_read(file).split("\n")
+                        df = pd.read_csv(StringIO("\n".join(content[0:11])))
+                        st.write(f"First 10 rows of {name} (out of ~{len(content)-1})")
                         st.dataframe(
-                            pd.read_csv(StringIO(fs_read(file))),
+                            df.head(10),
                             selection_mode="single",
                             hide_index=True,
                             use_container_width=True,
@@ -58,8 +60,10 @@ def data_files_dialog():
                     include = st.checkbox(name, value=(tables.contains(name)))
                 with cols[1]:
                     with st.popover("Show"):
+                        df = sns.load_dataset(name)
+                        st.write(f"First 10 rows of {name} (out of {len(df)})")
                         st.dataframe(
-                            sns.load_dataset(name),
+                            df,
                             selection_mode="single",
                             hide_index=True,
                             use_container_width=True,

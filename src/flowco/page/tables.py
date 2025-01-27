@@ -1,6 +1,8 @@
 from __future__ import annotations
+from functools import lru_cache
 from io import StringIO
 import os
+import threading
 from typing import Dict, List
 import pandas as pd
 from pydantic import BaseModel, Field
@@ -26,7 +28,7 @@ Use this function whenever you need to access the data in this table.  Do not re
 
 def file_path_to_table_name(file_path: str) -> str:
     basename = os.path.basename(file_path)
-    assert basename.endswith(".csv") or basename in sns.get_dataset_names()
+    # assert basename.endswith(".csv") or basename in sns.get_dataset_names()
     if basename.endswith(".csv"):
         basename = basename[:-4]
         fixed = "".join([c if c.isalnum() else "_" for c in basename])
@@ -100,7 +102,7 @@ class GlobalTables(BaseModel):
     def all_files(self) -> List[str]:
         return self.tables.copy()
 
-    def all_contents(self) -> Dict[str,str]:
+    def all_contents(self) -> Dict[str, str]:
         return {table: self.table_contents(table) for table in self.tables}
 
     def remove(self, file_path: str) -> GlobalTables:
@@ -130,7 +132,12 @@ class GlobalTables(BaseModel):
         if file_path.endswith(".csv"):
             return fs_read(file_path, use_cache=True)
         else:
-            return sns.load_dataset(file_path).to_csv(index=False)
+            return GlobalTables.sns_contents(file_path)
+
+    @staticmethod
+    @lru_cache
+    def sns_contents(file_path) -> str:
+        return sns.load_dataset(file_path).to_csv(index=False)
 
     def table_description(self, file_path) -> str:
         # return a string containing the first few rows of the table and the types of the columns

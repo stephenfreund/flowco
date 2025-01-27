@@ -131,6 +131,11 @@ class Node(NodeLike, BaseModel):
         description="Whether the node is locked and cannot be modified by the LLM.",
     )
 
+    force_show_output: bool = Field(
+        default=True,
+        description="Whether the output of the node is visible in the diagram.",
+    )
+
     # Update with pill
 
     function_name: str = Field(
@@ -248,6 +253,7 @@ class Node(NodeLike, BaseModel):
             and self.geometry == other.geometry
             and self.output_geometry == other.output_geometry
             and self.is_locked == other.is_locked
+            and self.force_show_output == other.force_show_output
             and self.requirements == other.requirements
             and self.function_return_type == other.function_return_type
             and self.algorithm == other.algorithm
@@ -574,6 +580,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                         geometry=Geometry(**node["geometry"]),
                         output_geometry=Geometry(**node["output_geometry"]),
                         is_locked=node.get("is_locked", False),
+                        force_show_output=node.get("force_show_output", False),
                         function_name=node["function_name"],
                         function_result_var=node["function_result_var"],
                         predecessors=node["predecessors"],
@@ -1013,7 +1020,7 @@ class DataFlowGraph(GraphLike, BaseModel):
         if not config.x_no_dfg_image_in_prompt:
             if self.image is None:
                 with logger("Generating image"):
-                    self.image = dataflow_graph_to_image(self)
+                    self.image = dataflow_graph_to_image(self, show_outputs=False)
 
             if self.image is not None:
                 return [
@@ -1039,12 +1046,19 @@ class DataFlowGraph(GraphLike, BaseModel):
             result = node.result
             if result is not None:
                 if result.result is not None:
-                    repr, clipped = result.result.to_repr(10)
+
+                    # guard against the result value being something we can't handle
+                    try:
+                        repr, clipped = result.result.to_repr(10)
+                    except Exception as e:
+                        error(e)
+                        repr, clipped = str(result.result), False
+
                     if clipped:
                         messages.append(
                             {
                                 "type": "text",
-                                "text": f"The variable `{node.function_result_var}` has this value.  We show only the first 10 elements have any aggregate value:\n```\n{repr}\n```",
+                                "text": f"The variable `{node.function_result_var}` has this value.  We show only the first 10 elements of any aggregate value:\n```\n{repr}\n```",
                             }
                         )
                     else:
@@ -1171,10 +1185,10 @@ class DataFlowGraph(GraphLike, BaseModel):
         md += f"**Version:** {self.version}\n\n"
 
         with logger("Generating image"):
-            self.image = dataflow_graph_to_image(self)
+            image = dataflow_graph_to_image(self, show_outputs=True)
 
-        if self.image is not None:
-            md += f"![Data Flow Graph Image](data:image/png;base64,{self.image})\n\n"
+        if image is not None:
+            md += f"![Data Flow Graph Image](data:image/png;base64,{image})\n\n"
 
         md += f"**Description:**\n\n{self.description}\n\n"
 
@@ -1185,7 +1199,7 @@ class DataFlowGraph(GraphLike, BaseModel):
         return md
 
 
-def dataflow_graph_to_image(dfg: DataFlowGraph) -> str:
+def dataflow_graph_to_image(dfg: DataFlowGraph, show_outputs: bool = False) -> str:
     """
     Convert a DataFlowGraph instance into a base64-encoded PNG image.
     """
@@ -1225,72 +1239,79 @@ def dataflow_graph_to_image(dfg: DataFlowGraph) -> str:
         )
 
     temp_files = []
-    # Create a temporary directory to store image files
-    # with tempfile.TemporaryDirectory() as temp_dir:
-    for node in dfg.nodes:
-        # Check if the node has no incoming edges
-        if node.result is not None:
-            if (
-                node.function_return_type is not None
-                and not node.function_return_type.is_None_type()
-            ):
-                if (text := node.result.pp_result_text(clip=15)) is not None:
+    if show_outputs:
+        # Create a temporary directory to store image files
+        # with tempfile.TemporaryDirectory() as temp_dir:
+        for node in dfg.nodes:
+            # Check if the node has no incoming edges
+            if node.result is not None:
+                if (
+                    node.function_return_type is not None
+                    and not node.function_return_type.is_None_type()
+                ):
+                    if (text := node.result.pp_result_text(clip=15)) is not None:
+                        dot.node(
+                            node.id + "-output",
+                            label=f"{text}",
+                            shape="none",
+                            fontsize="8pt",
+                        )
+                elif (text := node.result.pp_output_text(clip=15)) is not None:
                     dot.node(
                         node.id + "-output",
                         label=f"{text}",
                         shape="none",
                         fontsize="8pt",
                     )
-            elif (text := node.result.pp_output_text(clip=15)) is not None:
-                dot.node(
+                elif (image_url := node.result.output_image()) is not None:
+                    base64encoded = image_url.split(",", maxsplit=1)[1]
+                    image_data = base64.b64decode(base64encoded)
+
+                    image_filename = f"{node.id}-output.png"
+                    image_path = (
+                        image_filename  # os.path.join(temp_dir, image_filename)
+                    )
+
+                    log(f"Saving image to {image_path}")
+                    with open(image_path, "wb") as image_file:
+                        image_file.write(image_data)
+                    temp_files.append(image_path)
+
+                    dot.node(
+                        node.id + "-output",
+                        label="",
+                        image=image_path,
+                        width="3",
+                        height="3",
+                        imagescale="true",
+                        fixedsize="true",
+                        shape="none",
+                    )
+
+                with dot.subgraph() as s:
+                    s.attr(rank="same")  # Ensure nodes are on the same horizontal level
+                    s.node(node.id)
+                    s.node(node.id + "-output")
+
+                edge_style = {"style": "solid"}  # Example edge style
+                dot.edge(
+                    node.id,
                     node.id + "-output",
-                    label=f"{text}",
-                    shape="none",
-                    fontsize="8pt",
-                )
-            elif (image_url := node.result.output_image()) is not None:
-                base64encoded = image_url.split(",", maxsplit=1)[1]
-                image_data = base64.b64decode(base64encoded)
-
-                image_filename = f"{node.id}-output.png"
-                image_path = image_filename  # os.path.join(temp_dir, image_filename)
-
-                log(f"Saving image to {image_path}")
-                with open(image_path, "wb") as image_file:
-                    image_file.write(image_data)
-                temp_files.append(image_path)
-
-                dot.node(
-                    node.id + "-output",
-                    label="",
-                    image=image_path,
-                    width="3",
-                    height="3",
-                    imagescale="true",
-                    fixedsize="true",
-                    shape="none",
+                    **edge_style,
+                    color="red",  # Example edge color
                 )
 
-            with dot.subgraph() as s:
-                s.attr(rank="same")  # Ensure nodes are on the same horizontal level
-                s.node(node.id)
-                s.node(node.id + "-output")
+    try:
+        png_data = dot.pipe(format="png")
+        base64_image = base64.b64encode(png_data).decode("utf-8")
 
-            edge_style = {"style": "solid"}  # Example edge style
-            dot.edge(
-                node.id,
-                node.id + "-output",
-                **edge_style,
-                color="red",  # Example edge color
-            )
+        for temp_file in temp_files:
+            try:
+                os.remove(temp_file)
+            except Exception as e:
+                error(f"Error deleting temporary file", e)
 
-    png_data = dot.pipe(format="png")
-    base64_image = base64.b64encode(png_data).decode("utf-8")
-
-    for temp_file in temp_files:
-        try:
-            os.remove(temp_file)
-        except Exception as e:
-            error(f"Error deleting temporary file", e)
-
-    return base64_image
+        return base64_image
+    except Exception as e:
+        error(f"Error generating image", e)
+        return ""
