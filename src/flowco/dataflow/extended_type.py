@@ -823,7 +823,7 @@ class SklearnClassType(BaseType):
         t = type(value)
         fully_qualified_name = f"{t.__module__}.{t.__name__}"
         self_t = self.import_class_safe(fully_qualified_name)
-        print(t, self_t)
+        # print(t, self_t)
         if t == self_t:
             return
 

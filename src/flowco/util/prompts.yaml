@@ -1119,6 +1119,41 @@ repair-syntax: |
     ```
     {node}
     ```
+
+    The code should:
+
+    * Implement the requirements as a pure function.
+    * Return a value consistent with the return type.
+    * Have no side effects.
+    * Be optimized for readability, clarity, and simplicity.
+    * Do not include pydoc strings.
+    
+    You may only import matplotlib, seaborn, numpy, sklearn, scipy, and pandas.  
+
+    Import any classes referenced in the return type.
+    
+    Uses seaborn for all plots, with
+    no changes to the base style.  Do not call `plt.close()`.  Do not call `plt.show()`.  Do not save plots to disk.
+
+    Do not define additional functions.  All TypedDict definitions should be inlined in the signature.
+
+    The code must begin with the following lines.  You may not change them.
+    ```
+    # put all imports here
+    def {signature}:
+    ```
+
+    This is the error:
+    ```
+    {error}
+    ```
+
+repair-syntax-old: |
+    The code for a dataflow node cannot be parsed or has an error in its signature.  
+    Fix it.  This is the node:
+    ```
+    {node}
+    ```
     This is the error:
     ```
     {error}
@@ -1155,7 +1190,38 @@ repair-syntax: |
 #     {error}
 #     ```
 
-repair-node-run: | 
+repair-node-run: |
+    The dataflow graph failed to run.  Fix the node that caused the error.
+    The code should:
+
+    * Implement the requirements as a pure function.
+    * Return a value consistent with the return type.
+    * Have no side effects.
+    * Be optimized for readability, clarity, and simplicity.
+    * Do not include pydoc strings.
+    
+    You may only import matplotlib, seaborn, numpy, sklearn, scipy, and pandas.  
+
+    Import any classes referenced in the return type.
+    
+    Uses seaborn for all plots, with
+    no changes to the base style.  Do not call `plt.close()`.  Do not call `plt.show()`.  Do not save plots to disk.
+
+    Do not define additional functions.  All TypedDict definitions should be inlined in the signature.
+
+    The code must begin with the following lines.  You may not change the signature.
+    ```
+    # put all imports here
+    def {signature}:
+    ```
+
+    This is the error:
+    ```
+    {error}
+    ```
+
+
+repair-node-run-old: | 
     The dataflow graph failed to run.  Fix the node that caused the error.
     The function siguature is:
     ```

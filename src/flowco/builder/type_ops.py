@@ -16,14 +16,17 @@ from regex import E
 
 from flowco.util.output import error, log, logger
 
+# These are for the typchecker in str_to_type
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import sklearn
+import scipy
+from typing import *
+
 
 def str_to_type(type_str: str) -> type:
-    import pandas as pd
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import sklearn
-    import scipy
 
     try:
         t = eval(type_str)
@@ -31,7 +34,7 @@ def str_to_type(type_str: str) -> type:
         return t
     except Exception as e:
         raise SyntaxError(
-            f"`{type_str}` is not a valid type.  Try using a fully qualified type name for library classes, e.g. `sklean.linear_model.LinearRegression`."
+            f"`{type_str}` is not a valid type.  If that is a TypedDict, inline the definition.  If it is a library class, use the fully qualified type name, e.g. `sklean.linear_model.LinearRegression`."
         )
 
 

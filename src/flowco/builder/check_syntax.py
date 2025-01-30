@@ -183,6 +183,7 @@ def _repair_node_syntax(node: Node, max_retries: int) -> Tuple[Node, bool]:
             assistant.add_prompt_by_key(
                 "repair-syntax",
                 node=initial_node.model_dump_json(indent=2),
+                signature=node.signature_str(),
                 error=strip_ansi(str(e)),
             )
 
@@ -191,6 +192,7 @@ def _repair_node_syntax(node: Node, max_retries: int) -> Tuple[Node, bool]:
                 node_completion_model("code", include_explanation=True),
             )
 
+            message("\n".join(["Old Code"] + node.code))
             message("\n".join(["New Code"] + new_node.code))
             message(
                 "\n".join(
