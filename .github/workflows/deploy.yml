@@ -50,7 +50,7 @@ jobs:
           docker build --platform linux/amd64 \
             --build-arg COMMIT_SHA=${{ github.sha }} \
             --build-arg BUILD_DATE=$BUILD_DATE \
-            --build-arg RELEASE_VERSION=$${ github.event.release.tag_name }} \
+            --build-arg RELEASE_VERSION=${{ github.event.release.tag_name }} \
             -t $ECR_REPOSITORY:$IMAGE_TAG .
           
           # Tag the Docker image with the ECR registry URI
