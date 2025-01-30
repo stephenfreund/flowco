@@ -1,4 +1,6 @@
 from __future__ import annotations
+import importlib
+import inspect
 import pprint
 import textwrap
 from typing import Any, Iterable, Set, Tuple, Union, Dict, List, Literal, Optional
@@ -6,8 +8,10 @@ from pydantic import BaseModel, Field
 from abc import abstractmethod
 import numpy as np
 import pandas as pd
+from sklearn.linear_model import LinearRegression
 
 from flowco.builder import type_ops
+from flowco.util.output import error
 
 # Define TypeRepresentation before using it in classes
 TypeRepresentation = Union[
@@ -21,6 +25,7 @@ TypeRepresentation = Union[
     "TypedDictType",
     "DictType",
     # "TupleType",
+    "SklearnClassType",
     "SetType",
     "PDDataFrameType",
     "PDSeriesType",
@@ -232,7 +237,11 @@ class FloatType(BaseType):
         return "float"
 
     def check_value(self, value: Any) -> None:
-        if isinstance(value, float):
+        if (
+            isinstance(value, float)
+            or isinstance(value, np.floating)
+            or isinstance(value, int)
+        ):
             return
         raise ValueError(f"Expected float, got {type(value).__name__}")
 
@@ -372,6 +381,11 @@ class ListType(BaseType):
 
 
 class TypedDictType(BaseType):
+    """
+    Use this to represent records or objects with a fixed set of keys and types.
+    Do not use this for dictionaries with dynamic keys.
+    """
+
     type: Literal["TypedDict"]
     name: str = Field(
         ...,  # Required field
@@ -432,10 +446,16 @@ class TypedDictType(BaseType):
 
 
 class DictType(BaseType):
+    """
+    Use for a general-purpose dictionary with string keys and values of some pre-determined type;
+    When the set of keys is dynamic or not known in advance; or
+    when you only need to specify the types of values without constraining the actual keys.
+    """
+
     type: Literal["Dict"]
-    key_type: TypeRepresentation = Field(
-        ..., description="The type of the dictionary keys."  # Required field
-    )
+    # key_type: TypeRepresentation = Field(
+    #     ..., description="The type of the dictionary keys."  # Required field
+    # )
     value_type: TypeRepresentation = Field(
         ..., description="The type of the dictionary values."  # Required field
     )
@@ -449,7 +469,8 @@ class DictType(BaseType):
         super().__init__(**data)
 
     def to_python_type(self) -> str:
-        return f"Dict[{self.key_type.to_python_type()}, {self.value_type.to_python_type()}]"
+        # return f"Dict[{self.key_type.to_python_type()}, {self.value_type.to_python_type()}]"
+        return f"Dict[str, {self.value_type.to_python_type()}]"
 
     def to_markdown(self, indent: int = 0) -> List[str]:
         spaces = "  " * indent
@@ -457,16 +478,15 @@ class DictType(BaseType):
         return [f"{spaces}- **Dict**: {desc}"]
 
     def __str__(self) -> str:
-        return f"Dict[{self.key_type}, {self.value_type}]"
+        # return f"Dict[{self.key_type}, {self.value_type}]"
+        return f"Dict[str, {self.value_type}]"
 
     def check_value(self, value: Any) -> None:
         if not isinstance(value, dict):
             raise ValueError(f"Expected dict, got {type(value).__name__}")
         for k, v in value.items():
-            try:
-                self.key_type.check_value(k)
-            except ValueError as ve:
-                raise ValueError(f"Dictionary key '{k}': {ve}") from ve
+            if not isinstance(k, str):
+                raise ValueError(f"Dictionary key '{k}' has type {type(k)}, not string")
             try:
                 self.value_type.check_value(v)
             except ValueError as ve:
@@ -475,7 +495,6 @@ class DictType(BaseType):
     def type_schema(self) -> Dict[str, Any]:
         schema = {
             "type": "dict",
-            "keys": self.key_type.type_schema(),
             "values": self.value_type.type_schema(),
             "description": self.description,
         }
@@ -578,6 +597,10 @@ class SetType(BaseType):
 
 
 class PDDataFrameType(BaseType):
+    """
+    Use this to define a Pandas DataFrame with specific columns and types.
+    """
+
     type: Literal["pd.DataFrame"]
     columns: List[KeyType] = Field(
         ...,  # Required field
@@ -612,7 +635,7 @@ class PDDataFrameType(BaseType):
         if not isinstance(value, pd.DataFrame):
             raise ValueError(f"Expected pd.DataFrame, got {type(value).__name__}")
         df_columns = value.columns.to_list()
-        print(value)
+        # print(value)
         if not value.empty:
             for col in self.columns:
                 if col.key not in df_columns:
@@ -730,40 +753,88 @@ class NumpyNdarrayType(BaseType):
         return schema
 
 
-# class ClassType(BaseType):
-#     type: Literal["class"]
-#     name: str = Field(..., description="The name of the class.")  # Required field
-#     description: str = Field(
-#         ..., description="A human-readable description of the type."  # Required field
-#     )
+class SklearnClassType(BaseType):
+    type: Literal["class"]
+    name: str = Field(
+        ...,
+        description="The fully qualified name of any class in the sklearn library.",
+    )  # Required field
+    description: str = Field(
+        ..., description="A human-readable description of the type."  # Required field
+    )
 
-#     def __init__(self, **data):
-#         if "type" not in data:
-#             data["type"] = "class"
-#         super().__init__(**data)
+    def __init__(self, **data):
+        if "type" not in data:
+            data["type"] = "class"
+        super().__init__(**data)
 
-#     def to_python_type(self) -> str:
-#         return self.name
+    def to_python_type(self) -> str:
+        return self.name
 
-#     def to_markdown(self, indent: int = 0) -> List[str]:
-#         spaces = "  " * indent
-#         return [f"{spaces}- **Class** {self.name}: {self.description}"]
+    def to_markdown(self, indent: int = 0) -> List[str]:
+        spaces = "  " * indent
+        return [f"{spaces}- **Class** {self.name}: {self.description}"]
 
-#     def __str__(self) -> str:
-#         return self.name
+    def __str__(self) -> str:
+        return self.name
 
-#     def check_value(self, value: Any) -> None:
-#         # Assuming 'name' is the class name, you might need a mapping to actual classes
-#         # For demonstration, we'll check if the value is an instance of any class
-#         if isinstance(value, type):
-#             return
-#         raise ValueError(f"Expected type '{self.name}', got {type(value).__name__}")
+    def import_class_safe(self, fully_qualified_name):
+        """
+        Safely imports a class from its fully qualified name with error handling.
 
-#     def type_schema(self) -> Dict[str, Any]:
-#         return {
-#             "description": self.description,
-#             "type": "object",  # Generic object; specific class schemas would require more details
-#         }
+        Args:
+            fully_qualified_name (str): The fully qualified name of the class.
+
+        Returns:
+            type: The class type if successful.
+            None: If import fails.
+        """
+        try:
+            module_path, class_name = fully_qualified_name.rsplit(".", 1)
+        except ValueError:
+            error(
+                f"Error: '{fully_qualified_name}' is not a valid fully qualified name."
+            )
+            return None
+
+        try:
+            module = importlib.import_module(module_path)
+        except ImportError as e:
+            error(f"Error: Could not import module '{module_path}'.\n{e}")
+            return None
+
+        try:
+            cls = getattr(module, class_name)
+        except AttributeError:
+            error(
+                f"Error: Module '{module_path}' does not have a class named '{class_name}'."
+            )
+            return None
+
+        if not isinstance(cls, type):
+            error(f"Error: '{class_name}' in module '{module_path}' is not a class.")
+            return None
+
+        return cls
+
+    def check_value(self, value: Any) -> None:
+        # Assuming 'name' is the class name, you might need a mapping to actual classes
+        # For demonstration, we'll check if the value is an instance of any class
+        t = type(value)
+        fully_qualified_name = f"{t.__module__}.{t.__name__}"
+        self_t = self.import_class_safe(fully_qualified_name)
+        print(t, self_t)
+        if t == self_t:
+            return
+
+        raise ValueError(f"Expected type '{self.name}', got {t.__name__}")
+
+    def type_schema(self) -> Dict[str, Any]:
+        return {
+            "description": self.description,
+            "type": "class",
+            "class_name": self.name,
+        }
 
 
 class ExtendedType(BaseModel):
@@ -917,6 +988,11 @@ class ExtendedType(BaseModel):
                     length=val.size,
                     description="Automatically inferred as NumpyNdarrayType.",
                 )
+            elif not isinstance(val, type):
+                return SklearnClassType(
+                    name=str(type(val)),
+                    description="Automatically inferred as SklearnClassType.",
+                )
             return AnyType(description="Automatically inferred as AnyType.")
 
         return cls(
@@ -975,8 +1051,9 @@ def schema_to_text(schema: Dict[str, Any]) -> str:
             # lines.append(f"{'Dict[':<{type_width}} # {description}")
             lines.append(f"Dict[")
             # Process keys
-            key_schema = sch["keys"]
-            key_str = process_schema(key_schema, pre_comment=",")
+            # key_schema = sch["keys"]
+            # key_str = process_schema(key_schema, pre_comment=",")
+            key_str = f"str  #{description}"
             lines.append(f"{indent_lines(key_str)}")
             # Process values
             value_schema = sch["values"]
@@ -1021,6 +1098,8 @@ def schema_to_text(schema: Dict[str, Any]) -> str:
                 lines.append(f"{kind}[")
             lines.append(f"{indent_lines(items_str)}")
             lines.append(f"]{pre_comment}")
+        elif sch["type"] == "class":
+            lines.append(f"{sch['class_name']}{pre_comment}  # {description}")
         else:
             lines.append(f"Any  # Unknown type: {description}")
 
@@ -1045,6 +1124,7 @@ TypeRepresentation = Union[
     TypedDictType,
     DictType,
     # TupleType,
+    SklearnClassType,
     SetType,
     PDDataFrameType,
     PDSeriesType,
@@ -1064,6 +1144,7 @@ ListType.model_rebuild()
 TypedDictType.model_rebuild()
 DictType.model_rebuild()  # Newly added
 # TupleType.model_rebuild()
+SklearnClassType.model_rebuild()
 SetType.model_rebuild()
 PDDataFrameType.model_rebuild()
 PDSeriesType.model_rebuild()
@@ -1121,16 +1202,6 @@ if __name__ == "__main__":
 
     print(ExtendedType.from_value(value))
 
-    # extended_type = ExtendedType(the_type=TypeRepresentation TypedDict(
-    #     "SimpleLinearRegressionResultsDict",
-    #     {
-    #         "species": str,
-    #         "coefficients": List[float],
-    #         "rsquared": float,
-    #         "p_value": float,
-    #     },
-    # ),
-
     print("---")
     print(openai.pydantic_function_tool(update_node))
     print("---")
@@ -1150,7 +1221,10 @@ if __name__ == "__main__":
     }
 
     type_representation = ExtendedType.from_value(example_value)
-    print(type_representation.to_markdown())
+    print(type_representation)
+
+    print(ExtendedType.from_value(LinearRegression()))
+    # print(type_representation.to_markdown())
 
     # print(json.dumps(TypeDeclarationModel.model_json_schema(), indent=2))
 
@@ -1162,7 +1236,7 @@ if __name__ == "__main__":
         # "Give me a set of strings.",
         # "Give me a numpy ndarray of floats.",
         "Give me a pandas series of integers.",
-        "Give me a dictionary for the results of a scipy LinearRegression model.",
+        "Give me a dictionary for the results of a sklearn LinearRegression model.",
         """
         Give me a dataframe type for this data file:
             species,"Beak length, mm","Beak depth, mm"
@@ -1170,6 +1244,8 @@ if __name__ == "__main__":
             fortis,9.2,8.3 
             scandens,13.9,8.4
         """,
+        "You are going to compute a linear regression for me.  Give me a return type.  Use a Sklearn object.",
+        "You are going to compute a logistic regression for me.  Give me a return type.  Use a Sklearn object.",
     ]
 
     for p in prompts:
@@ -1179,4 +1255,4 @@ if __name__ == "__main__":
             messages=[{"role": "system", "content": p}],
         )
 
-        print(completion.choices[0].message.parsed.to_markdown())
+        print(completion.choices[0].message.parsed)

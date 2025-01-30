@@ -64,10 +64,11 @@ def sign_in(authorization_url: str):
     st.link_button("Sign In", authorization_url)
     st.divider()
     # Read the commit SHA and build date from environment variables
+    release = os.getenv("RELEASE_VERSION", "unknown")
     commit_sha = os.getenv("COMMIT_SHA", "unknown")[:7]
     build_date = os.getenv("BUILD_DATE", "unknown")
 
-    st.caption(f"version info: {commit_sha} -- {build_date}")
+    st.caption(f"Release {release}: {commit_sha} -- {build_date}")
 
 
 # Function to fetch user information from id_token

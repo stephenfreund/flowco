@@ -236,7 +236,8 @@ class ResultValue(BaseModel):
             #         raise TypeError(f"Cannot represent callable: {e}")
 
             else:
-                raise TypeError(f"Type {type(o)} for {o} not supported.")
+                return str(o), False
+                # raise TypeError(f"Type {type(o)} for {o} not supported.")
 
         representation, was_clipped = process(o)
         return representation, was_clipped

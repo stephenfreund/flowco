@@ -191,6 +191,7 @@ def _repair_node_syntax(node: Node, max_retries: int) -> Tuple[Node, bool]:
                 node_completion_model("code", include_explanation=True),
             )
 
+            message("\n".join(["New Code"] + new_node.code))
             message(
                 "\n".join(
                     textwrap.wrap(

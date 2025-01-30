@@ -132,7 +132,7 @@ class Node(NodeLike, BaseModel):
     )
 
     force_show_output: bool = Field(
-        default=True,
+        default=False,
         description="Whether the output of the node is visible in the diagram.",
     )
 

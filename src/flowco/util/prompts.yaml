@@ -319,8 +319,10 @@ postconditions-no-descriptions: |
     The postconditions should refer to the output as `{function_return_var}` and 
     the inputs by name.  Not all inputs may be used.
 
-    Create a return type for the function that meets the postconditions.  The 
-    return type must be an extended type except Any or None.
+    Create a return type for the function that meets the postconditions.
+
+    The return type should be `None` if the function generates a plot.  Otherwise,
+    create a return type for the function that meets the postconditions.
 
     The return type's specification
     should be detailed enough that users of the function can understand what
@@ -641,7 +643,11 @@ compile: |
     * Be optimized for readability, clarity, and simplicity.
     * Do not include pydoc strings.
     
-    You may only import matplotlib, seaborn, numpy, sklearn, scipy, statsmodels, and pandas.  Uses seaborn for all plots, with
+    You may only import matplotlib, seaborn, numpy, sklearn, scipy, and pandas.  
+
+    Import any classes referenced in the return type.
+    
+    Uses seaborn for all plots, with
     no changes to the base style.  Do not call `plt.close()`.  Do not call `plt.show()`.  Do not save plots to disk.
 
     Do not include other functions.
@@ -1105,7 +1111,7 @@ repair-system: |
 
     Always provide an explanation in yor response that describes the error and how to fix it.
 
-    Provide the minimal change to fix the error.
+    Provide a new version of the code with minimal changes to fix the error.
 
 repair-syntax: |
     The code for a dataflow node cannot be parsed or has an error in its signature.  

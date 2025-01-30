@@ -117,7 +117,9 @@ def from_dfg(dfg: DataFlowGraph, image_cache: UIImageCache | None) -> MxDiagram:
             geometry=node.geometry,
             phase=node.phase.value,  # Convert Phase enum to int
             has_messages=len(node.messages) > 0,
-            output_geometry=node.output_geometry,
+            output_geometry=(
+                node.output_geometry if node.output_geometry else node.geometry
+            ),
             is_locked=node.is_locked,
             force_show_output=node.force_show_output,
             output=get_output(node, image_cache),

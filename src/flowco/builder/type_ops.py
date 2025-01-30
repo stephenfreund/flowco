@@ -31,7 +31,7 @@ def str_to_type(type_str: str) -> type:
         return t
     except Exception as e:
         raise SyntaxError(
-            f"`{type_str}` is not a valid type.  If there are type parameters, trying removing them."
+            f"`{type_str}` is not a valid type.  Try using a fully qualified type name for library classes, e.g. `sklean.linear_model.LinearRegression`."
         )
 
 

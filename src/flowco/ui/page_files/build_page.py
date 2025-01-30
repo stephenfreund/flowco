@@ -390,7 +390,7 @@ class BuildPage(FlowcoPage):
             textwrap.dedent(
                 """\
             ### Graph Operations
-            * **Scroll canvas:** Ctrl-Click (or Right-Click?) and drag
+            * **Scroll canvas:** Drag around canvas
             * **Select node:** Click on it
             * **Create node:** Shift-click on canvas
             * **Move node:** Click on it and drag

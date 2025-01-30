@@ -18,10 +18,12 @@ ENV PYTHONUNBUFFERED=1
 # Add arguments for commit SHA and build date
 ARG COMMIT_SHA
 ARG BUILD_DATE
+ARG RELEASE_VERSION
 
 # Set environment variables for the app
 ENV COMMIT_SHA=$COMMIT_SHA
 ENV BUILD_DATE=$BUILD_DATE
+ENV RELEASE_VERSION=$RELEASE_VERSION
 
 # Set work directory
 WORKDIR /app
