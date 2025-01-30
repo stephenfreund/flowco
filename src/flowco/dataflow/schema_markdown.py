@@ -61,9 +61,9 @@ def main():
     print((markdown_dict))
     print("\n---\n")
 
-    print("### Example 5: TypedDict with Various Fields\n")
+    print("### Example 5: Record with Various Fields\n")
 
-    # Sample 5: TypedDict with various fields
+    # Sample 5: Record with various fields
     id_type = IntType(description="Unique user identifier.")
     name_type = StrType(description="Full name of the user.")
     email_type = OptionalType(
@@ -82,17 +82,17 @@ def main():
     )
     key_age = KeyType(key="age", type=age_type, description="User's age.")
 
-    typed_dict = TypedDictType(
+    record = RecordType(
         name="UserProfile",
         items=[key_id, key_name, key_email, key_age],
         description="A user's profile information.",
     )
-    extended_type_typed_dict = ExtendedType(
-        the_type=typed_dict, description="User Profile TypedDict Type."
+    extended_type_record = ExtendedType(
+        the_type=record, description="User Profile Record Type."
     )
-    schema_typed_dict = extended_type_typed_dict.type_schema()
-    markdown_typed_dict = schema_to_text(schema_typed_dict)
-    print((markdown_typed_dict))
+    schema_record = extended_type_record.type_schema()
+    markdown_record = schema_to_text(schema_record)
+    print((markdown_record))
     print("\n---\n")
 
     print("### Example 6: Pandas DataFrame with Specific Column Types\n")
@@ -125,9 +125,9 @@ def main():
     print((markdown_dataframe))
     print("\n---\n")
 
-    print("### Example 7: Nested Structures (List of TypedDicts)\n")
+    print("### Example 7: Nested Structures (List of Records)\n")
 
-    # Sample 7: Nested List of TypedDicts
+    # Sample 7: Nested List of Records
     product_id_type = IntType(description="Product identifier.")
     product_name_type = StrType(description="Name of the product.")
     product_price_type = FloatType(description="Price of the product.")
@@ -140,18 +140,18 @@ def main():
         key="price", type=product_price_type, description="Product price."
     )
 
-    product_typed_dict = TypedDictType(
+    product_record = RecordType(
         name="Product",
         items=[product_key_id, product_key_name, product_key_price],
         description="A single product.",
     )
 
     list_of_products = ListType(
-        element_type=product_typed_dict, length=None, description="A list of products."
+        element_type=product_record, length=None, description="A list of products."
     )
 
     extended_type_list_products = ExtendedType(
-        the_type=list_of_products, description="List of Product TypedDicts."
+        the_type=list_of_products, description="List of Product Records."
     )
     schema_list_products = extended_type_list_products.type_schema()
     markdown_list_products = schema_to_text(schema_list_products)
@@ -205,8 +205,8 @@ def main():
         description="Customer email is optional.",
     )
 
-    # Define customer TypedDict
-    customer_typed_dict = TypedDictType(
+    # Define customer Record
+    customer_record = RecordType(
         name="Customer",
         items=[
             KeyType(key="id", type=order_id_type, description="Customer ID."),
@@ -218,8 +218,8 @@ def main():
         description="Customer information.",
     )
 
-    # Define product TypedDict
-    product_typed_dict_order = TypedDictType(
+    # Define product Record
+    product_record_order = RecordType(
         name="Product",
         items=[
             KeyType(
@@ -241,20 +241,20 @@ def main():
         description="Product information.",
     )
 
-    # Define order TypedDict
-    order_typed_dict = TypedDictType(
+    # Define order Record
+    order_record = RecordType(
         name="Order",
         items=[
             KeyType(key="order_id", type=order_id_type, description="Unique order ID."),
             KeyType(
                 key="customer",
-                type=customer_typed_dict,
+                type=customer_record,
                 description="Customer details.",
             ),
             KeyType(
                 key="items",
                 type=ListType(
-                    element_type=product_typed_dict_order,
+                    element_type=product_record_order,
                     length=None,
                     description="List of products in the order.",
                 ),
@@ -265,7 +265,7 @@ def main():
     )
 
     extended_type_order = ExtendedType(
-        the_type=order_typed_dict, description="Complete Order Type."
+        the_type=order_record, description="Complete Order Type."
     )
     schema_order = extended_type_order.type_schema()
     markdown_order = schema_to_text(schema_order)

@@ -585,7 +585,7 @@
         "description": "",
         "function_return_type": {
           "the_type": {
-            "type": "TypedDict",
+            "type": "Record",
             "name": "StatisticsResult",
             "items": [
               {
@@ -616,13 +616,13 @@
         "function_computed_value": "",
         "algorithm": null,
         "code": [
-          "from typing import List, TypedDict",
+          "from typing import List, Record",
           "import numpy as np",
           "",
           "",
           "def compute_statistics(",
           "    create_1000: List[float],",
-          ") -> TypedDict(\"StatisticsResult\", {\"spread\": float, \"mean\": float, \"median\": float}):",
+          ") -> Record(\"StatisticsResult\", {\"spread\": float, \"mean\": float, \"median\": float}):",
           "    result = {",
           "        \"spread\": float(np.ptp(create_1000)),",
           "        \"mean\": float(np.mean(create_1000)),",
@@ -746,7 +746,7 @@
                 "description": "",
                 "function_return_type": {
                   "the_type": {
-                    "type": "TypedDict",
+                    "type": "Record",
                     "name": "StatisticsResult",
                     "items": [
                       {
@@ -828,10 +828,10 @@
               },
               "out_values": {
                 "code": [
-                  "from typing import List, TypedDict",
+                  "from typing import List, Record",
                   "import numpy as np",
                   "",
-                  "def compute_statistics(create_1000: List[float]) -> TypedDict('StatisticsResult', {'spread': float, 'mean': float, 'median': float}):",
+                  "def compute_statistics(create_1000: List[float]) -> Record('StatisticsResult', {'spread': float, 'mean': float, 'median': float}):",
                   "    result = {",
                   "        \"spread\": float(np.ptp(create_1000)),",
                   "        \"mean\": float(np.mean(create_1000)),",
@@ -877,7 +877,7 @@
                 ],
                 "function_return_type": {
                   "the_type": {
-                    "type": "TypedDict",
+                    "type": "Record",
                     "name": "StatisticsResult",
                     "items": [
                       {
