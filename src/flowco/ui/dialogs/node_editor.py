@@ -155,11 +155,12 @@ class NodeEditor:
             focus=focus,
         )
         last_response = self.last_update.get(title, None)
-        if (last_response is None and response["id"] != "") or (
-            last_response is not None and last_response["id"] != response["id"]
+        if response["id"] != "" and (
+            last_response is None
+            or (last_response is not None and last_response["id"] != response["id"])
         ):
-            # print(f"Last response: {last_response}")
-            # print(f"Current response: {response}")
+            print(f"Last response: {last_response}")
+            print(f"Current response: {response}")
             self.last_update[title] = response
             return Response(response["text"], response["type"] == "submit")
         else:
