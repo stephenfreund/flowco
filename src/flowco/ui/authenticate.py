@@ -49,29 +49,25 @@ def purge_stale_entries(cache_dict):
 
 
 def sign_in(authorization_url: str):
-    instructions = textwrap.dedent(
-        """\
-        # Flowco!
+    release = os.getenv("RELEASE_VERSION", "unknown")
+    commit_sha = os.getenv("COMMIT_SHA", "unknown")[:7]
+    build_date = os.getenv("BUILD_DATE", "unknown")
 
+    instructions = textwrap.dedent(
+        f"""\
+        # Flowco {release}!
+        
         * Flowco uses Google Sign-In to authenticate users.
         * Your email address will be used to create a unique account.
         * Flowco uses an Amazon S3 bucket to store all user files.
+        * Click the "Report Bug" whenever you see anything fishy!
 
+        [Version Release Notes](https://github.com/stephenfreund/flowco/releases)
         """
     )
     # st.write(f"Please sign in to continue.")
     st.write(instructions)
     st.link_button("Sign In", authorization_url)
-    st.divider()
-    # Read the commit SHA and build date from environment variables
-    release = os.getenv("RELEASE_VERSION", "unknown")
-    commit_sha = os.getenv("COMMIT_SHA", "unknown")[:7]
-    build_date = os.getenv("BUILD_DATE", "unknown")
-
-    st.write(f"Release {release}, {build_date}")
-    st.page_link(
-        "https://github.com/stephenfreund/flowco/releases", label="Release Notes"
-    )
 
 
 # Function to fetch user information from id_token

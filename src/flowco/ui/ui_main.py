@@ -13,7 +13,6 @@ from flowco.util.costs import CostTracker
 from flowco.util.output import Output, error, log_timestamp
 
 from flowco.session.session import StreamlitSession, session
-from flowco.util.stopper import Stopper
 
 
 def init_service():
@@ -35,7 +34,6 @@ def init_service():
         session.set(
             output=Output(),
             costs=CostTracker(),
-            stopper=Stopper(),
             shells=PythonShells(),
             filesystem=SessionFileSystem(f"file://{page_path}"),
         )
@@ -73,7 +71,6 @@ except Exception as e:
     session.set(
         output=Output(),
         costs=CostTracker(),
-        stopper=Stopper(),
         shells=PythonShells(),
         filesystem=SessionFileSystem(f"file://{page_path}"),
     )

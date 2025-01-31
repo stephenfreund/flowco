@@ -9,7 +9,6 @@ from flowco.builder.pass_config import PassConfig
 from flowco.dataflow.phase import Phase
 from flowco.session.session import session
 from flowco.util.output import error, log, warn, logger
-from flowco.util.stopper import Stopper
 from typing import (
     Callable,
     Dict,
@@ -194,6 +193,7 @@ class BuildEngine:
         graph: DataFlowGraph,
         target_phase: Phase,
         node_ids: List[str] | str | None,
+        should_stop: Callable[[], bool] = lambda: False,
     ) -> Iterator[BuildUpdate]:
 
         node_ids = graph.listify_node_ids(node_ids)
@@ -205,11 +205,11 @@ class BuildEngine:
 
         if config.sequential:
             yield from self.build_with_worklist_sequential(
-                pass_config, graph, target_phase, node_ids
+                pass_config, graph, target_phase, node_ids, should_stop
             )
         else:
             yield from self.build_with_worklist_parallel(
-                pass_config, graph, target_phase, node_ids
+                pass_config, graph, target_phase, node_ids, should_stop
             )
 
     def build_with_worklist_sequential(
@@ -218,6 +218,7 @@ class BuildEngine:
         graph: DataFlowGraph,
         target_phase: Phase,
         node_ids: List[str] | str | None,
+        should_stop: Callable[[], bool],
     ) -> Iterator[BuildUpdate]:
 
         @dataclass
@@ -236,7 +237,7 @@ class BuildEngine:
                 node = graph[node_id]
 
                 with logger(f"{node_id}:{node.pill}"):
-                    if session.get("stopper", Stopper).should_stop():
+                    if should_stop():
                         return NodeResult(work_item, node, node, "Stopped")
 
                     node.build_status = phase_to_message.get(
@@ -322,8 +323,7 @@ class BuildEngine:
             current_worklist = submit_items(worklist)
 
             with logger("Running worklist"):
-                stopper = session.get("stopper", Stopper)
-                while len(done) < len(worklist) and not stopper.should_stop():
+                while len(done) < len(worklist) and not should_stop():
                     try:
                         log(f"Building: {len(worklist.keys()) - len(done)} steps")
                         item = in_flight.pop(0)
@@ -372,6 +372,7 @@ class BuildEngine:
         graph: DataFlowGraph,
         target_phase: Phase,
         node_ids: List[str] | str | None,
+        should_stop: Callable[[], bool],
     ) -> Iterator[BuildUpdate]:
 
         @dataclass
@@ -396,7 +397,7 @@ class BuildEngine:
 
                 with buffer_output(f"{node.pill}") as buffer:
                     with logger(f"Starting"):
-                        if session.get("stopper", Stopper).should_stop():
+                        if should_stop():
                             result_queue.put(
                                 NodeResult(work_item, node, node, "Stopped")
                             )
@@ -520,8 +521,7 @@ class BuildEngine:
                 current_worklist = submit_items(worklist)
 
                 with logger("Running worklist"):
-                    stopper = session.get("stopper", Stopper)
-                    while len(done) < len(worklist) and not stopper.should_stop():
+                    while len(done) < len(worklist) and not should_stop():
                         try:
                             log(f"Remaining: {len(worklist.keys()) - len(done)} steps")
                             result = result_queue.get()
@@ -553,7 +553,8 @@ class BuildEngine:
                         except Exception as e:
                             error(e)
                             raise e
-                    if stopper.should_stop():
+
+                    if should_stop():
                         executor.shutdown(wait=False, cancel_futures=True)
                         log(f"Stopping!")
 

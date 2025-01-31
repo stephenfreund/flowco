@@ -25,7 +25,6 @@ from flowco.util.costs import CostTracker, call_count, total_cost
 from flowco.util.output import Output, error, log, log_timestamp, message, logger
 
 from flowco.util.errors import FlowcoError
-from flowco.util.stopper import Stopper
 from flowco.util.text import md_to_html
 from flowthon.flowthon import FlowthonProgram
 
@@ -394,15 +393,13 @@ def main(page: Optional[Page] = None, argv: List[str] = sys.argv[1:]):
     session.set(
         output=Output(),
         costs=CostTracker(),
-        stopper=Stopper(),
         shells=PythonShells(),
         filesystem=SessionFileSystem(f"file://{os.getcwd()}"),
     )
     log_timestamp()
 
     try:
-        with session.get("stopper", Stopper):
-            main_core(page=page, argv=argv)
+        main_core(page=page, argv=argv)
     except FlowcoError as e:
         error(e)
     finally:

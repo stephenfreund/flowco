@@ -225,6 +225,7 @@ class BuildPage(FlowcoPage):
             st.session_state.builder_progress = 0
         else:
             builder.stop()
+            self.clear_builder_and_reset_state()
 
     def get_builder_updates(self):
         ui_page: UIPage = st.session_state.ui_page
@@ -284,24 +285,26 @@ class BuildPage(FlowcoPage):
         if builder is not None:
             if not builder.is_alive():
                 self.get_builder_updates()
-                st.session_state.force_update = True
-                st.session_state.builder = None
-                # set all node build_statuses to None
-                ui_page: UIPage = st.session_state.ui_page
-                dfg = ui_page.dfg()
-                dfg = dfg.update(
-                    nodes=[
-                        x.update(
-                            build_status=None,
-                        )
-                        for x in dfg.nodes
-                    ]
-                )
-                ui_page.update_dfg(dfg)
+                self.clear_builder_and_reset_state()
                 st.rerun()
             else:
                 time.sleep(0.25)
                 st.rerun()
+
+    def clear_builder_and_reset_state(self):
+        st.session_state.force_update = True
+        st.session_state.builder = None
+        ui_page: UIPage = st.session_state.ui_page
+        dfg = ui_page.dfg()
+        dfg = dfg.update(
+            nodes=[
+                x.update(
+                    build_status=None,
+                )
+                for x in dfg.nodes
+            ]
+        )
+        ui_page.update_dfg(dfg)
 
     @st.dialog("Edit Description", width="large")
     def edit_description(self):
