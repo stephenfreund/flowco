@@ -68,7 +68,10 @@ def sign_in(authorization_url: str):
     commit_sha = os.getenv("COMMIT_SHA", "unknown")[:7]
     build_date = os.getenv("BUILD_DATE", "unknown")
 
-    st.caption(f"Release {release}: {commit_sha} -- {build_date}")
+    st.write(f"Release {release}, {build_date}")
+    st.page_link(
+        "https://github.com/stephenfreund/flowco/releases", label="Release Notes"
+    )
 
 
 # Function to fetch user information from id_token

@@ -1,3 +1,4 @@
+import os
 from typing import Callable
 import pandas as pd
 import streamlit as st
@@ -62,6 +63,14 @@ def settings(ui_page: UIPage):
         st.rerun()
 
     st.divider()
+
+    # Read the commit SHA and build date from environment variables
+    release = os.getenv("RELEASE_VERSION", "unknown")
+    commit_sha = os.getenv("COMMIT_SHA", "unknown")[:7]
+    build_date = os.getenv("BUILD_DATE", "unknown")
+
+    st.write(f"Flowco Release {release}, {build_date}")
+    st.write("[Release Notes](https://github.com/stephenfreund/flowco/releases)")
 
     try:
         session_info = f"**Session Info:** {st.session_state.user_email}   {session.get('output', Output).prefix}"

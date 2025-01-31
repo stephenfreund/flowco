@@ -20,16 +20,28 @@ def run(
     queue: Queue,
 ):
 
-    # Todo: Need a way to signal a stop so the worklist stops.
-    # Get rid ot todo crap and just pass in a callback.
-
     with session.get("stopper", Stopper):
         with page:
             for build_updated in engine.build_with_worklist(
                 build_config, page.dfg, target_phase, node_ids
             ):
+                # log(
+                #     f"Putting build_updated in queue.  Remaining: {build_updated.steps_remaining}"
+                # )
+                # if session.get("stopper", Stopper).should_stop():
+                #     log("Stopping build early.")
+                #     return
                 queue.put(build_updated)
-            queue.join()
+
+            log("Waiting for no unfinished tasks.")
+            with queue.all_tasks_done:
+                if queue.unfinished_tasks:
+                    if queue.all_tasks_done.wait(3):
+                        log("All tasks done.")
+                    else:
+                        log("Timeout waiting for tasks to finish.")
+
+            # queue.join()
 
         log("Done building.")
 

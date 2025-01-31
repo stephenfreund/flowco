@@ -276,17 +276,28 @@ class BuildPage(FlowcoPage):
                 repair=button.repair,
                 passes_key=button.passes_key,
             )
+            st.session_state.force_update = True
             st.rerun()
 
         builder: Builder = st.session_state.builder
         debug(f"Builder is alive: {builder is not None and builder.is_alive()}")
         if builder is not None:
             if not builder.is_alive():
-
                 self.get_builder_updates()
-
                 st.session_state.force_update = True
                 st.session_state.builder = None
+                # set all node build_statuses to None
+                ui_page: UIPage = st.session_state.ui_page
+                dfg = ui_page.dfg()
+                dfg = dfg.update(
+                    nodes=[
+                        x.update(
+                            build_status=None,
+                        )
+                        for x in dfg.nodes
+                    ]
+                )
+                ui_page.update_dfg(dfg)
                 st.rerun()
             else:
                 time.sleep(0.25)

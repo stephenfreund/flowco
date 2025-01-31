@@ -492,14 +492,14 @@ class FlowcoPage:
 
                 force_update = st.session_state.force_update
 
+                if force_update:
+                    st.session_state.image_cache.clear()
+
                 cache = (
                     st.session_state.image_cache
                     if not config.x_no_image_cache
                     else None
                 )
-
-                if force_update:
-                    st.session_state.image_cache.clear()
 
                 diagram = st.session_state.ui_page.dfg_as_mx_diagram(cache).model_dump()
                 # log("mx_diagram size", len(json.dumps(diagram)))

@@ -449,7 +449,8 @@ class RecordType(BaseType):
 class DictType(BaseType):
     """
     A general-purpose dictionary with string keys and values of some pre-determined type.
-    Use this when the set of strings used as keys is dynamic and not known in advance.
+    Use this when the all values represent the same information and when the set of
+    strings used as keys is dynamic and not known in advance.
     """
 
     type: Literal["Dict"]
@@ -460,7 +461,8 @@ class DictType(BaseType):
         ..., description="The type of the dictionary values."  # Required field
     )
     description: str = Field(
-        ..., description="A human-readable description of the type."  # Required field
+        ...,
+        description="A human-readable description of the type.  Include the keys if you can predetermine them.",  # Required field
     )
 
     def __init__(self, **data):
@@ -841,7 +843,7 @@ class ExtendedType(BaseModel):
     the_type: TypeRepresentation
     description: str = Field(
         ...,  # Required field
-        description="A description of what this type represents. Indicate how to interpret each component of the type.",
+        description="A description of what this type represents. Indicate how to interpret each component of the type.  Include any constraints or assumptions.  For each DictType embedded in this extneded type, specify the valid keys for that dictionary.",
     )
 
     def to_python_type(self) -> str:
@@ -1062,14 +1064,14 @@ def schema_to_text(schema: Dict[str, Any]) -> str:
             lines.append(f"]{pre_comment}")
         elif sch["type"] == "record":
             # lines.append(f"{'{':<{type_width}} # {description}")
-            lines.append("{")
+            lines.append("Record[")
             properties = sch["properties"]
             body = []
             for key, prop_schema in properties.items():
                 prop_str = process_schema(prop_schema)
                 body.append(f"'{key}': {prop_str}")
             lines.append(indent_lines("\n".join(body)))
-            lines.append(f"}}{pre_comment}")
+            lines.append(f"]{pre_comment}")
         elif sch["type"] == "dataframe":
             # lines.append(f"{'DataFrame':<{type_width}} # {description}")
             lines.append("DataFrame[")

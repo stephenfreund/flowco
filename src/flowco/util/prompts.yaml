@@ -317,16 +317,22 @@ postconditions-no-descriptions: |
     computed value `{function_return_var}`.
 
     The postconditions should refer to the output as `{function_return_var}` and 
-    the inputs by name.  Not all inputs may be used.
+    the inputs by name.  Not all inputs may be used.  The postconditions should be
+    detailed enough that the code for that step can be written later using only the preconditions.
+    The postconditions should be detailed enough that subsequent steps know exactly how to 
+    use the output in  `{function_return_var}`.  That includes the type and any constraints on the value,
+    as well as the keys to use for any dictionary in the return value.
 
     Create a return type for the function that meets the postconditions.
+    Favor Records over Dictionaries in the return type.  
 
     The return type should be `None` if the function generates a plot.  Otherwise,
     create a return type for the function that meets the postconditions.
 
     The return type's specification
     should be detailed enough that users of the function can understand what
-    the function returns.
+    the function returns.  That includes the type and any constraints on the value,
+    as well as the keys to use for any dictionary in the return value.
     
     If this function returns data from a file, use the column labels 
     and types found in that file.
@@ -1008,6 +1014,51 @@ ama_node_editor: |
     each other and with the changes you make. Do not change the function name,
     parameter names, or parameter types.
 
+    The new postconditions should be
+    detailed enough that the code for that step can be written later using only the preconditions.
+    The postconditions should be detailed enough that subsequent steps know exactly how to 
+    use the output.  That includes the type and any constraints on the value,
+    as well as the keys to use for any dictionary in the return value.
+
+    The new return type for the function that meets the postconditions.
+    Favor Records over Dictionaries in the return type.  
+
+    The new return type should be `None` if the function generates a plot.  Otherwise,
+    the new return type for the function that meets the postconditions.
+
+    The new return type's specification
+    should be detailed enough that users of the function can understand what
+    the function returns.  That includes the type and any constraints on the value,
+    as well as the keys to use for any dictionary in the return value.
+    
+    If this function returns data from a file, use the column labels 
+    and types found in that file.
+
+    The postconditions you create should be detailed enough that the 
+    code for that step can be written later using only the preconditions 
+    and postconditions.  Avoid contradictions or redundancies in the postconditions.
+
+    The code should:
+
+    * Implement the requirements as a pure function.
+    * Return a value consistent with the return type.
+    * Have no side effects.
+    * Be optimized for readability, clarity, and simplicity.
+    * Do not include pydoc strings.
+    
+    You may only import matplotlib, seaborn, numpy, sklearn, scipy, and pandas.  
+
+    Import any classes referenced in the return type.
+    
+    Uses seaborn for all plots, with
+    no changes to the base style.  Do not call `plt.close()`.  Do not call `plt.show()`.  Do not save plots to disk.
+
+    Do not include other functions.
+
+    The function should return a value of the appropriate type, or None if the function displays a plot.
+
+    Assume the client has no other information about the function.
+
     Explain your reasoning and provide a clear and concise answer in simple English.  
     Nore more than 50 words.
 
@@ -1022,6 +1073,33 @@ ama_node_editor_no_code: |
     
     The label, requirements, and return type must all be consistent with
     each other and with the changes you make. 
+
+    The new postconditions should be
+    detailed enough that the code for that step can be written later using only the preconditions.
+    The postconditions should be detailed enough that subsequent steps know exactly how to 
+    use the output.  That includes the type and any constraints on the value,
+    as well as the keys to use for any dictionary in the return value.
+
+    The return type for the function must meet the new postconditions.
+    Favor Records over Dictionaries in the return type.  
+
+    The return type should be `None` if the function generates a plot.  Otherwise,
+    create a return type for the function that meets the postconditions.
+
+    The return type's specification
+    should be detailed enough that users of the function can understand what
+    the function returns.  That includes the type and any constraints on the value,
+    as well as the keys to use for any dictionary in the return value.
+    
+    If this function returns data from a file, use the column labels 
+    and types found in that file.
+
+    The postconditions you create should be detailed enough that the 
+    code for that step can be written later using only the preconditions 
+    and postconditions.  Avoid contradictions or redundancies in the postconditions.
+
+    Assume the client has no other information about the function.
+
 
     Explain your reasoning and provide a clear and concise answer in simple English.  
     Nore more than 50 words.

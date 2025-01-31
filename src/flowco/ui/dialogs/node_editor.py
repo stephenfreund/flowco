@@ -75,14 +75,14 @@ class NodeEditor:
     def others(self, title):
         if show_code():
             l = {
-                "Label": ["Requirements", "Code"],
-                "Requirements": ["Label", "Code"],
-                "Code": ["Label", "Requirements"],
+                "Label": ["Requirements", "Return Type", "Code"],
+                "Requirements": ["Label", "Code", "Return Type"],
+                "Code": ["Label", "Requirements", "Return Type"],
             }
         else:
             l = {
-                "Label": ["Requirements"],
-                "Requirements": ["Label"],
+                "Label": ["Requirements", "Return Type"],
+                "Requirements": ["Label", "Return Type"],
             }
         return " and ".join(l[title])
 
