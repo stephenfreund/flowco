@@ -14,7 +14,7 @@ from flowco.util.config import config
 from flowco.util.costs import CostTracker
 from flowco.util.files import get_flowco_files, setup_flowco_files
 from flowco.util.output import Output, log, log_timestamp
-from flowco.util.stopper import Stopper
+# from flowco.util.stopper import Stopper
 
 
 @st.cache_data
@@ -50,7 +50,6 @@ def init_service():
         session.set(
             output=Output(prefix=f"{key}_{st.session_state.user_email}"),
             costs=CostTracker(),
-            stopper=Stopper(),
             shells=python_shells(),
             filesystem=SessionFileSystem(
                 f"s3://go-flowco/{st.session_state.user_email}"
