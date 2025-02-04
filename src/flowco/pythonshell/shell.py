@@ -2,30 +2,41 @@ import inspect
 import json
 import os
 import re
-from tempfile import NamedTemporaryFile, TemporaryDirectory, TemporaryFile
+from tempfile import TemporaryDirectory
 import textwrap
 import io
 import base64
-import traceback
 import uuid
-import seaborn as sns
 from typing import Any, Dict, List
 from PIL import Image
 import nbformat as nbf
 from nbclient import NotebookClient, exceptions as nb_exceptions
 
-from flowco.assistant.openai import OpenAIAssistant
+from flowco.assistant.flowco_assistant import flowco_assistant
 from flowco.builder.type_ops import convert_np_float64, decode, encode
 from flowco.dataflow.checks import CheckOutcomes, QualitativeCheck
 from flowco.dataflow.dfg import Node, DataFlowGraph
 from flowco.page.output import NodeResult, OutputType, ResultOutput, ResultValue
 from flowco.page.tables import GlobalTables
 from flowco.pythonshell.sandbox import Sandbox
-from flowco.session.session_file_system import fs_read
-from flowco.util.output import debug, error, log, logger, message
+from flowco.util.output import debug, error, log, logger
 from pydantic import BaseModel
 
 from flowco.util.text import strip_ansi
+
+from openai.types.chat.chat_completion_content_part_text_param import (
+    ChatCompletionContentPartTextParam,
+)
+from openai.types.chat.chat_completion_content_part_image_param import (
+    ChatCompletionContentPartImageParam,
+    ImageURL,
+)
+
+from openai.types.chat import (
+    ChatCompletionMessage,
+    ChatCompletionMessageParam,
+    ChatCompletionContentPartParam,
+)
 
 
 class EvalResult(BaseModel):
@@ -265,7 +276,7 @@ class PythonShell:
         """
         Load the result variable from the previous node into the PythonShell.
         """
-        if node.result is not None:
+        if node.result is not None and node.result.result is not None:
             repr_val, _ = node.result.result.to_repr()
             self._run_cell(f"{node.function_result_var} = {repr_val}")
         else:
@@ -293,7 +304,7 @@ class PythonShell:
                     arguments = self.load_parameters(dfg, node)
 
                 with logger("Running node code"):
-                    self._run_cell("\n".join(node.code))
+                    self._run_cell("\n".join(node.code or []))
 
                 with logger("Calling function"):
                     # Construct and execute the function call
@@ -348,17 +359,21 @@ class PythonShell:
             predecessor = dfg[predecessor_id]
             context[predecessor.function_result_var] = predecessor.result.result
 
-        context[node.function_result_var] = node.result.result
+        if node.result is not None and node.result.result is not None:
+            context[node.function_result_var] = node.result.result
         return context
 
     def _inspect_output(
         self, node: Node, qualitative_checks: Dict[str, QualitativeCheck]
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
 
         if len(qualitative_checks) == 0:
             return {}
 
-        result_messages = node.result.to_prompt_messages()
+        if node.result is not None:
+            result_messages = node.result.to_content_parts()
+        else:
+            result_messages = []
 
         class InspectionCompletion(BaseModel):
             requirement: str
@@ -369,17 +384,15 @@ class PythonShell:
             errors: List[InspectionCompletion]
 
         requirements = [check.requirement for check in qualitative_checks.values()]
-        assertions = [assertion for assertion in qualitative_checks.keys()]
 
-        assistant = OpenAIAssistant(
-            "gpt-4o",
-            system_prompt_key=["system-prompt", "inspect-output"],
+        assistant = flowco_assistant(
+            prompt_key="inspect-output",
             requirements=json.dumps(requirements, indent=2),
         )
-        assistant.add_message("user", "Here is the output.")
-        assistant.add_message("user", result_messages)
+        assistant.add_text("user", "Here is the output.")
+        assistant.add_content_parts("user", result_messages)
 
-        completion = assistant.completion(InspectionsCompletion)
+        completion = assistant.model_completion(InspectionsCompletion)
         messages = {
             x.requirement: x.message if x.error else None for x in completion.errors
         }
@@ -390,16 +403,13 @@ class PythonShell:
 
     def run_assertions(
         self, tables: GlobalTables, dfg: DataFlowGraph, node: Node
-    ) -> NodeResult:
+    ) -> Node:
         """
         Evaluate a Node object and capture outputs.
 
         Args:
             dfg (DataFlowGraph): The data flow graph containing node dependencies.
             node (Node): The Node object to evaluate.
-
-        Returns:
-            NodeResult: The result of evaluating the node.
         """
 
         with logger(f"Evaluating assertions for node '{node.id}'"):
@@ -410,6 +420,7 @@ class PythonShell:
 
                 context = self.make_context(dfg, node)
                 outcomes = {}
+                assert node.assertion_checks is not None, "No assertion checks found."
                 for assertion, check in node.assertion_checks.items():
                     if check.type == "quantitative":
                         with logger(f"Evaluating quantitative assertion {assertion}"):
@@ -454,7 +465,9 @@ class PythonShell:
 
     async def restart(self):
         self.nb.cells = []
-        await self.client.km.restart_kernel(now=True)
+        assert self.client is not None, "No kernel client found."
+        assert self.client.km is not None, "No kernel manager found."
+        self.client.km.restart_kernel(now=True)
         self._init()
 
     def close(self):
@@ -463,7 +476,8 @@ class PythonShell:
         """
         try:
             if self.client is not None:
-                self.client.kc.shutdown()
+                if self.client.kc is not None:
+                    self.client.kc.shutdown()
             if self.sandbox is not None:
                 self.sandbox.cleanup()
         except Exception as e:

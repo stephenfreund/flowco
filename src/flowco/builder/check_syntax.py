@@ -3,7 +3,7 @@ import textwrap
 from typing import Optional, Tuple
 
 
-from flowco.assistant.assistant import Assistant
+from flowco.assistant.flowco_assistant import flowco_assistant
 from flowco.builder.build import PassConfig, node_pass
 from flowco.builder.type_ops import types_equal
 
@@ -118,7 +118,7 @@ def _check_node_syntax(node: Node) -> None:
 
 
 def _repair_node_syntax(node: Node, max_retries: int) -> Tuple[Node, bool]:
-    assistant = Assistant("repair-system")
+    assistant = flowco_assistant()
 
     original = node.model_copy()
 
@@ -180,20 +180,21 @@ def _repair_node_syntax(node: Node, max_retries: int) -> Tuple[Node, bool]:
                 ),
             )
 
-            assistant.add_prompt_by_key(
+            prompt = config.get_prompt(
                 "repair-syntax",
                 node=initial_node.model_dump_json(indent=2),
                 signature=node.signature_str(),
                 error=strip_ansi(str(e)),
             )
+            assistant.add_text("user", prompt)
 
             new_node = node_completion(
                 assistant,
                 node_completion_model("code", include_explanation=True),
             )
 
-            message("\n".join(["Old Code"] + node.code))
-            message("\n".join(["New Code"] + new_node.code))
+            message("\n".join(["**Old Code**"] + (node.code or [])))
+            message("\n".join(["**New Code**"] + (new_node.code or [])))  # type: ignore
             message(
                 "\n".join(
                     textwrap.wrap(

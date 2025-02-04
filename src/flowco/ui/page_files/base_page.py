@@ -29,7 +29,7 @@ from mxgraph_component import mxgraph_component
 from flowco import __main__
 from flowco.ui.ui_page import UIPage
 from flowco.util.config import config
-from flowco.util.costs import total_cost
+from flowco.util.costs import inflight, total_cost
 from flowco.util.config import AbstractionLevel
 from flowco.util.files import create_zip_in_memory
 from flowco.util.output import Output, error, log, log_timestamp
@@ -179,7 +179,9 @@ class FlowcoPage:
         if node is None:
             ui_page: UIPage = st.session_state.ui_page
             st.title(ui_page.page().file_name)
-            st.caption(f"Total cost: {total_cost():.2f} USD")
+            st.caption(
+                f"Total cost: {total_cost():.2f} USD &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        {':gray[:material/phone_in_talk:]' * inflight()}"
+            )
 
     def show_messages(self, node: Node):
         for message in node.messages:

@@ -39,7 +39,7 @@ def data_files_dialog():
                         st.write(f"First 10 rows of {name} (out of ~{len(content)-1})")
                         st.dataframe(
                             df.head(10),
-                            selection_mode="single",
+                            selection_mode="single-row",
                             hide_index=True,
                             use_container_width=True,
                         )
@@ -64,7 +64,7 @@ def data_files_dialog():
                         st.write(f"First 10 rows of {name} (out of {len(df)})")
                         st.dataframe(
                             df,
-                            selection_mode="single",
+                            selection_mode="single-row",
                             hide_index=True,
                             use_container_width=True,
                         )

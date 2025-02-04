@@ -1,8 +1,8 @@
 import os
+from llm import models
 from typing import Callable
 import pandas as pd
 import streamlit as st
-from flowco.assistant.openai import OpenAIAssistant
 from flowco.dataflow.dfg import Node
 from flowco.session.session import session
 from flowco.ui.authenticate import cache
@@ -16,9 +16,11 @@ from flowco.util.output import Output
 @st.dialog("Settings", width="large")
 def settings(ui_page: UIPage):
 
-    models = OpenAIAssistant.supported_models()
-    current_model = models.index(config.model) if config.model in models else 0
-    model = st.selectbox("LLM model", models, current_model)
+    supported_models = models.supported_models()
+    current_model = (
+        supported_models.index(config.model) if config.model in supported_models else 0
+    )
+    model = st.selectbox("LLM model", supported_models, current_model)
     if model != None:
         config.model = model
 
@@ -86,26 +88,26 @@ def show_file(self, file_name: str):
     st.dataframe(df)
 
 
-@st.dialog("Report", width="large")
-def run_report():
-    report = Report()
-    main = st.empty()
-    with main.container(height=600):
-        st.write_stream(report.make(ui_page.page()))
+# @st.dialog("Report", width="large")
+# def run_report():
+#     report = Report()
+#     main = st.empty()
+#     with main.container(height=600):
+#         st.write_stream(report.make(ui_page.page()))
 
-    with main.container(height=600):
-        st.markdown(report.with_embedded_images, unsafe_allow_html=True)
+#     with main.container(height=600):
+#         st.markdown(report.with_embedded_images, unsafe_allow_html=True)
 
-    @st.fragment
-    def download():
-        st.download_button(
-            "Download", report.with_embedded_images, f"{page.file_name}.md"
-        )
+#     @st.fragment
+#     def download():
+#         st.download_button(
+#             "Download", report.with_embedded_images, f"{page.file_name}.md"
+#         )
 
-    download()
+#     download()
 
 
-@st.dialog("Confirm", width="medium")
+@st.dialog("Confirm", width="small")
 def confirm(message: str, on_confirm: Callable[[], None]):
     st.write(message)
     if st.button("OK"):

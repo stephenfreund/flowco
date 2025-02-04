@@ -5,11 +5,10 @@ from typing import List
 from nbclient.exceptions import CellExecutionError
 from pydantic import Field, BaseModel
 
-from flowco.assistant.assistant import Assistant
-from flowco.assistant.openai import OpenAIAssistant
+from flowco.assistant.flowco_assistant import flowco_assistant
 from flowco.builder.build import PassConfig, node_pass
 from flowco.builder.graph_completions import (
-    messages_for_node,
+    json_for_node_view,
     node_completion,
     node_completion_model,
 )
@@ -33,7 +32,7 @@ def suggest_assertions(graph: DataFlowGraph, node: Node) -> List[str]:
     class SuggestedAssertions(BaseModel):
         suggestions: List[str]
 
-    suggestions = assistant.completion(SuggestedAssertions)
+    suggestions = assistant.model_completion(SuggestedAssertions)
     assert suggestions is not None, "No completion from assistant"
     return suggestions.suggestions
 
@@ -52,7 +51,7 @@ def none_return_type_completion(node):
         assertions: List[AssertionCompletion]
 
     assistant = assertions_assistant(node)
-    completion = assistant.completion(AssertionsCompletion)
+    completion = assistant.model_completion(AssertionsCompletion)
     assert completion, "No completion from assistant"
 
     checks = {
@@ -78,7 +77,7 @@ def not_none_return_type_completion(node):
         assertions: List[AssertionCompletion]
 
     assistant = assertions_assistant(node)
-    completion = assistant.completion(AssertionsCompletion)
+    completion = assistant.model_completion(AssertionsCompletion)
     assert completion, "No completion from assistant"
 
     checks = {
@@ -163,7 +162,6 @@ def assertions_assistant(node: Node, suggest=False):
     # just to regenerate it every time...
 
     substitutions = {
-        "system_prompt_key": ["system-prompt", prompt],
         "input_vars": parameter_type_str,
         "preconditions": json.dumps(node.preconditions, indent=2),
         "output_var": node.function_result_var,
@@ -171,7 +169,7 @@ def assertions_assistant(node: Node, suggest=False):
         "requirements": json.dumps(node.assertions or [], indent=2),
     }
 
-    assistant = OpenAIAssistant(config.model, **substitutions)
+    assistant = flowco_assistant(prompt, **substitutions)
 
     return assistant
 
@@ -220,7 +218,7 @@ def repair_assertions(
 def _repair_assertions(
     pass_config: PassConfig, graph: DataFlowGraph, node: Node, max_retries: int
 ) -> Node:
-    assistant = Assistant("repair-system")
+    assistant = flowco_assistant("repair-system")
     retries = 0
     original = None
 
@@ -268,9 +266,10 @@ def _repair_assertions(
 
         message(f"Repair attempt {retries} of {config.retries}")
 
-        assistant.add_message(
+        assistant.add_text("user", f"Here is the current state of node {node.pill}:")
+        assistant.add_json(
             "user",
-            messages_for_node(
+            json_for_node_view(
                 node=node,
                 node_fields=[
                     "pill",
@@ -285,18 +284,18 @@ def _repair_assertions(
             ),
         )
 
-        assistant.add_prompt_by_key(
+        repair_prompt = config.get_prompt(
             "repair-node-assertions",
             errors=[
-                outcome
-                for outcome in node.assertion_outcomes.outcomes.values()
-                if outcome is not None
+                x for x in node.assertion_outcomes.outcomes.values() if x is not None
             ],
             context=json.dumps(
                 {x: v.to_text() for x, v in node.assertion_outcomes.context.items()},  # type: ignore
                 indent=2,
             ),
         )
+
+        assistant.add_text("user", repair_prompt)
 
         new_node = node_completion(
             assistant,

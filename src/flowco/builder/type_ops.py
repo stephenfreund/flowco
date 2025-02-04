@@ -1,5 +1,5 @@
 from tempfile import TemporaryFile
-from typing import *
+from typing import Any, Dict, List, Tuple
 
 import json
 import numpy as np
@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import sklearn
 import scipy
-from typing import *
+from typing import get_origin, get_args
 
 
 def str_to_type(type_str: str) -> type:

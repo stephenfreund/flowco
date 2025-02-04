@@ -9,6 +9,15 @@ from flowco.builder import type_ops
 from flowco.dataflow import extended_type
 from flowco.util.output import error, log
 
+from openai.types.chat import ChatCompletionContentPartParam
+from openai.types.chat.chat_completion_content_part_text_param import (
+    ChatCompletionContentPartTextParam,
+)
+from openai.types.chat.chat_completion_content_part_image_param import (
+    ChatCompletionContentPartImageParam,
+    ImageURL,
+)
+
 
 class OutputType(str, enum.Enum):
     text = "text"
@@ -57,11 +66,11 @@ class ResultValue(BaseModel):
         def clip_collection(collection):
             nonlocal clipping_occurred
             if isinstance(collection, (list, tuple, set)):
-                if len(collection) > clip_size:
+                if clip_size is not None and len(collection) > clip_size:
                     clipping_occurred = True
                     return list(collection)[:clip_size]
             elif isinstance(collection, dict):
-                if len(collection) > clip_size:
+                if clip_size is not None and len(collection) > clip_size:
                     clipping_occurred = True
                     # Sort dict items by key to ensure consistent clipping
                     clipped_items = sorted(
@@ -73,7 +82,10 @@ class ResultValue(BaseModel):
         def process(o: Any) -> Tuple[str, bool]:
             nonlocal clipping_occurred
 
-            if isinstance(o, (bool, int, float, np.int64, np.float64)) or o is None:
+            if (
+                isinstance(o, (bool, int, float, np.signedinteger, np.floating))
+                or o is None
+            ):
                 return repr(o), False
 
             elif isinstance(o, str):
@@ -255,50 +267,51 @@ class ResultValue(BaseModel):
     def to_text(self) -> str:
         return self.text
 
-    def to_prompt(self) -> Dict[str, Any]:
+    def to_content_part(self) -> ChatCompletionContentPartTextParam:
         repr, clipped = self.to_repr(10)
         if clipped:
             log("Clipped repr: " + repr)
-        return {"type": "text", "text": repr}
+        return ChatCompletionContentPartTextParam(
+            type="text",
+            text=repr,
+        )
 
 
 class ResultOutput(BaseModel):
     output_type: OutputType = Field(description="The type of the output")
     data: str = Field(description="The data of the output")
 
-    def to_prompt(self) -> Dict[str, Any]:
+    def to_content_part(self) -> ChatCompletionContentPartParam:
         if self.output_type == OutputType.text:
-            return {
-                "type": "text",
-                "text": self.data,
-            }
+            return ChatCompletionContentPartTextParam(
+                type="text",
+                text=self.data,
+            )
         elif self.output_type == OutputType.image:
-            return {
-                "type": "image_url",
-                "image_url": {
-                    "url": self.data.replace(
-                        "data:image/png,", "data:image/png;base64,"
-                    ),
-                    "detail": "high",
-                },
-            }
+            return ChatCompletionContentPartImageParam(
+                type="image_url",
+                image_url=ImageURL(
+                    url=self.data.replace("data:image/png,", "data:image/png;base64,"),
+                    detail="high",
+                ),
+            )
         else:
-            return {
-                "type": "text",
-                "text": "Unknown output type: {self.output_type}: {self.data}",
-            }
+            return ChatCompletionContentPartTextParam(
+                type="text",
+                text="Unknown output type: {self.output_type}: {self.data}",
+            )
 
 
 class NodeResult(BaseModel):
     result: Optional[ResultValue]
     output: Optional[ResultOutput]
 
-    def to_prompt_messages(self) -> List[Dict[str, Any]]:
+    def to_content_parts(self) -> List[ChatCompletionContentPartParam]:
         messages = []
         if self.result and self.result.text.strip() != "None":
-            messages.append(self.result.to_prompt())
+            messages.append(self.result.to_content_part())
         if self.output:
-            messages.append(self.output.to_prompt())
+            messages.append(self.output.to_content_part())
         return messages
 
     def _clip(self, text, clip: int | None = None) -> str:
