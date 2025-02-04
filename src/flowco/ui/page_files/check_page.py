@@ -183,7 +183,7 @@ class CheckPage(BuildPage):
             self.edit_checks(node_id)
 
     def show_node_details(self, node: Node):
-        with st.container(key="node_code", border=True):
+        with st.container(key="node_checks", border=True):
             st.write("###### Checks")
             assertions = node.assertions or []
             if assertions:
