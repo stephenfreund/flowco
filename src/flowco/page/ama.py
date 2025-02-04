@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 import traceback
-from typing import Any, Dict, Iterable, List, Literal, Tuple
+from typing import Annotated, Any, Dict, Iterable, List, Literal, Tuple
 
 import openai
-from flowco.assistant.openai import OpenAIAssistant
-from flowco.assistant.stream import StreamingAssistantWithFunctionCalls
-from flowco.builder.graph_completions import messages_for_graph
+from openai.types.chat.chat_completion_content_part_text_param import (
+    ChatCompletionContentPartTextParam,
+)
+from openai.types.chat.chat_completion_content_part_image_param import (
+    ChatCompletionContentPartImageParam,
+    ImageURL,
+)
+
+
+from flowco.assistant.flowco_assistant import flowco_assistant, flowco_assistant_fast
+from flowco.builder.graph_completions import json_for_graph_view
 from flowco.dataflow.dfg import Geometry
 from flowco.dataflow.extended_type import ExtendedType
 from flowco.dataflow.phase import Phase
@@ -26,41 +34,7 @@ from flowco.dataflow.dfg_update import (
     update_dataflow_graph,
 )
 from flowco.util.text import strip_ansi
-
-if config.x_algorithm_phase:
-
-    class update_node(BaseModel):
-        id: str = Field(description="The id of the node to modify.")
-        label: str = Field(
-            description="The new label of the node.  Keep in sync with the requirements, algorithm, and code."
-        )
-        requirements: List[str] = Field(
-            description="A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well."
-        )
-        function_return_type: ExtendedType = Field(
-            description="The return type of the node."
-        )
-        algorithm: List[str] = Field(description="The algorithm of the node.")
-        code: List[str] = Field(
-            description="The code for the node.  Only modify if there is already an code.  The code should be a list of strings, one for each line of code.  The signature must match the original version, except for the return type"
-        )
-
-else:
-
-    class update_node(BaseModel):
-        id: str = Field(description="The id of the node to modify.")
-        label: str = Field(
-            description="The new label of the node.  Keep in sync with the requirements, algorithm, and code."
-        )
-        requirements: List[str] = Field(
-            description="A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well."
-        )
-        function_return_type: ExtendedType = Field(
-            description="The return type of the node."
-        )
-        code: List[str] = Field(
-            description="The code for the node.  Only modify if there is already an code.  The code should be a list of strings, one for each line of code.  The signature must match the original version, except for the return type"
-        )
+from llm.assistant import ToolCallResult
 
 
 class VisibleMessage(BaseModel):
@@ -73,9 +47,6 @@ class QuestionKind(BaseModel):
     kind: Literal["Explain"] | Literal["Modify"]
 
 
-ReturnType = Tuple[str, str | Dict[str, Any] | None]
-
-
 class AskMeAnything:
 
     def __init__(self, page: Page):
@@ -85,30 +56,15 @@ class AskMeAnything:
 
     def reset(self):
         """Reset internals"""
-        self.assistant = StreamingAssistantWithFunctionCalls(
-            [],
-            ["system-prompt", "ama_general"],
-            imports="",
-        )
+        self.assistant = flowco_assistant(prompt_key="ama_general")
         self.shell = None
         self.completion_dfg = None
 
-    def python_eval(self, code: str) -> ReturnType:
+    def python_eval(
+        self, code: Annotated[str, "The Python code to evaluate"]
+    ) -> ToolCallResult:
         """
-        {
-            "name": "python_eval",
-            "description": "Exec python code.  You may assume numpy, scipy, and pandas are available.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "code": {
-                        "type": "string",
-                        "description": "The Python code to evaluate"
-                    }
-                },
-                "required": ["code"]
-            }
-        }
+        Evaluate python code.  You may assume numpy, scipy, and pandas are available.",
         """
         init_code = ""
         for node in self.page.dfg.nodes:
@@ -132,263 +88,167 @@ class AskMeAnything:
                 result_output = result.as_result_output()
                 if result_output is not None:
                     log(f"Result:\n{result_output}")
-                    return f"**:blue[Okay, I ran some code:]**\n```\n{code}\n```\n", (
-                        result_output.to_prompt() if result_output is not None else None
+                    return ToolCallResult(
+                        user_message=f"**:blue[Okay, I ran some code:]**\n```\n{code}\n```\n",
+                        content=(
+                            result_output.to_content_part()
+                            if result_output is not None
+                            else None
+                        ),
                     )
+
                 else:
-                    return (
-                        f"**:blue[Okay, I ran some code:]**\n```\n{code}\n```\n. It produced no output",
-                        None,
+                    return ToolCallResult(
+                        user_message=f"**:blue[Okay, I ran some code:]**\n```\n{code}\n```\n. It produced no output",
+                        content=None,
                     )
             except Exception as e:
                 error(f"Error running code: {e}")
                 e_str = strip_ansi(str(e).splitlines()[-1])
-                return (
-                    f"**:red[I had an error running this code:]**\n```\n{code}\n```\n\n**:red[Error:]**\n```\n{e_str}\n```\n",
-                    e_str,
+                return ToolCallResult(
+                    user_message=f"**:red[I had an error running this code:]**\n```\n{code}\n```\n\n**:red[Error:]**\n```\n{e_str}\n```\n",
+                    content=ChatCompletionContentPartTextParam(type="text", text=e_str),
                 )
 
-    def inspect(self, id: str) -> ReturnType:
+    def inspect(
+        self, id: Annotated[str, "The id of the node whose output to inspect"]
+    ) -> ToolCallResult:
         """
-        {
-            "name": "inspect",
-            "description": "Inspect the output for a node in the diagram, including any generated plots.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "description": "The id of the node to inspect"
-                    }
-                },
-                "required": ["id"]
-            }
-        }
+        Inspect the output for a node in the diagram, including any generated plots.
         """
         log(f"inspect: {id}")
         if id not in self.page.dfg.node_ids():
-            return (f"**:red[Node {id} does not exist]**", None)
+            return ToolCallResult(
+                user_message=f"**:red[Node {id} does not exist]**", content=None
+            )
         node = self.page.dfg[id]
         result = node.result
         if result is None:
-            return (f"**:red[No output or result for {node.pill}]**", None)
+            return ToolCallResult(
+                user_message=f"**:red[No output or result for {node.pill}]**",
+                content=None,
+            )
         else:
             if result.output is not None:
-                return (
-                    f"**:blue[I inspected the output for {node.pill}]**",
-                    result.output.to_prompt(),
+                return ToolCallResult(
+                    user_message=f"**:blue[I inspected the output for {node.pill}]**",
+                    content=result.output.to_content_part(),
                 )
             elif result.result is not None:
-                return (
-                    f"**:blue[I inspected the result for {node.pill}]**",
-                    result.result.to_prompt(),
+                return ToolCallResult(
+                    user_message=f"**:blue[I inspected the result for {node.pill}]**",
+                    content=result.result.to_content_part(),
                 )
             else:
-                return (f"**:red[No output or result for {node.pill}]**", None)
-
-    if config.x_algorithm_phase:
-
-        def update_node(
-            self,
-            id: str,
-            pill: str | None = None,
-            label: str | None = None,
-            requirements: List[str] | None = None,
-            function_return_type: ExtendedType | None = None,
-            algorithm: List[str] | None = None,
-            code: List[str] | None = None,
-        ) -> ReturnType:
-
-            log(f"update_node: {id}, {requirements}, {algorithm}, {code}")
-            dfg = self.page.dfg
-
-            if dfg[id] is None:
-                return (f"**:red[Node {id} does not exist]**", None)
-
-            node = dfg[id]
-            mods = []
-
-            if code and code != node.code:
-                log(f"Updating code to {code}")
-                node = node.update(code=code, phase=Phase.algorithm)
-                mods.append("code")
-            if algorithm and algorithm != node.algorithm:
-                log(f"Updating algorithm to {algorithm}")
-                node = node.update(algorithm=algorithm, phase=Phase.requirements)
-                mods.append("algorithm")
-            if requirements and requirements != node.requirements:
-                log(f"Updating requirements to {requirements}")
-                node = node.update(
-                    requirements=requirements,
-                    phase=Phase.clean,
+                return ToolCallResult(
+                    user_message=f"**:red[No output or result for {node.pill}]**",
+                    content=None,
                 )
-                mods.append("requirements")
 
-            if function_return_type:
-                function_return_type = ExtendedType.model_validate(function_return_type)
-                if function_return_type != node.function_return_type:
-                    log(
-                        f"Updating function_return_type from {node.function_return_type} to {function_return_type}"
-                    )
-                    node = node.update(
-                        function_return_type=function_return_type,
-                        phase=Phase.clean,
-                    )
-                mods.append("return-type")
-            if label and label != node.label:
-                log(f"Updating label to {label}")
-                node = node.update(label=label, phase=Phase.clean)
-                mods.append("label")
-            if pill and pill != node.pill:
-                log(f"Updating pill to {pill}")
-                node = node.update(pill=pill, phase=Phase.clean)
-                mods.append("pill")
+    def update_node(
+        self,
+        id: Annotated[str, "The id of the node to update"],
+        pill: Annotated[
+            str,
+            "The new pill of the node.",
+        ],
+        label: Annotated[
+            str,
+            "The new label of the node.",
+        ],
+        requirements: Annotated[
+            List[str],
+            "A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well.",
+        ],
+        function_return_type: Annotated[ExtendedType, "The return type of the node."],
+        code: Annotated[
+            List[str] | None,
+            "The code for the node.  Only modify if there is already code.  The code should be a list of strings, one for each line of code.  The signature must match the original version, except for the return type",
+        ],
+    ) -> ToolCallResult:
+        log(f"update_node: {id}, {requirements},  {code}")
+        dfg = self.page.dfg
 
-            if node.phase == Phase.clean:
-                dfg = dfg.lower_phase_with_successors(node.id, Phase.clean)
-
-            if config.x_trust_ama:
-                if "requirements" in mods or "return-type" in mods:
-                    node = node.update(
-                        cache=node.cache.update(Phase.requirements, node)
-                    )
-                    node = node.update(phase=Phase.requirements)
-                if "algorithm" in mods:
-                    node = node.update(cache=node.cache.update(Phase.algorithm, node))
-                    node = node.update(phase=Phase.algorithm)
-                if "code" in mods:
-                    node = node.update(cache=node.cache.update(Phase.code, node))
-                    node = node.update(phase=Phase.code)
-
-            dfg = dfg.with_node(node)
-            self.page.update_dfg(dfg)
-
-            mod_str = ", ".join(reversed(mods))
-
-            return (
-                f"**:blue[I updated {mod_str} for {node.pill}]**",
-                node.model_dump_json(indent=2),
+        if dfg[id] is None:
+            return ToolCallResult(
+                user_message=f"**:red[Node {id} does not exist]**", content=None
             )
 
-    else:
+        node = dfg[id]
+        mods = []
 
-        def update_node(
-            self,
-            id: str,
-            pill: str | None = None,
-            label: str | None = None,
-            requirements: List[str] | None = None,
-            function_return_type: ExtendedType | None = None,
-            code: List[str] | None = None,
-        ) -> ReturnType:
-            log(f"update_node: {id}, {requirements},  {code}")
-            dfg = self.page.dfg
+        if code and code != node.code:
+            log(f"Updating code to {code}")
+            node = node.update(code=code, phase=Phase.algorithm)
+            mods.append("code")
+        if requirements and requirements != node.requirements:
+            log(f"Updating requirements to {requirements}")
+            node = node.update(
+                requirements=requirements,
+                phase=Phase.clean,
+            )
+            mods.append("requirements")
 
-            if dfg[id] is None:
-                return (f"**:red[Node {id} does not exist]**", None)
-
-            node = dfg[id]
-            mods = []
-
-            if code and code != node.code:
-                log(f"Updating code to {code}")
-                node = node.update(code=code, phase=Phase.algorithm)
-                mods.append("code")
-            if requirements and requirements != node.requirements:
-                log(f"Updating requirements to {requirements}")
+        if function_return_type:
+            function_return_type = ExtendedType.model_validate(function_return_type)
+            if (
+                node.function_return_type is not None
+                and function_return_type != node.function_return_type
+            ):
+                log(
+                    f"Updating function_return_type from {node.function_return_type.to_markdown(True)} to {function_return_type.to_markdown(True)}"
+                )
                 node = node.update(
-                    requirements=requirements,
+                    function_return_type=function_return_type,
                     phase=Phase.clean,
                 )
-                mods.append("requirements")
+            mods.append("return-type")
+        if label and label != node.label:
+            log(f"Updating label to {label}")
+            node = node.update(label=label, phase=Phase.clean)
+            mods.append("label")
+        if pill and pill != node.pill:
+            log(f"Updating pill to {pill}")
+            node = node.update(pill=pill, phase=Phase.clean)
+            mods.append("pill")
 
-            if function_return_type:
-                function_return_type = ExtendedType.model_validate(function_return_type)
-                if (
-                    node.function_return_type is not None
-                    and function_return_type != node.function_return_type
-                ):
-                    log(
-                        f"Updating function_return_type from {node.function_return_type.to_markdown(True)} to {function_return_type.to_markdown(True)}"
-                    )
-                    node = node.update(
-                        function_return_type=function_return_type,
-                        phase=Phase.clean,
-                    )
-                mods.append("return-type")
-            if label and label != node.label:
-                log(f"Updating label to {label}")
-                node = node.update(label=label, phase=Phase.clean)
-                mods.append("label")
-            if pill and pill != node.pill:
-                log(f"Updating pill to {pill}")
-                node = node.update(pill=pill, phase=Phase.clean)
-                mods.append("pill")
+        if node.phase == Phase.clean:
+            dfg = dfg.lower_phase_with_successors(node.id, Phase.clean)
 
-            if node.phase == Phase.clean:
-                dfg = dfg.lower_phase_with_successors(node.id, Phase.clean)
+        if config.x_trust_ama:
+            if "requirements" in mods or "return-type" in mods:
+                node = node.update(cache=node.cache.update(Phase.requirements, node))
+                node = node.update(phase=Phase.requirements)
+            if "code" in mods:
+                node = node.update(cache=node.cache.update(Phase.code, node))
+                node = node.update(phase=Phase.code)
 
-            if config.x_trust_ama:
-                if "requirements" in mods or "return-type" in mods:
-                    node = node.update(
-                        cache=node.cache.update(Phase.requirements, node)
-                    )
-                    node = node.update(phase=Phase.requirements)
-                if "code" in mods:
-                    node = node.update(cache=node.cache.update(Phase.code, node))
-                    node = node.update(phase=Phase.code)
+        dfg = dfg.with_node(node)
+        self.page.update_dfg(dfg)
 
-            dfg = dfg.with_node(node)
-            self.page.update_dfg(dfg)
+        mod_str = ", ".join(reversed(mods))
 
-            mod_str = ", ".join(reversed(mods))
-
-            return (
-                f"**:blue[I updated {mod_str} for {node.pill}]**",
-                node.model_dump_json(indent=2),
-            )
+        return ToolCallResult(
+            user_message=f"**:blue[I updated {mod_str} for {node.pill}]**",
+            content=ChatCompletionContentPartTextParam(
+                type="text", text=node.model_dump_json(indent=2)
+            ),
+        )
 
     def add_node(
         self,
-        id: str,
-        predecessors: List[str],
-        label: str,
-        requirements: List[str],
-    ) -> ReturnType:
+        id: Annotated[
+            str, "A unique id for the new node.  No spaces or special characters."
+        ],
+        predecessors: Annotated[List[str], "The ids of the predecessor nodes"],
+        label: Annotated[str, "The label of the new node"],
+        requirements: Annotated[
+            List[str],
+            "A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well.",
+        ],
+    ) -> ToolCallResult:
         """
-        {
-            "name": "add_node",
-            "description": "Add a node and its requirements to the diagram.  Do not provide an algorithm or code.  Nodes should represent one small step in a pipeline. Eg: one transformation, one statistical test, one visualization, one output, ...  Provide a list of nodes that should point to the new node.  Provide a unique id for the node, a list of predecessor nodes, a label, and a list of requirements that must be true of the return value for the function.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "description": "A unique id for the new node.  No spaces or special characters."
-                    },
-                    "predecessors": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "description": "The ids of the predecessor nodes"
-                    },
-                    "label": {
-                        "type": "string",
-                        "description": "The label of the new node"
-                    },
-                    "requirements": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "description": "A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well."
-                    }
-                },
-                "required": ["id", "predecessors", "label", "requirements"],
-                "additionalProperties": false
-            }
-        }
+        Add a node and its requirements to the diagram.  Do not provide an algorithm or code.  Nodes should represent one small step in a pipeline. Eg: one transformation, one statistical test, one visualization, one output, ...  Provide a list of nodes that should point to the new node.  Provide a unique id for the node, a list of predecessor nodes, a label, and a list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well.
         """
         log(f"add_node: {id}, {predecessors}, {label}, {requirements}")
         dfg = self.page.dfg
@@ -396,11 +256,17 @@ class AskMeAnything:
         pill = "tmp-pill"
 
         if dfg.node_for_pill(pill) is not None:
-            return (f"**:red[Node with pill {pill} already exists]**", None)
+            return ToolCallResult(
+                user_message=f"**:red[Node with pill {pill} already exists]**",
+                content=None,
+            )
 
         for pred in predecessors:
             if dfg[pred] is None:
-                return (f"**:red[predecessor {pred} does not exist]**", None)
+                return ToolCallResult(
+                    user_message=f"**:red[predecessor {pred} does not exist]**",
+                    content=None,
+                )
 
         pill = dfg.make_pill(label)
         geometry = Geometry(x=0, y=0, width=0, height=0)
@@ -447,43 +313,34 @@ class AskMeAnything:
 
         self.page.update_dfg(dfg)
 
-        src_pills = ", ".join(predecessors)
+        src_pills = ", ".join(dfg[x].pill for x in predecessors)
         if src_pills:
             message = f"I add a new node {node.pill}, and connected these nodes to it: {src_pills}"
         else:
             message = f"I add a new node {node.pill}"
-        return (
-            f"**:blue[{message}]**",
-            node.model_dump_json(indent=2),
+        return ToolCallResult(
+            user_message=f"**:blue[{message}]**",
+            content=ChatCompletionContentPartTextParam(
+                type="text", text=node.model_dump_json(indent=2)
+            ),
         )
 
-    def add_edge(self, src_id: str, dst_id: str) -> ReturnType:
+    def add_edge(
+        self,
+        src_id: Annotated[str, "The id of the src node"],
+        dst_id: Annotated[str, "The id of the dst node"],
+    ) -> ToolCallResult:
         """
-        {
-            "name": "add_edge",
-            "description": "Add an edge to the diagram",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "src_id": {
-                        "type": "string",
-                        "description": "The id of the source node"
-                    },
-                    "dst_id": {
-                        "type": "string",
-                        "description": "The id of the destination node"
-                    }
-                },
-                "required": ["src_id", "dst_id"]
-            }
-        }
+        Add an edge to the diagram
         """
         log(f"add_edge: {src_id}, {dst_id}")
         dfg = self.page.dfg
 
         for id in [src_id, dst_id]:
             if dfg[id] is None:
-                return (f"**:red[Node {id} does not exist]", None)
+                return ToolCallResult(
+                    user_message=f"**:red[Node {id} does not exist]", content=None
+                )
 
         dfg = dfg.with_new_edge(src_id, dst_id)
         self.page.update_dfg(dfg)
@@ -491,33 +348,31 @@ class AskMeAnything:
         # find id for that edge
         edge = dfg.edge_for_nodes(src_id, dst_id)
 
-        return (
-            f"**:blue[I added a new edge from {src_id} to {dst_id}]**",
-            edge.model_dump_json(indent=2),
+        assert edge is not None, f"Edge not found for {src_id} to {dst_id}"
+
+        src_pill = dfg[src_id].pill
+        dst_pill = dfg[dst_id].pill
+
+        return ToolCallResult(
+            user_message=f"**:blue[I added a new edge from {src_pill} to {dst_pill}]**",
+            content=ChatCompletionContentPartTextParam(
+                type="text", text=edge.model_dump_json(indent=2)
+            ),
         )
 
-    def remove_node(self, id: str) -> ReturnType:
+    def remove_node(
+        self, id: Annotated[str, "The id of the node to remove"]
+    ) -> ToolCallResult:
         """
-        {
-            "name": "remove_node",
-            "description": "Remove a node from the diagram",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "description": "The id of the node to remove"
-                    }
-                },
-                "required": ["id"]
-            }
-        }
+        Remove a node from the diagram.
         """
         log(f"remove_node: {id}")
         dfg = self.page.dfg
 
         if dfg[id] is None:
-            return (f"**:red[Node {id} does not exist]**", None)
+            return ToolCallResult(
+                user_message=f"**:red[Node {id} does not exist]**", content=None
+            )
 
         node = dfg[id]
         dfg_update = mxDiagramUpdate(
@@ -544,24 +399,15 @@ class AskMeAnything:
 
         dfg = update_dataflow_graph(dfg, dfg_update)
         self.page.update_dfg(dfg)
-        return (f"**:blue[I removed node {node.pill}]**", None)
+        return ToolCallResult(
+            user_message=f"**:blue[I removed node {node.pill}]**", content=None
+        )
 
-    def remove_edge(self, id: str) -> ReturnType:
+    def remove_edge(
+        self, id: Annotated[str, "The id of the edge to remove"]
+    ) -> ToolCallResult:
         """
-        {
-            "name": "remove_edge",
-            "description": "Remove an edge from the diagram",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "description": "The id of the edge to remove"
-                    }
-                },
-                "required": ["id"]
-            }
-        }
+        Remove an edge from the diagram
         """
         log(f"remove_edge: {id}")
         dfg = self.page.dfg
@@ -569,9 +415,8 @@ class AskMeAnything:
         edge_to_remove = dfg.get_edge(id)
 
         if edge_to_remove is None:
-            return (
-                "**:red[Edge has already been removed]**",
-                f"{{ success: false, message: 'Edge {id} does not exist' }}",
+            return ToolCallResult(
+                user_message="**:red[Edge has already been removed]**", content=None
             )
 
         dfg_update = mxDiagramUpdate(
@@ -595,22 +440,29 @@ class AskMeAnything:
             },
         )
 
+        src_pill = dfg[edge_to_remove.src].pill
+        dst_pill = dfg[edge_to_remove.dst].pill
+
         dfg = update_dataflow_graph(dfg, dfg_update)
         self.page.update_dfg(dfg)
-        return (
-            f"**:blue[I removed edge from {edge_to_remove.src} to {edge_to_remove.dst}]**",
-            None,
+
+        return ToolCallResult(
+            user_message=f"**:blue[I removed edge from {src_pill} to {dst_pill}]**",
+            content=None,
         )
 
     def classify_question(self, question: str) -> str:
-        assistant: OpenAIAssistant = OpenAIAssistant(
-            model="gpt-4o-mini",
-            system_prompt_key="classify_ama_prompt",
-        )
+        assistant = flowco_assistant_fast(prompt_key="classify_ama_prompt")
+
         for message in self.visible_messages[-4:]:
-            assistant.add_message(message.role, message.content)
-        assistant.add_message("user", f"Classify this prompt:\n```\n{question}\n```\n")
-        return str(assistant.completion(QuestionKind, "gpt-4o-mini").kind)
+            assistant.add_content_parts(
+                role=message.role,
+                content=ChatCompletionContentPartTextParam(
+                    type="text", text=message.content
+                ),
+            )
+        assistant.add_text("user", f"Classify this prompt:\n```\n{question}\n```\n")
+        return str(assistant.model_completion(QuestionKind).kind)
 
     def complete(self, prompt: str, selected_node: str | None = None) -> Iterable[str]:
         try:
@@ -636,10 +488,7 @@ class AskMeAnything:
                             self.add_edge,
                             self.remove_node,
                             self.remove_edge,
-                            (
-                                self.update_node,
-                                openai.pydantic_function_tool(update_node)["function"],
-                            ),
+                            self.update_node,
                         ],
                         prompt,
                         selected_node,
@@ -688,40 +537,41 @@ class AskMeAnything:
                 self.page.tables.as_preconditions()
             )
 
-            self.assistant.add_message("user", self.page.dfg.to_image_prompt_messages())
+            image = self.page.dfg.to_image_url()
+            if image is not None:
+                self.assistant.add_text("user", "Here is the current diagram:")
+                self.assistant.add_image("user", url=image)
 
             node_fields = [
                 "id",
                 "pill",
                 "label",
                 "requirements",
-                # "function_return_type", include???
+                "function_return_type",
                 "code",
             ]
 
-            if config.x_algorithm_phase:
-                node_fields.append("algorithm")
-
-            self.assistant.add_message(
+            self.assistant.add_text("user", "Here is the current data flow graph:")
+            self.assistant.add_json(
                 "user",
-                messages_for_graph(
+                json_for_graph_view(
                     self.page.dfg, graph_fields=["edges"], node_fields=node_fields
                 ),
             )
 
-            self.assistant.add_message("user", locals)
+            self.assistant.add_text("user", locals)
 
         if selected_node is not None:
-            self.assistant.add_message(
+            self.assistant.add_text(
                 "user",
                 f"The currently selected node in the diagram is: `{selected_node}`",
             )
 
         self.visible_messages += [VisibleMessage(role="user", content=prompt)]
-        self.assistant.add_message("system", config.get_prompt(system_prompt))
-        self.assistant.add_message("user", prompt)
+        self.assistant.add_text("system", config.get_prompt(system_prompt))
+        self.assistant.add_text("user", prompt)
 
-        for x in self.assistant.str_completion():
+        for x in self.assistant.stream():
             markdown += x
             yield x
 

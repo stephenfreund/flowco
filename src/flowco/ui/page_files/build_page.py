@@ -9,6 +9,7 @@ from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_page import UIPage
 from flowco.ui.ui_util import phase_for_last_shown_part, set_session_state
 from flowco.util.config import config
+from flowco.util.costs import inflight
 from flowco.util.output import debug, log
 from flowco.ui.page_files.base_page import FlowcoPage
 

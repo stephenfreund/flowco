@@ -1,4 +1,5 @@
 from io import StringIO
+from flowco.dataflow.dfg import Node
 from flowco.page.page import Page
 from flowco.session.session_file_system import (
     fs_copy,
@@ -27,7 +28,7 @@ class ProjectsPage(FlowcoPage):
     def graph_is_editable(self) -> bool:
         return False
 
-    @st.dialog("New project", width="medium")
+    @st.dialog("New project", width="large")
     def new_project(self):
         name = st.text_input("Name", placeholder="Project name")
         if name in self.get_project_names():
@@ -39,7 +40,7 @@ class ProjectsPage(FlowcoPage):
             self.add_project(name)
             st.rerun()
 
-    @st.dialog("New project", width="medium")
+    @st.dialog("New project", width="large")
     def dup_project(self):
         name = st.text_input("Name", placeholder="Project name")
         if name.endswith(".flowco"):
@@ -93,7 +94,7 @@ class ProjectsPage(FlowcoPage):
         st.session_state.clear_graph = True
         # st.rerun()
 
-    def sidebar(self):
+    def sidebar(self, node: Node | None = None):
         names = self.get_project_names()
         current = self.get_current_project_name()
 
@@ -170,7 +171,7 @@ class ProjectsPage(FlowcoPage):
             else None
         )
 
-    @st.dialog("Download Files", width="medium")
+    @st.dialog("Download Files", width="large")
     def download_files(self):
         ui_page = st.session_state.ui_page
         flowco_name = ui_page.page().file_name
@@ -191,7 +192,7 @@ class ProjectsPage(FlowcoPage):
         ):
             st.rerun()
 
-    @st.dialog("Upload Project", width="medium")
+    @st.dialog("Upload Project", width="large")
     def upload_file(self):
         uploaded_file = st.file_uploader(
             "Choose a file", type="flowco", accept_multiple_files=False
@@ -207,4 +208,4 @@ class ProjectsPage(FlowcoPage):
                 st.session_state.selected_node = "<<<<<"
                 st.session_state.force_update = True
                 st.session_state.clear_graph = True
-                st.rerun()  # warning: hack -- this is in a callback, so technically a no op.
+                st.rerun()  # hack -- this is in a callback, so technically a no op.

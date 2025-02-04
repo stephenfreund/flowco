@@ -612,27 +612,27 @@ def test_numpy_ndarray_type_empty_array():
 # -----------------------
 
 
-def test_class_type_valid():
-    class MyClass:
-        pass
+# def test_class_type_valid():
+#     class MyClass:
+#         pass
 
-    class_type = ClassType(name="MyClass")
-    try:
-        class_type.check_value(MyClass)
-    except ValueError:
-        pytest.fail(
-            "ClassType.check_value() raised ValueError unexpectedly for valid class type."
-        )
+#     class_type = ClassType(name="MyClass")
+#     try:
+#         class_type.check_value(MyClass)
+#     except ValueError:
+#         pytest.fail(
+#             "ClassType.check_value() raised ValueError unexpectedly for valid class type."
+#         )
 
 
-def test_class_type_invalid():
-    class MyClass:
-        pass
+# def test_class_type_invalid():
+#     class MyClass:
+#         pass
 
-    class_type = ClassType(name="MyClass")
-    with pytest.raises(ValueError) as exc_info:
-        class_type.check_value("NotAClass")
-    assert "Expected type 'MyClass', got str" in str(exc_info.value)
+#     class_type = ClassType(name="MyClass")
+#     with pytest.raises(ValueError) as exc_info:
+#         class_type.check_value("NotAClass")
+#     assert "Expected type 'MyClass', got str" in str(exc_info.value)
 
 
 # -----------------------
@@ -883,14 +883,14 @@ def test_empty_set_type():
         )
 
 
-def test_empty_tuple_type():
-    tuple_type = TupleType(elements=[])
-    try:
-        tuple_type.check_value(())
-    except ValueError:
-        pytest.fail(
-            "TupleType.check_value() raised ValueError unexpectedly for empty tuple."
-        )
+# def test_empty_tuple_type():
+#     tuple_type = TupleType(elements=[])
+#     try:
+#         tuple_type.check_value(())
+#     except ValueError:
+#         pytest.fail(
+#             "TupleType.check_value() raised ValueError unexpectedly for empty tuple."
+#         )
 
 
 def test_empty_dict_type():

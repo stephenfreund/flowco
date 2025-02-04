@@ -147,7 +147,7 @@ class NodeEditor:
             key=f"editor_{title}",
             height=height,
             allow_reset=True,
-            response_mode=["blur"],
+            response_mode=["blur"],  # type: ignore
             props=props,
             options=options,
             info=info_bar,

@@ -78,7 +78,7 @@ class UIPage(PageListener):
         st.session_state.force_update = True
 
 
-def set_ui_page(ui_page: UIPage):
+def set_ui_page(ui_page: UIPage | None):
     if "ui_page" in st.session_state and st.session_state.ui_page is not None:
         with logger("closing current page"):
             page = st.session_state.ui_page.page()

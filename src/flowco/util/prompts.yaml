@@ -1065,7 +1065,8 @@ ama_node_editor: |
     You should:
     1. Restate the request in your own words.  Break down tasks into smaller steps.
     2. Identify the necessary changes to the node for those steps.
-    3. Use a function call to make the changes.
+    
+    Use a function call to make the changes.
 
 ama_node_editor_no_code: |
     You are an expert at statistical analysis and data science.  Help the
@@ -1107,7 +1108,8 @@ ama_node_editor_no_code: |
     You should:
     1. Restate the request in your own words.  Break down tasks into smaller steps.
     2. Identify the necessary changes to the node for those steps.
-    3. Use a function call to make the changes.
+    
+    Use a function call to make the changes.
 
 ama_node_editor_sync_no_code: |
     You are an expert at statistical analysis and data science.  Help the

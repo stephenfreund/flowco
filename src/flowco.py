@@ -14,7 +14,6 @@ from flowco.util.config import config
 from flowco.util.costs import CostTracker
 from flowco.util.files import get_flowco_files, setup_flowco_files
 from flowco.util.output import Output, log, log_timestamp
-# from flowco.util.stopper import Stopper
 
 
 @st.cache_data

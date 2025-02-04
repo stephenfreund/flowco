@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional, TypeVar, get_origin
 from pydantic import BaseModel, Field, create_model
 from typing import get_args, Union
 
-from flowco.assistant.assistant import Assistant
 from flowco.dataflow.dfg import (
     DataFlowGraph,
     GraphLike,
@@ -12,6 +11,7 @@ from flowco.dataflow.dfg import (
 )
 from flowco.dataflow.phase import Phase
 from flowco.util.output import log
+from llm.assistant import Assistant
 
 
 def extract_type(field_annotation) -> type[Any]:
@@ -123,40 +123,25 @@ def extend_model_to_include_error_option(model: type[BaseModel]):
     )
 
 
-def messages_for_graph(
+def json_for_graph_view(
     graph: DataFlowGraph,
     graph_fields: List[str] = [],
     node_fields: List[str] = [],
-) -> List[str | Dict[str, Any]]:
+) -> Dict[str, Any]:
     initial_graph_model = graph_node_like_model(
         node_like_model(node_fields), graph_fields
     )
 
     initial_graph = make_graph_node_like(graph, initial_graph_model)
-
-    return [
-        {"type": "text", "text": "Here is the dataflow graph"},
-        {
-            "type": "text",
-            "text": initial_graph.model_dump_json(exclude_none=True, indent=2),
-        },
-    ]
+    return initial_graph.model_dump(exclude_none=True)
 
 
-def messages_for_node(
-    node: Node, node_fields: List[str] = []
-) -> List[str | Dict[str, Any]]:
+def json_for_node_view(node: Node, node_fields: List[str] = []) -> Dict[str, Any]:
     initial_node_model = node_like_model(node_fields)
 
     initial_node = make_node_like(node, initial_node_model)
 
-    return [
-        {"type": "text", "text": f"Here is the node named `{node.pill}`"},
-        {
-            "type": "text",
-            "text": initial_node.model_dump_json(exclude_none=True, indent=2),
-        },
-    ]
+    return initial_node.model_dump(exclude_none=True)
 
 
 def cache_prompt(phase: Phase, node: Node, description: str) -> str:

@@ -79,7 +79,7 @@ class PythonShells:
 
     def run_assertions(
         self, tables: GlobalTables, dfg: DataFlowGraph, node: Node
-    ) -> NodeResult:
+    ) -> Node:
         shell = self._get_shell()
         try:
             return shell.run_assertions(tables, dfg, node)

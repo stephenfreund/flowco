@@ -437,4 +437,4 @@ if __name__ == "__main__":
     if os.environ.get("OPENAI_API_KEY", None) is None:
         raise FlowcoError("You must set the OPENAI_API_KEY environment variable")
 
-    main(page=None, argv=sys.argv)
+    main(argv=sys.argv)

@@ -265,7 +265,7 @@ class Node(NodeLike, BaseModel):
         )
 
     def diff(self, other: "Node") -> dict:
-        return deepdiff.DeepDiff(self, other)
+        return deepdiff.diff.DeepDiff(self, other)
 
     def signature_str(self) -> str:
         assert (
@@ -610,7 +610,7 @@ class DataFlowGraph(GraphLike, BaseModel):
         return format_basemodel(self, order=["description", "nodes", "edges"])
 
     def diff(self, other: "DataFlowGraph") -> dict:
-        return deepdiff.DeepDiff(self, other)
+        return deepdiff.diff.DeepDiff(self, other)
 
     def node_ids(self) -> list[str]:
         return [node.id for node in self.nodes]
@@ -633,8 +633,8 @@ class DataFlowGraph(GraphLike, BaseModel):
                 return edge
         return None
 
-    def successors(self, node_id: str) -> List[str]:
-        return [edge.dst for edge in self.edges if edge.src == node_id]
+    # def successors(self, node_id: str) -> List[str]:
+    #     return [edge.dst for edge in self.edges if edge.src == node_id]
 
     def listify_node_ids(self, node_ids: NodeOrNodeList = None) -> List[str]:
         if node_ids is None:
@@ -1009,13 +1009,13 @@ class DataFlowGraph(GraphLike, BaseModel):
                 FunctionCall(
                     node_id=node.id,
                     function_name=node.function_name,
-                    arguments=[f"{x.function_result_var}" for x in preds],
+                    arguments=[f"{x.function_result_var}" for x in preds],  # type: ignore
                     result=node.function_result_var,
                 )
             ]
         return driver
 
-    def to_image_prompt_messages(self) -> List[Dict[str, Any]]:
+    def to_image_url(self) -> str | None:
 
         if not config.x_no_dfg_image_in_prompt:
             if self.image is None:
@@ -1023,94 +1023,80 @@ class DataFlowGraph(GraphLike, BaseModel):
                     self.image = dataflow_graph_to_image(self, show_outputs=False)
 
             if self.image is not None:
-                return [
-                    {
-                        "type": "text",
-                        "text": f"Here is the dataflow diagram.",
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/png;base64,{self.image}",
-                            "detail": "high",
-                        },
-                    },
-                ]
+                return f"data:image/png;base64,{self.image}"
 
-        return []
+        return None
 
-    def outputs_to_prompt_messages(dfg: DataFlowGraph) -> List[Dict[str, Any]]:
-        messages = []
-        for node_id in dfg.topological_sort():
-            node = dfg[node_id]
-            result = node.result
-            if result is not None:
-                if result.result is not None:
+    # def outputs_to_prompt_messages(dfg: DataFlowGraph) -> List[Dict[str, Any]]:
+    #     messages = []
+    #     for node_id in dfg.topological_sort():
+    #         node = dfg[node_id]
+    #         result = node.result
+    #         if result is not None:
+    #             if result.result is not None:
 
-                    # guard against the result value being something we can't handle
-                    try:
-                        repr, clipped = result.result.to_repr(10)
-                    except Exception as e:
-                        error(e)
-                        repr, clipped = str(result.result), False
+    #                 # guard against the result value being something we can't handle
+    #                 try:
+    #                     repr, clipped = result.result.to_repr(10)
+    #                 except Exception as e:
+    #                     error(e)
+    #                     repr, clipped = str(result.result), False
 
-                    if clipped:
-                        messages.append(
-                            {
-                                "type": "text",
-                                "text": f"The variable `{node.function_result_var}` has this value.  We show only the first 10 elements of any aggregate value:\n```\n{repr}\n```",
-                            }
-                        )
-                    else:
-                        messages.append(
-                            {
-                                "type": "text",
-                                "text": f"The variable `{node.function_result_var}` has this value:\n```\n{repr}\n```",
-                            }
-                        )
+    #                 if clipped:
+    #                     messages.append(
+    #                         {
+    #                             "type": "text",
+    #                             "text": f"The variable `{node.function_result_var}` has this value.  We show only the first 10 elements of any aggregate value:\n```\n{repr}\n```",
+    #                         }
+    #                     )
+    #                 else:
+    #                     messages.append(
+    #                         {
+    #                             "type": "text",
+    #                             "text": f"The variable `{node.function_result_var}` has this value:\n```\n{repr}\n```",
+    #                         }
+    #                     )
 
-                if result.output is not None:
-                    messages.append(
-                        {
-                            "type": "text",
-                            "text": f"Here is the output for {node_id}.",
-                        }
-                    )
-                    output = result.output
-                    if output.output_type == OutputType.text:
-                        messages.append({"type": "text", "text": output.data})
-                    elif output.output_type == OutputType.image:
-                        messages.append(
-                            {
-                                "type": "text",
-                                "text": f"You may include the following image in your report with this: `![node_output]({node_id}.png)`",
-                            }
-                        )
-                        messages.append(
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": output.data.replace(
-                                        "data:image/png,", "data:image/png;base64,"
-                                    ),
-                                    "detail": "high",
-                                },
-                            }
-                        )
-                    else:
-                        messages.append(
-                            {
-                                "type": "text",
-                                "text": "Unknown output type: {self.output_type}: {self.data}",
-                            }
-                        )
-        return messages
+    #             if result.output is not None:
+    #                 messages.append(
+    #                     {
+    #                         "type": "text",
+    #                         "text": f"Here is the output for {node_id}.",
+    #                     }
+    #                 )
+    #                 output = result.output
+    #                 if output.output_type == OutputType.text:
+    #                     messages.append({"type": "text", "text": output.data})
+    #                 elif output.output_type == OutputType.image:
+    #                     messages.append(
+    #                         {
+    #                             "type": "text",
+    #                             "text": f"You may include the following image in your report with this: `![node_output]({node_id}.png)`",
+    #                         }
+    #                     )
+    #                     messages.append(
+    #                         {
+    #                             "type": "image_url",
+    #                             "image_url": {
+    #                                 "url": output.data.replace(
+    #                                     "data:image/png,", "data:image/png;base64,"
+    #                                 ),
+    #                                 "detail": "high",
+    #                             },
+    #                         }
+    #                     )
+    #                 else:
+    #                     messages.append(
+    #                         {
+    #                             "type": "text",
+    #                             "text": "Unknown output type: {self.output_type}: {self.data}",
+    #                         }
+    #                     )
+    #     return messages
 
-    def replace_placeholders_with_base64_images(
-        dfg: DataFlowGraph, markdown: str
-    ) -> str:
-        for node_id in dfg.topological_sort():
-            image = dfg[node_id].get_generated_image()
+    def replace_placeholders_with_base64_images(self, markdown: str) -> str:
+        for node_id in self.topological_sort():
+            image = self[node_id].get_generated_image()
             if image is not None:
                 image = image.replace("data:image/png,", "data:image/png;base64,")
                 markdown = markdown.replace(
@@ -1288,7 +1274,7 @@ def dataflow_graph_to_image(dfg: DataFlowGraph, show_outputs: bool = False) -> s
                         shape="none",
                     )
 
-                with dot.subgraph() as s:
+                with dot.subgraph() as s:  # type: ignore
                     s.attr(rank="same")  # Ensure nodes are on the same horizontal level
                     s.node(node.id)
                     s.node(node.id + "-output")
