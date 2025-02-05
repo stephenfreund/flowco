@@ -1,3 +1,4 @@
+import openai
 from flowco.util.config import config
 from flowco.util.costs import add_cost, decrement_inflight, increment_inflight
 from flowco.util.output import error, log, warn, debug
@@ -57,3 +58,18 @@ def flowco_assistant_fast(
         prompt = config.get_prompt(prompt_key, **prompt_substitutions)
         assistant.add_text("system", prompt)
     return assistant
+
+
+def fast_text_complete(prompt: str) -> str:
+    assistant = Assistant("gpt-4o-mini", logger=FlowcoLogger(), max_tokens=10)
+    assistant.add_text("system", prompt)
+    return assistant.completion()
+
+
+def fast_transcription(voice):
+    transcription = openai.audio.transcriptions.create(
+        model="whisper-1", file=voice, response_format="verbose_json"
+    )
+    cost = round(float(transcription.duration)) * 0.006 / 60
+    add_cost(cost)  # this one is handled by the assistant
+    return transcription.text

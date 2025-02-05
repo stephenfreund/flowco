@@ -1,15 +1,10 @@
 from __future__ import annotations
 
 import traceback
-from typing import Annotated, Any, Dict, Iterable, List, Literal, Tuple
+from typing import Annotated, Iterable, List, Literal
 
-import openai
 from openai.types.chat.chat_completion_content_part_text_param import (
     ChatCompletionContentPartTextParam,
-)
-from openai.types.chat.chat_completion_content_part_image_param import (
-    ChatCompletionContentPartImageParam,
-    ImageURL,
 )
 
 
@@ -22,9 +17,8 @@ from flowco.page.page import Page
 from flowco.pythonshell.shells import PythonShells
 from flowco.session.session import session
 from flowco.util.config import config
-from flowco.util.errors import FlowcoError
 from flowco.util.output import error, log, logger
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 from flowco.dataflow.dfg_update import (

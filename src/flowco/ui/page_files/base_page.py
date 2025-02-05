@@ -1,7 +1,6 @@
 from pprint import pformat
 from flowco.dataflow.extended_type import schema_to_text
 from flowco.session.session import session
-from openai import OpenAI
 import uuid
 
 from flowco.page.ama import AskMeAnything, VisibleMessage
@@ -180,7 +179,7 @@ class FlowcoPage:
             ui_page: UIPage = st.session_state.ui_page
             st.title(ui_page.page().file_name)
             st.caption(
-                f"Total cost: {total_cost():.2f} USD &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        {':gray[:material/phone_in_talk:]' * inflight()}"
+                f"Total cost: {total_cost():.2f} USD &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        {':gray[:material/bigtop_updates:]' * inflight()}"
             )
 
     def show_messages(self, node: Node):
@@ -239,12 +238,8 @@ class FlowcoPage:
     def ama_voice_input(self, container):
         toggle("ama_responding")
         voice = st.session_state.voice_input
-        client = OpenAI()
-        transcription = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=voice,
-        )
-        self.ama_completion(container, transcription.text)
+        transcription = quick_transcription(voice)
+        self.ama_completion(container, transcription)
 
     def ama_completion(self, container, prompt):
         page = st.session_state.ui_page.page()

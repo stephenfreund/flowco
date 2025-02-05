@@ -1,11 +1,10 @@
-from dataclasses import dataclass, field
-import json
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, List
 
 from code_editor import code_editor
-import deepdiff
 import streamlit as st
 
+from flowco.assistant.flowco_assistant import fast_transcription
 from flowco.builder.cache import BuildCache
 from flowco.builder.synthesize import algorithm, requirements, compile
 from flowco.dataflow.dfg import DataFlowGraph, Node
@@ -21,7 +20,6 @@ from flowco.ui.ui_util import (
 )
 from flowco.util.config import config
 from flowco.util.output import log
-from openai import OpenAI
 
 
 @dataclass
@@ -171,12 +169,8 @@ class NodeEditor:
 
     def register_pending_voice(self, container):
         voice = st.session_state.voice_input_node
-        client = OpenAI()
-        transcription = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=voice,
-        )
-        self.pending_ama = PendingAMA(transcription.text, True)
+        text = fast_transcription(voice)
+        self.pending_ama = PendingAMA(text, True)
 
     def node_component_editors(self) -> None:
         label_response = self.component_editor(

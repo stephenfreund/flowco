@@ -1,6 +1,4 @@
 from __future__ import annotations
-import traceback
-import black
 from collections import deque
 import os
 import textwrap
@@ -10,8 +8,8 @@ from pydantic import BaseModel, Field
 
 import base64
 
-import openai
 
+from flowco.assistant.flowco_assistant import fast_text_complete
 from flowco.builder.cache import BuildCache
 from flowco.dataflow.checks import Check, CheckOutcomes
 from flowco.dataflow.extended_type import ExtendedType
@@ -771,14 +769,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                 Do not use any of the following: {', '.join(exclude_pills)}.
                 """
         )
-        completion = openai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "system", "content": prompt}],
-            max_tokens=10,
-        )
-
-        # Extract the generated text
-        pill = completion.choices[0].message.content
+        pill = fast_text_complete(prompt)
         if pill is None:
             raise FlowcoError("No pill generated")
         log(f"'{pill}'")

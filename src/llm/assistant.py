@@ -160,6 +160,7 @@ class Assistant:
         functions: List[Callable[..., ToolCallResult]] = [],
         logger: AssistantLogger = AssistantLogger(),
         temperature: float | None = None,
+        max_tokens: int | None = None,
     ) -> None:
         self.model = get_model(model)
         self.messages: List[ChatCompletionMessageParam] = []
@@ -167,6 +168,7 @@ class Assistant:
         self.cached_images = {}
         self.logger = logger
         self.temperature = temperature
+        self.max_tokens = max_tokens
 
     def append(self, message: ChatCompletionMessageParam) -> None:
         self.messages.append(message)
@@ -358,6 +360,8 @@ class Assistant:
             args["prediction"] = ChatCompletionPredictionContentParam(
                 type="content", content=prediction
             )
+        if self.max_tokens is not None:
+            args["max_tokens"] = self.max_tokens
 
         if len(self.functions) > 0:
             args["tools"] = [tool.function_schema for tool in self.functions.values()]
