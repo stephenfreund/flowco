@@ -1,15 +1,17 @@
-import functools
-import pandas as pd
+from pprint import pformat
 import streamlit as st
 
-from typing import Any, Callable, Iterator, List
+from typing import Callable, Iterator, List
 import uuid
 
 from streamlit_extras.stylable_container import stylable_container
 
-from flowco.dataflow.dfg import Node
 from flowco.dataflow.phase import Phase
+from flowco.session.session import session
+from flowco.session.session_file_system import fs_write
 from flowco.util.config import AbstractionLevel
+from flowco.util.files import create_zip_in_memory
+from flowco.util.output import Output, log_timestamp
 
 
 def editable_list(
@@ -173,3 +175,23 @@ def phase_for_last_shown_part() -> Phase:
         return Phase.requirements
     else:
         return Phase.clean
+
+
+def zip_bug(description):
+    ui_page = st.session_state.ui_page
+    flowco_name = ui_page.page().file_name
+    data_files = [
+        file for file in ui_page.page().tables.all_files() if file.endswith(".csv")
+    ]
+    time_stamp = log_timestamp()
+    file_name = f"flowco-{time_stamp}.zip"
+    zip_data = create_zip_in_memory(
+        [flowco_name] + data_files,
+        additional_entries={
+            "description.txt": description,
+            "logging.txt": session.get("output", Output).get_full_output(),
+            "session_state.json": pformat(dict(st.session_state)),
+        },
+    )
+    fs_write(file_name, zip_data, "wb")
+    return file_name, zip_data

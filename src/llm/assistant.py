@@ -241,7 +241,11 @@ class Assistant:
 
         self.logger.log(f"Tool call: {function_name}")
 
-        result = function_def.function(**args)
+        try:
+            result = function_def.function(**args)
+        except Exception as e:
+            self.logger.error(f"Error in tool call {function_name}: {e}")
+            result = ToolCallResult(user_message=f"An error occurred: {e}")
 
         self.logger.log(f"Tool result: {result}")
 
