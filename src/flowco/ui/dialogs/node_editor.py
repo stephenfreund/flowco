@@ -91,6 +91,7 @@ class NodeEditor:
         language: str,
         height: int,
         focus=False,
+        prop_change_button=True,
     ) -> Response | None:
         props = {
             "showGutter": False,
@@ -125,19 +126,22 @@ class NodeEditor:
             ],
         }
 
-        buttons = [
-            {
-                #                "name": f"Synchronize {self.others(title)} to {title}",
-                "name": f"{title} → {self.others(title)}",
-                "feather": "RefreshCw",
-                "hasText": True,
-                "alwaysOn": True,
-                "commands": [
-                    "submit",
-                ],
-                "style": {"top": "1rem", "right": "0.4rem"},
-            },
-        ]
+        if prop_change_button:
+            buttons = [
+                {
+                    #                "name": f"Synchronize {self.others(title)} to {title}",
+                    "name": f"{title} → {self.others(title)}",
+                    "feather": "RefreshCw",
+                    "hasText": True,
+                    "alwaysOn": True,
+                    "commands": [
+                        "submit",
+                    ],
+                    "style": {"top": "1rem", "right": "0.4rem"},
+                },
+            ]
+        else:
+            buttons = []
 
         response = code_editor(
             value,
@@ -173,6 +177,31 @@ class NodeEditor:
         self.pending_ama = PendingAMA(text, True)
 
     def node_component_editors(self) -> None:
+
+        l, r = st.columns(2, vertical_alignment="center")
+        with l:
+            pill_response = self.component_editor(
+                "Title", self.node.pill, "markdown", 1, True, False
+            )
+            if pill_response is not None:
+                pill_text = pill_response.text
+                pill_text = "".join(
+                    "-" if not c.isalnum() else c for c in pill_text
+                ).strip("-")
+
+                self.node = self.node.update(
+                    pill=pill_response.text.strip().replace(" ", "-")
+                )
+
+        with r:
+            with st.popover("Show Inputs"):
+                for param in self.node.function_parameters:
+                    st.write(f"### {param.name}")
+                    extended_type = param.type
+                    if extended_type is not None:
+                        st.caption(extended_type.description)
+                        st.code(schema_to_text(extended_type.type_schema()))
+
         label_response = self.component_editor(
             "Label", self.node.label, "markdown", 1, True
         )
@@ -245,7 +274,8 @@ class NodeEditor:
 
         dfg = dfg.with_node(node)
 
-        if original_node.label != node.label:
+        # gen new pill if label changed but pill did not.
+        if original_node.label != node.label and original_node.pill == node.pill:
             node = dfg.update_node_pill(node)
             dfg = dfg.with_node(node)
 
