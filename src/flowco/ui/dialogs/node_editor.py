@@ -228,6 +228,7 @@ class NodeEditor:
         if (
             original_node.requirements != node.requirements
             or original_node.label != node.label
+            or original_node.function_return_type != node.function_return_type
         ):
             page: Page = ui_page.page()
             page.clean(node.id)  # !!! this can change the page.dfg

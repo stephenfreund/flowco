@@ -135,6 +135,10 @@ graph.setCellsEditable(true);
 graph.setCellsResizable(true);
 graph.setEnterStopsCellEditing(true);
 
+// Enables rubberband selection
+// new mx.mxRubberband(graph);
+
+
 // Enable panning
 // graph.setPanning(true);
 graph.panningHandler.useLeftButtonForPanning = true;
@@ -715,7 +719,7 @@ graph.connectionHandler.createTargetVertex = function (evt, source) {
     geometry: vertex.geometry,
     phase: 0,
     is_locked: false,
-    force_show_output: false    
+    force_show_output: true
   }
   vertex.setStyle(node_style);
 
@@ -808,7 +812,7 @@ function addListeners() {
               geometry: new mx.mxRectangle(pt.x - width / 2, pt.y - height / 2, width, height),
               phase: 0,
               is_locked: false,
-              force_show_output: false
+              force_show_output: true
             }
             const newCell = graph.insertVertex(parent, id, value, pt.x, pt.y, 160, 80, node_style);
             if (userLabel != null) {

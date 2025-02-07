@@ -3,6 +3,7 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from flowco.dataflow.dfg import DataFlowGraph, Node, Geometry
+from flowco.dataflow.extended_type import ext_type_to_summary
 from flowco.util.config import config, AbstractionLevel
 from flowco.util.output import log
 from flowco.util.text import md_to_html
@@ -74,11 +75,12 @@ def get_output(
         ):
             text = node.result.pp_result_text(clip=15)
             if text is not None:
-                clipped = f"<pre>{text}</pre>"
+                clipped = f"<b>{ext_type_to_summary(node.function_return_type)}</b><pre>{text}</pre>"
                 return DiagramOutput(output_type="text", data=clipped)
 
         text = node.result.pp_output_text(clip=15)
         if text is not None:
+
             clipped = f"<pre>{text}</pre>"
             return DiagramOutput(output_type="text", data=clipped)
 

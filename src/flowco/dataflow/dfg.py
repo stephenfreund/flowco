@@ -130,7 +130,7 @@ class Node(NodeLike, BaseModel):
     )
 
     force_show_output: bool = Field(
-        default=False,
+        default=True,
         description="Whether the output of the node is visible in the diagram.",
     )
 
@@ -578,7 +578,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                         geometry=Geometry(**node["geometry"]),
                         output_geometry=Geometry(**node["output_geometry"]),
                         is_locked=node.get("is_locked", False),
-                        force_show_output=node.get("force_show_output", False),
+                        force_show_output=node.get("force_show_output", True),
                         function_name=node["function_name"],
                         function_result_var=node["function_result_var"],
                         predecessors=node["predecessors"],
