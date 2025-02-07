@@ -1,3 +1,4 @@
+from __future__ import annotations
 import random
 from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
@@ -28,14 +29,21 @@ class DiagramNode(BaseModel):
     build_status: Optional[str] = None
     output: Optional[DiagramOutput] = None
 
-    # html: str = ""
-
 
 class DiagramEdge(BaseModel):
     id: str
     pill: str
     src: str
     dst: str
+
+
+class DiagramGroup(BaseModel):
+    id: str
+    label: str
+    is_collapsed: bool
+    collapsed_geometry: Optional[Geometry] = None
+    parent_group: Optional[str] = None
+    nodes: List[str] = []
 
 
 class MxDiagram(BaseModel):
@@ -45,6 +53,9 @@ class MxDiagram(BaseModel):
     )
     edges: Dict[str, DiagramEdge] = Field(
         description="Dictionary of DiagramEdges keyed by edge id.",
+    )
+    groups: List[DiagramGroup] = Field(
+        description="Root DiagramGroup containing all nodes.",
     )
 
 
@@ -150,6 +161,23 @@ def from_dfg(dfg: DataFlowGraph, image_cache: UIImageCache | None) -> MxDiagram:
         )
         mx_edges[edge.id] = diagram_edge
 
+    groups = [
+        DiagramGroup(
+            id=group.id,
+            label=group.label,
+            is_collapsed=group.is_collapsed,
+            collapsed_geometry=group.collapsed_geometry,
+            parent_group=group.parent_group,
+            nodes=group.nodes,
+        )
+        for group in dfg.groups
+    ]
+
     # Assemble MXDiagram
-    mx_diagram = MxDiagram(nodes=mx_nodes, edges=mx_edges, version=dfg.version)
+    mx_diagram = MxDiagram(
+        nodes=mx_nodes,
+        edges=mx_edges,
+        groups=groups,
+        version=dfg.version,
+    )
     return mx_diagram

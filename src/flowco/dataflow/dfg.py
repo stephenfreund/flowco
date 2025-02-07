@@ -92,6 +92,15 @@ class NodeQuestions(BaseModel):
     questions: List[str] = Field(description="The assistant in need of answers.")
 
 
+class Group(BaseModel):
+    id: str
+    label: str
+    is_collapsed: bool
+    collapsed_geometry: Optional[Geometry] = None
+    parent_group: Optional[str] = None
+    nodes: List[str] = []
+
+
 class Node(NodeLike, BaseModel):
     """
     A node in a data flow graph.
@@ -236,6 +245,8 @@ class Node(NodeLike, BaseModel):
         default=None,
         description="The result of the computation stage.",
     )
+
+    ###
 
     cache: BuildCache = Field(
         default_factory=BuildCache,
@@ -523,6 +534,14 @@ class DataFlowGraph(GraphLike, BaseModel):
         default_factory=list,
         description="The edges in the graph.",
     )
+    ###
+
+    groups: List[Group] = Field(
+        default_factory=list,
+        description="The groups that this node belongs to.",
+    )
+
+    ###
 
     image: Optional[str] = Field(
         default=None,
@@ -546,6 +565,7 @@ class DataFlowGraph(GraphLike, BaseModel):
             and self.description == other.description
             and self.nodes == other.nodes
             and self.edges == other.edges
+            and self.groups == other.groups
         )
 
     def semantically_eq(self, other: DataFlowGraph) -> bool:
@@ -567,6 +587,7 @@ class DataFlowGraph(GraphLike, BaseModel):
             description = data.get("description", "")
             nodes = data.get("nodes", [])
             edges = data.get("edges", [])
+            groups = data.get("groups", [])
 
             new_nodes = []
             for node in nodes:
@@ -591,7 +612,13 @@ class DataFlowGraph(GraphLike, BaseModel):
 
                     new_nodes.append(new_node)
 
-            return cls(version=0, description=description, nodes=new_nodes, edges=edges)
+            return cls(
+                version=0,
+                description=description,
+                nodes=new_nodes,
+                edges=edges,
+                groups=groups,
+            )
 
     def ensure_valid(self):
         """
@@ -604,8 +631,17 @@ class DataFlowGraph(GraphLike, BaseModel):
         ):
             raise ValueError("All edges must be between nodes in the graph")
 
+        for group in self.groups:
+            if group.parent_group is not None:
+                if group.parent_group not in [g.id for g in self.groups]:
+                    raise ValueError("All parent groups must be in the graph")
+            if not all(
+                node_id in [node.id for node in self.nodes] for node_id in group.nodes
+            ):
+                raise ValueError("All nodes in a group must be in the graph")
+
     def __str__(self) -> str:
-        return format_basemodel(self, order=["description", "nodes", "edges"])
+        return format_basemodel(self, order=["description", "nodes", "edges", "groups"])
 
     def diff(self, other: "DataFlowGraph") -> dict:
         return deepdiff.diff.DeepDiff(self, other)
@@ -866,6 +902,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                 }
                 | Node.get_merge_schema(),
                 "edges": {"mergeStrategy": "FailOnDifferentValueStrategy"},
+                "groups": {"mergeStrategy": "overwrite"},
                 "description": {"mergeStrategy": "overwrite"},
             }
         }

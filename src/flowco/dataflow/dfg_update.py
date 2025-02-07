@@ -1,8 +1,9 @@
 from sys import version
 from typing import Dict, List, Optional
 from pydantic import BaseModel, ValidationError
-from flowco.dataflow.dfg import DataFlowGraph, Edge, Geometry, Node
+from flowco.dataflow.dfg import DataFlowGraph, Edge, Geometry, Group, Node
 from flowco.dataflow.phase import Phase
+from flowco.ui.mx_diagram import DiagramGroup
 from flowco.util.output import log, warn, error
 from flowco.util.text import (
     pill_to_function_name,
@@ -31,6 +32,7 @@ class mxDiagramUpdate(BaseModel):
     version: int
     nodes: Dict[str, DiagramNodeUpdate]
     edges: Dict[str, DiagramEdgeUpdate]
+    groups: List[DiagramGroup]
 
 
 def update_dataflow_graph(
@@ -40,6 +42,9 @@ def update_dataflow_graph(
     Updates the DataFlowGraph based on the mxDiagramUpdate.
     Returns a new DataFlowGraph instance with the updates applied.
     """
+
+    print(diagram_update)
+
     # Create deep copies of current nodes and edges to avoid mutation
     new_nodes_dict: Dict[str, Node] = {
         node.id: node.model_copy(deep=True) for node in current_graph.nodes
@@ -172,11 +177,25 @@ def update_dataflow_graph(
 
     # Create the new DataFlowGraph
     try:
+        groups = [
+            Group(
+                id=group.id,
+                label=group.label,
+                is_collapsed=group.is_collapsed,
+                collapsed_geometry=group.collapsed_geometry,
+                parent_group=group.parent_group,
+                nodes=group.nodes,
+            )
+            for group in diagram_update.groups
+        ]
+        print(groups)
+
         new_graph = DataFlowGraph(
             description=current_graph.description,
             nodes=updated_nodes,
             edges=updated_edges,
             version=diagram_update.version,
+            groups=groups,
         )
 
         def predecessors(node: Node) -> List[str]:
