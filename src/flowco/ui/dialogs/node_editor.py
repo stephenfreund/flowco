@@ -262,7 +262,7 @@ class NodeEditor:
             page: Page = ui_page.page()
             page.clean(node.id)  # !!! this can change the page.dfg
 
-            node = node.update(phase=Phase.requirements)
+            node = node.update(phase=Phase.requirements)  
 
         dfg = ui_page.dfg()  # must reload
 
