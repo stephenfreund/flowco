@@ -12,7 +12,6 @@ from typing import Dict, List
 import webbrowser
 
 import nbformat
-from sklearn import base
 
 from flowthon.nbflowthon import convert_notebook_to_flowthon
 from flowthon.nbsplit import split_notebook_by_heading_level

@@ -1,10 +1,9 @@
 from tempfile import TemporaryFile
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
-import json
 import numpy as np
 import pandas as pd
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any
 
 import pickle
 import base64
@@ -12,17 +11,11 @@ import pandas as pd
 import numpy as np
 from typing import Any
 
-from regex import E
 
-from flowco.util.output import error, log, logger
 
 # These are for the typchecker in str_to_type
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-import sklearn
-import scipy
 from typing import get_origin, get_args
 
 

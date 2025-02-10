@@ -1,16 +1,11 @@
 from __future__ import annotations
 import importlib
-import inspect
-import pprint
-import textwrap
-from typing import Any, Iterable, Set, Tuple, Union, Dict, List, Literal, Optional
+from typing import Any, Iterable, Union, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field
 from abc import abstractmethod
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LinearRegression
 
-from flowco.builder import type_ops
 from flowco.util.output import error
 
 # Define TypeRepresentation before using it in classes
@@ -25,7 +20,7 @@ TypeRepresentation = Union[
     "RecordType",
     "DictType",
     # "TupleType",
-    "SklearnClassType",
+    "LibraryClassType",
     "SetType",
     "PDDataFrameType",
     "PDSeriesType",
@@ -755,11 +750,11 @@ class NumpyNdarrayType(BaseType):
         return schema
 
 
-class SklearnClassType(BaseType):
+class LibraryClassType(BaseType):
     type: Literal["class"]
     name: str = Field(
         ...,
-        description="The fully qualified name of any class in the sklearn library.",
+        description="The fully qualified name of any class in the sklearn or statsmodels library.",
     )  # Required field
     description: str = Field(
         ..., description="A human-readable description of the type."  # Required field
@@ -991,9 +986,9 @@ class ExtendedType(BaseModel):
                     description="Automatically inferred as NumpyNdarrayType.",
                 )
             elif not isinstance(val, type):
-                return SklearnClassType(
+                return LibraryClassType(
                     name=str(type(val)),
-                    description="Automatically inferred as SklearnClassType.",
+                    description="Automatically inferred as LibraryClassType.",
                 )
             return AnyType(description="Automatically inferred as AnyType.")
 
@@ -1159,7 +1154,7 @@ TypeRepresentation = Union[
     RecordType,
     DictType,
     # TupleType,
-    SklearnClassType,
+    LibraryClassType,
     SetType,
     PDDataFrameType,
     PDSeriesType,
@@ -1179,7 +1174,7 @@ ListType.model_rebuild()
 RecordType.model_rebuild()
 DictType.model_rebuild()  # Newly added
 # TupleType.model_rebuild()
-SklearnClassType.model_rebuild()
+LibraryClassType.model_rebuild()
 SetType.model_rebuild()
 PDDataFrameType.model_rebuild()
 PDSeriesType.model_rebuild()
@@ -1204,6 +1199,7 @@ class update_node(BaseModel):
 
 
 if __name__ == "__main__":
+    from sklearn.linear_model import LinearRegression
 
     from openai import OpenAI
     import openai
