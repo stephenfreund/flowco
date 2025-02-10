@@ -47,7 +47,7 @@ class AskMeAnything:
     def __init__(self, page: Page):
         self.page = page
         self.reset()
-        self.visible_messages = []
+        self.visible_messages : List[VisibleMessage] = []
 
     def reset(self):
         """Reset internals"""
