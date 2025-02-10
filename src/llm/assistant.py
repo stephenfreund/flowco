@@ -232,16 +232,15 @@ class Assistant:
         self, tool_call: ChatCompletionMessageToolCall | ParsedFunctionToolCall
     ) -> str:
         call_text = ""
-
         call_id = tool_call.id
         function = tool_call.function
         function_name = function.name
-        args = json.loads(function.arguments)
-        function_def = self.functions[function_name]
-
-        self.logger.log(f"Tool call: {function_name}")
-
         try:
+            args = json.loads(function.arguments)
+            function_def = self.functions[function_name]
+
+            self.logger.log(f"Tool call: {function_name}")
+
             result = function_def.function(**args)
         except Exception as e:
             self.logger.error(f"Error in tool call {function_name}: {e}")

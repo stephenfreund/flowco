@@ -1133,7 +1133,7 @@ def ext_type_to_summary(ext_type: ExtendedType) -> str:
             return "Record"
         elif t == "pd.DataFrame":
             return "DataFrame"
-        elif t in ["np.ndarray", "list", "set", "pd.Series"]:
+        elif t in ["np.ndarray", "List", "Set", "pd.Series"]:
             return f"{t.capitalize()}[{rep_to_summary(the_type.element_type)}]"
         elif t == "class":
             return ext_type.the_type.name

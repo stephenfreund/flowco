@@ -18,6 +18,8 @@ from openai.types.chat.chat_completion_content_part_image_param import (
     ImageURL,
 )
 
+from flowco.util.text import sandwich_text
+
 
 class OutputType(str, enum.Enum):
     text = "text"
@@ -284,8 +286,7 @@ class ResultOutput(BaseModel):
     def to_content_part(self) -> ChatCompletionContentPartParam:
         if self.output_type == OutputType.text:
             return ChatCompletionContentPartTextParam(
-                type="text",
-                text=self.data,
+                type="text", text=sandwich_text(self.data, 50, 25)
             )
         elif self.output_type == OutputType.image:
             return ChatCompletionContentPartImageParam(

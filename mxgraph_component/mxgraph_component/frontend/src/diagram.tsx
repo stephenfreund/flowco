@@ -496,7 +496,7 @@ class CustomHierarchicalLayout extends mx.mxHierarchicalLayout {
 export function layoutDiagram(graph: mxGraph) {
     graph.getModel().beginUpdate();
     try {
-        console.log(graph)
+        // console.log(graph)
 
         // add an implicit edge from each node to the group of the target if that gropu is not the default parent
         const cells = graph.getChildCells(graph.getDefaultParent(), true, true);
@@ -538,7 +538,7 @@ export function layoutDiagram(graph: mxGraph) {
                 graph.getModel().remove(edge);
             }
         }
-        console.log(graph)
+        // console.log(graph)
     } finally {
         graph.getModel().endUpdate();
     }

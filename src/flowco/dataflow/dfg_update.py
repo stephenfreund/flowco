@@ -43,7 +43,7 @@ def update_dataflow_graph(
     Returns a new DataFlowGraph instance with the updates applied.
     """
 
-    print(diagram_update)
+    # print(diagram_update)
 
     # Create deep copies of current nodes and edges to avoid mutation
     new_nodes_dict: Dict[str, Node] = {
@@ -188,7 +188,7 @@ def update_dataflow_graph(
             )
             for group in diagram_update.groups
         ]
-        print(groups)
+        # print(groups)
 
         new_graph = DataFlowGraph(
             description=current_graph.description,

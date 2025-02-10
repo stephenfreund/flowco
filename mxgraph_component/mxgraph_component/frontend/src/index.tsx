@@ -1294,11 +1294,11 @@ function onRender(event: Event): void {
   const data = (event as CustomEvent<RenderData>).detail;
   const initial_render = currentDiagram === undefined;
 
-  console.log("currentDiagram === undefined", initial_render)
-  console.log("forced", data.args["forced"])
-  console.log("clear", data.args["clear"])
-  console.log("!editable", !data.args["editable"])
-  console.log("Force", initial_render || !data.args['editable'] || data.args["forced"] || data.args["clear"])
+  // console.log("currentDiagram === undefined", initial_render)
+  // console.log("forced", data.args["forced"])
+  // console.log("clear", data.args["clear"])
+  // console.log("!editable", !data.args["editable"])
+  // console.log("Force", initial_render || !data.args['editable'] || data.args["forced"] || data.args["clear"])
 
 
   setEditable(false);
