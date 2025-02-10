@@ -16,6 +16,7 @@ from flowco.dataflow.phase import Phase
 from flowco.page.page import Page
 from flowco.pythonshell.shells import PythonShells
 from flowco.session.session import session
+from flowco.ui.mx_diagram import DiagramGroup
 from flowco.util.config import config
 from flowco.util.output import error, log, logger
 from pydantic import BaseModel
@@ -297,7 +298,20 @@ class AskMeAnything:
         dfg = update_dataflow_graph(
             dfg,
             mxDiagramUpdate(
-                version=dfg.version, nodes=node_updates, edges=edge_updates
+                version=dfg.version,
+                nodes=node_updates,
+                edges=edge_updates,
+                groups=[
+                    DiagramGroup(
+                        id=x.id,
+                        label=x.label,
+                        is_collapsed=x.is_collapsed,
+                        collapsed_geometry=x.collapsed_geometry,
+                        parent_group=x.parent_group,
+                        nodes=x.nodes,
+                    )
+                    for x in dfg.groups
+                ],
             ),
         )
 
@@ -389,6 +403,17 @@ class AskMeAnything:
                 for x in dfg.edges
                 if not (x.src == id or x.dst == id)
             },
+            groups=[
+                DiagramGroup(
+                    id=x.id,
+                    label=x.label,
+                    is_collapsed=x.is_collapsed,
+                    collapsed_geometry=x.collapsed_geometry,
+                    parent_group=x.parent_group,
+                    nodes=[y for y in x.nodes if y != id],
+                )
+                for x in dfg.groups
+            ],
         )
 
         dfg = update_dataflow_graph(dfg, dfg_update)
@@ -432,6 +457,17 @@ class AskMeAnything:
                 for x in dfg.edges
                 if x.id != id
             },
+            groups=[
+                DiagramGroup(
+                    id=x.id,
+                    label=x.label,
+                    is_collapsed=x.is_collapsed,
+                    collapsed_geometry=x.collapsed_geometry,
+                    parent_group=x.parent_group,
+                    nodes=x.nodes,
+                )
+                for x in dfg.groups
+            ],
         )
 
         src_pill = dfg[edge_to_remove.src].pill
