@@ -3,7 +3,7 @@ import mx from './mxgraph';
 import { mxGraphModel, mxCellState, mxCell, mxConstants, mxHierarchicalLayout } from 'mxgraph';
 import { v4 as uuidv4 } from "uuid";
 
-import { mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, node_style, labelForEdge, clean_color, isDiagramNode, layoutDiagram  } from "./diagram";
+import { mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, node_style, labelForEdge, clean_color, isDiagramNode, layoutDiagram, DiagramNode, phase_to_color, update_group_style } from "./diagram";
 import { clearImageCache } from "./cache";
 
 var currentDiagram: mxDiagram | undefined = undefined;
@@ -135,6 +135,13 @@ graph.setCellsEditable(true);
 graph.setCellsResizable(true);
 graph.setEnterStopsCellEditing(true);
 
+// Get the default edge style from the graph's stylesheet
+var edgeStyle = graph.getStylesheet().getDefaultEdgeStyle();
+
+// Set the edge style to use the elbow connector
+// Remove the connector style so that edges are drawn as straight lines
+delete edgeStyle[mx.mxConstants.STYLE_EDGE];
+
 
 function cellKind(node: mxCell) {
   if (node.isEdge()) {
@@ -200,6 +207,7 @@ class mxIconSet {
   private images: HTMLImageElement[] | null;
 
   constructor(private state: mxCellState) {
+    console.log("BEEP")
     this.images = [];
     const graph = state.view.graph;
 
@@ -324,46 +332,48 @@ class mxIconSet {
       const deleteImg: HTMLImageElement = mx.mxUtils.createImage("delete.png");
       deleteImg.setAttribute('title', 'Delete');
 
-      const labelBounds = state.text.bounds;
-      const labelRightX = labelBounds.x + labelBounds.width;
-      const labelBottomY = labelBounds.y + labelBounds.height;
+      if (state.text != null) {
+        const labelBounds = state.text.bounds;
+        const labelRightX = labelBounds.x + labelBounds.width;
+        const labelBottomY = labelBounds.y + labelBounds.height;
 
-      const imageWidth = 16;
-      const imageHeight = 16;
+        const imageWidth = 16;
+        const imageHeight = 16;
 
-      const offsetX = 0 // -imageWidth; // Positions the image within the label bounds
-      const offsetY = 0 // -imageHeight;
+        const offsetX = 0 // -imageWidth; // Positions the image within the label bounds
+        const offsetY = 0 // -imageHeight;
 
-      Object.assign(deleteImg.style, {
-        position: 'absolute',
-        cursor: 'pointer',
-        width: `${imageWidth}px`,
-        height: `${imageHeight}px`,
-        left: `${labelRightX + offsetX}px`,
-        top: `${labelBottomY + offsetY}px`,
-      });
+        Object.assign(deleteImg.style, {
+          position: 'absolute',
+          cursor: 'pointer',
+          width: `${imageWidth}px`,
+          height: `${imageHeight}px`,
+          left: `${labelRightX + offsetX}px`,
+          top: `${labelBottomY + offsetY}px`,
+        });
 
 
-      // Add event listeners for Delete Icon
-      mx.mxEvent.addListener(deleteImg, 'click', mx.mxUtils.bind(this, (evt: MouseEvent) => {
-        // eslint-disable-next-line no-restricted-globals
-        if (can_edit && (evt.shiftKey || confirm("Delete Edge?"))) {
-          graph.removeCells([state.cell], false);
-        }
-        mx.mxEvent.consume(evt);
-        this.destroy();
-      }));
+        // Add event listeners for Delete Icon
+        mx.mxEvent.addListener(deleteImg, 'click', mx.mxUtils.bind(this, (evt: MouseEvent) => {
+          // eslint-disable-next-line no-restricted-globals
+          if (can_edit && (evt.shiftKey || confirm("Delete Edge?"))) {
+            graph.removeCells([state.cell], false);
+          }
+          mx.mxEvent.consume(evt);
+          this.destroy();
+        }));
 
-      mx.mxEvent.addListener(deleteImg, 'mouseenter', mx.mxUtils.bind(this, (evt: MouseEvent) => {
-        deleteImg.style.opacity = '0.7';
-      }));
+        mx.mxEvent.addListener(deleteImg, 'mouseenter', mx.mxUtils.bind(this, (evt: MouseEvent) => {
+          deleteImg.style.opacity = '0.7';
+        }));
 
-      mx.mxEvent.addListener(deleteImg, 'mouseleave', mx.mxUtils.bind(this, (evt: MouseEvent) => {
-        deleteImg.style.opacity = '1.0';
-      }));
+        mx.mxEvent.addListener(deleteImg, 'mouseleave', mx.mxUtils.bind(this, (evt: MouseEvent) => {
+          deleteImg.style.opacity = '1.0';
+        }));
 
-      graph.container.appendChild(deleteImg);
-      this.images.push(deleteImg);
+        graph.container.appendChild(deleteImg);
+        this.images.push(deleteImg);
+      }
     }
   }
 
@@ -385,7 +395,9 @@ var currentIconSet: mxIconSet | undefined = undefined;
 
 function dragEnter(evt: Event, state: mxCellState) {
   if (can_edit && currentIconSet === undefined) {
-    currentIconSet = new mxIconSet(state);
+    if (graph.getModel().getChildCount(state.cell) === 0) {
+      currentIconSet = new mxIconSet(state);
+    }
   }
 }
 
@@ -499,8 +511,10 @@ graph.labelChanged = function (cell, newValue, trigger): mxCell {
     graph.setCellsEditable(true);
     streamlitResponse();
     return cell
+  } else {
+    streamlitResponse();
+    return mx.mxGraph.prototype.labelChanged.apply(this, [cell, newValue, trigger]);
   }
-  return mx.mxGraph.prototype.labelChanged.apply(this, [cell, newValue, trigger]);
 };
 
 
@@ -1025,47 +1039,25 @@ graph.foldingEnabled = true; // Enable collapsible groups
 
 // Only cells with children are considered foldable
 graph.isCellFoldable = function (cell, collapse) {
-    return this.model.getChildCount(cell) > 0;
+  return this.model.getChildCount(cell) > 0;
 };
-
-
-// Define a custom style for group cells that uses the swimlane shape.
-// This reserves a header (using STARTSIZE and SPACING_TOP) so that the folding icon and editable text label remain visible.
-// A margin is added so that children are inset from the group border.
-var groupStyle: Record<string, any> = {};
-groupStyle[mx.mxConstants.STYLE_SHAPE] = mx.mxConstants.SHAPE_SWIMLANE;
-groupStyle[mx.mxConstants.STYLE_FILLCOLOR] = '#FFFFFF';
-groupStyle[mx.mxConstants.STYLE_STROKECOLOR] = 'gray';
-// groupStyle[mxConstants.STYLE_ROUNDED] = true;
-groupStyle[mx.mxConstants.STYLE_FONTCOLOR] = 'gray';
-groupStyle[mx.mxConstants.STYLE_STARTSIZE] = 0;    // Height of header (for label & folding icon)
-groupStyle['verticalAlign'] = 'bottom';
-groupStyle[mx.mxConstants.STYLE_SPACING_TOP] = 10;    // Reserve space inside the group for the header
-groupStyle[mx.mxConstants.STYLE_MARGIN] = 5;         // Margin between child cells and the group border
-groupStyle[mx.mxConstants.STYLE_WHITE_SPACE] = "wrap";     // Enable folding icon
-
-graph.getStylesheet().putCellStyle('group', groupStyle);
-
-groupStyle = mx.mxUtils.clone(groupStyle);
-groupStyle['verticalAlign'] = 'top';
-graph.getStylesheet().putCellStyle('group_collapsed', groupStyle);
 
 // ************************************
 // Preserve Collapsed Size When Resizing
 // ************************************
 // When a collapsed group is resized by the user, save the new geometry
 // on a custom property (manualCollapsedSize) so that future layout calls remember it.
-graph.addListener(mx.mxEvent.RESIZE_CELLS, function(sender, evt) {
-    var cells = evt.getProperty('cells');
-    for (var i = 0; i < cells.length; i++) {
+graph.addListener(mx.mxEvent.RESIZE_CELLS, function (sender, evt) {
+  var cells = evt.getProperty('cells');
+  for (var i = 0; i < cells.length; i++) {
     var cell = cells[i];
     if (cell.collapsed) {
-        var geo = graph.getModel().getGeometry(cell);
-        if (geo != null) {
+      var geo = graph.getModel().getGeometry(cell);
+      if (geo != null) {
         cell.manualCollapsedSize = geo.clone();
-        }
+      }
     }
-    }
+  }
 });
 
 
@@ -1074,53 +1066,146 @@ graph.addListener(mx.mxEvent.RESIZE_CELLS, function(sender, evt) {
 // ************************************
 
 
+// /**
+//  * Groups the currently selected cells into a new group.
+//  * The new group uses the custom 'group' style (swimlane) so that it has an editable header.
+//  */
+// function groupCells() {
+//     var cells = graph.getSelectionCells();
+//     if (cells && cells.length > 0) {
+//         graph.getModel().beginUpdate();
+//         try {
+//             // Group the selected cells (they become children of the new group cell)
+//             var group = graph.groupCells(null, 0, cells);
+//             group.setId("group-" + group.id);
+//             if (group != null) {
+//                 // Apply the custom group style (swimlane).
+//                 group.setStyle('group');
+//                 // If no label is set, assign a default one.
+//                 if (!group.value) {
+//                     group.value = 'Group';
+//                 }
+//                 // Select the new group cell.
+//                 graph.setSelectionCell(group);
+//             }
+//         } finally {
+//             graph.getModel().endUpdate();
+//             layoutDiagram(graph);
+//         }
+//     }
+// }
+
 /**
- * Groups the currently selected cells into a new group.
- * The new group uses the custom 'group' style (swimlane) so that it has an editable header.
+ * Groups the currently selected cells according to these rules:
+ *
+ * 1. If all selected cells are regular nodes, then create a new group.
+ * 2. If one group cell is selected along with one or more regular nodes (that are not already grouped),
+ *    then add those nodes to the selected group.
+ * 3. Otherwise, alert the user that the selection is invalid.
  */
 function groupCells() {
-    var cells = graph.getSelectionCells();
-    if (cells && cells.length > 0) {
-        graph.getModel().beginUpdate();
-        try {
-            // Group the selected cells (they become children of the new group cell)
-            var group = graph.groupCells(null, 0, cells);
-            group.setId("group-" + group.id);
-            if (group != null) {
-                // Apply the custom group style (swimlane).
-                group.setStyle('group');
-                // If no label is set, assign a default one.
-                if (!group.value) {
-                    group.value = 'Group';
-                }
-                // Select the new group cell.
-                graph.setSelectionCell(group);
-            }
-        } finally {
-            graph.getModel().endUpdate();
-            layoutDiagram(graph);
-        }
+  var cells = graph.getSelectionCells();
+  if (!cells || cells.length === 0) {
+    return;
+  }
+
+  // Helper function to determine if a cell is a group.
+  // In this example, a cell is considered a group if its style is 'group'.
+  function isGroup(cell: mxCell) {
+    return cell.getStyle && cell.getStyle() === 'group';
+  }
+
+  // Separate the selection into group cells and regular cells.
+  var groupCellsArr = [];
+  var regularCellsArr = [];
+
+  for (var i = 0; i < cells.length; i++) {
+    var cell = cells[i];
+    if (isGroup(cell)) {
+      groupCellsArr.push(cell);
+    } else {
+      regularCellsArr.push(cell);
     }
+  }
+
+  // Get the default parent used for ungrouped nodes.
+  var defaultParent = graph.getDefaultParent();
+
+  // CASE 1: All selected cells are regular nodes.
+  if (groupCellsArr.length === 0 && regularCellsArr.length > 0) {
+    graph.getModel().beginUpdate();
+    try {
+      // Group all the selected regular nodes into a new group.
+      var newGroup = graph.groupCells(null, 0, cells);
+      if (newGroup != null) {
+        // Set a new id and the custom style.
+        newGroup.setId("group-" + uuidv4());
+        update_group_style(graph, newGroup);
+        graph.getModel().setGeometry(newGroup, new mx.mxGeometry(0, 0, 200, 150));
+        // If no label is set, assign a default one.
+        if (!newGroup.value) {
+          newGroup.value = 'Group';
+        }
+        // Select the new group cell.
+        graph.setSelectionCell(newGroup);
+      }
+    } finally {
+      graph.getModel().endUpdate();
+      layoutDiagram(graph);
+    }
+  }
+  // CASE 2: One group cell and one or more regular nodes.
+  else if (groupCellsArr.length === 1 && regularCellsArr.length > 0) {
+    var targetGroup = groupCellsArr[0];
+    // Verify that each selected regular node is not already in a group.
+    for (var j = 0; j < regularCellsArr.length; j++) {
+      var regCell = regularCellsArr[j];
+      // A regular node is considered ungrouped if its parent is the default parent.
+      if (regCell.parent !== defaultParent) {
+        alert("You can only group nodes that are not already part of a group.");
+        return;
+      }
+    }
+    // All checks passed; add the regular nodes to the target group.
+    graph.getModel().beginUpdate();
+    try {
+      for (var k = 0; k < regularCellsArr.length; k++) {
+        var cellToAdd = regularCellsArr[k];
+        // This call moves the cell into the target group.
+        graph.getModel().add(targetGroup, cellToAdd, targetGroup.getChildCount());
+      }
+      // Optionally, update the selection to include both the target group and the newly added nodes.
+      graph.setSelectionCells([targetGroup].concat(regularCellsArr));
+    } finally {
+      graph.getModel().endUpdate();
+      layoutDiagram(graph);
+    }
+  }
+  // CASE 3: Any other combination of selections.
+  else {
+    alert("You cannot group two existing groups.");
+  }
 }
+
 
 /**
  * Ungroups each selected group cell.
  */
 function ungroupCells() {
-    var cells = graph.getSelectionCells();
-    if (cells && cells.length > 0) {
-        graph.getModel().beginUpdate();
-        try {
-            for (var i = 0; i < cells.length; i++) {
-                if (graph.getModel().getChildCount(cells[i]) > 0) {
-                    graph.ungroupCells([cells[i]]);
-                }
-            }
-        } finally {
-            graph.getModel().endUpdate();
-            layoutDiagram(graph);
+  var cells = graph.getSelectionCells();
+  if (cells && cells.length > 0) {
+    graph.getModel().beginUpdate();
+    try {
+      for (var i = 0; i < cells.length; i++) {
+        if (graph.getModel().getChildCount(cells[i]) > 0) {
+          graph.ungroupCells([cells[i]]);
         }
+      }
+    } finally {
+      graph.getModel().endUpdate();
+      layoutDiagram(graph);
     }
+  }
 }
 
 // // ************************************
@@ -1129,37 +1214,57 @@ function ungroupCells() {
 document.getElementById('groupBtn')!.addEventListener('click', groupCells);
 document.getElementById('ungroupBtn')!.addEventListener('click', ungroupCells);
 
+
+// Add a listener for selection changes
+graph.getSelectionModel().addListener(mx.mxEvent.CHANGE, function(sender, evt) {
+  // Get the currently selected cells
+  var cells = graph.getSelectionCells();
+  var btn = document.getElementById('groupBtn')!;
+  var ungroupBtn = document.getElementById('ungroupBtn')!;
+
+  // Initially hide the button
+  btn.style.display = 'none';
+  ungroupBtn.style.display = 'none';
+
+  if (cells.length > 1) {
+    var countWithChildren = 0;
+    for (var i = 0; i < cells.length; i++) {
+      if (graph.getModel().getChildCount(cells[i]) > 0) {
+        countWithChildren++;
+      }
+    }
+    if (countWithChildren <= 1) {
+      btn.innerText = 'Group';
+      btn.style.display = ''; // Show the button
+    }
+  } else if (cells.length === 1 && graph.getModel().getChildCount(cells[0]) > 0) {
+    ungroupBtn.style.display = ''; // Show the button
+  }
+});
+
 // Re-run layout (and update group bounds) when groups are collapsed/expanded.
 graph.addListener(mx.mxEvent.FOLD_CELLS, function (sender, evt) {
-    var cells = evt.getProperty('cells');
-    var collapsed = evt.getProperty('collapsed');
-    for (var i = 0; i < cells.length; i++) {
-        var cell = cells[i];
-        if (graph.isSwimlane(cell)) {
-            if (graph.isCellCollapsed(cell)) {
-                cell.setStyle('group_collapsed');
-            } else {
-                cell.setStyle('group');
-            }
-            console.log(cell)
-        }
+  var cells = evt.getProperty('cells');
+  var collapsed = evt.getProperty('collapsed');
+  for (var i = 0; i < cells.length; i++) {
+    var cell = cells[i];
+    if (graph.isSwimlane(cell)) {
+      update_group_style(graph, cell);
     }
+  }
 
-    layoutDiagram(graph);
+  layoutDiagram(graph);
 });
 
 // Assume 'graph' is your mxGraph instance
 graph.isCellMovable = function (cell) {
-    // If the cell is not in the default parent, then it belongs to a group
-    if (cell.parent !== this.getDefaultParent()) {
-        return false;
-    }
-    // Otherwise, use the default behavior
-    return mx.mxGraph.prototype.isCellMovable.apply(this, arguments as unknown as [mxCell]);
+  // If the cell is not in the default parent, then it belongs to a group
+  if (cell.parent !== this.getDefaultParent()) {
+    return false;
+  }
+  // Otherwise, use the default behavior
+  return mx.mxGraph.prototype.isCellMovable.apply(this, arguments as unknown as [mxCell]);
 };
-
-
-
 
 
 
@@ -1289,4 +1394,3 @@ Streamlit.setComponentReady();
 // Finally, tell Streamlit to update our initial height. We omit the
 // `height` parameter here to have it default to our scrollHeight.
 Streamlit.setFrameHeight();
-

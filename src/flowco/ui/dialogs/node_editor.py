@@ -267,6 +267,8 @@ class NodeEditor:
         for phase in visible_phases():
             node = node.update(cache=node.cache.update(phase=phase, node=node))
 
+        node = node.update(phase=min(node.phase, Phase.code))
+
         log(
             "Updating node",
             node.update(cache=BuildCache()).model_dump_json(indent=2),

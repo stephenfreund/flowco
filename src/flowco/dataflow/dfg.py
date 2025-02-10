@@ -587,7 +587,7 @@ class DataFlowGraph(GraphLike, BaseModel):
             description = data.get("description", "")
             nodes = data.get("nodes", [])
             edges = data.get("edges", [])
-            groups = data.get("groups", [])
+            groups = []  # data.get("groups", [])
 
             new_nodes = []
             for node in nodes:
@@ -1022,7 +1022,7 @@ class DataFlowGraph(GraphLike, BaseModel):
 
     def reset(self, reset_requirements=False) -> "DataFlowGraph":
         new_nodes = [node.reset(reset_requirements) for node in self.nodes]
-        return self.update(nodes=new_nodes, version=self.version + 1)
+        return self.update(nodes=new_nodes, version=self.version + 1, groups=[])
 
     def make_driver(self):
 

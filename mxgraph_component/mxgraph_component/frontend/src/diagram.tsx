@@ -1,6 +1,6 @@
 import { get } from 'lodash';
 import mx from './mxgraph';
-import { mxCell, mxGeometry, mxGraph } from 'mxgraph';
+import { mxCell, mxGeometry, mxGraph, mxHierarchicalLayout } from 'mxgraph';
 import { cacheImage, getCachedImage } from './cache';
 
 export interface Geometry {
@@ -91,8 +91,6 @@ function escapeHtml(text: string): string {
 
 export const node_style = 'html=1;shape=rectangle;whiteSpace=wrap;rounded=1;';
 export const node_hover_style = 'html=1;shape=rectangle;whiteSpace=wrap;rounded=1;shadow=1;';
-// Use a swimlane shape to represent a group.
-export const group_style = 'html=1;shape=swimlane;startSize=20;fillColor=#f0f0f0;strokeColor=#888888;rounded=1;';
 
 const edge_style = 'endArrow=classic;html=1;rounded=0;labelBackgroundColor=white;';
 const output_node_style_text = `html=1;shape=rectangle;whiteSpace=wrap;shadow=1;fillColor=#E8E8E8;strokeColor=#990000;align=left;verticalAlign=middle;spacing=5;fontFamily=monospace;overflow=hidden;`;
@@ -112,7 +110,7 @@ const phase_colors = [
     '#beb8d9'
 ];
 
-function phase_to_color(phase: number): string {
+export function phase_to_color(phase: number): string {
     if (phase < 0 || phase >= phase_colors.length) {
         return '#FFFFFF';
     } else {
@@ -227,7 +225,7 @@ function make_output_node(graph: mxGraph, node: DiagramNode): mxCell | undefined
         }
         vertex.setConnectable(false);
         const cell = graph.insertEdge(
-            vertex.parent,
+            graph.getDefaultParent(),
             `output-edge-${cellId}`,
             '',
             graph.getModel().getCell(node.id),
@@ -341,48 +339,254 @@ function update_edge(graph: mxGraph, edge: DiagramEdge): void {
 }
 
 
-/**
- * Recursively applies a hierarchical layout to the given cell if it has children.
- * This ensures that nodes inside a group are laid out only within that group's boundaries.
- *
- * @param {mxCell} cell The cell (group) to check for children and run the layout.
- */
-function runNestedLayout(graph: mxGraph, cell: mxCell) {
-    if (!graph.isCellCollapsed(cell) && graph.getModel().getChildCount(cell) > 0) {
-        var groupLayout = makeLayout(graph);
-        groupLayout.execute(cell);
+export const group_style = 'shape=swimlane;strokeWidth=3;startSize=0;verticalAlign=bottom;spacingTop=10;margin=10;whiteSpace=wrap;fontSize=14;fontStyle=1;strokeColor=#880088;';
+export const group_collapsed_style = 'shape=swimlane;strokeWidth=3;startSize=0;verticalAlign=top;spacingTop=10;margin=10;whiteSpace=wrap;fontSize=14;fontStyle=1;strokeColor=#880088;';
+
+function lighten(col: string, amt: number) {
+
+    var usePound = false;
+
+    if (col[0] == "#") {
+        col = col.slice(1);
+        usePound = true;
     }
+
+    var num = parseInt(col, 16);
+
+    var r = (num >> 16) * amt;
+
+    if (r > 255) r = 255;
+    else if (r < 0) r = 0;
+
+    var b = ((num >> 8) & 0x00FF) * amt;
+
+    if (b > 255) b = 255;
+    else if (b < 0) b = 0;
+
+    var g = (num & 0x0000FF) * amt;
+
+    if (g > 255) g = 255;
+    else if (g < 0) g = 0;
+
+    return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16);
+
+}
+
+
+export function update_group_style(graph: mxGraph, cell: mxCell) {
+    let color;
+    if (cell.isCollapsed()) {
+        const model = graph.getModel();
+        const nodes = model.getChildCells(cell, true, false);
+        const phases = nodes.map(x => (x.value as DiagramNode).phase);
+        const min_phase = Math.min(...phases);
+        color = `swimlaneFillColor=${phase_to_color(min_phase)};`;
+    } else {
+        color = ''
+    }
+    const style = (cell.isCollapsed() ? group_collapsed_style : group_style) + color;
+    graph.setCellStyle(style, [cell]);
+    console.log("Updated group style", cell.id, style);
+
 }
 
 /**
- * Updates the bounds of all group cells so that each group (if expanded)
- * is resized to enclose all its children with a specified border.
+ * CustomHierarchicalLayout extends mxHierarchicalLayout.
+ *
+ * It overrides:
+ *
+ * 1. execute(parent):
+ *    To store the container being laid out (currentParent). When laying out the main graph,
+ *    currentParent equals graph.getDefaultParent(). For group layouts, currentParent is that group.
+ *
+ * 2. getEdges(cell):
+ *    For any cell that is a group (has children), it iterates through all children—even if hidden
+ *    because the group is collapsed—and adds any edge that connects to a cell outside the group.
+ *
+ * 3. getVisibleTerminal(edge, source):
+ *    When laying out the top‑level graph (currentParent is the default parent), if the terminal of an
+ *    edge is inside any group (regardless of collapsed state) then the group container is returned.
+ *    When laying out inside a group, the actual terminal is returned.
  */
-function updateAllGroupBounds(graph: mxGraph) {
-    function updateGroupRecursively(cell : mxCell) {
-        // Process nested groups first (bottom-up)
-        var children = graph.getModel().getChildCells(cell, true, false);
-        for (var j = 0; j < children.length; j++) {
-            if (graph.getModel().getChildCount(children[j]) > 0) {
-                updateGroupRecursively(children[j]);
+class CustomHierarchicalLayout extends mx.mxHierarchicalLayout {
+    currentParent: any;
+
+    constructor(graph: any) {
+        super(graph);
+    }
+
+    // Override execute() to store the container being laid out.
+    execute(parent: any): void {
+        this.currentParent = parent;
+        this.edgeStyle = 3;
+        super.execute(parent);
+    }
+
+    // Helper: Returns true if cell is a descendant of parent.
+    isCellDescendant(cell: any, parent: any): boolean {
+        while (cell != null) {
+            if (cell === parent) {
+                return true;
+            }
+            cell = this.graph.getModel().getParent(cell);
+        }
+        return false;
+    }
+
+    // Override getEdges():
+    // For any cell that is a group (has children), regardless of collapsed or expanded,
+    // iterate over its children and add any edge that connects to an external cell.
+    getEdges(cell: any): any[] {
+        const edges: any[] = super.getEdges(cell);
+        if (this.graph.getModel().getChildCount(cell) > 0) {
+            const childCount = this.graph.getModel().getChildCount(cell);
+            for (let i = 0; i < childCount; i++) {
+                const child = this.graph.getModel().getChildAt(cell, i);
+                const childEdges = this.graph.getModel().getEdges(child);
+                if (childEdges != null) {
+                    for (let j = 0; j < childEdges.length; j++) {
+                        const edge = childEdges[j];
+                        const source = this.graph.getModel().getTerminal(edge, true);
+                        const target = this.graph.getModel().getTerminal(edge, false);
+                        // If either terminal is not a descendant of cell, then the edge is external.
+                        if (!this.isCellDescendant(source, cell) || !this.isCellDescendant(target, cell)) {
+                            if (edges.indexOf(edge) < 0) {
+                                edges.push(edge);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return edges;
+    }
+
+    // Override getVisibleTerminal():
+    // When laying out the top‑level graph (currentParent is the default parent),
+    // if an edge's terminal is inside one or more groups then climb the parent chain
+    // until reaching the outermost group (i.e. the group cell that is a direct child of the default parent).
+    // When laying out inside a group (currentParent !== default parent), simply return the actual terminal.
+    getVisibleTerminal(edge: any, source: boolean): any {
+        const cell = this.graph.getModel().getTerminal(edge, source);
+        const parent = cell.getParent();
+        const default_parent = this.graph.getDefaultParent();
+
+
+        if (parent === default_parent) {
+            return cell;  // outermost cell
+        } else {
+            if (source) {
+                if (parent.isCollapsed()) {
+                    return parent;  // pointing out of collapsed group
+                } else {
+                    return cell;  // pointing out of expanded group
+                }
+            } else {
+                if (parent.isCollapsed()) {
+                    return parent;  // pointing into collapsed group
+                } else {
+                    return cell; // pointing into expanded group
+                }
+            }
+        }
+    }
+}
+
+
+export function layoutDiagram(graph: mxGraph) {
+    graph.getModel().beginUpdate();
+    try {
+        console.log(graph)
+
+        // add an implicit edge from each node to the group of the target if that gropu is not the default parent
+        const cells = graph.getChildCells(graph.getDefaultParent(), true, true);
+        for (const cell of cells) {
+            // find edges to point into some group
+            const edges = graph.getModel().getEdges(cell);
+            for (const edge of edges) {
+                const source = edge.source;
+                const target = edge.target;
+                if (source && target) {
+                    if (target.getParent() !== graph.getDefaultParent()) {
+                        const newEdge = graph.insertEdge(graph.getDefaultParent(), 'null', 'implicit', source, target.getParent());
+                    }
+                    if (source.getParent() !== graph.getDefaultParent()) {
+                        const newEdge = graph.insertEdge(graph.getDefaultParent(), 'null', 'implicit', source.getParent(), target);
+                    }
+                }
             }
         }
 
-        if (cell.collapsed && cell.manualCollapsedSize) {
-            graph.getModel().setGeometry(cell, cell.manualCollapsedSize.clone());
-        } else {
-            graph.updateGroupBounds([cell], 20, false);
-        }
-    }
+        const parent = graph.getDefaultParent();
+        const layout = new CustomHierarchicalLayout(graph);
+        layout.execute(parent);
 
-    // Process all top-level group cells.
-    var cells = graph.getModel().getChildCells(graph.getDefaultParent(), true, false);
-    for (var i = 0; i < cells.length; i++) {
-        if (graph.getModel().getChildCount(cells[i]) > 0) {
-            updateGroupRecursively(cells[i]);
+        const childCount = graph.getModel().getChildCount(parent);
+        for (let i = 0; i < childCount; i++) {
+            const cell = graph.getModel().getChildAt(parent, i);
+            if (graph.getModel().getChildCount(cell) > 0 && !graph.isCellCollapsed(cell)) {
+                const layoutGroup = new CustomHierarchicalLayout(graph);
+                layoutGroup.execute(cell);
+                graph.updateGroupBounds([cell], 20);
+            }
         }
+
+        // remove all those implicit edges
+        const edges = graph.getChildEdges(graph.getDefaultParent());
+        for (const edge of edges) {
+            if (edge.value === 'implicit') {
+                graph.getModel().remove(edge);
+            }
+        }
+        console.log(graph)
+    } finally {
+        graph.getModel().endUpdate();
     }
 }
+
+
+// /**
+//  * Recursively applies a hierarchical layout to the given cell if it has children.
+//  * This ensures that nodes inside a group are laid out only within that group's boundaries.
+//  *
+//  * @param {mxCell} cell The cell (group) to check for children and run the layout.
+//  */
+// function runNestedLayout(graph: mxGraph, cell: mxCell) {
+//     if (!graph.isCellCollapsed(cell) && graph.getModel().getChildCount(cell) > 0) {
+//         var groupLayout = makeLayout(graph);
+//         groupLayout.execute(cell);
+//     }
+// }
+
+// /**
+//  * Updates the bounds of all group cells so that each group (if expanded)
+//  * is resized to enclose all its children with a specified border.
+//  */
+// function updateAllGroupBounds(graph: mxGraph) {
+//     function updateGroupRecursively(cell : mxCell) {
+//         // Process nested groups first (bottom-up)
+//         var children = graph.getModel().getChildCells(cell, true, false);
+//         for (var j = 0; j < children.length; j++) {
+//             if (graph.getModel().getChildCount(children[j]) > 0) {
+//                 updateGroupRecursively(children[j]);
+//             }
+//         }
+
+//         if (cell.collapsed && cell.manualCollapsedSize) {
+//             graph.getModel().setGeometry(cell, cell.manualCollapsedSize.clone());
+//         } else {
+//             graph.updateGroupBounds([cell], 20, false);
+//         }
+//     }
+
+//     // Process all top-level group cells.
+//     var cells = graph.getModel().getChildCells(graph.getDefaultParent(), true, false);
+//     for (var i = 0; i < cells.length; i++) {
+//         if (graph.getModel().getChildCount(cells[i]) > 0) {
+//             updateGroupRecursively(cells[i]);
+//         }
+//     }
+// }
 
 /**
  * Adjusts the geometry of collapsed groups so that their height is
@@ -417,52 +621,52 @@ function updateCollapsedGroups(graph: mxGraph, cell: mxCell) {
     }
 }
 
-function runLayout(graph: mxGraph) {
-    const layout = makeLayout(graph);
-    layout.execute(graph.getDefaultParent());
+// function runLayout(graph: mxGraph) {
+//     const layout = makeLayout(graph);
+//     layout.execute(graph.getDefaultParent());
 
-    updateAllGroupBounds(graph);
+//     updateAllGroupBounds(graph);
 
-    var cells = graph.getModel().getChildCells(graph.getDefaultParent(), true, false);
+//     var cells = graph.getModel().getChildCells(graph.getDefaultParent(), true, false);
 
-    for (var i = 0; i < cells.length; i++) {
-        runNestedLayout(graph, cells[i]);
-    }
-    updateAllGroupBounds(graph);
+//     for (var i = 0; i < cells.length; i++) {
+//         runNestedLayout(graph, cells[i]);
+//     }
+//     updateAllGroupBounds(graph);
 
-    // // Now adjust collapsed groups to only display the header area.
-    // var topGroups = graph.getModel().getChildCells(graph.getDefaultParent(), true, false);
-    // for (var i = 0; i < topGroups.length; i++) {
-    //     updateCollapsedGroups(graph,topGroups[i]);
-    // }
-}
+//     // // Now adjust collapsed groups to only display the header area.
+//     // var topGroups = graph.getModel().getChildCells(graph.getDefaultParent(), true, false);
+//     // for (var i = 0; i < topGroups.length; i++) {
+//     //     updateCollapsedGroups(graph,topGroups[i]);
+//     // }
+// }
 
 
-export function layoutDiagram(graph: mxGraph) {
-    const parent = graph.getDefaultParent();
-    graph.getModel().beginUpdate();
-    try {
-        runLayout(graph)
-        resetNodeTranslation(graph);
-    } catch (error) {
-        console.error("Error applying layout:", error);
-    } finally {
-        const morph = new mx.mxMorphing(graph);
-        morph.addListener('done', function () {
-            graph.getModel().endUpdate();
-        });
-        morph.startAnimation();
-    }
-    graph.refresh();
-}
+// export function layoutDiagram(graph: mxGraph) {
+//     const parent = graph.getDefaultParent();
+//     graph.getModel().beginUpdate();
+//     try {
+//         runLayout(graph)
+//         resetNodeTranslation(graph);
+//     } catch (error) {
+//         console.error("Error applying layout:", error);
+//     } finally {
+//         const morph = new mx.mxMorphing(graph);
+//         morph.addListener('done', function () {
+//             graph.getModel().endUpdate();
+//         });
+//         morph.startAnimation();
+//     }
+//     graph.refresh();
+// }
 
-function makeLayout(graph: mxGraph) {
-    const layout = new mx.mxHierarchicalLayout(graph, "north");
-    layout.interRankCellSpacing = 35;
-    layout.disableEdgeStyle = true;
-    layout.edgeStyle = 3;
-    return layout;
-}
+// function makeLayout(graph: mxGraph) {
+//     const layout = new mx.mxHierarchicalLayout(graph, "north");
+//     layout.interRankCellSpacing = 35;
+//     layout.disableEdgeStyle = true;
+//     layout.edgeStyle = 3;
+//     return layout;
+// }
 
 export function resetNodeTranslation(graph: mxGraph) {
     const parent = graph.getDefaultParent();
@@ -570,6 +774,7 @@ export function updateDiagram(graph: mxGraph, diagram: mxDiagram): void {
         let layoutNeeded = false;
         for (const nodeId in diagram.nodes) {
             const node = diagram.nodes[nodeId];
+            console.log("Checking node", node.id, node.geometry);
             if (node.geometry.x === 0 && node.geometry.y === 0 &&
                 node.geometry.width === 0 && node.geometry.height === 0) {
                 node.geometry = { x: 0, y: 0, width: 120, height: 60 };
@@ -596,56 +801,23 @@ export function updateDiagram(graph: mxGraph, diagram: mxDiagram): void {
             const descendents = model.getDescendants(parent);
             let groupCell = descendents.find(node => node.id === group.id);
             console.log("Group cell", group.id, groupCell);
-            // let geom: mxGeometry;
-            // if (group.is_collapsed && group.collapsed_geometry) {
-            //     geom = new mx.mxGeometry(group.collapsed_geometry.x, group.collapsed_geometry.y, group.collapsed_geometry.width, group.collapsed_geometry.height);
-            // } else {
-            //     // Use the expanded geometry.
-            //     if (group.geometry) {
-            //         geom = new mx.mxGeometry(group.geometry.x, group.geometry.y, group.geometry.width, group.geometry.height);
-            //     } else {
-            //         // geom should bound the included nodes
-            //         const groupCells = group.nodes.map(nodeId => model.getCell(nodeId));
-            //         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-            //         for (const cell of groupCells) {
-            //             if (cell) {
-            //                 const bounds = cell.geometry;
-            //                 if (bounds) {
-            //                     minX = Math.min(minX, bounds.x);
-            //                     minY = Math.min(minY, bounds.y);
-            //                     maxX = Math.max(maxX, bounds.x + bounds.width);
-            //                     maxY = Math.max(maxY, bounds.y + bounds.height);
-            //                 }
-            //             }
-            //         }
-            //         geom = new mx.mxGeometry(minX, minY, maxX - minX, maxY - minY);
-            //     }
-            // }
             if (groupCell) {
                 console.log("Updating group cell", group.id);
                 model.setValue(groupCell, group.label);
             } else {
                 console.log("Creating group cell", group.id);
                 const members = group.nodes.map(nodeId => model.getCell(nodeId));
-                groupCell = graph.groupCells(null, 20, members); 
+                groupCell = graph.groupCells(null, 20, members);
                 graph.addCell(groupCell, parent);
-                model.setGeometry(groupCell, new mx.mxGeometry());
+                model.setGeometry(groupCell, new mx.mxGeometry(0, 0, 200, 150));
                 groupCell.setId(group.id);
                 groupCell.setStyle('group');
                 groupCell.value = group.label;
                 groupCell.setConnectable(false);
             }
-            // groupCell.collapsed = group.is_collapsed;
-            // groupCell.manualCollapsedSize = group.collapsed_geometry ? new mx.mxRectangle(group.collapsed_geometry.x, group.collapsed_geometry.y, group.collapsed_geometry.width, group.collapsed_geometry.height) : undefined;
 
-            // if (group.is_collapsed && group.collapsed_geometry) {
-            //     model.setGeometry(groupCell, new mx.mxGeometry(group.collapsed_geometry.x, group.collapsed_geometry.y, group.collapsed_geometry.width, group.collapsed_geometry.height));
-            // } else if (group.geometry) {
-            //     model.setGeometry(groupCell, new mx.mxGeometry(group.geometry.x, group.geometry.y, group.geometry.width, group.geometry.height));
-            // }
-            // // Store the expanded geometry as a custom property on the cell.
-            // (groupCell as any).expandedGeometry = group.geometry;
-            
+            update_group_style(graph, groupCell);
+
             // Reparent member nodes into the group.
             for (const nodeId of group.nodes) {
                 const nodeCell = model.getCell(nodeId);
@@ -667,15 +839,16 @@ export function updateDiagram(graph: mxGraph, diagram: mxDiagram): void {
             graph.foldCells(group.is_collapsed, false, [groupCell]);
         }
 
-        // if (layoutNeeded) {
-        //     layoutDiagram(graph);
-        // }
+        if (layoutNeeded) {
+            layoutDiagram(graph);
+        }
 
 
     } finally {
         model.endUpdate();
     }
 }
+
 
 /**
  * The update format now also carries groups.
