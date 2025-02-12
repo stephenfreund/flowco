@@ -209,6 +209,15 @@ def update_dataflow_graph(
 
         for node_id in new_graph.topological_sort():
             new_graph[node_id].predecessors = predecessors(new_graph[node_id])
+            # if different from original graph, set phase to clean
+            if node_id in current_graph.node_ids():
+                if (
+                    new_graph[node_id].predecessors
+                    != current_graph[node_id].predecessors
+                ):
+                    new_graph = new_graph.lower_phase_with_successors(
+                        node_id, Phase.clean
+                    )
 
         return new_graph
 

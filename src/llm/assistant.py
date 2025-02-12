@@ -1,8 +1,13 @@
 import inspect
+import os
+import subprocess
+import threading
+from time import sleep
 from typing import Any, Callable, Dict, Iterator, List, Literal, Type, TypeVar
 
 
 import openai
+from flowco.util.output import logger
 from llm.message_format import process_chat_message
 from llm.models import get_model
 from pydantic import BaseModel
@@ -153,7 +158,12 @@ class AssistantLogger:
         pass
 
 
+proxy_url = "http://0.0.0.0"
+proxy_port = 4001
+
+
 class Assistant:
+
     def __init__(
         self,
         model: str,
@@ -169,6 +179,32 @@ class Assistant:
         self.logger = logger
         self.temperature = temperature
         self.max_tokens = max_tokens
+
+        if self.model.use_proxy:
+            self.logger.warn(
+                f"Using proxy model {self.model.name}. This model is not suitable for production use."
+            )
+            self.start_proxy(self.model.name)
+            self.client = openai.Client(base_url=f"{proxy_url}:{proxy_port}")
+        else:
+            self.client = openai.Client()
+
+    proxy_lock = threading.Lock()
+
+    def start_proxy(self, model_name: str) -> None:
+        with Assistant.proxy_lock:
+            import socket
+
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                if s.connect_ex(("localhost", proxy_port)) != 0:
+                    self.logger.log("Starting proxy model")
+                    config_file = os.path.dirname(__file__) + "/litellm-config.yaml"
+                    p = subprocess.Popen(
+                        f"litellm --port {proxy_port} --config {config_file}".split(
+                            " "
+                        ),
+                    )
+                    sleep(3)  # wait for the proxy to start
 
     def append(self, message: ChatCompletionMessageParam) -> None:
         self.messages.append(message)
@@ -375,7 +411,8 @@ class Assistant:
             full_completion_text = ""
             while True:
                 try:
-                    completion = openai.chat.completions.create(
+                    client = self.client
+                    completion = client.chat.completions.create(
                         model=self.model.name,
                         messages=self.messages,
                         **self._args(prediction),
@@ -416,7 +453,8 @@ class Assistant:
     def stream(self, prediction: str | None = None) -> Iterator[str]:
         with self.logger:
             while True:
-                stream = openai.chat.completions.create(
+                client = self.client
+                stream = client.chat.completions.create(
                     model=self.model.name,
                     messages=self.messages,
                     **self._args(prediction),
@@ -476,7 +514,8 @@ class Assistant:
         with self.logger:
             while True:
                 try:
-                    completion = openai.beta.chat.completions.parse(
+                    client = self.client
+                    completion = client.beta.chat.completions.parse(
                         model=self.model.name,
                         messages=self.messages,
                         response_format=response_model,  # type: ignore

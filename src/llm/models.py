@@ -6,6 +6,8 @@ from openai.types.completion_usage import CompletionUsage
 @dataclass
 class Model:
     name: str
+    use_proxy: bool
+
     supports_vision: bool
     supports_audio: bool
     supports_temperature: bool
@@ -36,6 +38,7 @@ class Model:
 _models = {
     "o3-mini": Model(
         name="o3-mini",
+        use_proxy=False,
         supports_vision=False,
         supports_audio=False,
         supports_temperature=False,
@@ -46,6 +49,7 @@ _models = {
     ),
     "o1": Model(
         name="o1",
+        use_proxy=False,
         supports_vision=True,
         supports_audio=False,
         supports_temperature=True,
@@ -56,6 +60,7 @@ _models = {
     ),
     "gpt-4o": Model(
         name="gpt-4o-2024-11-20",
+        use_proxy=False,
         supports_vision=True,
         supports_audio=False,
         supports_temperature=True,
@@ -66,6 +71,7 @@ _models = {
     ),
     "gpt-4o-mini": Model(
         name="gpt-4o-mini",
+        use_proxy=False,
         supports_vision=False,
         supports_audio=False,
         supports_temperature=True,
@@ -73,6 +79,28 @@ _models = {
         completion_token_rate=0.60 / 10**6,
         prompt_token_rate=0.15 / 10**6,
         cached_token_rate=0.075 / 10**6,
+    ),
+    "claude-3-sonnet": Model(
+        name="claude-3-sonnet",
+        use_proxy=True,
+        supports_vision=True,
+        supports_audio=False,
+        supports_temperature=False,
+        supports_prediction=False,
+        completion_token_rate=15 / 10**6,
+        prompt_token_rate=3 / 10**6,
+        cached_token_rate=3 / 10**6,
+    ),
+    "claude-3-haiku": Model(
+        name="claude-3-haiku",
+        use_proxy=True,
+        supports_vision=False,
+        supports_audio=False,
+        supports_temperature=False,
+        supports_prediction=False,
+        completion_token_rate=15 / 10**6,
+        prompt_token_rate=3 / 10**6,
+        cached_token_rate=3 / 10**6,
     ),
 }
 
