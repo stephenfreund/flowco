@@ -1,8 +1,10 @@
+from __future__ import annotations
 import random
 from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from flowco.dataflow.dfg import DataFlowGraph, Node, Geometry
+from flowco.dataflow.extended_type import ext_type_to_summary
 from flowco.util.config import config, AbstractionLevel
 from flowco.util.output import log
 from flowco.util.text import md_to_html
@@ -27,14 +29,21 @@ class DiagramNode(BaseModel):
     build_status: Optional[str] = None
     output: Optional[DiagramOutput] = None
 
-    # html: str = ""
-
 
 class DiagramEdge(BaseModel):
     id: str
     pill: str
     src: str
     dst: str
+
+
+class DiagramGroup(BaseModel):
+    id: str
+    label: str
+    is_collapsed: bool
+    collapsed_geometry: Optional[Geometry] = None
+    parent_group: Optional[str] = None
+    nodes: List[str] = []
 
 
 class MxDiagram(BaseModel):
@@ -44,6 +53,9 @@ class MxDiagram(BaseModel):
     )
     edges: Dict[str, DiagramEdge] = Field(
         description="Dictionary of DiagramEdges keyed by edge id.",
+    )
+    groups: List[DiagramGroup] = Field(
+        description="Root DiagramGroup containing all nodes.",
     )
 
 
@@ -74,11 +86,12 @@ def get_output(
         ):
             text = node.result.pp_result_text(clip=15)
             if text is not None:
-                clipped = f"<pre>{text}</pre>"
+                clipped = f"<b>{ext_type_to_summary(node.function_return_type)}</b><pre>{text}</pre>"
                 return DiagramOutput(output_type="text", data=clipped)
 
         text = node.result.pp_output_text(clip=15)
         if text is not None:
+
             clipped = f"<pre>{text}</pre>"
             return DiagramOutput(output_type="text", data=clipped)
 
@@ -148,6 +161,23 @@ def from_dfg(dfg: DataFlowGraph, image_cache: UIImageCache | None) -> MxDiagram:
         )
         mx_edges[edge.id] = diagram_edge
 
+    groups = [
+        DiagramGroup(
+            id=group.id,
+            label=group.label,
+            is_collapsed=group.is_collapsed,
+            collapsed_geometry=group.collapsed_geometry,
+            parent_group=group.parent_group,
+            nodes=group.nodes,
+        )
+        for group in dfg.groups
+    ]
+
     # Assemble MXDiagram
-    mx_diagram = MxDiagram(nodes=mx_nodes, edges=mx_edges, version=dfg.version)
+    mx_diagram = MxDiagram(
+        nodes=mx_nodes,
+        edges=mx_edges,
+        groups=groups,
+        version=dfg.version,
+    )
     return mx_diagram

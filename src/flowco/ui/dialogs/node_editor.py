@@ -1,11 +1,10 @@
-from dataclasses import dataclass, field
-import json
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, List
 
 from code_editor import code_editor
-import deepdiff
 import streamlit as st
 
+from flowco.assistant.flowco_assistant import fast_transcription
 from flowco.builder.cache import BuildCache
 from flowco.builder.synthesize import algorithm, requirements, compile
 from flowco.dataflow.dfg import DataFlowGraph, Node
@@ -21,7 +20,6 @@ from flowco.ui.ui_util import (
 )
 from flowco.util.config import config
 from flowco.util.output import log
-from openai import OpenAI
 
 
 @dataclass
@@ -93,6 +91,7 @@ class NodeEditor:
         language: str,
         height: int,
         focus=False,
+        prop_change_button=True,
     ) -> Response | None:
         props = {
             "showGutter": False,
@@ -127,19 +126,22 @@ class NodeEditor:
             ],
         }
 
-        buttons = [
-            {
-                #                "name": f"Synchronize {self.others(title)} to {title}",
-                "name": f"{title} → {self.others(title)}",
-                "feather": "RefreshCw",
-                "hasText": True,
-                "alwaysOn": True,
-                "commands": [
-                    "submit",
-                ],
-                "style": {"top": "1rem", "right": "0.4rem"},
-            },
-        ]
+        if prop_change_button:
+            buttons = [
+                {
+                    #                "name": f"Synchronize {self.others(title)} to {title}",
+                    "name": f"{title} → {self.others(title)}",
+                    "feather": "RefreshCw",
+                    "hasText": True,
+                    "alwaysOn": True,
+                    "commands": [
+                        "submit",
+                    ],
+                    "style": {"top": "1rem", "right": "0.4rem"},
+                },
+            ]
+        else:
+            buttons = []
 
         response = code_editor(
             value,
@@ -147,7 +149,7 @@ class NodeEditor:
             key=f"editor_{title}",
             height=height,
             allow_reset=True,
-            response_mode=["blur"],
+            response_mode=["blur"],  # type: ignore
             props=props,
             options=options,
             info=info_bar,
@@ -155,11 +157,12 @@ class NodeEditor:
             focus=focus,
         )
         last_response = self.last_update.get(title, None)
-        if (last_response is None and response["id"] != "") or (
-            last_response is not None and last_response["id"] != response["id"]
+        if response["id"] != "" and (
+            last_response is None
+            or (last_response is not None and last_response["id"] != response["id"])
         ):
-            # print(f"Last response: {last_response}")
-            # print(f"Current response: {response}")
+            print(f"Last response: {last_response}")
+            print(f"Current response: {response}")
             self.last_update[title] = response
             return Response(response["text"], response["type"] == "submit")
         else:
@@ -170,14 +173,35 @@ class NodeEditor:
 
     def register_pending_voice(self, container):
         voice = st.session_state.voice_input_node
-        client = OpenAI()
-        transcription = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=voice,
-        )
-        self.pending_ama = PendingAMA(transcription.text, True)
+        text = fast_transcription(voice)
+        self.pending_ama = PendingAMA(text, True)
 
     def node_component_editors(self) -> None:
+
+        l, r = st.columns(2, vertical_alignment="center")
+        with l:
+            pill_response = self.component_editor(
+                "Title", self.node.pill, "markdown", 1, True, False
+            )
+            if pill_response is not None:
+                pill_text = pill_response.text
+                pill_text = "".join(
+                    "-" if not c.isalnum() else c for c in pill_text
+                ).strip("-")
+
+                self.node = self.node.update(
+                    pill=pill_response.text.strip().replace(" ", "-")
+                )
+
+        with r:
+            with st.popover("Show Inputs"):
+                for param in self.node.function_parameters:
+                    st.write(f"### {param.name}")
+                    extended_type = param.type
+                    if extended_type is not None:
+                        st.caption(extended_type.description)
+                        st.code(schema_to_text(extended_type.type_schema()))
+
         label_response = self.component_editor(
             "Label", self.node.label, "markdown", 1, True
         )
@@ -233,14 +257,18 @@ class NodeEditor:
         if (
             original_node.requirements != node.requirements
             or original_node.label != node.label
+            or original_node.function_return_type != node.function_return_type
         ):
             page: Page = ui_page.page()
             page.clean(node.id)  # !!! this can change the page.dfg
+
+            node = node.update(phase=Phase.requirements)  
 
         dfg = ui_page.dfg()  # must reload
 
         for phase in visible_phases():
             node = node.update(cache=node.cache.update(phase=phase, node=node))
+
 
         log(
             "Updating node",
@@ -249,7 +277,8 @@ class NodeEditor:
 
         dfg = dfg.with_node(node)
 
-        if original_node.label != node.label:
+        # gen new pill if label changed but pill did not.
+        if original_node.label != node.label and original_node.pill == node.pill:
             node = dfg.update_node_pill(node)
             dfg = dfg.with_node(node)
 

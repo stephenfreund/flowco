@@ -6,6 +6,7 @@ from flowco.ui.ui_args import parse_args
 from flowco.ui.ui_init import st_init
 from flowco.ui.ui_page import UIPage, set_ui_page
 from flowco.ui.ui_st_pages import st_pages
+from flowco.ui.ui_util import zip_bug
 from flowco.util.files import setup_flowco_files
 import streamlit as st
 
@@ -63,6 +64,10 @@ except Exception as e:
     print(traceback.format_exc())
     st.error(e)
     st.exception(e)
+    try:
+        zip_bug(f"""{str(e)}\n{traceback.format_exc()}""")
+    except Exception as e2:
+        print("Error zipping bug report", e2)
     print("Restarting Session Components...")
     if os.path.isdir(st.session_state.args.page):
         page_path = os.path.abspath(st.session_state.args.page)

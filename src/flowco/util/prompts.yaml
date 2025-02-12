@@ -2,7 +2,7 @@ system-prompt: |
     You are an assistant to take a data science computation dataflow diagram 
     and generate code. 
 
-    You may only import matplotlib, seaborn, numpy, sklearn, and pandas.  
+    You may only import matplotlib, seaborn, numpy, sklearn, statsmodels, scipy, and pandas.  
 
 semantic-diff: |
     Here are the old and new values for parts of a computation step:
@@ -523,113 +523,6 @@ algorithm: |
 
 
 
-# assess: |
-#     Here are the preconditions for a set of variables, and a post-condition:
-#     ```
-#     {requirements}
-#     ```
-#     And an algorithm:
-#     ```
-#     {algorithm}
-#     ```
-#     Assume an expert data scientist will write code for this algorithm using Python and the standard
-#     numpy, pandas, matplotlib, seaborn, scipy, and sklearn libraries.  
-#     The expert has no other information about the function but can make reasonable choices about 
-#     how to implement parts of it.
-
-#     I want you to assess the algorithm.  Here are the criteria:
-#     * Are the postconditions unambiguous in their meaning?
-#     * Does the algorithm meet the post-conditions if the preconditions are all satisfied?
-#     * Is it a meaningful algorithm?
-#     * Are the results easy to interpret?
-
-#     Answer, `Good`, `Bad`, or `More Information Needed`. 
-    
-#     If your answer is `Bad`, provide a reason why the algorithm does not meet the post-condition.
-    
-#     If your answer is `More Information Needed`, provide the most important question that would help you make a decision:
-#     * If additional data is needed to perform the computation, ask for that data.
-#     * If more information about the algorithm is needed, ask the most important question related to that algorithm.
-
-
-# return-type: |
-#     Here are the pre and post conditions for a function
-#     ```
-#     {requirements}
-#     ```
-#     Create a return type for the function that meets the postconditions.
-    
-#     The return type's specification
-#     should be detailed enough that users of the function can understand what
-#     the function returns.  Do not include a specificaiton if the return
-#     type is None.
-    
-#     Assume the client has no other information about the function.
-    
-#     If this function returns data from a file, use the column labels 
-#     and types found in that file.
-
-#     The type should reflect what is described in the specification.
-#     The return type for functions generating plots should be None.
-
-# return-description: |
-#     Here are the pre and post conditions for a function
-#     ```
-#     {requirements}
-#     ```
-#     Give a one sentence description of the value returned by
-#     this function.
-
-# description: |
-#     Here are the preconditions for a set of variables used by 
-#     a computation:
-#     ```
-#     {preconditions}
-#     ```
-#     Here are the requirements for the return value `{function_return_var}`:
-#     ```
-#     {requirements}
-#     ```
-
-#     Create a prose description for this step of the computation.
-
-# parameters: |
-#     Identify the function_return_vars from all direct and indirect 
-#     predecessors that will be necessary to compute the results of this stage.
-
-#     Your answer should be a list of variables drawn from this list:
-#     ```
-#     {result_vars}
-#     ``` 
-
-
-# signatures: |
-#     Create a Python function signature for this step of the computation.
-
-#     The signature should include the function name, the parameters, and the return
-#     type for this step.  
-
-#     The function name should capture the intent of this step computation.
-    
-#     There is one parameter for each predecessor node.  For this node, 
-#     there are `{n_predecessors}` predecessors.  They are:
-#     ```
-#     {predecessors}
-#     ```
-
-#     The parameter types should match the return values for 
-#     the predecessors' functions.
-    
-#     The return type should be described with its type and any
-#     requirements for the value.  If a stage has no outgoing edges.
-
-#     Assume that the following modules have been imported:
-#     ```
-#     import pandas as pd
-#     import numpy as np
-#     import seaborn as sns
-#     import matplotlib.pyplot as plt
-#     ```
 
 compile: |
     Write the code for this step as a single function.
@@ -649,7 +542,7 @@ compile: |
     * Be optimized for readability, clarity, and simplicity.
     * Do not include pydoc strings.
     
-    You may only import matplotlib, seaborn, numpy, sklearn, scipy, and pandas.  
+    You may only import matplotlib, seaborn, numpy, sklearn, statsmodels, scipy, and pandas.  
 
     Import any classes referenced in the return type.
     
@@ -1052,7 +945,7 @@ ama_node_editor: |
     * Be optimized for readability, clarity, and simplicity.
     * Do not include pydoc strings.
     
-    You may only import matplotlib, seaborn, numpy, sklearn, scipy, and pandas.  
+    You may only import matplotlib, seaborn, numpy, sklearn, statsmodels, scipy, and pandas.  
 
     Import any classes referenced in the return type.
     
@@ -1071,7 +964,8 @@ ama_node_editor: |
     You should:
     1. Restate the request in your own words.  Break down tasks into smaller steps.
     2. Identify the necessary changes to the node for those steps.
-    3. Use a function call to make the changes.
+    
+    Use a function call to make the changes.
 
 ama_node_editor_no_code: |
     You are an expert at statistical analysis and data science.  Help the
@@ -1113,7 +1007,8 @@ ama_node_editor_no_code: |
     You should:
     1. Restate the request in your own words.  Break down tasks into smaller steps.
     2. Identify the necessary changes to the node for those steps.
-    3. Use a function call to make the changes.
+    
+    Use a function call to make the changes.
 
 ama_node_editor_sync_no_code: |
     You are an expert at statistical analysis and data science.  Help the
@@ -1211,8 +1106,8 @@ repair-syntax: |
     * Have no side effects.
     * Be optimized for readability, clarity, and simplicity.
     * Do not include pydoc strings.
-    
-    You may only import matplotlib, seaborn, numpy, sklearn, scipy, and pandas.  
+
+    You may only import matplotlib, seaborn, numpy, sklearn, statsmodels, scipy, and pandas.  
 
     Import any classes referenced in the return type.
     
@@ -1284,7 +1179,7 @@ repair-node-run: |
     * Be optimized for readability, clarity, and simplicity.
     * Do not include pydoc strings.
     
-    You may only import matplotlib, seaborn, numpy, sklearn, scipy, and pandas.  
+    You may only import matplotlib, seaborn, numpy, sklearn, statsmodels, scipy, and pandas.  
 
     Import any classes referenced in the return type.
     
@@ -1685,7 +1580,8 @@ full-compile-code: |
     * Have no side effects.
     * Be optimized for readability, clarity, and simplicity.
     
-    You may only import matplotlib, seaborn, numpy, sklearn, and pandas.  Uses seaborn for all plots, with
+    You may only import matplotlib, seaborn, numpy, sklearn, statsmodels, scipy, and pandas.  
+    Use seaborn for all plots, with
     no changes to the base style.  Do not call `plt.close()` and *do not* save them to disk.
 
     Do not include other functions.

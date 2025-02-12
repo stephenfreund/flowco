@@ -1,11 +1,7 @@
-from pprint import pformat
 from flowco.dataflow.extended_type import schema_to_text
-from flowco.session.session import session
-from openai import OpenAI
 import uuid
 
 from flowco.page.ama import AskMeAnything, VisibleMessage
-from flowco.session.session_file_system import fs_write
 from flowco.ui import ui_help
 from flowco.ui.authenticate import sign_out
 import numpy as np
@@ -21,6 +17,7 @@ from flowco.ui.ui_dialogs import settings
 from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_util import (
     toggle,
+    zip_bug,
 )
 import streamlit as st
 
@@ -29,10 +26,9 @@ from mxgraph_component import mxgraph_component
 from flowco import __main__
 from flowco.ui.ui_page import UIPage
 from flowco.util.config import config
-from flowco.util.costs import total_cost
+from flowco.util.costs import inflight, total_cost
 from flowco.util.config import AbstractionLevel
-from flowco.util.files import create_zip_in_memory
-from flowco.util.output import Output, error, log, log_timestamp
+from flowco.util.output import error, log
 
 
 class FlowcoPage:
@@ -179,7 +175,9 @@ class FlowcoPage:
         if node is None:
             ui_page: UIPage = st.session_state.ui_page
             st.title(ui_page.page().file_name)
-            st.caption(f"Total cost: {total_cost():.2f} USD")
+            st.caption(
+                f"Total cost: {total_cost():.2f} USD &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        {':gray[:material/bigtop_updates:]' * inflight()}"
+            )
 
     def show_messages(self, node: Node):
         for message in node.messages:
@@ -237,12 +235,8 @@ class FlowcoPage:
     def ama_voice_input(self, container):
         toggle("ama_responding")
         voice = st.session_state.voice_input
-        client = OpenAI()
-        transcription = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=voice,
-        )
-        self.ama_completion(container, transcription.text)
+        transcription = quick_transcription(voice)
+        self.ama_completion(container, transcription)
 
     def ama_completion(self, container, prompt):
         page = st.session_state.ui_page.page()
@@ -393,14 +387,6 @@ class FlowcoPage:
                     st.rerun()
 
     def report_bug(self):
-        ui_page = st.session_state.ui_page
-        flowco_name = ui_page.page().file_name
-        data_files = [
-            file for file in ui_page.page().tables.all_files() if file.endswith(".csv")
-        ]
-        time_stamp = log_timestamp()
-        file_name = f"flowco-{time_stamp}.zip"
-
         @st.dialog("Report Bug", width="small")
         def download_files():
 
@@ -411,17 +397,7 @@ class FlowcoPage:
 
             if text:
                 with st.spinner("Creating ZIP file..."):
-                    zip_data = create_zip_in_memory(
-                        [flowco_name] + data_files,
-                        additional_entries={
-                            "description.txt": text,
-                            "logging.txt": session.get(
-                                "output", Output
-                            ).get_full_output(),
-                            "session_state.json": pformat(dict(st.session_state)),
-                        },
-                    )
-                    fs_write(file_name, zip_data, "wb")
+                    file_name, zip_data = zip_bug(text)
 
                 st.write("Saved on server.  Click below to download bug files locally.")
 

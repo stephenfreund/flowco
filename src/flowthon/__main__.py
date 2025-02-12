@@ -12,7 +12,6 @@ from typing import Dict, List
 import webbrowser
 
 import nbformat
-from sklearn import base
 
 from flowthon.nbflowthon import convert_notebook_to_flowthon
 from flowthon.nbsplit import split_notebook_by_heading_level
@@ -437,4 +436,4 @@ if __name__ == "__main__":
     if os.environ.get("OPENAI_API_KEY", None) is None:
         raise FlowcoError("You must set the OPENAI_API_KEY environment variable")
 
-    main(page=None, argv=sys.argv)
+    main(argv=sys.argv)

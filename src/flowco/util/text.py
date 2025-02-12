@@ -354,3 +354,16 @@ def black_format(code: List[str], line_length=70):
     except Exception as e:
         formatted_code = code_block
     return formatted_code.split("\n")
+
+
+def sandwich_text(text: str, max_lines: int = 1024, top_proportion: float = 0.5) -> str:
+    if max_lines == None:
+        return text
+    lines = text.splitlines()
+    if len(lines) <= max_lines:
+        return text
+    else:
+        total_len = max_lines - 1  # some slop for the ...
+        top_len = int(top_proportion * total_len)
+        bot_start = len(lines) - (total_len - top_len)
+        return "\n".join(lines[0:top_len] + [" [...] "] + lines[bot_start:])

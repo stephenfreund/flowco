@@ -1,7 +1,5 @@
-import json
 import textwrap
-from typing import Optional
-from flowco.assistant.assistant import Assistant
+from flowco.assistant.flowco_assistant import flowco_assistant
 from flowco.builder.build import PassConfig, node_pass
 from flowco.builder.graph_completions import (
     make_node_like,
@@ -15,12 +13,8 @@ from flowco.page.error_messages import error_message
 from flowco.pythonshell.shells import PythonShells
 from flowco.session.session import session
 from flowco.util.config import config
-from flowco.util.errors import FlowcoError
-from flowco.util.output import log, logger, message, warn
+from flowco.util.output import log, logger, message
 from flowco.util.text import strip_ansi
-
-
-from nbclient.exceptions import CellExecutionError
 
 
 @node_pass(
@@ -57,7 +51,7 @@ def check_run(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node
 def _repair_run(
     pass_config: PassConfig, graph: DataFlowGraph, node: Node, max_retries: int
 ) -> Node:
-    assistant = Assistant("repair-system")
+    assistant = flowco_assistant("repair-system")
     retries = 0
     stashed_error = None
 
@@ -109,27 +103,25 @@ def _repair_run(
 
             initial_node = make_node_like(node, node_like_model(node_fields))
 
-            assistant.add_prompt_by_key(
+            repair_prompt = config.get_prompt(
                 "repair-node-run",
                 error=strip_ansi(str(e)),
                 signature=node.signature_str(),
             )
-
-            assistant.add_json_object(
-                "Here is the offending node", initial_node.model_dump()
-            )
+            assistant.add_text("user", repair_prompt)
+            assistant.add_text("user", "Here is the offending node")
+            assistant.add_json("user", initial_node.model_dump())
 
             if node.result is not None:
-                assistant.add_message(
-                    role="user", content=node.result.to_prompt_messages()
-                )
+                for p in node.result.to_content_parts():
+                    assistant.add_content_parts("user", p)
 
-            new_node = node_completion(
-                assistant,
+            new_node = assistant.model_completion(
                 node_completion_model("code", include_explanation=True),
             )
 
-            message("\n".join(["New Code"] + new_node.code))
+            message("\n".join(["**Old Code**"] + (node.code or [])))
+            message("\n".join(["**New Code**"] + (new_node.code or [])))  # type: ignore
             message(
                 "\n".join(
                     textwrap.wrap(

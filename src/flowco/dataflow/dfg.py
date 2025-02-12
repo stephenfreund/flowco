@@ -1,7 +1,5 @@
 from __future__ import annotations
 import html
-import traceback
-import black
 from collections import deque
 import os
 import textwrap
@@ -11,8 +9,8 @@ from pydantic import BaseModel, Field
 
 import base64
 
-import openai
 
+from flowco.assistant.flowco_assistant import fast_text_complete
 from flowco.builder.cache import BuildCache
 from flowco.dataflow.checks import Check, CheckOutcomes
 from flowco.dataflow.extended_type import ExtendedType
@@ -95,6 +93,15 @@ class NodeQuestions(BaseModel):
     questions: List[str] = Field(description="The assistant in need of answers.")
 
 
+class Group(BaseModel):
+    id: str
+    label: str
+    is_collapsed: bool
+    collapsed_geometry: Optional[Geometry] = None
+    parent_group: Optional[str] = None
+    nodes: List[str] = []
+
+
 class Node(NodeLike, BaseModel):
     """
     A node in a data flow graph.
@@ -133,7 +140,7 @@ class Node(NodeLike, BaseModel):
     )
 
     force_show_output: bool = Field(
-        default=False,
+        default=True,
         description="Whether the output of the node is visible in the diagram.",
     )
 
@@ -240,6 +247,8 @@ class Node(NodeLike, BaseModel):
         description="The result of the computation stage.",
     )
 
+    ###
+
     cache: BuildCache = Field(
         default_factory=BuildCache,
         description="A cache of the build process for this node.",
@@ -266,7 +275,7 @@ class Node(NodeLike, BaseModel):
         )
 
     def diff(self, other: "Node") -> dict:
-        return deepdiff.DeepDiff(self, other)
+        return deepdiff.diff.DeepDiff(self, other)
 
     def signature_str(self) -> str:
         assert (
@@ -526,6 +535,14 @@ class DataFlowGraph(GraphLike, BaseModel):
         default_factory=list,
         description="The edges in the graph.",
     )
+    ###
+
+    groups: List[Group] = Field(
+        default_factory=list,
+        description="The groups that this node belongs to.",
+    )
+
+    ###
 
     image: Optional[str] = Field(
         default=None,
@@ -549,6 +566,7 @@ class DataFlowGraph(GraphLike, BaseModel):
             and self.description == other.description
             and self.nodes == other.nodes
             and self.edges == other.edges
+            and self.groups == other.groups
         )
 
     def semantically_eq(self, other: DataFlowGraph) -> bool:
@@ -570,6 +588,7 @@ class DataFlowGraph(GraphLike, BaseModel):
             description = data.get("description", "")
             nodes = data.get("nodes", [])
             edges = data.get("edges", [])
+            groups = []  # data.get("groups", [])
 
             new_nodes = []
             for node in nodes:
@@ -581,7 +600,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                         geometry=Geometry(**node["geometry"]),
                         output_geometry=Geometry(**node["output_geometry"]),
                         is_locked=node.get("is_locked", False),
-                        force_show_output=node.get("force_show_output", False),
+                        force_show_output=node.get("force_show_output", True),
                         function_name=node["function_name"],
                         function_result_var=node["function_result_var"],
                         predecessors=node["predecessors"],
@@ -594,7 +613,13 @@ class DataFlowGraph(GraphLike, BaseModel):
 
                     new_nodes.append(new_node)
 
-            return cls(version=0, description=description, nodes=new_nodes, edges=edges)
+            return cls(
+                version=0,
+                description=description,
+                nodes=new_nodes,
+                edges=edges,
+                groups=groups,
+            )
 
     def ensure_valid(self):
         """
@@ -607,11 +632,20 @@ class DataFlowGraph(GraphLike, BaseModel):
         ):
             raise ValueError("All edges must be between nodes in the graph")
 
+        for group in self.groups:
+            if group.parent_group is not None:
+                if group.parent_group not in [g.id for g in self.groups]:
+                    raise ValueError("All parent groups must be in the graph")
+            if not all(
+                node_id in [node.id for node in self.nodes] for node_id in group.nodes
+            ):
+                raise ValueError("All nodes in a group must be in the graph")
+
     def __str__(self) -> str:
-        return format_basemodel(self, order=["description", "nodes", "edges"])
+        return format_basemodel(self, order=["description", "nodes", "edges", "groups"])
 
     def diff(self, other: "DataFlowGraph") -> dict:
-        return deepdiff.DeepDiff(self, other)
+        return deepdiff.diff.DeepDiff(self, other)
 
     def node_ids(self) -> list[str]:
         return [node.id for node in self.nodes]
@@ -634,8 +668,8 @@ class DataFlowGraph(GraphLike, BaseModel):
                 return edge
         return None
 
-    def successors(self, node_id: str) -> List[str]:
-        return [edge.dst for edge in self.edges if edge.src == node_id]
+    # def successors(self, node_id: str) -> List[str]:
+    #     return [edge.dst for edge in self.edges if edge.src == node_id]
 
     def listify_node_ids(self, node_ids: NodeOrNodeList = None) -> List[str]:
         if node_ids is None:
@@ -772,14 +806,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                 Do not use any of the following: {', '.join(exclude_pills)}.
                 """
         )
-        completion = openai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "system", "content": prompt}],
-            max_tokens=10,
-        )
-
-        # Extract the generated text
-        pill = completion.choices[0].message.content
+        pill = fast_text_complete(prompt)
         if pill is None:
             raise FlowcoError("No pill generated")
         log(f"'{pill}'")
@@ -876,6 +903,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                 }
                 | Node.get_merge_schema(),
                 "edges": {"mergeStrategy": "FailOnDifferentValueStrategy"},
+                "groups": {"mergeStrategy": "overwrite"},
                 "description": {"mergeStrategy": "overwrite"},
             }
         }
@@ -995,7 +1023,7 @@ class DataFlowGraph(GraphLike, BaseModel):
 
     def reset(self, reset_requirements=False) -> "DataFlowGraph":
         new_nodes = [node.reset(reset_requirements) for node in self.nodes]
-        return self.update(nodes=new_nodes, version=self.version + 1)
+        return self.update(nodes=new_nodes, version=self.version + 1, groups=[])
 
     def make_driver(self):
 
@@ -1010,13 +1038,13 @@ class DataFlowGraph(GraphLike, BaseModel):
                 FunctionCall(
                     node_id=node.id,
                     function_name=node.function_name,
-                    arguments=[f"{x.function_result_var}" for x in preds],
+                    arguments=[f"{x.function_result_var}" for x in preds],  # type: ignore
                     result=node.function_result_var,
                 )
             ]
         return driver
 
-    def to_image_prompt_messages(self) -> List[Dict[str, Any]]:
+    def to_image_url(self) -> str | None:
 
         if not config.x_no_dfg_image_in_prompt:
             if self.image is None:
@@ -1024,94 +1052,80 @@ class DataFlowGraph(GraphLike, BaseModel):
                     self.image = dataflow_graph_to_image(self, show_outputs=False)
 
             if self.image is not None:
-                return [
-                    {
-                        "type": "text",
-                        "text": f"Here is the dataflow diagram.",
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/png;base64,{self.image}",
-                            "detail": "high",
-                        },
-                    },
-                ]
+                return f"data:image/png;base64,{self.image}"
 
-        return []
+        return None
 
-    def outputs_to_prompt_messages(dfg: DataFlowGraph) -> List[Dict[str, Any]]:
-        messages = []
-        for node_id in dfg.topological_sort():
-            node = dfg[node_id]
-            result = node.result
-            if result is not None:
-                if result.result is not None:
+    # def outputs_to_prompt_messages(dfg: DataFlowGraph) -> List[Dict[str, Any]]:
+    #     messages = []
+    #     for node_id in dfg.topological_sort():
+    #         node = dfg[node_id]
+    #         result = node.result
+    #         if result is not None:
+    #             if result.result is not None:
 
-                    # guard against the result value being something we can't handle
-                    try:
-                        repr, clipped = result.result.to_repr(10)
-                    except Exception as e:
-                        error(e)
-                        repr, clipped = str(result.result), False
+    #                 # guard against the result value being something we can't handle
+    #                 try:
+    #                     repr, clipped = result.result.to_repr(10)
+    #                 except Exception as e:
+    #                     error(e)
+    #                     repr, clipped = str(result.result), False
 
-                    if clipped:
-                        messages.append(
-                            {
-                                "type": "text",
-                                "text": f"The variable `{node.function_result_var}` has this value.  We show only the first 10 elements of any aggregate value:\n```\n{repr}\n```",
-                            }
-                        )
-                    else:
-                        messages.append(
-                            {
-                                "type": "text",
-                                "text": f"The variable `{node.function_result_var}` has this value:\n```\n{repr}\n```",
-                            }
-                        )
+    #                 if clipped:
+    #                     messages.append(
+    #                         {
+    #                             "type": "text",
+    #                             "text": f"The variable `{node.function_result_var}` has this value.  We show only the first 10 elements of any aggregate value:\n```\n{repr}\n```",
+    #                         }
+    #                     )
+    #                 else:
+    #                     messages.append(
+    #                         {
+    #                             "type": "text",
+    #                             "text": f"The variable `{node.function_result_var}` has this value:\n```\n{repr}\n```",
+    #                         }
+    #                     )
 
-                if result.output is not None:
-                    messages.append(
-                        {
-                            "type": "text",
-                            "text": f"Here is the output for {node_id}.",
-                        }
-                    )
-                    output = result.output
-                    if output.output_type == OutputType.text:
-                        messages.append({"type": "text", "text": output.data})
-                    elif output.output_type == OutputType.image:
-                        messages.append(
-                            {
-                                "type": "text",
-                                "text": f"You may include the following image in your report with this: `![node_output]({node_id}.png)`",
-                            }
-                        )
-                        messages.append(
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": output.data.replace(
-                                        "data:image/png,", "data:image/png;base64,"
-                                    ),
-                                    "detail": "high",
-                                },
-                            }
-                        )
-                    else:
-                        messages.append(
-                            {
-                                "type": "text",
-                                "text": "Unknown output type: {self.output_type}: {self.data}",
-                            }
-                        )
-        return messages
+    #             if result.output is not None:
+    #                 messages.append(
+    #                     {
+    #                         "type": "text",
+    #                         "text": f"Here is the output for {node_id}.",
+    #                     }
+    #                 )
+    #                 output = result.output
+    #                 if output.output_type == OutputType.text:
+    #                     messages.append({"type": "text", "text": output.data})
+    #                 elif output.output_type == OutputType.image:
+    #                     messages.append(
+    #                         {
+    #                             "type": "text",
+    #                             "text": f"You may include the following image in your report with this: `![node_output]({node_id}.png)`",
+    #                         }
+    #                     )
+    #                     messages.append(
+    #                         {
+    #                             "type": "image_url",
+    #                             "image_url": {
+    #                                 "url": output.data.replace(
+    #                                     "data:image/png,", "data:image/png;base64,"
+    #                                 ),
+    #                                 "detail": "high",
+    #                             },
+    #                         }
+    #                     )
+    #                 else:
+    #                     messages.append(
+    #                         {
+    #                             "type": "text",
+    #                             "text": "Unknown output type: {self.output_type}: {self.data}",
+    #                         }
+    #                     )
+    #     return messages
 
-    def replace_placeholders_with_base64_images(
-        dfg: DataFlowGraph, markdown: str
-    ) -> str:
-        for node_id in dfg.topological_sort():
-            image = dfg[node_id].get_generated_image()
+    def replace_placeholders_with_base64_images(self, markdown: str) -> str:
+        for node_id in self.topological_sort():
+            image = self[node_id].get_generated_image()
             if image is not None:
                 image = image.replace("data:image/png,", "data:image/png;base64,")
                 markdown = markdown.replace(
@@ -1293,7 +1307,7 @@ def dataflow_graph_to_image(dfg: DataFlowGraph, show_outputs: bool = False) -> s
                         shape="none",
                     )
 
-                with dot.subgraph() as s:
+                with dot.subgraph() as s:  # type: ignore
                     s.attr(rank="same")  # Ensure nodes are on the same horizontal level
                     s.node(node.id)
                     s.node(node.id + "-output")

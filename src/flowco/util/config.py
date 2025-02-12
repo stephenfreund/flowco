@@ -55,7 +55,7 @@ class Config:
         """
         Initialize the configuration class with default values.
         """
-        self.model = _flowco_get_env("model", "gpt-4o-2024-11-20")
+        self.model = _flowco_get_env("model", "gpt-4o")
         self.stream = bool(int(_flowco_get_env("stream", "0")))
         self.debug = bool(int(_flowco_get_env("debug", "0")))
         self.quiet = int(_flowco_get_env("quiet", "0"))

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import Callable, Iterable, List, Literal, Tuple
+from typing import Annotated, Callable, Iterable, List, Literal, Tuple
 
-import openai
-from flowco.assistant.openai import OpenAIAssistant
-from flowco.assistant.stream import StreamingAssistantWithFunctionCalls
-from flowco.builder.graph_completions import messages_for_graph, messages_for_node
+from openai.types.chat.chat_completion_content_part_text_param import (
+    ChatCompletionContentPartTextParam,
+)
+from flowco.assistant.flowco_assistant import flowco_assistant
+from flowco.builder.graph_completions import json_for_graph_view, json_for_node_view
 from flowco.dataflow.dfg import DataFlowGraph, Geometry, Node
 from flowco.dataflow.extended_type import ExtendedType
 from flowco.dataflow.phase import Phase
@@ -17,40 +18,12 @@ from flowco.util.errors import FlowcoError
 from flowco.util.output import error, log, logger
 from pydantic import BaseModel, Field
 
+from llm.assistant import ToolCallResult
+
 
 class VisibleMessage(BaseModel):
     role: str
     content: str
-
-
-ReturnType = Tuple[str, str | None]
-
-
-class update_node(BaseModel):
-    label: str = Field(
-        description="The new label of the node.  Keep in sync with the requirements, algorithm, and code."
-    )
-    requirements: List[str] = Field(
-        description="A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well."
-    )
-    function_return_type: ExtendedType = Field(
-        description="The return type of the node."
-    )
-    code: List[str] = Field(
-        description="The code for the node.  Only modify if there is already an code.  The code should be a list of strings, one for each line of code.  The signature must match the original version, except for the return type"
-    )
-
-
-class update_node_requirements(BaseModel):
-    label: str = Field(
-        description="The new label of the node.  Keep in sync with the requirements, algorithm, and code."
-    )
-    requirements: List[str] = Field(
-        description="A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well."
-    )
-    function_return_type: ExtendedType = Field(
-        description="The return type of the node."
-    )
 
 
 class AskMeAnythingNode:
@@ -62,35 +35,39 @@ class AskMeAnythingNode:
         if show_code:
             prompt = "ama_node_editor"
             functions = [
-                (
-                    self.update_node,
-                    openai.pydantic_function_tool(update_node)["function"],
-                )
+                self.update_node,
             ]
         else:
             prompt = "ama_node_editor_no_code"
             functions = [
-                (
-                    self.update_node_requirements,
-                    openai.pydantic_function_tool(update_node_requirements)["function"],
-                )
+                self.update_node_requirements,
             ]
 
-        self.assistant = StreamingAssistantWithFunctionCalls(
-            functions,
-            ["system-prompt", prompt],
-            imports="",
-        )
+        self.assistant = flowco_assistant(prompt_key=prompt)
+        self.assistant.set_functions(functions)
         self.completion_node = None
         self.visible_messages = []
 
     def update_node(
         self,
-        label: str | None = None,
-        requirements: List[str] | None = None,
-        function_return_type: ExtendedType | None = None,
-        code: List[str] | None = None,
-    ) -> ReturnType:
+        label: Annotated[
+            str,
+            "The new label of the node.",
+        ],
+        requirements: Annotated[
+            List[str],
+            "A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well.",
+        ],
+        function_return_type: Annotated[ExtendedType, "The return type of the node."],
+        code: Annotated[
+            List[str] | None,
+            "The code for the node.  Only modify if there is already code.  The code should be a list of strings, one for each line of code.  The signature must match the original version, except for the return type",
+        ],
+    ) -> ToolCallResult:
+        """
+        Use this to modify the node.  The label, requirements, function_return_type, and code must be kept in sync.
+        Make as few changes as possible.
+        """
         node = self.completion_node
         assert node is not None, "Node must be set before calling update_node"
         mods = []
@@ -140,30 +117,43 @@ class AskMeAnythingNode:
 
         self.completion_node = node
 
-        return (
-            f"Updated {mod_str} for {node.pill}",
-            node.model_dump_json(
-                include=set(
-                    [
-                        "id",
-                        "pill",
-                        "label",
-                        "predecessors",
-                        "requirements",
-                        "function_return_type",
-                        "code",
-                    ]
+        return ToolCallResult(
+            user_message=f"Updated {mod_str} for {node.pill}",
+            content=ChatCompletionContentPartTextParam(
+                type="text",
+                text=node.model_dump_json(
+                    include=set(
+                        [
+                            "id",
+                            "pill",
+                            "label",
+                            "predecessors",
+                            "requirements",
+                            "function_return_type",
+                            "code",
+                        ]
+                    ),
+                    indent=2,
                 ),
-                indent=2,
             ),
         )
 
     def update_node_requirements(
         self,
-        label: str | None = None,
-        requirements: List[str] | None = None,
-        function_return_type: ExtendedType | None = None,
-    ) -> ReturnType:
+        label: Annotated[
+            str,
+            "The new label of the node.  Keep in sync with the requirements, algorithm, and code.",
+        ],
+        requirements: Annotated[
+            List[str],
+            "A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well.",
+        ],
+        function_return_type: Annotated[ExtendedType, "The return type of the node."],
+    ) -> ToolCallResult:
+        """
+        Use this to modify the node.  The label, requirements, and function_return_type must be kept in sync.
+        Make as few changes as possible.
+        """
         node = self.completion_node
         assert node is not None, "Node must be set before calling update_node"
         mods = []
@@ -207,21 +197,24 @@ class AskMeAnythingNode:
 
         self.completion_node = node
 
-        return (
-            f"Updated {mod_str} for {node.pill}",
-            node.model_dump_json(
-                include=set(
-                    [
-                        "id",
-                        "pill",
-                        "label",
-                        "predecessors",
-                        "requirements",
-                        "function_return_type",
-                        "code",
-                    ]
+        return ToolCallResult(
+            user_message=f"Updated {mod_str} for {node.pill}",
+            content=ChatCompletionContentPartTextParam(
+                type="text",
+                text=node.model_dump_json(
+                    include=set(
+                        [
+                            "id",
+                            "pill",
+                            "label",
+                            "predecessors",
+                            "requirements",
+                            "function_return_type",
+                            "code",
+                        ]
+                    ),
+                    indent=2,
                 ),
-                indent=2,
             ),
         )
 
@@ -240,22 +233,28 @@ class AskMeAnythingNode:
         markdown = ""
 
         if self.completion_node is None:
-            self.assistant.add_message(
+            self.assistant.add_text("user", "Here is the current dataflow graph.")
+            self.assistant.add_json(
                 "user",
-                messages_for_graph(
+                json_for_graph_view(
                     graph=self.dfg,
                     graph_fields=["edges", "description"],
                     node_fields=["requirements"],
                 ),
             )
 
-            image = self.dfg.to_image_prompt_messages()
-            self.assistant.add_message("user", image)
+            image = self.dfg.to_image_url()
+            if image:
+                self.assistant.add_text(
+                    "user", "Here is a picture of the dataflow graph."
+                )
+                self.assistant.add_image("user", image)
 
         self.completion_node = node
-        self.assistant.add_message(
+        self.assistant.add_text("user", f"Here is the current node: {node.pill}")
+        self.assistant.add_json(
             "user",
-            messages_for_node(
+            json_for_node_view(
                 node=self.completion_node,
                 node_fields=(
                     [
@@ -278,9 +277,9 @@ class AskMeAnythingNode:
 
         yield "Working...\n\n"
 
-        self.assistant.add_message("user", prompt)
+        self.assistant.add_text("user", prompt)
 
-        for x in self.assistant.str_completion():
+        for x in self.assistant.stream():
             markdown += x
             yield x
 

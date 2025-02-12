@@ -1,9 +1,9 @@
 import { Streamlit, RenderData } from "streamlit-component-lib";
 import mx from './mxgraph';
-import { mxGraphModel, mxCellState, mxCell } from 'mxgraph';
+import { mxGraphModel, mxCellState, mxCell, mxConstants, mxHierarchicalLayout } from 'mxgraph';
 import { v4 as uuidv4 } from "uuid";
 
-import { mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, node_style, labelForEdge, clean_color, isDiagramNode, resetNodeTranslation } from "./diagram";
+import { mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, node_style, labelForEdge, clean_color, isDiagramNode, layoutDiagram, DiagramNode, phase_to_color, update_group_style } from "./diagram";
 import { clearImageCache } from "./cache";
 
 var currentDiagram: mxDiagram | undefined = undefined;
@@ -11,7 +11,7 @@ var currentRefreshPhase = 0;
 
 // Create a container for the graph
 const graphContainer = document.querySelector("#graph-container") as HTMLDivElement;
-const graph = new mx.mxGraph(graphContainer);
+export const graph = new mx.mxGraph(graphContainer);
 
 // Define zoom factors and limits
 const ZOOM_IN_FACTOR = 1.4;  // 10% zoom in
@@ -24,41 +24,41 @@ const MAX_ZOOM = 3.0;        // 300%
  * Zoom In Function
  */
 function zoomIn() {
-    let newScale = graph.view.scale * ZOOM_IN_FACTOR;
-    if (newScale > MAX_ZOOM) newScale = MAX_ZOOM;
-    graph.view.scale = newScale;
-    graph.refresh();
+  let newScale = graph.view.scale * ZOOM_IN_FACTOR;
+  if (newScale > MAX_ZOOM) newScale = MAX_ZOOM;
+  graph.view.scale = newScale;
+  graph.refresh();
 }
 
 /**
  * Zoom Out Function
  */
 function zoomOut() {
-    let newScale = graph.view.scale * ZOOM_OUT_FACTOR;
-    if (newScale < MIN_ZOOM) newScale = MIN_ZOOM;
-    graph.view.scale = newScale;
-    sessionStorage.setItem("scale", JSON.stringify(graph.view.scale));
-    graph.refresh();
+  let newScale = graph.view.scale * ZOOM_OUT_FACTOR;
+  if (newScale < MIN_ZOOM) newScale = MIN_ZOOM;
+  graph.view.scale = newScale;
+  sessionStorage.setItem("scale", JSON.stringify(graph.view.scale));
+  graph.refresh();
 }
 
 /**
  * Reset Zoom Function
  */
 function resetZoom() {
-    graph.view.scale = 1.0; // Reset to 100%
-    graph.view.translate = new mx.mxPoint(40, 60); // Reset pan
-    sessionStorage.setItem("scale", JSON.stringify(graph.view.scale));
-    graph.refresh();
+  graph.view.scale = 1.0; // Reset to 100%
+  graph.view.translate = new mx.mxPoint(40, 60); // Reset pan
+  sessionStorage.setItem("scale", JSON.stringify(graph.view.scale));
+  graph.refresh();
 }
 
 function getZoomScale() {
-    return graph.view.scale;
+  return graph.view.scale;
 }
 
 function setZoomScale(scale: number) {
-    graph.view.scale = scale;
-    sessionStorage.setItem("scale", JSON.stringify(graph.view.scale));
-    graph.refresh();
+  graph.view.scale = scale;
+  sessionStorage.setItem("scale", JSON.stringify(graph.view.scale));
+  graph.refresh();
 }
 
 function zoom(cmd: string) {
@@ -85,7 +85,7 @@ function showZoomedInContent(cell: mxCell) {
   const imageMatch = style && style.match('image=data:image/png,\(.*\)');
 
   if (imageMatch && imageMatch[1]) {
-    const imageUrl = imageMatch[1]; 
+    const imageUrl = imageMatch[1];
     // console.log("Image URL", imageUrl)
 
     // Create an <img> element and set the src to the extracted image URL
@@ -105,7 +105,7 @@ function showZoomedInContent(cell: mxCell) {
   zoomedInContainer.style.alignSelf = 'center';
   zoomedInContainer.style.left = '10px;' // cell.geometry.x + cell.geometry.width + 10 + 'px';  // Position to the right of the cell
   zoomedInContainer.style.margin = '10px';
-  zoomedInContainer.style.top =  '60px';  // Align with the top of the cell
+  zoomedInContainer.style.top = '60px';  // Align with the top of the cell
   zoomedInContainer.style.width = "800px";
   zoomedInContainer.style.boxShadow = "0 0 10px rgba(0, 0, 0, 0.5)";
   // zoomedInContainer.style.height = "80%";
@@ -135,12 +135,36 @@ graph.setCellsEditable(true);
 graph.setCellsResizable(true);
 graph.setEnterStopsCellEditing(true);
 
+// Get the default edge style from the graph's stylesheet
+var edgeStyle = graph.getStylesheet().getDefaultEdgeStyle();
+
+// Set the edge style to use the elbow connector
+// Remove the connector style so that edges are drawn as straight lines
+delete edgeStyle[mx.mxConstants.STYLE_EDGE];
+
+
+function cellKind(node: mxCell) {
+  if (node.isEdge()) {
+    return "edge";
+  } else if (node.id.startsWith("output-")) {
+    return "output";
+  } else if (node.id.startsWith("group-")) {
+    return "group";
+  } else {
+    return "node";
+  }
+}
+
+// Enables rubberband selection
+// new mx.mxRubberband(graph);
+
+
 // Enable panning
 // graph.setPanning(true);
 graph.panningHandler.useLeftButtonForPanning = true;
 
 // Listen for mouse move events to update the cursor
-graph.container.addEventListener('mousemove', function(evt) {
+graph.container.addEventListener('mousemove', function (evt) {
   var offset = mx.mxUtils.getOffset(graph.container);
   var x = mx.mxEvent.getClientX(evt) - offset.x;
   var y = mx.mxEvent.getClientY(evt) - offset.y;
@@ -151,13 +175,13 @@ graph.container.addEventListener('mousemove', function(evt) {
   hideZoomedInContent();
 
   if (cell == null) {
-      if (isShift) {
-          graph.container.style.cursor = 'default';
-      } else {
-          graph.container.style.cursor = 'grab';
-      }
-  } else {
+    if (isShift) {
       graph.container.style.cursor = 'default';
+    } else {
+      graph.container.style.cursor = 'grab';
+    }
+  } else {
+    graph.container.style.cursor = 'default';
   }
 });
 
@@ -183,10 +207,11 @@ class mxIconSet {
   private images: HTMLImageElement[] | null;
 
   constructor(private state: mxCellState) {
+    console.log("BEEP")
     this.images = [];
     const graph = state.view.graph;
 
-    if (state.cell.id.startsWith("output")) {
+    if (cellKind(state.cell) === "output" || cellKind(state.cell) === "group") {
       return;
     } else if (state.cell.isVertex()) {
       // tset if the current cell and all predecessors have phase 1 or better.
@@ -279,11 +304,11 @@ class mxIconSet {
           height: '16px',
           left: `${state.x + state.width - 16 - 8}px`,
           top: `${state.y + 2}px`
-          });
+        });
 
         // Add event listeners for Delete Icon
         mx.mxEvent.addListener(showOutputImg, 'click', mx.mxUtils.bind(this, (evt: MouseEvent) => {
-          const node_value = this.state.cell.value 
+          const node_value = this.state.cell.value
           node_value.force_show_output = !node_value.force_show_output;
 
           const output_node = graph.getModel().getCell(`output-${this.state.cell.id}`);
@@ -306,47 +331,49 @@ class mxIconSet {
 
       const deleteImg: HTMLImageElement = mx.mxUtils.createImage("delete.png");
       deleteImg.setAttribute('title', 'Delete');
-      
-      const labelBounds = state.text.bounds;
-      const labelRightX = labelBounds.x + labelBounds.width;
-      const labelBottomY = labelBounds.y + labelBounds.height;
 
-      const imageWidth = 16;
-      const imageHeight = 16;
+      if (state.text != null) {
+        const labelBounds = state.text.bounds;
+        const labelRightX = labelBounds.x + labelBounds.width;
+        const labelBottomY = labelBounds.y + labelBounds.height;
 
-      const offsetX = 0 // -imageWidth; // Positions the image within the label bounds
-      const offsetY = 0 // -imageHeight;
+        const imageWidth = 16;
+        const imageHeight = 16;
 
-      Object.assign(deleteImg.style, {
-        position: 'absolute',
-        cursor: 'pointer',
-        width: `${imageWidth}px`,
-        height: `${imageHeight}px`,
-        left: `${labelRightX + offsetX}px`,
-        top: `${labelBottomY + offsetY}px`,
-      });
+        const offsetX = 0 // -imageWidth; // Positions the image within the label bounds
+        const offsetY = 0 // -imageHeight;
+
+        Object.assign(deleteImg.style, {
+          position: 'absolute',
+          cursor: 'pointer',
+          width: `${imageWidth}px`,
+          height: `${imageHeight}px`,
+          left: `${labelRightX + offsetX}px`,
+          top: `${labelBottomY + offsetY}px`,
+        });
 
 
-      // Add event listeners for Delete Icon
-      mx.mxEvent.addListener(deleteImg, 'click', mx.mxUtils.bind(this, (evt: MouseEvent) => {
-        // eslint-disable-next-line no-restricted-globals
-        if (can_edit && (evt.shiftKey || confirm("Delete Edge?"))) {
-          graph.removeCells([state.cell], false);
-        }
-        mx.mxEvent.consume(evt);
-        this.destroy();
-      }));
+        // Add event listeners for Delete Icon
+        mx.mxEvent.addListener(deleteImg, 'click', mx.mxUtils.bind(this, (evt: MouseEvent) => {
+          // eslint-disable-next-line no-restricted-globals
+          if (can_edit && (evt.shiftKey || confirm("Delete Edge?"))) {
+            graph.removeCells([state.cell], false);
+          }
+          mx.mxEvent.consume(evt);
+          this.destroy();
+        }));
 
-      mx.mxEvent.addListener(deleteImg, 'mouseenter', mx.mxUtils.bind(this, (evt: MouseEvent) => {
-        deleteImg.style.opacity = '0.7';
-      }));
+        mx.mxEvent.addListener(deleteImg, 'mouseenter', mx.mxUtils.bind(this, (evt: MouseEvent) => {
+          deleteImg.style.opacity = '0.7';
+        }));
 
-      mx.mxEvent.addListener(deleteImg, 'mouseleave', mx.mxUtils.bind(this, (evt: MouseEvent) => {
-        deleteImg.style.opacity = '1.0';
-      }));
+        mx.mxEvent.addListener(deleteImg, 'mouseleave', mx.mxUtils.bind(this, (evt: MouseEvent) => {
+          deleteImg.style.opacity = '1.0';
+        }));
 
-      graph.container.appendChild(deleteImg);
-      this.images.push(deleteImg);
+        graph.container.appendChild(deleteImg);
+        this.images.push(deleteImg);
+      }
     }
   }
 
@@ -368,7 +395,9 @@ var currentIconSet: mxIconSet | undefined = undefined;
 
 function dragEnter(evt: Event, state: mxCellState) {
   if (can_edit && currentIconSet === undefined) {
-    currentIconSet = new mxIconSet(state);
+    if (graph.getModel().getChildCount(state.cell) === 0) {
+      currentIconSet = new mxIconSet(state);
+    }
   }
 }
 
@@ -421,7 +450,7 @@ function cleanReachableNodes(
     visited.add(current.id);
 
     // Check if the vertex ID does NOT start with "output-"
-    if (!current.id.startsWith("output-")) {
+    if (cellKind(current) !== "output") {
       // Update style based on phase
       const style = node_style + `fillColor=${clean_color()};`;
       current.value.phase = 0;
@@ -482,8 +511,10 @@ graph.labelChanged = function (cell, newValue, trigger): mxCell {
     graph.setCellsEditable(true);
     streamlitResponse();
     return cell
+  } else {
+    streamlitResponse();
+    return mx.mxGraph.prototype.labelChanged.apply(this, [cell, newValue, trigger]);
   }
-  return mx.mxGraph.prototype.labelChanged.apply(this, [cell, newValue, trigger]);
 };
 
 
@@ -515,7 +546,7 @@ graph.addMouseListener({
 
     var tmpState: mxCellState | undefined = graph.view.getState(me.getCell());
 
-    if (tmpState && tmpState.cell.id.startsWith("output")) {
+    if (tmpState && cellKind(tmpState.cell) === "output") {
       tmpState = undefined;
     }
 
@@ -554,13 +585,9 @@ let currentlyHoveredCell: mxCell | null = null;
  * @returns True if the cell is a vertex and its name does not start with "output-", else false.
  */
 function shouldHandleHover(cell: mxCell): boolean {
-  if (graph.getModel().isVertex(cell)) {
-    const id = cell.id; // Adjust based on how the name is stored
-    return true
-  }
-  return false;
+  let kind = cellKind(cell);
+  return (kind === "output" || kind === "node");
 }
-
 
 /**
  * Handles the hover event by calling hoverNode with the appropriate flag.
@@ -570,35 +597,33 @@ function handleHover(isEntering: boolean): void {
   if (!mouseDown) {
     let node: string | null = null;
     if (isEntering && currentlyHoveredCell) {
-      node = currentlyHoveredCell?.id;
-      if (node.startsWith("output-")) {
-        // console.log("BEEP")  
+      if (cellKind(currentlyHoveredCell) === "output") {
         showZoomedInContent(currentlyHoveredCell);
+      } else if (cellKind(currentlyHoveredCell) === "node") {
+        graph.toggleCellStyle("shadow", false, currentlyHoveredCell);
       }
-      graph.toggleCellStyle("shadow", false, currentlyHoveredCell);
     } else {
       if (currentlyHoveredCell) {
-        node = currentlyHoveredCell?.id;
-        graph.toggleCellStyle("shadow", true, currentlyHoveredCell);
-        if (node.startsWith("output-")) {
-          // console.log("BORP")  
+        if (cellKind(currentlyHoveredCell) === "output") {
           hideZoomedInContent();
+        } else if (cellKind(currentlyHoveredCell) === "node") {
+          graph.toggleCellStyle("shadow", true, currentlyHoveredCell);
         }
+        const cells = graph.getSelectionCells();
+        const selectedIds = cells.map(cell => cell.id);
+        node = selectedIds.length === 0 ? null : selectedIds[0];
       }
-      const cells = graph.getSelectionCells();
-      const selectedIds = cells.map(cell => cell.id);
-      node = selectedIds.length === 0 ? null : selectedIds[0];
-    }
 
-    console.log("Hovering: ", currentlyHoveredCell, node)
+      console.log("Hovering: ", currentlyHoveredCell, node)
 
-    if (!(currentlyHoveredCell && currentlyHoveredCell.id.startsWith("output-"))) {
-      const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, currentDiagram!.version));
-      Streamlit.setComponentValue({
-        command: "update",
-        diagram: diagram_str,
-        selected_node: node,
-      });
+      if (!(currentlyHoveredCell && cellKind(currentlyHoveredCell) === "output")) {
+        const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, currentDiagram!.version));
+        Streamlit.setComponentValue({
+          command: "update",
+          diagram: diagram_str,
+          selected_node: node,
+        });
+      }
     }
   }
 }
@@ -715,7 +740,7 @@ graph.connectionHandler.createTargetVertex = function (evt, source) {
     geometry: vertex.geometry,
     phase: 0,
     is_locked: false,
-    force_show_output: false    
+    force_show_output: true
   }
   vertex.setStyle(node_style);
 
@@ -751,7 +776,7 @@ function streamlitResponse(hover_node: string | null = null) {
       const original_version = currentDiagram.version;
       // console.log("Setting Value: " + selected_node)
       sessionStorage.setItem("selected_node", selected_node == null ? "" : selected_node);
-      
+
       const translation = graph.view.translate;
       sessionStorage.setItem("translation", JSON.stringify(translation));
 
@@ -808,7 +833,7 @@ function addListeners() {
               geometry: new mx.mxRectangle(pt.x - width / 2, pt.y - height / 2, width, height),
               phase: 0,
               is_locked: false,
-              force_show_output: false
+              force_show_output: true
             }
             const newCell = graph.insertVertex(parent, id, value, pt.x, pt.y, 160, 80, node_style);
             if (userLabel != null) {
@@ -816,7 +841,7 @@ function addListeners() {
               value2.label = userLabel.trim();
               // value.pill = completion;
               graph.getModel().setValue(newCell, value2);
-            }    
+            }
 
             generatePill(userLabel, newCell);
           } finally {
@@ -938,11 +963,11 @@ function addListeners() {
 function generateTwoWordSummary(phrase: string): string {
   // List of common English stop words to exclude
   const stopWords: Set<string> = new Set([
-      'a', 'an', 'the', 'and', 'or', 'but', 'if', 'in', 'on', 'with', 'for',
-      'of', 'at', 'by', 'from', 'up', 'about', 'into', 'over', 'after',
-      'under', 'above', 'to', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-      'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'shall',
-      'should', 'can', 'could', 'may', 'might', 'must'
+    'a', 'an', 'the', 'and', 'or', 'but', 'if', 'in', 'on', 'with', 'for',
+    'of', 'at', 'by', 'from', 'up', 'about', 'into', 'over', 'after',
+    'under', 'above', 'to', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'shall',
+    'should', 'can', 'could', 'may', 'might', 'must'
   ]);
 
   // Step 1: Normalize the input
@@ -957,12 +982,12 @@ function generateTwoWordSummary(phrase: string): string {
   // Step 4: Select the first two significant words
   const summaryWords = significantWords.slice(0, 2);
 
-  let pill : string;
+  let pill: string;
 
   // If not enough significant words, fallback to first two words
   if (summaryWords.length < 2) {
-      const fallbackWords = words.filter(word => word.length > 0).slice(0, 2);
-      pill = fallbackWords.map(capitalize).join('-');
+    const fallbackWords = words.filter(word => word.length > 0).slice(0, 2);
+    pill = fallbackWords.map(capitalize).join('-');
   } else {
     const titleCased = summaryWords.map(capitalize);
     pill = titleCased.join('-');
@@ -988,10 +1013,10 @@ function capitalize(word: string): string {
 
 
 function generatePill(userLabel: string, newCell: mxCell) {
-    const value = newCell.cloneValue();
-    value.label = userLabel.trim();
-    value.pill = generateTwoWordSummary(userLabel);
-    graph.getModel().setValue(newCell, value);
+  const value = newCell.cloneValue();
+  value.label = userLabel.trim();
+  value.pill = generateTwoWordSummary(userLabel);
+  graph.getModel().setValue(newCell, value);
 
 }
 
@@ -1007,23 +1032,241 @@ function updateGraphWithDiagram(diagram: mxDiagram) {
 
 /*****/
 
-// graph.addListener('doubleClick', function(sender, evt) {
-//   var cell = evt.getProperty('cell');
 
-//   if (cell != null && graph.getModel().isVertex(cell)) {
-//     var style = graph.getCellStyle(cell);
-//     if (cell.id.startsWith('output-') && ((style['shape'] === 'image') || style['image'])) {
-//       // Prevent the default double-click behavior (like editing the label)
-//       evt.consume();
-//       const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, currentDiagram!.version));
-//       Streamlit.setComponentValue({
-//         command: "output",
-//         diagram: diagram_str,
-//         selected_node: cell.id.substring(7),
-//       });
+
+
+graph.foldingEnabled = true; // Enable collapsible groups
+
+// Only cells with children are considered foldable
+graph.isCellFoldable = function (cell, collapse) {
+  return this.model.getChildCount(cell) > 0;
+};
+
+// ************************************
+// Preserve Collapsed Size When Resizing
+// ************************************
+// When a collapsed group is resized by the user, save the new geometry
+// on a custom property (manualCollapsedSize) so that future layout calls remember it.
+graph.addListener(mx.mxEvent.RESIZE_CELLS, function (sender, evt) {
+  var cells = evt.getProperty('cells');
+  for (var i = 0; i < cells.length; i++) {
+    var cell = cells[i];
+    if (cell.collapsed) {
+      var geo = graph.getModel().getGeometry(cell);
+      if (geo != null) {
+        cell.manualCollapsedSize = geo.clone();
+      }
+    }
+  }
+});
+
+
+// ************************************
+// Grouping and Ungrouping Functionality
+// ************************************
+
+
+// /**
+//  * Groups the currently selected cells into a new group.
+//  * The new group uses the custom 'group' style (swimlane) so that it has an editable header.
+//  */
+// function groupCells() {
+//     var cells = graph.getSelectionCells();
+//     if (cells && cells.length > 0) {
+//         graph.getModel().beginUpdate();
+//         try {
+//             // Group the selected cells (they become children of the new group cell)
+//             var group = graph.groupCells(null, 0, cells);
+//             group.setId("group-" + group.id);
+//             if (group != null) {
+//                 // Apply the custom group style (swimlane).
+//                 group.setStyle('group');
+//                 // If no label is set, assign a default one.
+//                 if (!group.value) {
+//                     group.value = 'Group';
+//                 }
+//                 // Select the new group cell.
+//                 graph.setSelectionCell(group);
+//             }
+//         } finally {
+//             graph.getModel().endUpdate();
+//             layoutDiagram(graph);
+//         }
 //     }
-//   }
-// });
+// }
+
+/**
+ * Groups the currently selected cells according to these rules:
+ *
+ * 1. If all selected cells are regular nodes, then create a new group.
+ * 2. If one group cell is selected along with one or more regular nodes (that are not already grouped),
+ *    then add those nodes to the selected group.
+ * 3. Otherwise, alert the user that the selection is invalid.
+ */
+function groupCells() {
+  var cells = graph.getSelectionCells();
+  if (!cells || cells.length === 0) {
+    return;
+  }
+
+  // Helper function to determine if a cell is a group.
+  // In this example, a cell is considered a group if its style is 'group'.
+  function isGroup(cell: mxCell) {
+    return cell.getStyle && cell.getStyle() === 'group';
+  }
+
+  // Separate the selection into group cells and regular cells.
+  var groupCellsArr = [];
+  var regularCellsArr = [];
+
+  for (var i = 0; i < cells.length; i++) {
+    var cell = cells[i];
+    if (isGroup(cell)) {
+      groupCellsArr.push(cell);
+    } else {
+      regularCellsArr.push(cell);
+    }
+  }
+
+  // Get the default parent used for ungrouped nodes.
+  var defaultParent = graph.getDefaultParent();
+
+  // CASE 1: All selected cells are regular nodes.
+  if (groupCellsArr.length === 0 && regularCellsArr.length > 0) {
+    graph.getModel().beginUpdate();
+    try {
+      // Group all the selected regular nodes into a new group.
+      var newGroup = graph.groupCells(null, 0, cells);
+      if (newGroup != null) {
+        // Set a new id and the custom style.
+        newGroup.setId("group-" + uuidv4());
+        update_group_style(graph, newGroup);
+        graph.getModel().setGeometry(newGroup, new mx.mxGeometry(0, 0, 200, 150));
+        // If no label is set, assign a default one.
+        if (!newGroup.value) {
+          newGroup.value = 'Group';
+        }
+        // Select the new group cell.
+        graph.setSelectionCell(newGroup);
+      }
+    } finally {
+      graph.getModel().endUpdate();
+      layoutDiagram(graph);
+    }
+  }
+  // CASE 2: One group cell and one or more regular nodes.
+  else if (groupCellsArr.length === 1 && regularCellsArr.length > 0) {
+    var targetGroup = groupCellsArr[0];
+    // Verify that each selected regular node is not already in a group.
+    for (var j = 0; j < regularCellsArr.length; j++) {
+      var regCell = regularCellsArr[j];
+      // A regular node is considered ungrouped if its parent is the default parent.
+      if (regCell.parent !== defaultParent) {
+        alert("You can only group nodes that are not already part of a group.");
+        return;
+      }
+    }
+    // All checks passed; add the regular nodes to the target group.
+    graph.getModel().beginUpdate();
+    try {
+      for (var k = 0; k < regularCellsArr.length; k++) {
+        var cellToAdd = regularCellsArr[k];
+        // This call moves the cell into the target group.
+        graph.getModel().add(targetGroup, cellToAdd, targetGroup.getChildCount());
+      }
+      // Optionally, update the selection to include both the target group and the newly added nodes.
+      graph.setSelectionCells([targetGroup].concat(regularCellsArr));
+    } finally {
+      graph.getModel().endUpdate();
+      layoutDiagram(graph);
+    }
+  }
+  // CASE 3: Any other combination of selections.
+  else {
+    alert("You cannot group two existing groups.");
+  }
+}
+
+
+/**
+ * Ungroups each selected group cell.
+ */
+function ungroupCells() {
+  var cells = graph.getSelectionCells();
+  if (cells && cells.length > 0) {
+    graph.getModel().beginUpdate();
+    try {
+      for (var i = 0; i < cells.length; i++) {
+        if (graph.getModel().getChildCount(cells[i]) > 0) {
+          graph.ungroupCells([cells[i]]);
+        }
+      }
+    } finally {
+      graph.getModel().endUpdate();
+      layoutDiagram(graph);
+    }
+  }
+}
+
+// // ************************************
+// // Button Event Listeners
+// // ************************************
+document.getElementById('groupBtn')!.addEventListener('click', groupCells);
+document.getElementById('ungroupBtn')!.addEventListener('click', ungroupCells);
+
+
+// Add a listener for selection changes
+graph.getSelectionModel().addListener(mx.mxEvent.CHANGE, function(sender, evt) {
+  // Get the currently selected cells
+  var cells = graph.getSelectionCells();
+  var btn = document.getElementById('groupBtn')!;
+  var ungroupBtn = document.getElementById('ungroupBtn')!;
+
+  // Initially hide the button
+  btn.style.display = 'none';
+  ungroupBtn.style.display = 'none';
+
+  if (cells.length > 1) {
+    var countWithChildren = 0;
+    for (var i = 0; i < cells.length; i++) {
+      if (graph.getModel().getChildCount(cells[i]) > 0) {
+        countWithChildren++;
+      }
+    }
+    if (countWithChildren <= 1) {
+      btn.innerText = 'Group';
+      btn.style.display = ''; // Show the button
+    }
+  } else if (cells.length === 1 && graph.getModel().getChildCount(cells[0]) > 0) {
+    ungroupBtn.style.display = ''; // Show the button
+  }
+});
+
+// Re-run layout (and update group bounds) when groups are collapsed/expanded.
+graph.addListener(mx.mxEvent.FOLD_CELLS, function (sender, evt) {
+  var cells = evt.getProperty('cells');
+  var collapsed = evt.getProperty('collapsed');
+  for (var i = 0; i < cells.length; i++) {
+    var cell = cells[i];
+    if (graph.isSwimlane(cell)) {
+      update_group_style(graph, cell);
+    }
+  }
+
+  layoutDiagram(graph);
+});
+
+// Assume 'graph' is your mxGraph instance
+graph.isCellMovable = function (cell) {
+  // If the cell is not in the default parent, then it belongs to a group
+  if (cell.parent !== this.getDefaultParent()) {
+    return false;
+  }
+  // Otherwise, use the default behavior
+  return mx.mxGraph.prototype.isCellMovable.apply(this, arguments as unknown as [mxCell]);
+};
+
+
 
 
 /*****/
@@ -1032,9 +1275,9 @@ function clearGraph() {
   var model = graph.getModel();
   model.beginUpdate();
   try {
-      model.clear();
+    model.clear();
   } finally {
-      model.endUpdate();
+    model.endUpdate();
   }
   graph.refresh();
 }
@@ -1051,11 +1294,11 @@ function onRender(event: Event): void {
   const data = (event as CustomEvent<RenderData>).detail;
   const initial_render = currentDiagram === undefined;
 
-  console.log("currentDiagram === undefined", initial_render)
-  console.log("forced", data.args["forced"])
-  console.log("clear", data.args["clear"])
-  console.log("!editable", !data.args["editable"])
-  console.log("Force", initial_render || !data.args['editable'] || data.args["forced"] || data.args["clear"])
+  // console.log("currentDiagram === undefined", initial_render)
+  // console.log("forced", data.args["forced"])
+  // console.log("clear", data.args["clear"])
+  // console.log("!editable", !data.args["editable"])
+  // console.log("Force", initial_render || !data.args['editable'] || data.args["forced"] || data.args["clear"])
 
 
   setEditable(false);
@@ -1151,4 +1394,3 @@ Streamlit.setComponentReady();
 // Finally, tell Streamlit to update our initial height. We omit the
 // `height` parameter here to have it default to our scrollHeight.
 Streamlit.setFrameHeight();
-
