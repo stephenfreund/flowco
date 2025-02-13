@@ -1,4 +1,5 @@
 from __future__ import annotations
+import html
 from collections import deque
 import os
 import textwrap
@@ -1213,7 +1214,7 @@ class DataFlowGraph(GraphLike, BaseModel):
         return md
 
 
-def dataflow_graph_to_image(dfg: DataFlowGraph, show_outputs: bool = False) -> str:
+def dataflow_graph_to_image(dfg: DataFlowGraph, show_outputs: bool = False) -> str | None:
     """
     Convert a DataFlowGraph instance into a base64-encoded PNG image.
     """
@@ -1232,7 +1233,9 @@ def dataflow_graph_to_image(dfg: DataFlowGraph, show_outputs: bool = False) -> s
     # Add nodes
     for node in dfg.nodes:
         label = "<br/>".join(textwrap.wrap(node.label, width=50))
-        label = f"<<b>{node.pill}:</b><br/>{label}>"
+        escaped_label = html.escape(label)
+        escaped_pill = html.escape(node.pill)
+        label = f"<<b>{escaped_pill}:</b><br/>{escaped_label}>"
         dot.node(node.id, label=label, **node_style)
 
     # Edge styles
@@ -1264,16 +1267,18 @@ def dataflow_graph_to_image(dfg: DataFlowGraph, show_outputs: bool = False) -> s
                     and not node.function_return_type.is_None_type()
                 ):
                     if (text := node.result.pp_result_text(clip=15)) is not None:
+                        escaped_text = html.escape(text)
                         dot.node(
                             node.id + "-output",
-                            label=f"{text}",
+                            label=f"{escaped_text}",
                             shape="none",
                             fontsize="8pt",
                         )
                 elif (text := node.result.pp_output_text(clip=15)) is not None:
+                    escaped_text = html.escape(text)
                     dot.node(
                         node.id + "-output",
-                        label=f"{text}",
+                        label=f"{escaped_text}",
                         shape="none",
                         fontsize="8pt",
                     )
@@ -1319,6 +1324,9 @@ def dataflow_graph_to_image(dfg: DataFlowGraph, show_outputs: bool = False) -> s
         png_data = dot.pipe(format="png")
         base64_image = base64.b64encode(png_data).decode("utf-8")
 
+        with open("/tmp/graph.png", "wb") as f:
+            f.write(png_data)
+
         for temp_file in temp_files:
             try:
                 os.remove(temp_file)
@@ -1328,4 +1336,4 @@ def dataflow_graph_to_image(dfg: DataFlowGraph, show_outputs: bool = False) -> s
         return base64_image
     except Exception as e:
         error(f"Error generating image", e)
-        return ""
+        return None

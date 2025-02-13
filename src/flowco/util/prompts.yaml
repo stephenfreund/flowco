@@ -561,7 +561,13 @@ compile: |
     ```
     # put all imports here
     def {signature}:
+        """"
+        # outline goes here
+        """"
+        # code goes here
     ```
+
+    Identify necessary imports, then outline the code in the pydoc comment, and finally write the body.
 
 
 assertions-code: |
