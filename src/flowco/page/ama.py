@@ -47,7 +47,7 @@ class AskMeAnything:
     def __init__(self, page: Page):
         self.page = page
         self.reset()
-        self.visible_messages : List[VisibleMessage] = []
+        self.visible_messages: List[VisibleMessage] = []
 
     def reset(self):
         """Reset internals"""
@@ -241,11 +241,14 @@ class AskMeAnything:
             List[str],
             "A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well.",
         ],
+        function_return_type: Annotated[ExtendedType, "The return type of the node."],
     ) -> ToolCallResult:
         """
-        Add a node and its requirements to the diagram.  Do not provide an algorithm or code.  Nodes should represent one small step in a pipeline. Eg: one transformation, one statistical test, one visualization, one output, ...  Provide a list of nodes that should point to the new node.  Provide a unique id for the node, a list of predecessor nodes, a label, and a list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well.
+        Add a node and its requirements to the diagram.  Do not provide code.  Nodes should represent one small step in a pipeline. Eg: one transformation, one statistical test, one visualization, one output, ...  Provide a list of nodes that should point to the new node.  Provide a unique id for the node, a list of predecessor nodes, a label, and a list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well.
         """
-        log(f"add_node: {id}, {predecessors}, {label}, {requirements}")
+        log(
+            f"add_node: {id}, {predecessors}, {label}, {requirements}, {function_return_type}"
+        )
         dfg = self.page.dfg
 
         pill = "tmp-pill"
@@ -316,7 +319,9 @@ class AskMeAnything:
         )
 
         node = dfg[id]
-        node = node.update(requirements=requirements)
+        node = node.update(
+            requirements=requirements, function_return_type=function_return_type
+        )
         dfg = dfg.with_node(node)
 
         self.page.update_dfg(dfg)

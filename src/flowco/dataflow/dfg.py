@@ -465,7 +465,7 @@ class Node(NodeLike, BaseModel):
             md += f"**Output** \n\n"
 
             if self.function_return_type is not None:
-                md += self.function_return_type.description
+                md += str(self.function_return_type)
                 md += "\n\n"
 
             if self.result is not None:
