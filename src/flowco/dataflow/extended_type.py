@@ -6,7 +6,7 @@ from abc import abstractmethod
 import numpy as np
 import pandas as pd
 
-from flowco.util.output import error
+from flowco.util.output import error, warn
 
 # Define TypeRepresentation before using it in classes
 TypeRepresentation = Union[
@@ -1133,7 +1133,8 @@ def ext_type_to_summary(ext_type: ExtendedType) -> str:
         elif t == "class":
             return ext_type.the_type.name
         else:
-            raise ValueError(f"Unknown type: {t}")
+            warn(f"Unknown type: {t}")
+            return t
 
     return rep_to_summary(ext_type.the_type)
 

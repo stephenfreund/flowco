@@ -19,6 +19,7 @@ deepdiff>=7.0.1
 streamlit_extras
 graphviz
 s3fs
+requests
 fsspec
 google-auth-oauthlib
 markdown

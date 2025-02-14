@@ -3,6 +3,10 @@ from typing import Dict
 import zipfile
 
 import os
+
+import requests
+from flowco.util.output import error, log
+
 from flowco.session.session_file_system import (
     fs_exists,
     fs_glob,
@@ -16,14 +20,49 @@ def get_flowco_files():
     return fs_glob("", "*.flowco")
 
 
+# def make_default_files():
+#     path = os.path.join(os.path.dirname(__file__), "initial_files")
+#     for file in os.listdir(path):
+#         print(f"Making {file}")
+#         file_path = os.path.join(path, file)
+#         with open(file_path, "r") as f:
+#             content = f.read()
+#             fs_write(file, content)
+
+
 def make_default_files():
-    path = os.path.join(os.path.dirname(__file__), "initial_files")
-    for file in os.listdir(path):
-        print(f"Making {file}")
-        file_path = os.path.join(path, file)
-        with open(file_path, "r") as f:
-            content = f.read()
-            fs_write(file, content)
+    try:
+        # Replace with your public folder ID from Google Drive.
+        folder_id = "1Q4pmI5XlM1IA5-ih-d2U68GgtIMhZ7wH"
+        # Replace with your Google API key.
+        api_key = os.environ.get("GOOGLE_API_KEY")
+
+        # Endpoint for listing files in a folder.
+        list_url = "https://www.googleapis.com/drive/v3/files"
+        params = {
+            "q": f"'{folder_id}' in parents and trashed=false",
+            "key": api_key,
+            "fields": "files(id, name, mimeType)",  # adjust fields as needed
+        }
+
+        response = requests.get(list_url, params=params)
+        response.raise_for_status()  # Raise an error if the request failed
+        data = response.json()
+
+        for file in data.get("files", []):
+            log(f"Making {file['name']}")
+            file_id = file["id"]
+            # Build the URL to download file content.
+            download_url = f"https://www.googleapis.com/drive/v3/files/{file_id}"
+            download_params = {"alt": "media", "key": api_key}
+            file_response = requests.get(download_url, params=download_params)
+            file_response.raise_for_status()
+
+            # Assuming the file is text-based.
+            content = file_response.text
+            fs_write(file["name"], content)
+    except Exception as e:
+        error(f"Error making default files: {e}")
 
 
 def setup_flowco_files():
