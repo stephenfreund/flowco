@@ -1,3 +1,4 @@
+import sys
 import boto3
 from datetime import datetime, timezone
 from dateutil.relativedelta import relativedelta
@@ -113,7 +114,10 @@ def download_zip_files(bucket_name, zip_files, download_dir):
 def main():
     # Bucket name and relative time string (e.g., "2 days ago")
     bucket_name = "go-flowco"
-    relative_time_str = "2 days ago"  # Specify your relative time
+    if len(sys.argv) < 2:
+        relative_time_str = "2 days ago"
+    else:
+        relative_time_str = " ".join(sys.argv[1:])
 
     # Get the list of zip files created after the given time
     zip_files = get_files_after_time(bucket_name, relative_time_str)

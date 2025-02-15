@@ -246,7 +246,7 @@ export function toSnakeCase(input: string): string {
 }
 
 export function labelForEdge(src_node: mxCell): string {
-    return toSnakeCase(src_node ? escapeHtml((src_node.value as DiagramNode).pill) : "");
+    return ""; // toSnakeCase(src_node ? escapeHtml((src_node.value as DiagramNode).pill) : "");
 }
 
 function make_edge(graph: mxGraph, edge: DiagramEdge): mxCell {

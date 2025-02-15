@@ -54,10 +54,9 @@ def requirements(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> N
             completion = get_requirements_completion(assistant)
 
         new_node = update_node_with_completion(node, completion)
-        new_node = new_node.update(phase=Phase.requirements)
-
-        if config.x_no_descriptions:
-            new_node = new_node.update(description="", function_computed_value="")
+        new_node = new_node.update(
+            phase=Phase.requirements, description="", function_computed_value=""
+        )
 
         new_node = new_node.update(
             cache=new_node.cache.update(Phase.requirements, new_node)
@@ -78,13 +77,10 @@ def requirements_assistant(
     node: Node,
     diff_instructions: str,
 ):
-    if graph.successors(node.id):
-        prompt = "postconditions"
-    else:
-        prompt = "postconditions-for-sink"
-
-    if config.x_no_descriptions:
-        prompt += "-no-descriptions"
+    # if graph.successors(node.id):
+    prompt = "postconditions"
+    # else:
+    #     prompt = "postconditions-for-sink"
 
     assistant = flowco_assistant("system-prompt")
     prompt_text = config.get_prompt(
@@ -131,15 +127,7 @@ def requirements_assistant(
 
 
 def requirements_completion_model():
-    if not config.x_no_descriptions:
-        fields = [
-            "requirements",
-            "description",
-            "function_return_type",
-            "function_computed_value",
-        ]
-    else:
-        fields = ["requirements", "function_return_type"]
+    fields = ["requirements", "function_return_type"]
 
     return node_completion_model(*fields)
 

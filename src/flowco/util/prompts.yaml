@@ -198,6 +198,7 @@ lift_up_changes_from_requirements: |
 
 
 
+
 postconditions: |
     Here are the preconditions for a set of variables used by 
     a computation:
@@ -205,110 +206,6 @@ postconditions: |
     {preconditions}
     ```
 
-    Complete the following steps:
-
-    1. *Postconditions*
-    
-    Start with the label
-    ```
-    {label}
-    ```
-    and create a list of postconditions that will hold for the 
-    computed value `{function_return_var}`.
-
-    The postconditions should refer to the output as `{function_return_var}` and 
-    the inputs by name.  Not all inputs may be used.
-
-    Create a return type for the function that meets the postconditions.  If
-    the function generates a plot, the return type should be None.
-
-    The return type's specification should be detailed enough that users of the function 
-    can understand what the function returns.  Do not include a specificaton if the return
-    type is None.
-    
-    The type should reflect what is described in the specification.
-    If the function generates plots, the return type should be None.
-
-    Assume the client has no other information about the function.
-    
-    If this function returns data from a file, use the column labels 
-    and types found in that file.
-
-    The postconditions you create should be detailed enough that the 
-    code for that step can be written later using only the preconditions 
-    and postconditions.  Avoid contradictions or redundancies in the postconditions.
-
-    {diff}
-
-    Leave unchanged any postconditions that are correct as written.
-
-    2. *Description*
-
-    Write a 3-5 sentence description of what this computation step does.
-
-    3. *Return Description*
-
-    Write a one sentence description of the value returned by
-    this function.  Be detailed enough that users of the function can understand
-    what the function returns without reading the source code.
-
-
-postconditions-for-sink: |
-    Here are the preconditions for a set of variables used by 
-    a computation:
-    ```
-    {preconditions}
-    ```
-
-    Complete the following steps:
-
-    1. *Posconditions*
-
-    Choose a specific output format.
-
-    Start with the label
-    ```
-    {label}
-    ```
-    and create a list of postconditions.
-
-    The postconditions should refer to the inputs by name.  Not all inputs may be used.
-
-    The postconditions you create should be detailed enough that the 
-    code for that step can be written later using only the preconditions 
-    and postconditions.  Avoid contradictions or redundancies in the postconditions.
-        
-    {diff}
-
-    Ask questions to resolve any ambiguities you encounter.
-
-    2. *Description*
-
-    Write a 3-5 sentence description of what this computation step does.
-
-    3. *Return Type*
-
-    The return type should be `None` if the function generates a plot.  Otherwise,
-    create a return type for the function that meets the postconditions.
-
-    4 * Return Description*
-
-    The computed valued description should be "None" if the function generates a plot.  Otherwise,
-    write a one sentence description of the value returned by this function.
-
-
-
-postconditions-no-descriptions: |
-    Here are the preconditions for a set of variables used by 
-    a computation:
-    ```
-    {preconditions}
-    ```
-
-    Complete the following steps:
-
-    1. *Postconditions*
-    
     Start with the label
     ```
     {label}
@@ -322,6 +219,9 @@ postconditions-no-descriptions: |
     The postconditions should be detailed enough that subsequent steps know exactly how to 
     use the output in  `{function_return_var}`.  That includes the type and any constraints on the value,
     as well as the keys to use for any dictionary in the return value.
+
+    Do not use print -- that is a side effect.  Instead, use return values to 
+    communicate information about the computation.
 
     Create a return type for the function that meets the postconditions.
     Favor Records over Dictionaries in the return type.  
@@ -345,7 +245,7 @@ postconditions-no-descriptions: |
     
     {diff}
 
-postconditions-for-sink-no-descriptions: |
+postconditions-for-sink: |
     Here are the preconditions for a set of variables used by 
     a computation:
     ```
@@ -355,8 +255,6 @@ postconditions-for-sink-no-descriptions: |
     Complete the following steps:
 
     1. *Posconditions*
-
-    Choose a specific output format.
 
     Start with the label
     ```
@@ -371,8 +269,6 @@ postconditions-for-sink-no-descriptions: |
     and postconditions.  Avoid contradictions or redundancies in the postconditions.
         
     {diff}
-
-    Ask questions to resolve any ambiguities you encounter.
 
     2. *Return Type*
 

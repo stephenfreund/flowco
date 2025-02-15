@@ -73,7 +73,6 @@ class Config:
         )
 
         # experimental features
-        self.x_no_descriptions = _flowco_get_env("x_no_descriptions", "1") != "0"
         self.x_lock_stops_updates = _flowco_get_env("lock_stops_updates", "0") != "0"
         self.x_no_dfg_image_in_prompt = (
             _flowco_get_env("x_no_dfg_image_in_prompt", "0") != "0"
@@ -202,15 +201,6 @@ class Config:
             type=AbstractionLevel,
             help="The abstraction level",
             action=UpdateConfigAction,
-            config=self,
-        )
-        parser.add_argument(
-            "--x_no_descriptions",
-            type=bool,
-            nargs=0,
-            default=self.x_no_descriptions,
-            help="Compute descriptions of nodes and computed values",
-            action=StoreTrueConfigAction,
             config=self,
         )
         parser.add_argument(

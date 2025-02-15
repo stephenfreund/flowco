@@ -262,13 +262,12 @@ class NodeEditor:
             page: Page = ui_page.page()
             page.clean(node.id)  # !!! this can change the page.dfg
 
-            node = node.update(phase=Phase.requirements)  
+            node = node.update(phase=Phase.requirements)
 
         dfg = ui_page.dfg()  # must reload
 
         for phase in visible_phases():
             node = node.update(cache=node.cache.update(phase=phase, node=node))
-
 
         log(
             "Updating node",
@@ -345,7 +344,7 @@ class NodeEditor:
                         st.rerun(scope="app")
             with middle:
                 if st.button(
-                    "Check",
+                    "Check Consistency",
                     icon=":material/check:",
                     disabled=self.pending_ama is not None,
                 ):

@@ -172,7 +172,7 @@ graph.container.addEventListener('mousemove', function (evt) {
   var cell = state ? state.cell : null;
   var isShift = evt.shiftKey;
 
-  hideZoomedInContent();
+  // hideZoomedInContent();
 
   if (cell == null) {
     if (isShift) {
@@ -579,14 +579,9 @@ graph.addMouseListener({
 let hoverTimer: number | null = null;
 let currentlyHoveredCell: mxCell | null = null;
 
-/**
- * Determines if a cell should trigger the hover event.
- * @param cell - The cell to evaluate.
- * @returns True if the cell is a vertex and its name does not start with "output-", else false.
- */
 function shouldHandleHover(cell: mxCell): boolean {
   let kind = cellKind(cell);
-  return (kind === "output" || kind === "node");
+  return (kind === "output"); // || kind === "node");
 }
 
 /**
@@ -594,36 +589,38 @@ function shouldHandleHover(cell: mxCell): boolean {
  * @param isEntering - True if entering hover, false if exiting.
  */
 function handleHover(isEntering: boolean): void {
+  console.log("Handling hover", isEntering, currentlyHoveredCell)
   if (!mouseDown) {
-    let node: string | null = null;
     if (isEntering && currentlyHoveredCell) {
       if (cellKind(currentlyHoveredCell) === "output") {
         showZoomedInContent(currentlyHoveredCell);
-      } else if (cellKind(currentlyHoveredCell) === "node") {
-        graph.toggleCellStyle("shadow", false, currentlyHoveredCell);
-      }
+      } 
+      // else if (cellKind(currentlyHoveredCell) === "node") {
+      //   graph.toggleCellStyle("shadow", false, currentlyHoveredCell);
+      // }
     } else {
       if (currentlyHoveredCell) {
         if (cellKind(currentlyHoveredCell) === "output") {
           hideZoomedInContent();
-        } else if (cellKind(currentlyHoveredCell) === "node") {
-          graph.toggleCellStyle("shadow", true, currentlyHoveredCell);
         }
-        const cells = graph.getSelectionCells();
-        const selectedIds = cells.map(cell => cell.id);
-        node = selectedIds.length === 0 ? null : selectedIds[0];
+        //  else if (cellKind(currentlyHoveredCell) === "node") {
+        //   graph.toggleCellStyle("shadow", true, currentlyHoveredCell);
+        // }
+        // const cells = graph.getSelectionCells();
+        // const selectedIds = cells.map(cell => cell.id);
+        // node = selectedIds.length === 0 ? null : selectedIds[0];
       }
 
-      console.log("Hovering: ", currentlyHoveredCell, node)
+      // console.log("Hovering: ", currentlyHoveredCell, node)
 
-      if (!(currentlyHoveredCell && cellKind(currentlyHoveredCell) === "output")) {
-        const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, currentDiagram!.version));
-        Streamlit.setComponentValue({
-          command: "update",
-          diagram: diagram_str,
-          selected_node: node,
-        });
-      }
+      // if (!(currentlyHoveredCell && cellKind(currentlyHoveredCell) === "output")) {
+      //   const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, currentDiagram!.version));
+      //   Streamlit.setComponentValue({
+      //     command: "update",
+      //     diagram: diagram_str,
+      //     selected_node: node,
+      //   });
+      // }
     }
   }
 }
@@ -638,7 +635,6 @@ const hoverMouseListener = {
     const x: number = me.getGraphX();
     const y: number = me.getGraphY();
     const cell: mxCell | null = graph.getCellAt(x, y);
-
     if (cell !== currentlyHoveredCell) {
       // Clear existing hover timer if any
       if (hoverTimer !== null) {
@@ -648,6 +644,7 @@ const hoverMouseListener = {
 
       // If there was a previously hovered cell, handle exit hover
       if (currentlyHoveredCell && shouldHandleHover(currentlyHoveredCell)) {
+        // console.log("Exiting hover", currentlyHoveredCell)    
         handleHover(false); // Exiting hover
         currentlyHoveredCell = null;
       }
@@ -681,6 +678,7 @@ graph.container.addEventListener('mouseout', (_event: MouseEvent): void => {
 
   // If a cell is currently hovered, handle exit hover
   if (currentlyHoveredCell && shouldHandleHover(currentlyHoveredCell)) {
+    // console.log("Exiting hover due to mouse out", currentlyHoveredCell)
     handleHover(false); // Exiting hover
     currentlyHoveredCell = null;
   }
@@ -763,14 +761,12 @@ graph.connectionHandler.createTargetVertex = function (evt, source) {
 // TODO: can we replace this with graph.isMouseDown???
 var mouseDown = false;
 
-function streamlitResponse(hover_node: string | null = null) {
+function streamlitResponse() {
   console.log("Streamlit Response Borp", can_edit, mouseDown, graph.isMouseDown)
   if (can_edit && !mouseDown) {
     const cells = graph.getSelectionCells();
     const selectedIds = cells.map(cell => cell.id);
     const selected_node = selectedIds.length === 0 ? null : selectedIds[0];
-
-    const selected_node_value = hover_node == null ? selected_node : hover_node;
 
     if (currentDiagram !== undefined) {
       const original_version = currentDiagram.version;
@@ -787,7 +783,7 @@ function streamlitResponse(hover_node: string | null = null) {
       Streamlit.setComponentValue({
         command: "update",
         diagram: diagram_str,
-        selected_node: selected_node_value,
+        selected_node: selected_node,
       });
       Streamlit.setFrameHeight();
       graph.sizeDidChange();
