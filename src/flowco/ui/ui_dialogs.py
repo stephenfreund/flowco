@@ -38,9 +38,6 @@ def settings(ui_page: UIPage):
             "Don't cache images", value=config.x_no_image_cache
         )
 
-        config.x_no_descriptions = st.toggle(
-            "Don't generate descriptions for each node", value=config.x_no_descriptions
-        )
         config.x_lock_stops_updates = st.toggle(
             "Use the LLM to check for precondition changes",
             value=config.x_lock_stops_updates,

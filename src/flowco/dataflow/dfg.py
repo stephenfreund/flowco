@@ -13,7 +13,7 @@ import base64
 from flowco.assistant.flowco_assistant import fast_text_complete
 from flowco.builder.cache import BuildCache
 from flowco.dataflow.checks import Check, CheckOutcomes
-from flowco.dataflow.extended_type import ExtendedType
+from flowco.dataflow.extended_type import ExtendedType, schema_to_text
 from flowco.dataflow.function_call import FunctionCall
 from flowco.dataflow.parameter import Parameter
 from flowco.dataflow.phase import Phase
@@ -425,20 +425,20 @@ class Node(NodeLike, BaseModel):
             build_status=None,
         )
 
-    def to_markdown(self) -> str:
-
-        keys = [
-            "pill",
-            "label",
-            "messages",
-            "requirements",
-            "description",
-            "code",
-            "result",
-            "assertions",
-        ]
-        if self.algorithm is not None:
-            keys.append("algorithm")
+    def to_markdown(self, keys: Optional[List[str]] = None) -> str:
+        if keys is None:
+            keys = [
+                "pill",
+                "label",
+                "messages",
+                "requirements",
+                "description",
+                "code",
+                "result",
+                "assertions",
+            ]
+            if self.algorithm is not None:
+                keys.append("algorithm")
         md = ""
         if "pill" in keys:
             md += f"#### {self.pill}\n\n"
@@ -455,7 +455,7 @@ class Node(NodeLike, BaseModel):
         if "description" in keys and self.description is not None:
             md += f"**Description**\n\n{self.description}\n\n"
         if "function_return_type" in keys and self.function_return_type is not None:
-            md += f"**Function Return Type** `{self.function_return_type}`\n\n"
+            md += f"\n**Output Type**\n```\n{schema_to_text(self.function_return_type.type_schema())}\n```\n\n"
         if "algorithm" in keys and self.algorithm is not None:
             algorithm = "\n".join([f"* {x}" for x in self.algorithm])
             md += f"**Algorithm**\n\n{algorithm}\n\n"
@@ -1214,7 +1214,9 @@ class DataFlowGraph(GraphLike, BaseModel):
         return md
 
 
-def dataflow_graph_to_image(dfg: DataFlowGraph, show_outputs: bool = False) -> str | None:
+def dataflow_graph_to_image(
+    dfg: DataFlowGraph, show_outputs: bool = False
+) -> str | None:
     """
     Convert a DataFlowGraph instance into a base64-encoded PNG image.
     """

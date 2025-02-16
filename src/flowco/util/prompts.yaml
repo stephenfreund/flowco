@@ -466,6 +466,43 @@ compile: |
     Identify necessary imports, then outline the code in the pydoc comment, and finally write the body.
 
 
+compile-pydoc: |
+    Write the code for this step as a single function.
+    
+    The code should:
+
+    * Implement the requirements as a pure function.
+    * Return a value consistent with the return type.
+    * Have no side effects.
+    * Be optimized for readability, clarity, and simplicity.
+    
+    You may only import matplotlib, seaborn, numpy, sklearn, statsmodels, scipy, and pandas.  
+
+    Import any classes referenced in the return type.
+    
+    Uses seaborn for all plots, with
+    no changes to the base style.  Do not call `plt.close()`.  Do not call `plt.show()`.  Do not save plots to disk.
+
+    Do not include other functions.
+
+    The function should return a value of the appropriate type, or None if the function displays a plot.
+
+    If the step already has code, fix it to implement the requirements and nothing more.
+
+    {diff}
+
+    The code must have this format:
+    ```
+    # put all imports here
+    def {signature}:
+        """
+        {pydoc}
+        """
+        # code goes here
+    ```
+
+    Identify necessary imports and then write the body.
+
 assertions-code: |
     Here are the input variables for a function:
     ```

@@ -2,13 +2,14 @@ from dataclasses import dataclass
 import textwrap
 from typing import Literal
 import streamlit as st
-from flowco.dataflow.dfg import Geometry
+from flowco.dataflow.dfg import Geometry, Node
 from flowco.dataflow.phase import Phase
+from flowco.page.ama import VisibleMessage
 from flowco.ui.dialogs.data_files import data_files_dialog
 from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_page import UIPage
 from flowco.ui.ui_util import phase_for_last_shown_part, set_session_state
-from flowco.util.config import config
+from flowco.util.config import AbstractionLevel, config
 from flowco.util.costs import inflight
 from flowco.util.output import debug, log
 from flowco.ui.page_files.base_page import FlowcoPage
@@ -228,6 +229,19 @@ class BuildPage(FlowcoPage):
             builder.stop()
             self.clear_builder_and_reset_state()
 
+    # def new_node_to_message(self, node: Node) -> str:
+    #     if node.phase == Phase.requirements:
+    #         assert node.requirements is not None, "Node has no requirements"
+    #         requirements = [f"* {x}" for x in node.requirements]
+    #         return f"##### {node.pill}: Requirements\n" + "\n".join(requirements)
+    #     elif node.phase == Phase.runnable:
+    #         if AbstractionLevel.show_code(st_abstraction_level()):
+    #             code = "\n".join(node.code)
+    #             return f"##### {node.pill}: Code\n```\n{code}\n```\n"
+    #     elif node.phase == Phase.run_checked:
+    #         return f"##### {node.pill}: Result\n...\n"
+    #     return ""
+
     def get_builder_updates(self):
         ui_page: UIPage = st.session_state.ui_page
         if st.session_state.builder is not None:
@@ -242,6 +256,13 @@ class BuildPage(FlowcoPage):
                     dfg = build_update.new_graph
                     ui_page.update_dfg(dfg)
                     builder.update_done()
+                    # if build_update.updated_node is not None:
+                    #     text = self.new_node_to_message(build_update.updated_node)
+                    #     if text:
+                    #         st.session_state.ama.add_visible_message(
+                    #             VisibleMessage(role="assistant", content=text)
+                    #         )
+
                 except queue.Empty:
                     continue
 

@@ -46,7 +46,7 @@ class UIPage(PageListener):
         return self._page.dfg
 
     def dfg_as_mx_diagram(self, image_cache: UIImageCache) -> MxDiagram:
-        return mx_diagram.from_dfg(self.dfg(), image_cache)
+        return mx_diagram.from_dfg(self.dfg(), image_cache, st_abstraction_level())
 
     def node(self, node_id: str) -> Node | None:
         return self.dfg().get_node(node_id)

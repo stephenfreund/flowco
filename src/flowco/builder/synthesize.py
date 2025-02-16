@@ -336,6 +336,65 @@ def algorithm_completion_model():
     return completion_model
 
 
+def generate_docstring_for_node(node: Node) -> str:
+    """
+    Generate a Google style docstring for a Node instance representing a computation stage.
+
+    This docstring summarizes the function's purpose, its parameters (with types and any
+    associated preconditions), and the return type (with additional return requirements).
+
+    Args:
+        Each parameter is documented with its name, type, description, and its preconditions
+        (if any).
+
+    Returns:
+        {return_type}: Description of the return value.
+        Return Requirements:
+            - Additional requirements for the return value.
+    """
+    assert node.function_parameters is not None, "Parameters must be defined."
+    assert node.preconditions is not None, "Preconditions must be defined."
+    assert node.function_result_var is not None, "Result var must be defined."
+    assert node.function_return_type is not None, "Return type must be defined."
+    assert node.requirements is not None, "Requirements must be defined."
+
+    lines = []
+
+    # Summary: function name and a brief label description.
+    lines.append(f"{node.label}")
+    lines.append("")
+    lines.append("This function has the following behavior:")
+    for requirement in node.requirements:
+        modified_requirement = requirement.replace(
+            f"`{node.function_result_var}`", "the result"
+        )
+        lines.append(f"        - {modified_requirement}")
+
+    # Args section: list each parameter with its type, description, and associated preconditions.
+    lines.append("Args:")
+    for param in node.function_parameters:
+        # Document the parameter.
+        lines.append(
+            f"    {param.name} ({param.type.to_python_type()}): {param.type.description}"
+        )
+        # Append preconditions if they exist for this parameter.
+        if param.name in node.preconditions:
+            lines.append("        Preconditions:")
+            for condition in node.preconditions[param.name]:
+                condition = condition.replace("output", param.name)
+                lines.append(f"            - {condition}")
+    lines.append("")
+
+    # Returns section: include return type and any additional return requirements.
+    lines.append("Returns:")
+    lines.append(
+        f"    {node.function_return_type.to_python_type()}: {node.function_return_type.description}"
+    )
+    lines.append("")
+
+    return "\n".join(lines)
+
+
 @node_pass(required_phase=Phase.algorithm, target_phase=Phase.code)
 def compile(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
     with logger("Compile step"):
@@ -393,10 +452,13 @@ def code_assistant(node: Node, diff_instructions):
     )
 
     assistant = flowco_assistant(
-        prompt_key="compile",
+        prompt_key="compile-pydoc",
         signature=node.signature_str(),
         parameter_types=parameter_type_str,
         diff=diff_instructions,
+        pydoc=textwrap.indent(
+            generate_docstring_for_node(node), prefix="    ", predicate=lambda x: True
+        ),
     )
 
     node_fields = [
@@ -414,11 +476,11 @@ def code_assistant(node: Node, diff_instructions):
     if config.x_algorithm_phase:
         node_fields.append("algorithm")
 
-    assistant.add_text("user", f"Here is the current state of node {node.pill}:")
-    assistant.add_json(
-        "user",
-        json_for_node_view(node=node, node_fields=node_fields),
-    )
+    # assistant.add_text("user", f"Here is the current state of node {node.pill}:")
+    # assistant.add_json(
+    #     "user",
+    #     json_for_node_view(node=node, node_fields=node_fields),
+    # )
 
     return assistant
 

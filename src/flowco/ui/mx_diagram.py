@@ -28,6 +28,7 @@ class DiagramNode(BaseModel):
     force_show_output: bool
     build_status: Optional[str] = None
     output: Optional[DiagramOutput] = None
+    html: Optional[str] = None
 
 
 class DiagramEdge(BaseModel):
@@ -112,7 +113,11 @@ def get_output(
 
 
 @staticmethod
-def from_dfg(dfg: DataFlowGraph, image_cache: UIImageCache | None) -> MxDiagram:
+def from_dfg(
+    dfg: DataFlowGraph,
+    image_cache: UIImageCache | None,
+    abstraction_level: AbstractionLevel = AbstractionLevel.spec,
+) -> MxDiagram:
 
     # Create a mapping from node id to Node for easy lookup
     node_dict = {node.id: node for node in dfg.nodes}
@@ -121,7 +126,11 @@ def from_dfg(dfg: DataFlowGraph, image_cache: UIImageCache | None) -> MxDiagram:
     mx_nodes: Dict[str, DiagramNode] = {}
 
     for node in dfg.nodes:
-        md = node.to_markdown()
+        keys = ["pill", "requirements", "function_return_type"]
+        if AbstractionLevel.show_code(abstraction_level):
+            keys += ["code"]
+
+        md = node.to_markdown(keys)
         html = md_to_html(md)
         diagram_node = DiagramNode(
             id=node.id,
@@ -137,7 +146,7 @@ def from_dfg(dfg: DataFlowGraph, image_cache: UIImageCache | None) -> MxDiagram:
             force_show_output=node.force_show_output,
             output=get_output(node, image_cache),
             build_status=node.build_status,
-            # html=html,
+            html=html,
         )
         mx_nodes[node.id] = diagram_node
 

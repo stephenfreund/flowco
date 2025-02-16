@@ -287,7 +287,6 @@ class BuildCommand(Command):
         if args.force or args.target in BuildCommand.always_force_to_run:
             p = builder.passes_by_target[target_phase]
             page.clean(phase=p.required_phase())
-
             phases_with_cache = [
                 Phase.requirements,
                 Phase.code,

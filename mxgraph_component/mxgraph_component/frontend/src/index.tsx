@@ -97,21 +97,32 @@ function showZoomedInContent(cell: mxCell) {
     // If no image is found, display the cell value as text
     zoomedInContainer.innerHTML = cell.value;
   }
-
-
   // Show the container and position it near the mouse
   zoomedInContainer.style.display = "block";
-  zoomedInContainer.style.position = 'absolute';
-  zoomedInContainer.style.alignSelf = 'center';
-  zoomedInContainer.style.left = '10px;' // cell.geometry.x + cell.geometry.width + 10 + 'px';  // Position to the right of the cell
-  zoomedInContainer.style.margin = '10px';
-  zoomedInContainer.style.top = '60px';  // Align with the top of the cell
-  zoomedInContainer.style.width = "800px";
-  zoomedInContainer.style.boxShadow = "0 0 10px rgba(0, 0, 0, 0.5)";
-  // zoomedInContainer.style.height = "80%";
-  zoomedInContainer.style.maxWidth = "100%";
-  // console.log("BB", zoomedInContainer)
 }
+
+// Function to display zoomed-in content (with image handling)
+function showZoomedInNodeContent(cell: mxCell) {
+  const node = cell.value
+  const html = node.html 
+  
+  if (html) {
+    zoomedInContainer.innerHTML = html;
+    // Show the container and position it near the mouse
+    zoomedInContainer.style.display = "block";
+  }
+}
+
+zoomedInContainer.style.position = 'absolute';
+zoomedInContainer.style.alignSelf = 'center';
+zoomedInContainer.style.left = '10px;' 
+zoomedInContainer.style.margin = '10px';
+zoomedInContainer.style.top = '60px';  // Align with the top of the cell
+zoomedInContainer.style.width = "95%";
+zoomedInContainer.style.fontSize = "12px";
+zoomedInContainer.style.boxShadow = "0 0 10px rgba(0, 0, 0, 0.5)";
+zoomedInContainer.style.maxWidth = "100%";
+
 
 function hideZoomedInContent() {
   zoomedInContainer.style.display = 'none';
@@ -292,9 +303,9 @@ class mxIconSet {
 
       // if state.cell has any outgoing edges that do not have empty labels, show output.
       const children = graph.getModel().getOutgoingEdges(state.cell);
-      const showOutput = children.some(child => child.value !== '');
+      const showOutput = children.some(child => !child.value.startsWith("output"));
       if (showOutput) {
-        // Create Delete Icon
+        // Create For show
         const showOutputImg: HTMLImageElement = state.cell.value.force_show_output ? mx.mxUtils.createImage("visible_filled.png") : mx.mxUtils.createImage("visible.png")
         showOutputImg.setAttribute('title', 'Show Output');
         Object.assign(showOutputImg.style, {
@@ -581,7 +592,7 @@ let currentlyHoveredCell: mxCell | null = null;
 
 function shouldHandleHover(cell: mxCell): boolean {
   let kind = cellKind(cell);
-  return (kind === "output"); // || kind === "node");
+  return (kind === "output" || kind === "node");
 }
 
 /**
@@ -595,14 +606,12 @@ function handleHover(isEntering: boolean): void {
       if (cellKind(currentlyHoveredCell) === "output") {
         showZoomedInContent(currentlyHoveredCell);
       } 
-      // else if (cellKind(currentlyHoveredCell) === "node") {
-      //   graph.toggleCellStyle("shadow", false, currentlyHoveredCell);
-      // }
+      else if (cellKind(currentlyHoveredCell) === "node") {
+        showZoomedInNodeContent(currentlyHoveredCell);
+      }
     } else {
       if (currentlyHoveredCell) {
-        if (cellKind(currentlyHoveredCell) === "output") {
-          hideZoomedInContent();
-        }
+        hideZoomedInContent();
         //  else if (cellKind(currentlyHoveredCell) === "node") {
         //   graph.toggleCellStyle("shadow", true, currentlyHoveredCell);
         // }
@@ -655,7 +664,7 @@ const hoverMouseListener = {
           currentlyHoveredCell = cell;
           handleHover(true); // Entering hover
           hoverTimer = null;
-        }, 250); // 250 milliseconds delay
+        }, 500); // 250 milliseconds delay
       }
     }
   },

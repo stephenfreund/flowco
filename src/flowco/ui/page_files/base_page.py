@@ -321,7 +321,7 @@ class FlowcoPage:
                 if type(value) == pd.DataFrame:
                     st.dataframe(value, height=200)
                 elif type(value) == dict:
-                    for k, v in value.items():
+                    for k, v in list(value.items())[0:10]:
                         st.write(f"**{k}**:")
                         if type(v) in [np.ndarray, list, pd.Series]:
                             v = pd.DataFrame(v)
@@ -336,6 +336,8 @@ class FlowcoPage:
                                 st.code(v)
                         else:
                             st.code(v)
+                    if len(value) > 10:
+                        st.write(f"And {len(value)-10} more...")
                 elif type(value) == str:
                     if value.startswith("{" or value.startswith("[")):
                         st.json(value)
