@@ -126,7 +126,7 @@ def from_dfg(
     mx_nodes: Dict[str, DiagramNode] = {}
 
     for node in dfg.nodes:
-        keys = ["pill", "requirements", "function_return_type"]
+        keys = ["pill", "messages", "requirements", "function_return_type"]
         if AbstractionLevel.show_code(abstraction_level):
             keys += ["code"]
 

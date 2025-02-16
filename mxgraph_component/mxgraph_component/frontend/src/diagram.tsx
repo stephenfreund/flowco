@@ -161,9 +161,9 @@ function update_overlays_for_node(graph: mxGraph, node: DiagramNode, vertex: mxC
         const node_height = vertex.geometry.height;
         const inset_factor = Math.min(node_width, node_height) / 15;
         const iconOverlay = new mx.mxCellOverlay(iconImage, "This node is locked");
-        iconOverlay.align = mx.mxConstants.ALIGN_RIGHT;
+        iconOverlay.align = mx.mxConstants.ALIGN_LEFT;
         iconOverlay.verticalAlign = mx.mxConstants.ALIGN_TOP;
-        iconOverlay.offset = new mx.mxPoint(-4 - inset_factor, 6 + inset_factor);
+        iconOverlay.offset = new mx.mxPoint(4 + inset_factor, 6 + inset_factor);
         graph.addCellOverlay(vertex, iconOverlay);
     }
 }
