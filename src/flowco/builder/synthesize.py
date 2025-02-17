@@ -454,7 +454,7 @@ def code_assistant(node: Node, diff_instructions):
     assistant = flowco_assistant(
         prompt_key="compile-pydoc",
         signature=node.signature_str(),
-        parameter_types=parameter_type_str,
+        # parameter_types=parameter_type_str,
         diff=diff_instructions,
         pydoc=textwrap.indent(
             generate_docstring_for_node(node), prefix="    ", predicate=lambda x: True
@@ -462,19 +462,28 @@ def code_assistant(node: Node, diff_instructions):
     )
 
     node_fields = [
-        "id",
-        "pill",
-        "preconditions",
-        "requirements",
-        "description",
+        # "id",
+        # "pill",
+        # "preconditions",
+        # "requirements",
+        # "description",
         "function_return_type",
-        "function_computed_value",
+        # "function_computed_value",
         "function_parameters",
-        "function_result_var",
+        # "function_result_var",
     ]
 
-    if config.x_algorithm_phase:
-        node_fields.append("algorithm")
+    # if config.x_algorithm_phase:
+    #     node_fields.append("algorithm")
+
+    assistant.add_text(
+        "user",
+        f"Here is the details of the parameter and return types, and what they represent:",
+    )
+    assistant.add_json(
+        "user",
+        json_for_node_view(node=node, node_fields=node_fields),
+    )
 
     # assistant.add_text("user", f"Here is the current state of node {node.pill}:")
     # assistant.add_json(
