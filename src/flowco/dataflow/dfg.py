@@ -440,62 +440,65 @@ class Node(NodeLike, BaseModel):
             if self.algorithm is not None:
                 keys.append("algorithm")
         md = ""
-        if "pill" in keys:
-            md += f"#### {self.pill}\n\n"
-        if "label" in keys:
-            md += f"{self.label}\n\n"
-        if "messages" in keys and self.messages is not None:
-            for level in ["error", "warning", "info"]:
-                for message in self.messages:
-                    if message.level == level:
-                        md += f'\n\n<div markdown="1" class="message {level}">\n{message.message().rstrip()}\n</div>\n\n'
-        if "requirements" in keys and self.requirements is not None:
-            requirements = "\n".join([f"* {x}" for x in self.requirements])
-            md += f"**Requirements**\n\n{requirements}\n\n"
-        if "description" in keys and self.description is not None:
-            md += f"**Description**\n\n{self.description}\n\n"
-        if "function_return_type" in keys and self.function_return_type is not None:
-            md += f"\n**Output Type**\n```\n{schema_to_text(self.function_return_type.type_schema())}\n```\n\n"
-        if "algorithm" in keys and self.algorithm is not None:
-            algorithm = "\n".join([f"* {x}" for x in self.algorithm])
-            md += f"**Algorithm**\n\n{algorithm}\n\n"
-        if "code" in keys and self.code is not None:
-            code = "\n".join(self.code)
-            md += f"**Code** \n```python\n{code}\n```\n\n"
-        if "result" in keys:
-            md += f"**Output** \n\n"
+        for key in keys:
+            if "pill" == key:
+                md += f"#### {self.pill}\n\n"
+            if "label" == key:
+                md += f"{self.label}\n\n"
+            if "messages" == key and self.messages is not None:
+                for level in ["error", "warning", "info"]:
+                    for message in self.messages:
+                        if message.level == level:
+                            md += f'\n\n<div markdown="1" class="message {level}">\n{message.message().rstrip()}\n</div>\n\n'
+            if "requirements" == key and self.requirements is not None:
+                requirements = "\n".join([f"* {x}" for x in self.requirements])
+                md += f"**Requirements**\n\n{requirements}\n\n"
+            if "description" == key and self.description is not None:
+                md += f"**Description**\n\n{self.description}\n\n"
+            if "function_return_type" == key and self.function_return_type is not None:
+                md += f"\n**Output Type**\n```\n{schema_to_text(self.function_return_type.type_schema())}\n```\n\n"
+            if "algorithm" == key and self.algorithm is not None:
+                algorithm = "\n".join([f"* {x}" for x in self.algorithm])
+                md += f"**Algorithm**\n\n{algorithm}\n\n"
+            if "code" == key and self.code is not None:
+                code = "\n".join(self.code)
+                md += f"**Code** \n```python\n{code}\n```\n\n"
+            if "result" == key:
+                md += f"**Output** \n\n"
 
-            if self.function_return_type is not None:
-                md += str(self.function_return_type)
-                md += "\n\n"
+                if self.function_return_type is not None:
+                    md += str(self.function_return_type)
+                    md += "\n\n"
 
-            if self.result is not None:
-                clipped = None
-                if (
-                    self.function_return_type is not None
-                    and not self.function_return_type.is_None_type()
-                ):
-                    text = self.result.pp_result_text(clip=15)
-                    if text is not None:
-                        clipped = f"<pre>{text}</pre>"
+                if self.result is not None:
+                    clipped = None
+                    if (
+                        self.function_return_type is not None
+                        and not self.function_return_type.is_None_type()
+                    ):
+                        text = self.result.pp_result_text(clip=15)
+                        if text is not None:
+                            clipped = f"<pre>{text}</pre>"
 
-                if not clipped:
-                    text = self.result.pp_output_text(clip=15)
-                    if text is not None:
-                        clipped = f"<pre>{text}</pre>"
+                    if not clipped:
+                        text = self.result.pp_output_text(clip=15)
+                        if text is not None:
+                            clipped = f"<pre>{text}</pre>"
 
-                if not clipped:
-                    image_url = self.result.output_image()
-                    if image_url is not None:
-                        base64encoded = image_url.split(",", maxsplit=1)
-                        image_data = base64encoded[0] + ";base64," + base64encoded[1]
-                        clipped = f"![{self.pill}]({image_data})"
+                    if not clipped:
+                        image_url = self.result.output_image()
+                        if image_url is not None:
+                            base64encoded = image_url.split(",", maxsplit=1)
+                            image_data = (
+                                base64encoded[0] + ";base64," + base64encoded[1]
+                            )
+                            clipped = f"![{self.pill}]({image_data})"
 
-                md += f"{clipped}\n\n"
+                    md += f"{clipped}\n\n"
 
-        if "assertions" in keys and self.assertions is not None:
-            assertions = "\n".join([f"* {x}" for x in self.assertions])
-            md += f"**Checks**\n\n{assertions}\n\n"
+            if "assertions" == key and self.assertions is not None:
+                assertions = "\n".join([f"* {x}" for x in self.assertions])
+                md += f"**Checks**\n\n{assertions}\n\n"
 
         return md
 

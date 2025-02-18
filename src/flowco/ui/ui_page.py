@@ -1,3 +1,4 @@
+from typing import List
 import streamlit as st
 import os
 
@@ -45,8 +46,10 @@ class UIPage(PageListener):
     def dfg(self):
         return self._page.dfg
 
-    def dfg_as_mx_diagram(self, image_cache: UIImageCache) -> MxDiagram:
-        return mx_diagram.from_dfg(self.dfg(), image_cache, st_abstraction_level())
+    def dfg_as_mx_diagram(
+        self, image_cache: UIImageCache, node_parts: List[str]
+    ) -> MxDiagram:
+        return mx_diagram.from_dfg(self.dfg(), image_cache, node_parts)
 
     def node(self, node_id: str) -> Node | None:
         return self.dfg().get_node(node_id)

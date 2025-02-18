@@ -16,6 +16,7 @@ from flowco.ui.dialogs.node_editor import edit_node
 from flowco.ui.ui_dialogs import settings
 from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_util import (
+    show_code,
     toggle,
     zip_bug,
 )
@@ -455,6 +456,12 @@ class FlowcoPage:
         else:
             return st.columns([4, 1])
 
+    def node_parts_for_diagram(self):
+        keys = ["pill", "messages", "requirements", "function_return_type"]
+        if show_code():
+            keys += ["code"]
+        return keys
+
     def main(self):
 
         self.init()
@@ -479,7 +486,9 @@ class FlowcoPage:
                     else None
                 )
 
-                diagram = st.session_state.ui_page.dfg_as_mx_diagram(cache).model_dump()
+                diagram = st.session_state.ui_page.dfg_as_mx_diagram(
+                    cache, self.node_parts_for_diagram()
+                ).model_dump()
                 # log("mx_diagram size", len(json.dumps(diagram)))
 
                 result = mxgraph_component(

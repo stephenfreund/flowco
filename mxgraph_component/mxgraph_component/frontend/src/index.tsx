@@ -83,6 +83,7 @@ function showZoomedInContent(cell: mxCell) {
 
   // Check if the style contains a background image
   const imageMatch = style && style.match('image=data:image/png,\(.*\)');
+  const title = `${cell.value.pill} Output`
 
   if (imageMatch && imageMatch[1]) {
     const imageUrl = imageMatch[1];
@@ -92,10 +93,10 @@ function showZoomedInContent(cell: mxCell) {
     const imgElement = document.createElement('img');
     imgElement.src = `data:image/png;base64,${imageUrl}`;
     imgElement.style.maxWidth = '100%'; // Optional: set a maximum size for the image
-    zoomedInContainer.innerHTML = imgElement.outerHTML;
+    zoomedInContainer.innerHTML = `<h4>${title}</h4><br/>${imgElement.outerHTML}`;
   } else {
     // If no image is found, display the cell value as text
-    zoomedInContainer.innerHTML = cell.value;
+    zoomedInContainer.innerHTML = `<h4>${title}</h4><br/>${cell.value.data}`;
   }
   // Show the container and position it near the mouse
   zoomedInContainer.style.display = "block";
@@ -428,6 +429,9 @@ graph.convertValueToString = function (...args): string {
 
   if (isDiagramNode(value)) {
     return `<span style="font-size:14px;"><b>${value.pill}</b><br></span> ${value.label}`;
+  } else if (typeof value.pill === "string") {
+    // output node
+    return value.data;
   }
 
   // Default label rendering for non-custom types

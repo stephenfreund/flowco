@@ -196,7 +196,7 @@ function make_output_node(graph: mxGraph, node: DiagramNode): mxCell | undefined
             vertex = graph.insertVertex(
                 graph.getDefaultParent(),
                 cellId,
-                output.data,
+                { data: output.data, pill: node.pill },
                 node.output_geometry.x,
                 node.output_geometry.y,
                 node.output_geometry.width,
@@ -214,7 +214,7 @@ function make_output_node(graph: mxGraph, node: DiagramNode): mxCell | undefined
             vertex = graph.insertVertex(
                 graph.getDefaultParent(),
                 cellId,
-                '',
+                { data: '', pill: node.pill },
                 node.output_geometry.x,
                 node.output_geometry.y,
                 node.output_geometry.width,

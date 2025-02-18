@@ -192,3 +192,15 @@ class CheckPage(BuildPage):
                 st.write("*Edit node to add checks!*")
 
         super().show_node_details(node)
+
+    def node_parts_for_diagram(self):
+        keys = [
+            "pill",
+            "messages",
+            "assertions",
+            "requirements",
+            "function_return_type",
+        ]
+        if show_code():
+            keys += ["code"]
+        return keys

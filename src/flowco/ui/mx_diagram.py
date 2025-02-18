@@ -114,9 +114,7 @@ def get_output(
 
 @staticmethod
 def from_dfg(
-    dfg: DataFlowGraph,
-    image_cache: UIImageCache | None,
-    abstraction_level: AbstractionLevel = AbstractionLevel.spec,
+    dfg: DataFlowGraph, image_cache: UIImageCache | None, node_parts: List[str]
 ) -> MxDiagram:
 
     # Create a mapping from node id to Node for easy lookup
@@ -126,11 +124,7 @@ def from_dfg(
     mx_nodes: Dict[str, DiagramNode] = {}
 
     for node in dfg.nodes:
-        keys = ["pill", "messages", "requirements", "function_return_type"]
-        if AbstractionLevel.show_code(abstraction_level):
-            keys += ["code"]
-
-        md = node.to_markdown(keys)
+        md = node.to_markdown(node_parts)
         html = md_to_html(md)
         diagram_node = DiagramNode(
             id=node.id,
