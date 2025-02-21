@@ -94,24 +94,42 @@ export const node_style = 'html=1;shape=rectangle;whiteSpace=wrap;rounded=1;';
 export const node_hover_style = 'html=1;shape=rectangle;whiteSpace=wrap;rounded=1;shadow=1;';
 
 const edge_style = 'endArrow=classic;html=1;rounded=0;labelBackgroundColor=white;';
-const output_node_style_text = `html=1;shape=rectangle;whiteSpace=wrap;shadow=1;fillColor=#E8E8E8;strokeColor=#990000;align=left;verticalAlign=middle;spacing=5;fontFamily=monospace;overflow=hidden;`;
-const output_node_style_image = `html=1;shape=image;shadow=1;imageBackground=#E8E8E8;imageBorder=#990000;`;
+const output_node_style_text = `html=1;shape=rectangle;whiteSpace=wrap;shadow=1;fillColor=#F0F0F0;strokeColor=#990000;align=left;verticalAlign=middle;spacing=5;fontFamily=monospace;overflow=hidden;`;
+const output_node_style_image = `html=1;shape=image;shadow=1;imageBackground=#F0F0F0;imageBorder=#990000;`;
 const output_edge_style = 'rounded=1;orthogonalLoop=1;dashed=1;strokeWidth=2;strokeColor=#990000;fillColor=#76608a;endArrow=block;endFill=0;edgeStyle=orthogonalEdgeStyle;curved=0;';
+// const phase_colors = [
+//     '#F4F4F4', // clean
+//     '#d899b3', // requirements
+//     '#eeb1b8', // algorithm
+//     '#fac4b3', // code
+//     '#fedebf', // runnable
+//     '#fef2d0', // run_checked
+//     '#f5fbd5',
+//     '#ddf1da',
+//     '#c1e6db',
+//     '#adcfe4',
+//     '#beb8d9'
+// ];
+
 const phase_colors = [
-    '#F4F4F4', // clean
-    '#d899b3', // requirements
-    '#eeb1b8', // algorithm
-    '#fac4b3', // code
-    '#fedebf', // runnable
+    '#dfedf7', // clean
+    '#dfedf7', // requirements
+    '#dfedf7', // algorithm
+    '#dfedf7', // code
+    '#dfedf7', // runnable
     '#fef2d0', // run_checked
-    '#f5fbd5',
-    '#ddf1da',
+    '#fef2d0', // checks compiled
+    '#ddf1da', // checked
     '#c1e6db',
     '#adcfe4',
     '#beb8d9'
 ];
 
-export function phase_to_color(phase: number): string {
+
+export function phase_to_color(phase: number, build_status: string | undefined): string {
+    if (build_status) {
+        return '#fac4b3';
+    }
     if (phase < 0 || phase >= phase_colors.length) {
         return '#FFFFFF';
     } else {
@@ -120,11 +138,11 @@ export function phase_to_color(phase: number): string {
 }
 
 export function clean_color() {
-    return phase_to_color(0);
+    return phase_to_color(0, undefined);
 }
 
 function style_for_node(node: DiagramNode): string {
-    let style = node_style + `fillColor=${phase_to_color(node.phase)};`;
+    let style = node_style + `fillColor=${phase_to_color(node.phase, node.build_status)};`;
     if (node.has_messages) {
         style += "shape=label;strokeColor=#DD0000;strokeWidth=4;imageAlign=center;imageVerticalAlign=middle;imageWidth=80;imageHeight=80;image=error.png;";
     }
@@ -290,7 +308,7 @@ function update_output_node(graph: mxGraph, node: DiagramNode): mxCell | undefin
     const output = node.output;
     if (output) {
         if (output.output_type === 'text') {
-            graph.getModel().setValue(cell, output.data);
+            graph.getModel().setValue(cell, { data: output.data, pill: node.pill });
         } else if (output.output_type === 'image') {
             let image = output.data;
             if (image === 'cached') {
@@ -301,6 +319,7 @@ function update_output_node(graph: mxGraph, node: DiagramNode): mxCell | undefin
             }
             const style = output_node_style_image + `;image=${image}`;
             graph.setCellStyle(style, [cell]);
+            graph.getModel().setValue(cell, { data: '', pill: node.pill });
         }
         const geometry = node.output_geometry;
         if (cell.geometry.x !== geometry.x ||
@@ -381,7 +400,7 @@ export function update_group_style(graph: mxGraph, cell: mxCell) {
         const nodes = model.getChildCells(cell, true, false);
         const phases = nodes.map(x => (x.value as DiagramNode).phase);
         const min_phase = Math.min(...phases);
-        color = `swimlaneFillColor=${phase_to_color(min_phase)};`;
+        color = `swimlaneFillColor=${phase_to_color(min_phase, undefined)};`;
     } else {
         color = ''
     }

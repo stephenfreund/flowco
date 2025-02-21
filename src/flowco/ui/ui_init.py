@@ -3,12 +3,14 @@ import streamlit as st
 from flowco.ui.mx_diagram import UIImageCache
 
 css = """
+
+
 .stMainBlockContainer {
     padding: 0rem;
     max-width: unset !important;
 }
 .stSidebar {
-    min-width: 415px;
+    min-width: 345px;
     max-width:1000px;
 }
 
@@ -61,7 +63,10 @@ css = """
 .st-key-node_code .stCode *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-node_checks .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .st-key-right-panel .stCode *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
-.st-key-right-panel p, ul, ol, li
+.st-key-right-panel p, 
+.st-key-right-panel ul, 
+.st-key-right-panel ol, 
+.st-key-right-panel li
 .st-key-right-panel .stMarkdown *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6)
  {
     font-size: 12px !important;
@@ -121,6 +126,12 @@ header {
     min-width: auto;
     max-width: initial;
 }
+
+.stMain:has(.st-key-help_page) {
+    padding:2rem;
+    overflow: auto;
+}
+
 
 /* Hide the "Hide" button in the sidebar */
 [data-testid="stSidebarContent"] [data-testid="stBaseButton-headerNoPadding"] {
@@ -288,9 +299,14 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
     gap: 0.4rem !important;
 }
 
+.st-key-help_page {
+    background-color: #FFFFFF !important;
+}
+
 .stMainBlockContainer {
     background-color: #F0F2F6;
 }
+
 .st-key-right-panel {
     height: calc(100vh - 75px) !important;
     margin-top: 2.25rem;
@@ -314,6 +330,7 @@ div:has(> div > .st-key-right-panel) {
     padding: 0rem !important;
     border: none !important;
 }
+
 
 .st-key-right-panel img {
 /*    max-width: 200px !important; */
@@ -347,6 +364,15 @@ div:has(> div > .st-key-right-panel) {
 .st-key-lock button[data-testid="stBaseButton-segmented_controlActive"] {
     padding: 4px;
 }
+
+div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > div.st-key-node_colors) {
+    background-color: #FFFFFF;
+}
+
+div .st-key-node_colors * {
+    background-color: #FFFFFF;
+}
+
 
 """
 

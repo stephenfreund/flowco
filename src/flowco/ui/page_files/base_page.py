@@ -74,7 +74,7 @@ class FlowcoPage:
                     st.session_state.force_update = True
 
                 spacer.write(
-                    "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
+                    "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
                     unsafe_allow_html=True,
                 )
 
@@ -359,32 +359,35 @@ class FlowcoPage:
     def bottom_bar(self):
         ui_page: UIPage = st.session_state.ui_page
         with st.container(key="bottom_bar"):
-            cols = st.columns([2, 2.1, 3])
-            cols = st.columns(4)
+            cols = st.columns(3)
             with cols[0]:
                 if st.button(
-                    label="",
-                    icon=":material/help:",
+                    label="Clear Outputs",
+                    icon=":material/settings:",
+                    help="Change settings",
                     disabled=not self.graph_is_editable(),
                 ):
-                    ui_help.help_dialog()
-
+                    ui_page.page().clear_outputs()
+                    st.session_state.force_update = True
+                    st.rerun()
             with cols[1]:
                 if st.button(
-                    label="",
+                    label="Settings",
                     icon=":material/settings:",
                     help="Change settings",
                     disabled=not self.graph_is_editable(),
                 ):
                     settings(ui_page)
 
-            with cols[2]:
+            st.divider()
+            cols = st.columns(2)
+            with cols[0]:
                 if st.button(
                     label="Report Bug", icon=":material/bug_report:", key="report_bug"
                 ):
                     self.report_bug()
 
-            with cols[3]:
+            with cols[1]:
                 if st.button(label="Logout", icon=":material/logout:", help="Sign out"):
                     sign_out()
                     st.rerun()

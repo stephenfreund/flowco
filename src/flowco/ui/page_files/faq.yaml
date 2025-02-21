@@ -1,0 +1,34 @@
+- section: "Flowco diagrams"
+  questions:
+    - question: "What is a Dataflow diagram?"
+      answer: |
+        A Dataflow diagram is a visual representation of the flow of data in a system.  In Flowco, a Dataflow diagram is a graph where nodes represent data transformations and edges represent the flow of data between nodes.  The diagram is a directed graph, meaning that the edges have a direction, indicating the flow of data from one node to another.
+    - question: "What is a Node?"
+      answer: |
+        Nodes represent one step of a computation, such as filtering, aggregation, or joining.  Each node has a type, which determines the kind of transformation it performs.  Nodes can have input and output edges, which represent the data that flows into and out of the node.
+
+- section: "Ask Me Anything (AMA)"
+  questions:
+    - question: "How do I use AMA?"
+      answer: | 
+        AMA lets you explore, create, and modify a Flowco graph via chat.  AMA responds to any questions about the diagram or data, can run code, and can modify the dataflow diagram based on your requests.  You can ask AMA questions like "What is the average value of column X?" or "Show me the graph for the dataflow from X to Y."  You can also ask AMA to modify the graph by saying things like "Add a node for to compute the mean of column X" or "Connect nodes X and Y with an edge."
+
+    - question: AMA didn't modify the graph when I asked it to.
+      answer: |
+        The AMA dialog may misinterpret your request. Following your request with one that simply says `Make that change` usually does the trick.  Starting your request with `Modify the graph to ...` leads to more reliable results in this case.
+
+    - question: AMA modified the graph when I didn't want it to.
+      answer: |
+        The AMA dialog may misinterpret your request.  Click "Undo" to undo the change, then try rephrasing your question.  Starting your request with `Explain why ...` leads to more reliable results in this case.  You can also exlicitly ask AMA to not modify the graph in your request.
+
+- section: "Fixing a Node"
+  questions:
+    - question: How do I fix a node?
+      answer: |
+        To fix a node...
+
+- section: "Adding Checks"
+  questions:
+    - question: How do I add a check?
+      answer: |
+        To add a check...

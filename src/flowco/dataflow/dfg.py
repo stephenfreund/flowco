@@ -328,12 +328,17 @@ class Node(NodeLike, BaseModel):
             self.model_fields.keys() - {"id", "predecessors"}
         ), f"Invalid kwargs for updating a node: {set(kwargs.keys()).difference(self.model_fields.keys() - {'id', 'predecessors'})}"
 
-        # if code is updated, we need to reset the cache
         code = kwargs.get("code", None)
         if code is not None:
             kwargs["code"] = black_format(code)
 
         new_node = self.model_copy(update=kwargs)
+
+        if new_node.pill != self.pill:
+            old_name = pill_to_python_name(self.pill)
+            new_name = pill_to_python_name(new_node.pill)
+            with logger(f"Renaming {old_name} to {new_name}"):
+                new_node = new_node.alpha_rename(old_name, new_name)
 
         if new_node == self:
             return self
@@ -501,6 +506,55 @@ class Node(NodeLike, BaseModel):
                 md += f"**Checks**\n\n{assertions}\n\n"
 
         return md
+
+    def alpha_rename(self, from_str: str, to_str: str) -> "Node":
+        """
+        Replace all occurrences of `from_str` with `to_str` in all string fields of the node.
+
+        Args:
+            from_str (str): The substring to be replaced.
+            to_str (str): The substring to replace with.
+        """
+
+        def replace_in_obj(obj):
+            if obj is None:
+                return None
+            if isinstance(obj, str):
+                return obj.replace(from_str, to_str)
+            elif isinstance(obj, BaseModel):
+                if isinstance(obj, Edge):
+                    return obj
+                elif isinstance(obj, Node):
+                    # Recursively replace in Pydantic models
+                    return obj.model_copy(
+                        update={
+                            field: replace_in_obj(getattr(obj, field))
+                            for field in obj.model_fields.keys()
+                            if field not in ["id", "predecessors"]
+                            and getattr(obj, field) is not None
+                        }
+                    )
+                else:
+                    # Recursively replace in Pydantic models
+                    return obj.model_copy(
+                        update={
+                            field: replace_in_obj(getattr(obj, field))
+                            for field in obj.model_fields.keys()
+                            if getattr(obj, field) is not None
+                        }
+                    )
+
+            elif isinstance(obj, list):
+                return [replace_in_obj(item) for item in obj]
+            elif isinstance(obj, dict):
+                return {key: replace_in_obj(value) for key, value in obj.items()}
+            else:
+                return obj  # For other types, return as is
+
+        # print(self.model_dump_json(indent=2))
+        result: Node = replace_in_obj(self)  # type: ignore
+        # print(result.model_dump_json(indent=2))
+        return result
 
 
 NodeOrNodeList = Optional[Union[str, List[str]]]
@@ -819,14 +873,8 @@ class DataFlowGraph(GraphLike, BaseModel):
         with logger("Generating pill"):
             exclude_pills: List[str] = [x.pill for x in self.nodes if x != node]
             pill = self.make_pill(node.label, exclude_pills=exclude_pills)
-            function_name = pill_to_function_name(pill)
-            function_result_var = pill_to_result_var_name(pill)
-
-            return node.update(
-                pill=pill,
-                function_name=function_name,
-                function_result_var=function_result_var,
-            )
+            node = node.update(pill=pill)
+            return node
 
     def alpha_rename(self, from_str: str, to_str: str) -> "DataFlowGraph":
         """
@@ -840,44 +888,44 @@ class DataFlowGraph(GraphLike, BaseModel):
             DataFlowGraph: A new DataFlowGraph instance with the replacements made.
         """
 
-        def replace_in_obj(obj):
-            if obj is None:
-                return None
-            if isinstance(obj, str):
-                return obj.replace(from_str, to_str)
-            elif isinstance(obj, BaseModel):
-                if isinstance(obj, Edge):
-                    return obj
-                elif isinstance(obj, Node):
-                    # Recursively replace in Pydantic models
-                    return obj.model_copy(
-                        update={
-                            field: replace_in_obj(getattr(obj, field))
-                            for field in obj.model_fields.keys()
-                            if field not in ["id", "predecessors"]
-                            and getattr(obj, field) is not None
-                        }
-                    )
-                else:
-                    # Recursively replace in Pydantic models
-                    return obj.model_copy(
-                        update={
-                            field: replace_in_obj(getattr(obj, field))
-                            for field in obj.model_fields.keys()
-                            if getattr(obj, field) is not None
-                        }
-                    )
+        # def replace_in_obj(obj):
+        #     if obj is None:
+        #         return None
+        #     if isinstance(obj, str):
+        #         return obj.replace(from_str, to_str)
+        #     elif isinstance(obj, BaseModel):
+        #         if isinstance(obj, Edge):
+        #             return obj
+        #         elif isinstance(obj, Node):
+        #             # Recursively replace in Pydantic models
+        #             return obj.model_copy(
+        #                 update={
+        #                     field: replace_in_obj(getattr(obj, field))
+        #                     for field in obj.model_fields.keys()
+        #                     if field not in ["id", "predecessors"]
+        #                     and getattr(obj, field) is not None
+        #                 }
+        #             )
+        #         else:
+        #             # Recursively replace in Pydantic models
+        #             return obj.model_copy(
+        #                 update={
+        #                     field: replace_in_obj(getattr(obj, field))
+        #                     for field in obj.model_fields.keys()
+        #                     if getattr(obj, field) is not None
+        #                 }
+        #             )
 
-            elif isinstance(obj, list):
-                return [replace_in_obj(item) for item in obj]
-            elif isinstance(obj, dict):
-                return {key: replace_in_obj(value) for key, value in obj.items()}
-            else:
-                return obj  # For other types, return as is
+        #     elif isinstance(obj, list):
+        #         return [replace_in_obj(item) for item in obj]
+        #     elif isinstance(obj, dict):
+        #         return {key: replace_in_obj(value) for key, value in obj.items()}
+        #     else:
+        #         return obj  # For other types, return as is
 
         new_nodes = []
         for node in self.nodes:
-            updated_node = replace_in_obj(node)
+            updated_node = node.alpha_rename(from_str, to_str)
             new_nodes.append(updated_node)
 
         return self.update(nodes=new_nodes)
@@ -1027,6 +1075,10 @@ class DataFlowGraph(GraphLike, BaseModel):
     def reset(self, reset_requirements=False) -> "DataFlowGraph":
         new_nodes = [node.reset(reset_requirements) for node in self.nodes]
         return self.update(nodes=new_nodes, version=self.version + 1, groups=[])
+
+    def clear_outputs(self) -> "DataFlowGraph":
+        new_nodes = [node.update(result=None, messages=None) for node in self.nodes]
+        return self.update(nodes=new_nodes, version=self.version + 1)
 
     def make_driver(self):
 

@@ -19,7 +19,7 @@ from flowco.ui.ui_util import (
     visible_phases,
 )
 from flowco.util.config import config
-from flowco.util.output import log
+from flowco.util.output import log, logger
 
 
 @dataclass
@@ -277,9 +277,9 @@ class NodeEditor:
         dfg = dfg.with_node(node)
 
         # gen new pill if label changed but pill did not.
-        if original_node.label != node.label and original_node.pill == node.pill:
-            node = dfg.update_node_pill(node)
-            dfg = dfg.with_node(node)
+        # if original_node.label != node.label and original_node.pill == node.pill:
+        #     node = dfg.update_node_pill(node)
+        #     dfg = dfg.with_node(node)
 
         ui_page.update_dfg(dfg)
 
@@ -394,6 +394,9 @@ class NodeEditor:
                             )
                         )
                     self.node = self.ama.updated_node() or self.node
+                    with logger("ama updating pill"):
+                        self.node = self.dfg.update_node_pill(self.node)
+
                     self.pending_ama = None
                     st.rerun(scope="fragment")
 

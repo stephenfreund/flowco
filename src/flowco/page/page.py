@@ -288,6 +288,12 @@ class Page(BaseModel, extra="allow"):
         self._undo_stack.clear()
 
     @atomic_method
+    def clear_outputs(self):
+        self.update_dfg(self.dfg.clear_outputs())
+        self.clean(phase=Phase.runnable)
+        self.save()
+
+    @atomic_method
     def clean(self, node_id: Optional[str] = None, phase: Phase = Phase.clean):
         """
         Clean the page or a specific node.  Call this before building to

@@ -78,14 +78,13 @@ let zoomedInContainer = document.getElementById("customBox")!;
 // Function to display zoomed-in content (with image handling)
 function showZoomedInContent(cell: mxCell) {
   // zoomedInContainer.innerHTML = cell.value;  // Clear any previous content
-
   const style = cell.style;
 
   // Check if the style contains a background image
   const imageMatch = style && style.match('image=data:image/png,\(.*\)');
-  const title = `${cell.value.pill} Output`
 
   if (imageMatch && imageMatch[1]) {
+    const title = `${cell.value.pill} Output`
     const imageUrl = imageMatch[1];
     // console.log("Image URL", imageUrl)
 
@@ -96,6 +95,7 @@ function showZoomedInContent(cell: mxCell) {
     zoomedInContainer.innerHTML = `<h4>${title}</h4><br/>${imgElement.outerHTML}`;
   } else {
     // If no image is found, display the cell value as text
+    const title = `${cell.value.pill} Output`
     zoomedInContainer.innerHTML = `<h4>${title}</h4><br/>${cell.value.data}`;
   }
   // Show the container and position it near the mouse

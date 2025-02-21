@@ -50,7 +50,7 @@ class BuildPage(FlowcoPage):
         return BuildButton(label="Update", icon=":material/refresh:", action="Update")
 
     def run_button(self) -> BuildButton:
-        return BuildButton(label="Run", icon=":material/play_circle:", action="Run")
+        return BuildButton(label="  Run  ", icon=":material/play_circle:", action="Run")
 
     def stop_button(self) -> BuildButton:
         return BuildButton(label="Stop", icon=":material/stop_circle:", action="Stop")
@@ -73,17 +73,17 @@ class BuildPage(FlowcoPage):
                 if st.session_state.builder is None:
                     cols = st.columns(8)
                     with cols[0]:
-                        update_button = self.update_button()
-                        st.button(
-                            update_button.label,
-                            icon=update_button.icon,
-                            on_click=lambda: set_session_state(
-                                "trigger_build_toggle", update_button
-                            ),
-                            disabled=not self.graph_is_editable(),
-                            help="Build and run any nodes that have changed since the last Run",
-                        )
-                    with cols[1]:
+                        #     update_button = self.update_button()
+                        #     st.button(
+                        #         update_button.label,
+                        #         icon=update_button.icon,
+                        #         on_click=lambda: set_session_state(
+                        #             "trigger_build_toggle", update_button
+                        #         ),
+                        #         disabled=not self.graph_is_editable(),
+                        #         help="Build and run any nodes that have changed since the last Run",
+                        #     )
+                        # with cols[1]:
                         if st.session_state.builder is None:
                             run_button = self.run_button()
                         else:
@@ -100,6 +100,12 @@ class BuildPage(FlowcoPage):
                                 if st.session_state.builder is None
                                 else "Stop building"
                             ),
+                        )
+
+                    with cols[1]:
+                        st.write(
+                            "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
+                            unsafe_allow_html=True,
                         )
 
                     with cols[2]:
@@ -132,7 +138,7 @@ class BuildPage(FlowcoPage):
                         )
                     with cols[5]:
                         st.write(
-                            "<span>&nbsp;</span>",
+                            "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
                             unsafe_allow_html=True,
                         )
                     with cols[6]:
@@ -295,7 +301,7 @@ class BuildPage(FlowcoPage):
             st.session_state.trigger_build_toggle = None
             self.toggle_building(
                 node_specific=button.node_specific,
-                force=(button.action == "Run"),
+                force=False,  # (button.action == "Run"),
                 repair=button.repair,
                 passes_key=button.passes_key,
             )
@@ -422,10 +428,26 @@ class BuildPage(FlowcoPage):
                 self.edit_description()
 
         st.divider()
+        colors = [
+            ("#dfedf7", "Modified"),
+            ("#fac4b3", "Running"),
+            ("#fef2d0", "Completed"),
+            ("#ddf1da", "Checked"),
+        ]
+        st.markdown("###### Node Colors")
+        lines = (
+            ["<div style='background-color:#FFFFFF;padding:0.5rem;'>"]
+            + [
+                f"<div style='background-color:{color};padding:0.2rem;'>{label}</div>"
+                for color, label in colors
+            ]
+            + ["</div>"]
+        )
+        st.html("\n".join(lines))
         st.write(
             textwrap.dedent(
                 """\
-            ### Graph Operations
+            ###### Graph Operations
             * **Scroll canvas:** Drag around canvas
             * **Select node:** Click on it
             * **Create node:** Shift-click on canvas
