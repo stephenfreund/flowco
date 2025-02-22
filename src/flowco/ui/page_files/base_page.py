@@ -1,7 +1,9 @@
+from typing import List, Optional
 from flowco.dataflow.extended_type import schema_to_text
 import uuid
 
 from flowco.page.ama import AskMeAnything, VisibleMessage
+from flowco.page.page import Page
 from flowco.ui import ui_help
 from flowco.ui.authenticate import sign_out
 import numpy as np
@@ -12,6 +14,7 @@ from flowco.dataflow import dfg_update
 from flowco.dataflow.dfg import Node
 from flowco.dataflow.phase import Phase
 from flowco.page.output import OutputType
+from flowco.ui.dialogs.node_creator import new_node_dialog
 from flowco.ui.dialogs.node_editor import edit_node
 from flowco.ui.ui_dialogs import settings
 from flowco.ui.ui_page import st_abstraction_level
@@ -428,6 +431,7 @@ class FlowcoPage:
 
     def update_ui_page(self, update: dfg_update.mxDiagramUpdate):
         ui_page: UIPage = st.session_state.ui_page
+
         new_dfg = dfg_update.update_dataflow_graph(ui_page.dfg(), update)
 
         if new_dfg != ui_page.dfg():
@@ -464,6 +468,13 @@ class FlowcoPage:
         if show_code():
             keys += ["code"]
         return keys
+
+    def edit_new_nodes(self, original_dfg):
+        new_dfg = st.session_state.ui_page.dfg()
+        for node in new_dfg.nodes:
+            if node.id not in original_dfg.node_ids():
+                new_node_dialog(node)
+                return
 
     def main(self):
 
@@ -506,16 +517,17 @@ class FlowcoPage:
                 )
 
                 if not st.session_state.force_update:
+                    original_dfg = st.session_state.ui_page.dfg()
                     self.update_ui_page(
                         dfg_update.mxDiagramUpdate.model_validate_json(
                             result["diagram"]
                         )
                     )
+                    self.edit_new_nodes(original_dfg)
 
                 st.session_state.force_update = False
                 st.session_state.clear_graph = False
                 st.session_state.zoom = None
-
                 if result["command"] == "edit":
                     if (
                         st.session_state.last_sequence_number
@@ -525,6 +537,8 @@ class FlowcoPage:
                             "sequence_number"
                         ]
                         self.prepare_node_for_edit(result["selected_node"])
+                elif result["command"] == "create":
+                    log("create", result)
                 else:
                     if selected_node == "<<<<<":
                         st.session_state.selected_node = None

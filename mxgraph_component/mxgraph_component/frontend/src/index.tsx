@@ -1,6 +1,6 @@
 import { Streamlit, RenderData } from "streamlit-component-lib";
 import mx from './mxgraph';
-import { mxGraphModel, mxCellState, mxCell, mxConstants, mxHierarchicalLayout } from 'mxgraph';
+import { mxGraphModel, mxCellState, mxCell, mxConstants, mxHierarchicalLayout, mxRectangle, mxAbstractCanvas2D, mxRectangleShape } from 'mxgraph';
 import { v4 as uuidv4 } from "uuid";
 
 import { mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, node_style, labelForEdge, clean_color, isDiagramNode, layoutDiagram, DiagramNode, phase_to_color, update_group_style } from "./diagram";
@@ -153,6 +153,91 @@ var edgeStyle = graph.getStylesheet().getDefaultEdgeStyle();
 // Set the edge style to use the elbow connector
 // Remove the connector style so that edges are drawn as straight lines
 delete edgeStyle[mx.mxConstants.STYLE_EDGE];
+
+
+// Make sure you have the mxGraph type definitions available in your project
+
+// Extend the built-in mxRectangleShape to create a custom shape with two borders.
+class DoubleBorderShape extends mx.mxRectangleShape {
+  constructor(bounds: mxRectangle, fill: string, stroke: string, strokeWidth: number) {
+    super(bounds, fill, stroke, strokeWidth);
+  }
+
+  // Override the paintForeground method to draw an additional inner border.
+  paintForeground(c: mxAbstractCanvas2D, x: number, y: number, w: number, h: number): void {
+    // Call the parent method to draw the default rectangle border.
+    super.paintForeground(c, x, y, w, h);
+
+    // Set the line style for the inner border.
+    c.begin();
+
+    // Define an offset for the inner border. Adjust the offset value to set the space between borders.
+    const offset: number = 3;
+
+    // Draw a rectangle inset from the original rectangle.
+    c.moveTo(x + offset, y + offset);
+    c.lineTo(x + w - offset, y + offset);
+    c.lineTo(x + w - offset, y + h - offset);
+    c.lineTo(x + offset, y + h - offset);
+    c.close();
+    c.stroke();
+  }
+}
+
+mx.mxCellRenderer.registerShape('doubleBorder', DoubleBorderShape);
+
+// Extend mxRectangleShape to create a custom data table shape.
+class DataTableShape extends mx.mxRectangleShape {
+  constructor(bounds: mxRectangle, fill: string, stroke: string, strokeWidth: number) {
+    super(bounds, fill, stroke, strokeWidth);
+  }
+
+  paintForeground(c: mxAbstractCanvas2D, x: number, y: number, w: number, h: number): void {
+    // Translate the canvas so (0,0) is at the top-left corner of the shape.
+    c.translate(x, y);
+
+    // Draw the outer rectangle (table border) with fill.
+    c.begin();
+    c.rect(0, 0, w, h);
+    c.fillAndStroke();
+
+    // Define the header height. You can adjust this as needed.
+    const headerHeight = 7;
+
+    // Draw the header separator line.
+    c.begin();
+    c.moveTo(0, headerHeight);
+    c.lineTo(w, headerHeight);
+    c.stroke();
+
+    c.begin();
+    c.moveTo(headerHeight, 0);
+    c.lineTo(headerHeight, h);
+    c.stroke();
+
+    // // Optionally, draw horizontal lines for additional rows.
+    // // In this example, we assume there are 3 data rows.
+    // const numDataRows = 3;
+    // const rowHeight = (h - headerHeight) / numDataRows;
+
+    // for (let i = 1; i < numDataRows; i++) {
+    //   const yLine = headerHeight + i * rowHeight;
+    //   c.begin();
+    //   c.moveTo(0, yLine);
+    //   c.lineTo(w, yLine);
+    //   c.stroke();
+    // }
+
+    // Reset the translation.
+    c.translate(-x, -y);
+  }
+}
+
+// Register the new shape with mxGraph's renderer.
+mx.mxCellRenderer.registerShape('dataTable', DataTableShape);
+
+
+
 
 
 function cellKind(node: mxCell) {
@@ -758,12 +843,11 @@ graph.connectionHandler.createTargetVertex = function (evt, source) {
   // Add the new vertex to the graph
   const newCell = graph.addCell(vertex);
 
-  // Prompt the user to enter a label
-  const userLabel = prompt("Describe this step", "...");
+  const value = newCell.cloneValue();
+  value.label = '...'
+  value.pill = vertex.id
+  graph.getModel().setValue(newCell, value);
 
-  if (userLabel != null) {
-    generatePill(userLabel, newCell);
-  }
   // must clear this before the response is generated
   mouseDown = false;
   streamlitResponse();

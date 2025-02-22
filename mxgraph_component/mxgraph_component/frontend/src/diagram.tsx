@@ -90,7 +90,7 @@ function escapeHtml(text: string): string {
     return text.replace(/[&<>"']/g, function (m) { return map[m]; });
 }
 
-export const node_style = 'html=1;shape=rectangle;whiteSpace=wrap;rounded=1;';
+export const node_style = 'html=1;shape=dataTable;whiteSpace=wrap;rounded=0;';
 export const node_hover_style = 'html=1;shape=rectangle;whiteSpace=wrap;rounded=1;shadow=1;';
 
 const edge_style = 'endArrow=classic;html=1;rounded=0;labelBackgroundColor=white;';

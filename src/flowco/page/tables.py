@@ -105,6 +105,9 @@ class GlobalTables(BaseModel):
     def all_contents(self) -> Dict[str, str]:
         return {table: self.table_contents(table) for table in self.tables}
 
+    def all_table_names(self) -> List[str]:
+        return [self.table_name(table) for table in self.tables]
+
     def remove(self, file_path: str) -> GlobalTables:
         return GlobalTables(
             tables=[table for table in self.tables if table != file_path]
