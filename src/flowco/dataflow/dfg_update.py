@@ -1,7 +1,7 @@
 from sys import version
 from typing import Dict, List, Optional
 from pydantic import BaseModel, ValidationError
-from flowco.dataflow.dfg import DataFlowGraph, Edge, Geometry, Group, Node
+from flowco.dataflow.dfg import DataFlowGraph, Edge, Geometry, Group, Node, NodeKind
 from flowco.dataflow.phase import Phase
 from flowco.ui.mx_diagram import DiagramGroup
 from flowco.util.output import log, warn, error
@@ -83,6 +83,8 @@ def update_dataflow_graph(
                 warn("Dataflow graph changed, so must re-evaluate requirements.")
                 node.phase = Phase.clean
 
+            assert node.id == node_update.id, f"Node '{node_id}' cannot be modified."
+
             # Update label and geometry
             node.label = node_update.label
             node.geometry = node_update.geometry
@@ -111,6 +113,7 @@ def update_dataflow_graph(
             # Create a new Node with default or placeholder values for missing fields
             new_node = Node(
                 id=node_update.id,
+                kind=NodeKind.compute,  # Placeholder value
                 pill=pill,
                 label=label,
                 geometry=node_update.geometry,

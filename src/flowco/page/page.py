@@ -117,9 +117,6 @@ class Page(BaseModel, extra="allow"):
     # generation part
     dfg: DataFlowGraph
 
-    # csv files
-    tables: GlobalTables = GlobalTables()
-
     # listeners for changes
     _listeners: List[PageListener] = PrivateAttr(default=[])
     _undo_stack: UndoStack = PrivateAttr(default_factory=UndoStack)
@@ -132,7 +129,7 @@ class Page(BaseModel, extra="allow"):
 
         super().__setattr__(name, value)
 
-        if name in ["dfg", "tables"] and current is not value:
+        if name in ["dfg"] and current is not value:
             self.save()
 
     def atomic(self):
@@ -184,7 +181,10 @@ class Page(BaseModel, extra="allow"):
     def __str__(self):
         return format_basemodel(
             self,
-            ["file_name", "dfg", "tables"],
+            [
+                "file_name",
+                "dfg",
+            ],
             drop_missing=True,
         )
 
@@ -229,7 +229,6 @@ class Page(BaseModel, extra="allow"):
                 page = Page(
                     file_name=data["file_name"],
                     dfg=data["dfg"],
-                    tables=data["tables"],
                 )
                 page.save()
         return page
@@ -240,21 +239,6 @@ class Page(BaseModel, extra="allow"):
                 raise FlowcoError(f"Page {self.file_name} does not exist.")
 
             self.dfg.ensure_valid()
-
-    def add_table(self, file_path: str):
-        with logger(f"Adding file"):
-            self.tables = self.tables.add(file_path)
-        self.clean()
-
-    def remove_table(self, file_path: str):
-        with logger(f"Removing file"):
-            self.tables = self.tables.remove(file_path)
-        self.clean()
-
-    def update_tables(self, tables: GlobalTables):
-        if tables != self.tables:
-            self.tables = tables
-            self.clean()
 
     def check_up_to_date(self):
         self.ensure_valid()
@@ -334,7 +318,7 @@ class Page(BaseModel, extra="allow"):
     def base_build_config(self, repair: bool) -> PassConfig:
 
         return PassConfig(
-            tables=self.tables,
+            tables=GlobalTables.from_dfg(self.dfg),
             max_retries=config.retries if repair else 0,
         )
 
@@ -412,119 +396,18 @@ class Page(BaseModel, extra="allow"):
             )
 
         self.update_dfg(dfg)
-        return FlowthonProgram(tables=self.tables.all_files(), nodes=nodes)
-
-        # dfg, editable = FlowthonProgram.from_dfg(self.dfg)
-        # self.update_dfg(dfg)
-
-        # # make file name by replacing the extension .flowco, with .flowthon
-        # with open(file_name, "w") as f:
-        #     rep = {
-        #         "tables": self.tables.model_dump(),
-        #         "graph": editable.to_json(level),
-        #     }
-        #     json_str = json.dumps(rep, indent=2)
-        #     f.write(json_str)
+        return FlowthonProgram(tables=GlobalTables.from_dfg(dfg), nodes=nodes)
 
     @atomic_method
     def merge_flowthon(
         self, flowthon: FlowthonProgram, rebuild=True, interactive=True
     ) -> None:
         with logger("Merging"):
-            self.tables = GlobalTables.from_list(flowthon.tables)
             build_config = self.base_build_config(repair=True)
             new_dfg = flowthon.merge(
                 build_config, self.dfg, rebuild=rebuild, interactive=interactive
             )
             self.update_dfg(new_dfg)
-
-    # @atomic
-    # def add_bugs(self, node_ids: Optional[List[str]]) -> None:
-    #     """
-    #     Sketchy -- not updated recently.
-    #     """
-    #     with logger("Creating assistant"):
-    #         assistant = Assistant("add-bugs")
-    #         assistant.add_json_object(
-    #             "Here is the dataflow graph matching the diagram",
-    #             self.dfg.model_dump(),
-    #         )
-
-    #     with logger("Running assistant"):
-    #         # TODO New completion model
-    #         new_graph = graph_completion(
-    #             assistant,
-    #             DataFlowGraph,
-    #         )
-
-    #     with logger("Updating graph"):
-    #         self.dfg = self.dfg.update(**new_graph.model_dump()).with_phase(
-    #             node_ids=None, phase=Phase.tests
-    #         )
-
-    # def check_unit_test(self, node_id: str, test_uid: str) -> None:
-    #     with logger(f"Check Unit Test {node_id} {test_uid}"):
-    #         self.check_up_to_date()
-    #         self.build(
-    #             BuildEngine.get_builder(),
-    #             target_phase=Phase.code,
-    #             repair=True,
-    #             target_node_id=node_id,
-    #         )
-
-    #         build_config = self.base_build_config(repair=True)
-
-    #         new_node, _ = check_unit_tests(
-    #             build_config,
-    #             self.dfg,
-    #             self.dfg[node_id],
-    #             test_uid,
-    #         )
-    #         self.update_dfg(self.dfg.with_node(new_node))
-
-    # @atomic
-    # def remove_unit_test(self, node_id, test_uid: str) -> None:
-    #     with logger(f"Remove Unit Test {node_id} {test_uid}"):
-    #         node = self.dfg[node_id]
-    #         unit_tests = node.unit_tests
-    #         if unit_tests is None:
-    #             return
-    #         new_unit_tests = [test for test in unit_tests if test.uuid != test_uid]
-    #         new_node = node.update(unit_tests=new_unit_tests)
-    #         self.update_dfg(self.dfg.with_node(new_node))
-
-    # @atomic
-    # def check_sanity_check(self, node_id: str, test_uid: str) -> None:
-    #     with logger(f"Check Sanity Check {node_id} {test_uid}"):
-    #         self.check_up_to_date()
-    #         self.build(
-    #             BuildEngine.get_builder(),
-    #             target_phase=Phase.code,
-    #             repair=True,
-    #             target_node_id=node_id,
-    #         )
-
-    #         build_config = self.base_build_config(repair=True)
-
-    #         new_node, _ = check_sanity_checks(
-    #             build_config,
-    #             self.dfg,
-    #             self.dfg[node_id],
-    #             test_uid,
-    #         )
-    #         self.update_dfg(self.dfg.with_node(new_node))
-
-    # def remove_sanity_check(self, node_id, test_uid: str) -> None:
-    #     with logger(f"Remove Sanity Check {node_id} {test_uid}"):
-    #         node = self.dfg[node_id]
-    #         sanity_checks = node.sanity_checks
-    #         if sanity_checks is None:
-    #             return
-    #         new_sanity_checks = [
-    #             test for test in sanity_checks if test.uuid != test_uid
-    #         ]
-    #         new_node = node.update(sanity_checks=new_sanity_checks)
-    #         self.update_dfg(self.dfg.with_node(new_node))
 
     @atomic_method
     def user_edit_graph_description(self, description: str) -> None:

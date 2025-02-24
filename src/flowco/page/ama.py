@@ -10,10 +10,11 @@ from openai.types.chat.chat_completion_content_part_text_param import (
 
 from flowco.assistant.flowco_assistant import flowco_assistant, flowco_assistant_fast
 from flowco.builder.graph_completions import json_for_graph_view
-from flowco.dataflow.dfg import Geometry
+from flowco.dataflow.dfg import Geometry, NodeKind
 from flowco.dataflow.extended_type import ExtendedType
 from flowco.dataflow.phase import Phase
 from flowco.page.page import Page
+from flowco.page.tables import GlobalTables
 from flowco.pythonshell.shells import PythonShells
 from flowco.session.session import session
 from flowco.ui.mx_diagram import DiagramGroup
@@ -73,7 +74,8 @@ class AskMeAnything:
                 value, _ = result.result.to_repr()
                 init_code += f"{node.function_result_var} = {value}\n"
 
-        init_code += "\n".join(self.page.tables.function_defs())
+        tables = GlobalTables.from_dfg(self.page.dfg)
+        init_code += "\n".join(tables.function_defs())
 
         shell_code = f"{init_code}\n{code}"
         with logger("python_eval"):
@@ -230,7 +232,7 @@ class AskMeAnything:
             ),
         )
 
-    def add_node(
+    def add_node_for_a_compute_step(
         self,
         id: Annotated[
             str, "A unique id for the new node.  No spaces or special characters."
@@ -244,7 +246,10 @@ class AskMeAnything:
         function_return_type: Annotated[ExtendedType, "The return type of the node."],
     ) -> ToolCallResult:
         """
-        Add a node and its requirements to the diagram.  Do not provide code.  Nodes should represent one small step in a pipeline. Eg: one transformation, one statistical test, one visualization, one output, ...  Provide a list of nodes that should point to the new node.  Provide a unique id for the node, a list of predecessor nodes, a label, and a list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well.
+        Add a node to compute a value to the diagram.  Do not provide code.  Nodes should represent one small step in a pipeline.
+        Provide a list of nodes that should point to the new node.
+        Provide a unique id for the node, a list of predecessor nodes, a label, and a list of requirements that must be true of the return value for the function.
+        Describe the representation of the return value as well.
         """
         log(
             f"add_node: {id}, {predecessors}, {label}, {requirements}, {function_return_type}"
@@ -320,7 +325,118 @@ class AskMeAnything:
 
         node = dfg[id]
         node = node.update(
-            requirements=requirements, function_return_type=function_return_type
+            requirements=requirements,
+            function_return_type=ExtendedType.model_validate(function_return_type),
+            kind=NodeKind.compute,
+        )
+        dfg = dfg.with_node(node)
+
+        self.page.update_dfg(dfg)
+
+        src_pills = ", ".join(dfg[x].pill for x in predecessors)
+        if src_pills:
+            message = f"I add a new node {node.pill}, and connected these nodes to it: {src_pills}"
+        else:
+            message = f"I add a new node {node.pill}"
+        return ToolCallResult(
+            user_message=f"**:blue[{message}]**",
+            content=ChatCompletionContentPartTextParam(
+                type="text", text=node.model_dump_json(indent=2)
+            ),
+        )
+
+    def add_node_for_a_plot(
+        self,
+        id: Annotated[
+            str, "A unique id for the new node.  No spaces or special characters."
+        ],
+        predecessors: Annotated[List[str], "The ids of the predecessor nodes"],
+        label: Annotated[str, "The label of the new node"],
+        requirements: Annotated[
+            List[str],
+            "A list of requirements that must be true of the return value for the function.  Describe the representation of the return value as well.",
+        ],
+    ) -> ToolCallResult:
+        """
+        Add a node to make a plot to the diagram.  Do not provide code.
+        Provide a list of nodes that should point to the new node.
+        Provide a unique id for the node, a list of predecessor nodes, a label, and a list of requirements for the plot.
+        """
+        log(f"add_node: {id}, {predecessors}, {label}, {requirements}")
+        dfg = self.page.dfg
+
+        pill = "tmp-pill"
+
+        if dfg.node_for_pill(pill) is not None:
+            return ToolCallResult(
+                user_message=f"**:red[Node with pill {pill} already exists]**",
+                content=None,
+            )
+
+        for pred in predecessors:
+            if dfg[pred] is None:
+                return ToolCallResult(
+                    user_message=f"**:red[predecessor {pred} does not exist]**",
+                    content=None,
+                )
+
+        pill = dfg.make_pill(label)
+        geometry = Geometry(x=0, y=0, width=0, height=0)
+        output_geometry = geometry.translate(geometry.width + 100, 0).resize(120, 80)
+        node_updates = {
+            x.id: DiagramNodeUpdate(
+                id=x.id,
+                pill=x.pill,
+                label=x.label,
+                geometry=x.geometry,
+                output_geometry=x.output_geometry,
+                is_locked=x.is_locked,
+                force_show_output=x.force_show_output,
+            )
+            for x in dfg.nodes
+        } | {
+            id: DiagramNodeUpdate(
+                id=id,
+                pill=pill,
+                label=label,
+                geometry=geometry,
+                output_geometry=output_geometry,
+                is_locked=False,
+                force_show_output=False,
+            )
+        }
+        edge_updates = {
+            x.id: DiagramEdgeUpdate(id=x.id, src=x.src, dst=x.dst) for x in dfg.edges
+        } | {
+            f"{src}-{id}": DiagramEdgeUpdate(id=f"{src}-{id}", src=src, dst=id)
+            for src in predecessors
+        }
+
+        dfg = update_dataflow_graph(
+            dfg,
+            mxDiagramUpdate(
+                version=dfg.version,
+                nodes=node_updates,
+                edges=edge_updates,
+                groups=[
+                    DiagramGroup(
+                        id=x.id,
+                        label=x.label,
+                        is_collapsed=x.is_collapsed,
+                        collapsed_geometry=x.collapsed_geometry,
+                        parent_group=x.parent_group,
+                        nodes=x.nodes,
+                    )
+                    for x in dfg.groups
+                ],
+            ),
+        )
+
+        node = dfg[id]
+        node = node.update(
+            requirements=requirements,
+            function_return_type=ExtendedType.from_value(None),
+            kind=NodeKind.plot,
         )
         dfg = dfg.with_node(node)
 
@@ -519,7 +635,8 @@ class AskMeAnything:
                         [
                             self.python_eval,
                             self.inspect,
-                            self.add_node,
+                            self.add_node_for_a_compute_step,
+                            self.add_node_for_a_plot,
                             self.add_edge,
                             self.remove_node,
                             self.remove_edge,
@@ -568,8 +685,9 @@ class AskMeAnything:
                     # type_description = node.function_return_type.type_description()
                     locals += f"`{node.function_result_var} : {node.function_return_type.to_python_type()}` is {node.function_return_type.description}\n\n"
 
+            tables = GlobalTables.from_dfg(self.page.dfg)
             locals += "\nYou have access to these files:\n" + str(
-                self.page.tables.as_preconditions()
+                tables.as_preconditions()
             )
 
             image = self.page.dfg.to_image_url()

@@ -5,12 +5,18 @@ from flowco.ui.mx_diagram import UIImageCache
 css = """
 
 
+.st-key-node_edit_top .stColumn {
+    width: fit-content !important;
+    flex: unset !important;
+}
+
+
 .stMainBlockContainer {
     padding: 0rem;
     max-width: unset !important;
 }
 .stSidebar {
-    min-width: 345px;
+    min-width: 350px;
     max-width:1000px;
 }
 
@@ -372,7 +378,6 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > div.st-key-node_colo
 div .st-key-node_colors * {
     background-color: #FFFFFF;
 }
-
 
 """
 

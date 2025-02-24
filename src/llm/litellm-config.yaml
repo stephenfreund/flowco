@@ -1,0 +1,18 @@
+model_list:
+  - model_name: claude-3-sonnet ### RECEIVED MODEL NAME ###
+    litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
+      model: claude-3-5-sonnet-20241022 ### MODEL NAME sent to `litellm.completion()` ###
+      api_key: "os.environ/ANTHROPIC_API_KEY" # does os.getenv("AZURE_API_KEY_EU")
+  - model_name: claude-3-haiku ### RECEIVED MODEL NAME ###
+    litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
+      model: claude-3-5-haiku-20241022 ### MODEL NAME sent to `litellm.completion()` ###
+      api_key: "os.environ/ANTHROPIC_API_KEY" # does os.getenv("AZURE_API_KEY_EU")
+
+litellm_settings: # module level litellm settings - https://github.com/BerriAI/litellm/blob/main/litellm/__init__.py
+  modify_params: True
+  enable_json_schema_validation: True
+
+
+general_settings:
+  max_parallel_requests: 20  # the max parallel requests allowed per deployment 
+  global_max_parallel_requests: 20  # the max parallel requests allowed on the proxy all up 

@@ -9,6 +9,7 @@ from streamlit_extras.stylable_container import stylable_container
 
 from flowco.dataflow.phase import Phase
 from flowco.page.ama import AskMeAnything
+from flowco.page.tables import GlobalTables
 from flowco.session.session import session
 from flowco.session.session_file_system import fs_write
 from flowco.util.config import AbstractionLevel
@@ -182,27 +183,29 @@ def phase_for_last_shown_part() -> Phase:
 def zip_bug(description):
     ui_page = st.session_state.ui_page
     flowco_name = ui_page.page().file_name
-    data_files = [
-        file for file in ui_page.page().tables.all_files() if file.endswith(".csv")
-    ]
+    try:
+        tables = GlobalTables.from_dfg(ui_page.dfg())
+        data_files = [file for file in tables.all_files() if file.endswith(".csv")]
+    except Exception as e:
+        data_files = []
+        pass
     time_stamp = log_timestamp()
     file_name = f"flowco-{time_stamp}.zip"
 
-    additional_entries={
+    additional_entries = {
         "description.txt": description,
         "logging.txt": session.get("output", Output).get_full_output(),
         "session_state.json": pformat(dict(st.session_state)),
     }
 
     if st.session_state.ama is not None:
-        ama : AskMeAnything = st.session_state.ama
-        additional_entries['ama.txt'] = "\n\n".join(
-            [f"# {x.role.upper()}\n{x.content}" for x in ama.visible_messages
-        ])
+        ama: AskMeAnything = st.session_state.ama
+        additional_entries["ama.txt"] = "\n\n".join(
+            [f"# {x.role.upper()}\n{x.content}" for x in ama.visible_messages]
+        )
 
     zip_data = create_zip_in_memory(
-        [flowco_name] + data_files,
-        additional_entries=additional_entries
+        [flowco_name] + data_files, additional_entries=additional_entries
     )
     fs_write(file_name, zip_data, "wb")
     return file_name, zip_data

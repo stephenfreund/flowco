@@ -1,4 +1,5 @@
 from __future__ import annotations
+from enum import IntEnum
 import html
 from collections import deque
 import os
@@ -102,6 +103,12 @@ class Group(BaseModel):
     nodes: List[str] = []
 
 
+class NodeKind(IntEnum):
+    compute = 0
+    table = 1
+    plot = 2
+
+
 class Node(NodeLike, BaseModel):
     """
     A node in a data flow graph.
@@ -118,6 +125,10 @@ class Node(NodeLike, BaseModel):
     # From Diagram:
     id: str = Field(
         description="A unique identifier for this computation stage. ids must never change.",
+    )
+
+    kind: NodeKind = Field(
+        description="The kind of node in the diagram.  Must never change except when setting up.",
     )
 
     pill: str = Field(description="A phrase to idenfity this node.")
@@ -257,6 +268,7 @@ class Node(NodeLike, BaseModel):
     def semantically_eq(self, other: "Node") -> bool:
         return (
             self.id == other.id
+            and self.kind == other.kind
             and self.pill == other.pill
             and self.label == other.label
             and self.predecessors == other.predecessors
@@ -302,6 +314,7 @@ class Node(NodeLike, BaseModel):
             key: {"mergeStrategy": "overwrite"} for key in cls.model_fields.keys()
         }
         properties["id"] = {"mergeStrategy": "FailOnDifferentValueStrategy"}
+        properties["kind"] = {"mergeStrategy": "FailOnDifferentValueStrategy"}
         properties["label"] = {"mergeStrategy": "FailOnDifferentValueStrategy"}
         properties["predecessors"] = {"mergeStrategy": "FailOnDifferentValueStrategy"}
         return {"properties": properties}
@@ -401,9 +414,6 @@ class Node(NodeLike, BaseModel):
             ]
         else:
             return [message for message in self.messages if message.phase == phase]
-
-    # def ask(self, phase: Phase, assistant: OpenAIAssistant) -> Node:
-    #     return self.update(questions=NodeQuestions(phase=phase, assistant=assistant))
 
     def reset(self, reset_requirements=False) -> Node:
         if reset_requirements:
@@ -652,6 +662,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                 with logger(f"Node {node['id']}..."):
                     new_node = Node(
                         id=node["id"],
+                        kind=node.get("kind", NodeKind.compute),
                         pill=node["pill"],
                         label=node["label"],
                         geometry=Geometry(**node["geometry"]),
@@ -725,9 +736,6 @@ class DataFlowGraph(GraphLike, BaseModel):
                 return edge
         return None
 
-    # def successors(self, node_id: str) -> List[str]:
-    #     return [edge.dst for edge in self.edges if edge.src == node_id]
-
     def listify_node_ids(self, node_ids: NodeOrNodeList = None) -> List[str]:
         if node_ids is None:
             node_ids = self.node_ids()
@@ -750,8 +758,6 @@ class DataFlowGraph(GraphLike, BaseModel):
             old_name = pill_to_python_name(old_pill)
             new_name = pill_to_python_name(node.pill)
             dfg = dfg.alpha_rename(old_name, new_name)
-            # dfg = dfg.alpha_rename(f"compute_{old_name}", f"compute_{new_name}")
-            # dfg = dfg.alpha_rename(f"{old_name}_result", f"{new_name}_result")
         return dfg
 
     def with_new_node(self, node: Node) -> "DataFlowGraph":
@@ -887,42 +893,6 @@ class DataFlowGraph(GraphLike, BaseModel):
         Returns:
             DataFlowGraph: A new DataFlowGraph instance with the replacements made.
         """
-
-        # def replace_in_obj(obj):
-        #     if obj is None:
-        #         return None
-        #     if isinstance(obj, str):
-        #         return obj.replace(from_str, to_str)
-        #     elif isinstance(obj, BaseModel):
-        #         if isinstance(obj, Edge):
-        #             return obj
-        #         elif isinstance(obj, Node):
-        #             # Recursively replace in Pydantic models
-        #             return obj.model_copy(
-        #                 update={
-        #                     field: replace_in_obj(getattr(obj, field))
-        #                     for field in obj.model_fields.keys()
-        #                     if field not in ["id", "predecessors"]
-        #                     and getattr(obj, field) is not None
-        #                 }
-        #             )
-        #         else:
-        #             # Recursively replace in Pydantic models
-        #             return obj.model_copy(
-        #                 update={
-        #                     field: replace_in_obj(getattr(obj, field))
-        #                     for field in obj.model_fields.keys()
-        #                     if getattr(obj, field) is not None
-        #                 }
-        #             )
-
-        #     elif isinstance(obj, list):
-        #         return [replace_in_obj(item) for item in obj]
-        #     elif isinstance(obj, dict):
-        #         return {key: replace_in_obj(value) for key, value in obj.items()}
-        #     else:
-        #         return obj  # For other types, return as is
-
         new_nodes = []
         for node in self.nodes:
             updated_node = node.alpha_rename(from_str, to_str)
@@ -1034,14 +1004,6 @@ class DataFlowGraph(GraphLike, BaseModel):
     ) -> "DataFlowGraph":
         to_change = self.listify_node_ids(node_ids)
 
-        # Could compute successors directly too...
-        # to_change = set(to_change) | {
-        #     x
-        #     for x in self.node_ids()
-        #     for node_id in to_change
-        #     if node_id in self[x].predecessors
-        # }
-
         succs = set(to_change)
         for node_id in to_change:
             succs |= self.successors(node_id)
@@ -1110,73 +1072,6 @@ class DataFlowGraph(GraphLike, BaseModel):
                 return f"data:image/png;base64,{self.image}"
 
         return None
-
-    # def outputs_to_prompt_messages(dfg: DataFlowGraph) -> List[Dict[str, Any]]:
-    #     messages = []
-    #     for node_id in dfg.topological_sort():
-    #         node = dfg[node_id]
-    #         result = node.result
-    #         if result is not None:
-    #             if result.result is not None:
-
-    #                 # guard against the result value being something we can't handle
-    #                 try:
-    #                     repr, clipped = result.result.to_repr(10)
-    #                 except Exception as e:
-    #                     error(e)
-    #                     repr, clipped = str(result.result), False
-
-    #                 if clipped:
-    #                     messages.append(
-    #                         {
-    #                             "type": "text",
-    #                             "text": f"The variable `{node.function_result_var}` has this value.  We show only the first 10 elements of any aggregate value:\n```\n{repr}\n```",
-    #                         }
-    #                     )
-    #                 else:
-    #                     messages.append(
-    #                         {
-    #                             "type": "text",
-    #                             "text": f"The variable `{node.function_result_var}` has this value:\n```\n{repr}\n```",
-    #                         }
-    #                     )
-
-    #             if result.output is not None:
-    #                 messages.append(
-    #                     {
-    #                         "type": "text",
-    #                         "text": f"Here is the output for {node_id}.",
-    #                     }
-    #                 )
-    #                 output = result.output
-    #                 if output.output_type == OutputType.text:
-    #                     messages.append({"type": "text", "text": output.data})
-    #                 elif output.output_type == OutputType.image:
-    #                     messages.append(
-    #                         {
-    #                             "type": "text",
-    #                             "text": f"You may include the following image in your report with this: `![node_output]({node_id}.png)`",
-    #                         }
-    #                     )
-    #                     messages.append(
-    #                         {
-    #                             "type": "image_url",
-    #                             "image_url": {
-    #                                 "url": output.data.replace(
-    #                                     "data:image/png,", "data:image/png;base64,"
-    #                                 ),
-    #                                 "detail": "high",
-    #                             },
-    #                         }
-    #                     )
-    #                 else:
-    #                     messages.append(
-    #                         {
-    #                             "type": "text",
-    #                             "text": "Unknown output type: {self.output_type}: {self.data}",
-    #                         }
-    #                     )
-    #     return messages
 
     def replace_placeholders_with_base64_images(self, markdown: str) -> str:
         for node_id in self.topological_sort():

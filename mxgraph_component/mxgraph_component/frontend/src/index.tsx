@@ -168,19 +168,19 @@ class DoubleBorderShape extends mx.mxRectangleShape {
     // Call the parent method to draw the default rectangle border.
     super.paintForeground(c, x, y, w, h);
 
-    // Set the line style for the inner border.
-    c.begin();
 
     // Define an offset for the inner border. Adjust the offset value to set the space between borders.
-    const offset: number = 3;
-
-    // Draw a rectangle inset from the original rectangle.
-    c.moveTo(x + offset, y + offset);
-    c.lineTo(x + w - offset, y + offset);
-    c.lineTo(x + w - offset, y + h - offset);
-    c.lineTo(x + offset, y + h - offset);
-    c.close();
-    c.stroke();
+    for (var i = 0; i < 2; i++) {
+      const offset = (i + 1) * 2;
+      // Set the line style for the inner border.
+      c.begin();
+      c.moveTo(x + offset, y + offset);
+      c.lineTo(x + w - offset, y + offset);
+      c.lineTo(x + w - offset, y + h - offset);
+      c.lineTo(x + offset, y + h - offset);
+      c.close();
+      c.stroke();
+    }
   }
 }
 
@@ -326,32 +326,34 @@ class mxIconSet {
         return true;
       }
 
-      const up_to_date = upToDate(state.cell);
-      const editImg: HTMLImageElement = mx.mxUtils.createImage(up_to_date ? 'edit.png' : 'refresh.png');
-      editImg.setAttribute('title', up_to_date ? 'Edit' : 'Refresh');
-      Object.assign(editImg.style, {
-        position: 'absolute',
-        cursor: 'pointer',
-        width: '16px',
-        height: '16px',
-        left: `${state.x + 8}px`,
-        top: `${state.y + state.height - 18}px`
-      });
-
-      mx.mxEvent.addListener(editImg, 'click', mx.mxUtils.bind(this, (evt: Event) => {
-        const version = currentDiagram!.version;
-        Streamlit.setComponentValue({
-          command: "edit",
-          diagram: JSON.stringify(convertMxGraphToDiagramUpdate(graph, version)),
-          selected_node: state.cell.id,
-          sequence_number: uuidv4()
+      const node = state.cell.value as DiagramNode;
+      if (true || node.kind !== 1) {  // tables are not editable
+        const up_to_date = upToDate(state.cell);
+        const editImg: HTMLImageElement = mx.mxUtils.createImage(up_to_date ? 'edit.png' : 'refresh.png');
+        editImg.setAttribute('title', up_to_date ? 'Edit' : 'Refresh');
+        Object.assign(editImg.style, {
+          position: 'absolute',
+          cursor: 'pointer',
+          width: '16px',
+          height: '16px',
+          left: `${state.x + 8}px`,
+          top: `${state.y + state.height - 18}px`
         });
-        mx.mxEvent.consume(evt);
-      }));
 
-      graph.container.appendChild(editImg);
-      this.images.push(editImg);
+        mx.mxEvent.addListener(editImg, 'click', mx.mxUtils.bind(this, (evt: Event) => {
+          const version = currentDiagram!.version;
+          Streamlit.setComponentValue({
+            command: "edit",
+            diagram: JSON.stringify(convertMxGraphToDiagramUpdate(graph, version)),
+            selected_node: state.cell.id,
+            sequence_number: uuidv4()
+          });
+          mx.mxEvent.consume(evt);
+        }));
 
+        graph.container.appendChild(editImg);
+        this.images.push(editImg);
+      }
 
       // Create Delete Icon
       const deleteImg: HTMLImageElement = mx.mxUtils.createImage("delete.png");
@@ -906,43 +908,34 @@ function addListeners() {
       mouseDown = false;
       const me = evt.getEvent();
       if (can_edit && (me.shiftKey && !mouseMoved)) {
-        const userLabel = prompt("Describe this step", "...");
-        if (userLabel != null) {
-          const pt = graph.getPointForEvent(me, false);
-          const model: mxGraphModel = graph.getModel();
-          const parent = graph.getDefaultParent();
-          model.beginUpdate();
-          try {
-            const id = findFirstUnusedStepId()
+        // const userLabel = prompt("Describe this step", "...");
+        // if (userLabel != null) {
+        const pt = graph.getPointForEvent(me, false);
+        const model: mxGraphModel = graph.getModel();
+        const parent = graph.getDefaultParent();
+        model.beginUpdate();
+        try {
+          const id = findFirstUnusedStepId()
 
-            const width = 160;
-            const height = 80;
+          const width = 160;
+          const height = 80;
 
-            // Prompt the user to enter a label
-            let value = {
-              id: id,
-              pill: id,
-              label: '...',
-              geometry: new mx.mxRectangle(pt.x - width / 2, pt.y - height / 2, width, height),
-              phase: 0,
-              is_locked: false,
-              force_show_output: true
-            }
-            const newCell = graph.insertVertex(parent, id, value, pt.x, pt.y, 160, 80, node_style);
-            if (userLabel != null) {
-              const value2 = newCell.cloneValue();
-              value2.label = userLabel.trim();
-              // value.pill = completion;
-              graph.getModel().setValue(newCell, value2);
-            }
-
-            generatePill(userLabel, newCell);
-          } finally {
-            model.endUpdate();
+          // Prompt the user to enter a label
+          let value = {
+            id: id,
+            pill: id,
+            label: '...',
+            geometry: new mx.mxRectangle(pt.x - width / 2, pt.y - height / 2, width, height),
+            phase: 0,
+            is_locked: false,
+            force_show_output: true
           }
+          const newCell = graph.insertVertex(parent, id, value, pt.x, pt.y, 160, 80, node_style);
+        } finally {
+          model.endUpdate();
         }
-        evt.consume();
       }
+      evt.consume();
       streamlitResponse();
     }
   });
@@ -996,6 +989,16 @@ function addListeners() {
     return hasPath(target, source, visitedNodes);
   }
 
+    // Assume mxCell is imported or globally available from mxGraph types
+  graph.isCellDisconnectable = function(cell: mxCell, terminal: mxCell, source: boolean): boolean {
+    if (cell && cell.edge) {
+      // Prevent disconnecting (and thus reconnecting) edges
+      return false;
+    }
+    // Fallback to the default behavior for vertices and other cells.
+    return mx.mxGraph.prototype.isCellDisconnectable.apply(this, [ cell, terminal, source ]);
+  };
+
 
   graph.getEdgeValidationError = function (...args) {
     const [, source, target] = args;
@@ -1005,6 +1008,12 @@ function addListeners() {
     if (source.id === target.id) {
       return '';
     }
+
+    const target_node = graph.getModel().getCell(target.id).value as DiagramNode;
+    if (target_node.kind === 1) {
+      return 'Table loading nodes cannot have incoming edges.';
+    }
+
     if (wouldCreateCycle(graph, source, target)) {
       return 'Edges cannot create cycles in the graph.';
     }
@@ -1013,6 +1022,16 @@ function addListeners() {
     }
     return mx.mxGraph.prototype.getEdgeValidationError.apply(this, args);
   };
+
+  graph.connectionHandler.isValidSource = function(cell: mxCell): boolean {
+    if (cellKind(cell) !== "node") {
+      return false;
+    }
+    const node = graph.getModel().getCell(cell.id).value as DiagramNode;
+    return node.kind !== 2;
+  };
+    
+  
 
   // Adds a handler for edge creation
   graph.connectionHandler.insertEdge = function (parent, id, value, source, target, style) {

@@ -13,6 +13,7 @@ export interface Geometry {
 // the value for a node is "<b>pill</b>: label"
 export interface DiagramNode {
     id: string;
+    kind: number;
     pill: string;
     label: string;
     geometry: Geometry;
@@ -90,7 +91,7 @@ function escapeHtml(text: string): string {
     return text.replace(/[&<>"']/g, function (m) { return map[m]; });
 }
 
-export const node_style = 'html=1;shape=dataTable;whiteSpace=wrap;rounded=0;';
+export const node_style = 'html=1;whiteSpace=wrap;rounded=0;';
 export const node_hover_style = 'html=1;shape=rectangle;whiteSpace=wrap;rounded=1;shadow=1;';
 
 const edge_style = 'endArrow=classic;html=1;rounded=0;labelBackgroundColor=white;';
@@ -141,8 +142,21 @@ export function clean_color() {
     return phase_to_color(0, undefined);
 }
 
+function kind_to_shape(kind: number): string {
+    switch (kind) {
+        case 0:
+            return 'shape=rectangle;rounded=1;';
+        case 1:
+            return 'shape=ellipse;perimeter=ellipsePerimeter;';
+        case 2:
+            return 'shape=doubleBorder;';
+        default:
+            return 'shape=hexagon;';
+    }
+}
+
 function style_for_node(node: DiagramNode): string {
-    let style = node_style + `fillColor=${phase_to_color(node.phase, node.build_status)};`;
+    let style = node_style + kind_to_shape(node.kind) + `fillColor=${phase_to_color(node.phase, node.build_status)};`;
     if (node.has_messages) {
         style += "shape=label;strokeColor=#DD0000;strokeWidth=4;imageAlign=center;imageVerticalAlign=middle;imageWidth=80;imageHeight=80;image=error.png;";
     }
@@ -154,6 +168,13 @@ function encodeSVG(svg: string): string {
         .replace(/'/g, "%27")
         .replace(/"/g, "%22");
 }
+
+export function getClosestPointOnEllipse(width: number, height: number): { x: number, y: number } {
+    const cx = width / 2;
+    const cy = height / 2;
+    // The closest point is given by (cx/√2, cy/√2)
+    return { x: cx / 2 / Math.sqrt(2), y: cy / 2 / Math.sqrt(2) };
+  }
 
 function update_overlays_for_node(graph: mxGraph, node: DiagramNode, vertex: mxCell): void {
     graph.removeCellOverlays(vertex);
@@ -177,11 +198,16 @@ function update_overlays_for_node(graph: mxGraph, node: DiagramNode, vertex: mxC
         const iconImage = new mx.mxImage("lock.png", 16, 16);
         const node_width = vertex.geometry.width;
         const node_height = vertex.geometry.height;
-        const inset_factor = Math.min(node_width, node_height) / 15;
+        // const inset_factor = Math.min(node_width, node_height) / 15;
         const iconOverlay = new mx.mxCellOverlay(iconImage, "This node is locked");
         iconOverlay.align = mx.mxConstants.ALIGN_LEFT;
         iconOverlay.verticalAlign = mx.mxConstants.ALIGN_TOP;
-        iconOverlay.offset = new mx.mxPoint(4 + inset_factor, 6 + inset_factor);
+        // if (node.kind !== 1) {
+            iconOverlay.offset = new mx.mxPoint(16,12);
+        // } else {
+        //     const closest = getClosestPointOnEllipse(node_width, node_height);
+        //     iconOverlay.offset = new mx.mxPoint(closest.x, closest.y);
+        // }
         graph.addCellOverlay(vertex, iconOverlay);
     }
 }

@@ -17,6 +17,7 @@ class DiagramOutput(BaseModel):
 
 class DiagramNode(BaseModel):
     id: str
+    kind: int  # Using int to represent the NodeKind enum
     pill: str
     label: str
     geometry: Geometry
@@ -128,6 +129,7 @@ def from_dfg(
         html = md_to_html(md)
         diagram_node = DiagramNode(
             id=node.id,
+            kind=node.kind.value,  # Convert NodeKind enum to int
             pill=node.pill,
             label=node.label,
             geometry=node.geometry,

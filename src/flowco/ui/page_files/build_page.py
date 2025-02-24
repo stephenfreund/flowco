@@ -104,7 +104,7 @@ class BuildPage(FlowcoPage):
 
                     with cols[1]:
                         st.write(
-                            "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
+                            "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
                             unsafe_allow_html=True,
                         )
 
@@ -138,7 +138,7 @@ class BuildPage(FlowcoPage):
                         )
                     with cols[5]:
                         st.write(
-                            "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
+                            "<span>&nbsp;&nbsp;&nbsp;&nbsp;</span>",
                             unsafe_allow_html=True,
                         )
                     with cols[6]:
@@ -167,11 +167,13 @@ class BuildPage(FlowcoPage):
                     with cols[7]:
                         if st.button(
                             label="",
-                            icon=":material/table_view:",
+                            icon=":material/cancel_presentation:",
+                            help="Clear all node outputs",
                             disabled=not self.graph_is_editable(),
-                            help="Manage data files for the diagram",
                         ):
-                            data_files_dialog()
+                            st.session_state.ui_page.page().clear_outputs()
+                            st.session_state.force_update = True
+                            st.rerun()
                 else:
                     run_button = self.stop_button()
                     st.button(

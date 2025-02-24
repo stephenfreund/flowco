@@ -28,20 +28,32 @@ class VisibleMessage(BaseModel):
 
 class AskMeAnythingNode:
 
-    def __init__(self, dfg: DataFlowGraph, show_code: bool):
+    def __init__(self, dfg: DataFlowGraph, show_code: bool, is_plot_node: bool):
         self.dfg = dfg
         self.show_code = show_code
 
-        if show_code:
-            prompt = "ama_node_editor"
-            functions = [
-                self.update_node,
-            ]
+        if is_plot_node:
+            if show_code:
+                prompt = "ama_node_editor-for-plot"
+                functions = [
+                    self.update_node_for_plot,
+                ]
+            else:
+                prompt = "ama_node_editor_no_code-for-plot"
+                functions = [
+                    self.update_node_requirements_for_plot,
+                ]
         else:
-            prompt = "ama_node_editor_no_code"
-            functions = [
-                self.update_node_requirements,
-            ]
+            if show_code:
+                prompt = "ama_node_editor"
+                functions = [
+                    self.update_node,
+                ]
+            else:
+                prompt = "ama_node_editor_no_code"
+                functions = [
+                    self.update_node_requirements,
+                ]
 
         self.assistant = flowco_assistant(prompt_key=prompt)
         self.assistant.set_functions(functions)
@@ -210,6 +222,146 @@ class AskMeAnythingNode:
                             "predecessors",
                             "requirements",
                             "function_return_type",
+                            "code",
+                        ]
+                    ),
+                    indent=2,
+                ),
+            ),
+        )
+
+    def update_node_for_plot(
+        self,
+        label: Annotated[
+            str,
+            "The new label of the node.",
+        ],
+        requirements: Annotated[
+            List[str],
+            "A list of requirements that must be true for this node.",
+        ],
+        code: Annotated[
+            List[str] | None,
+            "The code for the node.  Only modify if there is already code.  The code should be a list of strings, one for each line of code.  The signature must match the original version.",
+        ],
+    ) -> ToolCallResult:
+        """
+        Use this to modify the node.  The label, requirements and code must be kept in sync.
+        Make as few changes as possible.
+        """
+        node = self.completion_node
+        assert node is not None, "Node must be set before calling update_node"
+        mods = []
+        log(f"update_node: {label}, {requirements}, {code}")
+        if code and code != node.code:
+            log(f"Updating code to {code}")
+            node = node.update(code=code, phase=Phase.algorithm)
+            mods.append("code")
+
+        if requirements and requirements != node.requirements:
+            log(f"Updating requirements to {requirements}")
+            node = node.update(
+                requirements=requirements,
+                phase=Phase.clean,
+            )
+            mods.append("requirements")
+
+        if label and label != node.label:
+            log(f"Updating label to {label}")
+            node = node.update(label=label, phase=Phase.clean)
+            mods.append("label")
+
+        if config.x_trust_ama:
+            if "requirements" in mods:
+                node = node.update(cache=node.cache.update(Phase.requirements, node))
+                node = node.update(phase=Phase.requirements)
+            if "algorithm" in mods:
+                node = node.update(cache=node.cache.update(Phase.algorithm, node))
+                node = node.update(phase=Phase.algorithm)
+            if "code" in mods:
+                node = node.update(cache=node.cache.update(Phase.code, node))
+                node = node.update(phase=Phase.code)
+
+        mod_str = ", ".join(reversed(mods))
+
+        self.completion_node = node
+
+        return ToolCallResult(
+            user_message=f"Updated {mod_str} for {node.pill}",
+            content=ChatCompletionContentPartTextParam(
+                type="text",
+                text=node.model_dump_json(
+                    include=set(
+                        [
+                            "id",
+                            "pill",
+                            "label",
+                            "predecessors",
+                            "requirements",
+                            "code",
+                        ]
+                    ),
+                    indent=2,
+                ),
+            ),
+        )
+
+    def update_node_requirements_for_plot(
+        self,
+        label: Annotated[
+            str,
+            "The new label of the node.  Keep in sync with the requirements, algorithm, and code.",
+        ],
+        requirements: Annotated[
+            List[str],
+            "A list of requirements that must be true.",
+        ],
+    ) -> ToolCallResult:
+        """
+        Use this to modify the node.  The label and requirements must be kept in sync.
+        Make as few changes as possible.
+        """
+        node = self.completion_node
+        assert node is not None, "Node must be set before calling update_node"
+        mods = []
+        log(f"update_node_requirements: {label}, {requirements}")
+        if requirements and requirements != node.requirements:
+            log(f"Updating requirements to {requirements}")
+            node = node.update(
+                requirements=requirements,
+                phase=Phase.clean,
+            )
+            mods.append("requirements")
+
+        if label and label != node.label:
+            log(f"Updating label to {label}")
+            node = node.update(label=label, phase=Phase.clean)
+            mods.append("label")
+
+        if config.x_trust_ama:
+            if "requirements" in mods:
+                node = node.update(cache=node.cache.update(Phase.requirements, node))
+                node = node.update(phase=Phase.requirements)
+            if "algorithm" in mods:
+                node = node.update(cache=node.cache.update(Phase.algorithm, node))
+                node = node.update(phase=Phase.algorithm)
+
+        mod_str = ", ".join(reversed(mods))
+
+        self.completion_node = node
+
+        return ToolCallResult(
+            user_message=f"Updated {mod_str} for {node.pill}",
+            content=ChatCompletionContentPartTextParam(
+                type="text",
+                text=node.model_dump_json(
+                    include=set(
+                        [
+                            "id",
+                            "pill",
+                            "label",
+                            "predecessors",
+                            "requirements",
                             "code",
                         ]
                     ),

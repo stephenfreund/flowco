@@ -1,16 +1,16 @@
 node-passes:
-    - flowco.builder.synthesize.requirements
+    - flowco.builder.synthesize_kinds.kind_requirements
     - flowco.builder.synthesize.algorithm
-    - flowco.builder.synthesize.compile
+    - flowco.builder.synthesize_kinds.kind_compile
     - flowco.builder.check_syntax.check_syntax
     - flowco.builder.check_run.check_run
     - flowco.builder.assertions.compile_assertions  
     - flowco.builder.assertions.check_assertions  
 
 repair-checks-passes:
-    - flowco.builder.synthesize.requirements
+    - flowco.builder.synthesize_kinds.requirements
     - flowco.builder.synthesize.algorithm
-    - flowco.builder.synthesize.compile
+    - flowco.builder.synthesize_kinds.compile
     - flowco.builder.check_syntax.check_syntax
     - flowco.builder.check_run.check_run
     - flowco.builder.assertions.compile_assertions  
@@ -21,16 +21,3 @@ full-passes:
     - flowco.builder.new_passes.full_pass
     - flowco.builder.passes.check_node_syntax
     - flowco.builder.passes.check_run
-
-
-
-# node-passes:
-#     - flowco.builder.fine_grained_passes.requirements
-#     - flowco.builder.fine_grained_passes.algorithm
-#     - flowco.builder.fine_grained_passes.compile
-#     - flowco.builder.passes.check_node_syntax
-#     - flowco.builder.passes.check_run
-#     - flowco.builder.fine_grained_passes.sanity_checks
-#     - flowco.builder.fine_grained_passes.unit_tests
-#     - flowco.builder.passes.check_tests_syntax
-#     # - flowco.builder2.test_pass.check_tests

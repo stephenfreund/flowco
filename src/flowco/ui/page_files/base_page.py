@@ -365,32 +365,20 @@ class FlowcoPage:
             cols = st.columns(3)
             with cols[0]:
                 if st.button(
-                    label="Clear Outputs",
-                    icon=":material/settings:",
-                    help="Change settings",
-                    disabled=not self.graph_is_editable(),
-                ):
-                    ui_page.page().clear_outputs()
-                    st.session_state.force_update = True
-                    st.rerun()
-            with cols[1]:
-                if st.button(
-                    label="Settings",
+                    label="",
                     icon=":material/settings:",
                     help="Change settings",
                     disabled=not self.graph_is_editable(),
                 ):
                     settings(ui_page)
 
-            st.divider()
-            cols = st.columns(2)
-            with cols[0]:
+            with cols[1]:
                 if st.button(
                     label="Report Bug", icon=":material/bug_report:", key="report_bug"
                 ):
                     self.report_bug()
 
-            with cols[1]:
+            with cols[2]:
                 if st.button(label="Logout", icon=":material/logout:", help="Sign out"):
                     sign_out()
                     st.rerun()

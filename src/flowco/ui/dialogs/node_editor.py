@@ -1,17 +1,22 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List
 
+import seaborn as sns
+
 from code_editor import code_editor
 import streamlit as st
 
 from flowco.assistant.flowco_assistant import fast_transcription
 from flowco.builder.cache import BuildCache
 from flowco.builder.synthesize import algorithm, requirements, compile
-from flowco.dataflow.dfg import DataFlowGraph, Node
-from flowco.dataflow.extended_type import schema_to_text
+from flowco.builder.synthesize_kinds import table_requirements
+from flowco.dataflow.dfg import DataFlowGraph, Node, NodeKind
+from flowco.dataflow.extended_type import ExtendedType, schema_to_text
 from flowco.dataflow.phase import Phase
 from flowco.page.ama_node import AskMeAnythingNode
 from flowco.page.page import Page
+from flowco.page.tables import file_path_to_table_name, table_df
+from flowco.session.session_file_system import fs_glob, fs_write
 from flowco.ui.ui_page import UIPage
 from flowco.ui.ui_util import (
     phase_for_last_shown_part,
@@ -68,7 +73,7 @@ class NodeEditor:
         self.dfg = dfg
         self.node = node
         self.original_node = node
-        self.ama = AskMeAnythingNode(dfg, show_code())
+        self.ama = AskMeAnythingNode(dfg, show_code(), node.kind == NodeKind.plot)
 
     def others(self, title):
         if show_code():
@@ -189,9 +194,8 @@ class NodeEditor:
                     "-" if not c.isalnum() else c for c in pill_text
                 ).strip("-")
 
-                self.node = self.node.update(
-                    pill=pill_response.text.strip().replace(" ", "-")
-                )
+                if pill_text:
+                    self.node = self.node.update(pill=pill_text)
 
         with r:
             with st.popover("Show Inputs"):
@@ -255,14 +259,21 @@ class NodeEditor:
         node = self.node
 
         if (
-            original_node.requirements != node.requirements
+            original_node.kind != node.kind
+            or original_node.requirements != node.requirements
             or original_node.label != node.label
             or original_node.function_return_type != node.function_return_type
         ):
             page: Page = ui_page.page()
             page.clean(node.id)  # !!! this can change the page.dfg
 
-            node = node.update(phase=Phase.requirements)
+            assert node.requirements is not None, "Requirements must be set"
+            assert node.function_return_type is not None, "Return type must be set"
+
+            if original_node.kind != node.kind:
+                node = node.update(phase=Phase.clean)
+            else:
+                node = node.update(phase=Phase.requirements)
 
         dfg = ui_page.dfg()  # must reload
 
@@ -327,94 +338,186 @@ class NodeEditor:
 
         top = st.empty()
 
-        with st.container(key="edit_dialog"):
-            self.node_component_editors()
+        kinds = {
+            "Compute a value": NodeKind.compute,
+            "Load a dataset": NodeKind.table,
+            "Create a plot": NodeKind.plot,
+        }
 
-        with top.container():
-            left, middle, right = st.columns(3)
-            with left:
+        def update():
+            kind = kinds[st.session_state.new_node_type]
+            if kind != self.node.kind:
+                self.node = self.node.update(
+                    kind=kind,
+                    phase=Phase.clean,
+                    # requirements=[],
+                    # function_return_type=None,
+                    # code=[],
+                )
+
+        kind_str = st.selectbox(
+            "This node will:",
+            options=kinds.keys(),
+            index=self.node.kind,
+            key="new_node_type",
+            placeholder="Choose an option option",
+            # label_visibility="collapsed",
+            on_change=update,
+        )
+        assert kind_str in kinds
+        kind = kinds[kind_str]
+
+        if self.node.kind == NodeKind.table:
+            error = self.table()
+        else:
+            error = self.compute_or_plot()
+
+        with top.container(key="node_edit_top"):
+            if error is not None:
+                st.error(error)
+
+            c = st.columns(4, vertical_alignment="bottom")
+            with c[0]:
                 if st.button(
                     "Save",
                     icon=":material/save:",
-                    disabled=self.pending_ama is not None,
+                    disabled=self.pending_ama is not None or error is not None,
                 ):
                     with st.spinner("Saving..."):
                         self.save()
                         st.session_state.force_update = True
                         st.rerun(scope="app")
-            with middle:
-                if st.button(
-                    "Check Consistency",
-                    icon=":material/check:",
-                    disabled=self.pending_ama is not None,
-                ):
-                    self.pending_ama = PendingAMA(
-                        config.get_prompt(
-                            (
-                                "ama_node_editor_sync"
-                                if show_code()
-                                else "ama_node_editor_sync_no_code"
-                            ),
-                            label=self.node.label,
-                            requirements="\n".join(
-                                f"* {x}" for x in self.node.requirements or []
-                            ),
-                            code="\n".join(self.node.code or []),
-                        ),
-                        False,
-                    )
-            with right:
-                rebuild = st.button(
-                    "Regenerate",
-                    icon=":material/manufacturing:",
-                    disabled=self.pending_ama is not None,
-                )
+            with c[1]:
+                if st.button("Cancel", icon=":material/close:"):
+                    st.rerun(scope="app")
 
-            if rebuild:
-                self.regenerate()
+            if kind != NodeKind.table:
+                with c[2]:
+                    if st.button(
+                        "Check Consistency",
+                        icon=":material/check:",
+                        disabled=self.pending_ama is not None,
+                    ):
+                        self.pending_ama = PendingAMA(
+                            config.get_prompt(
+                                (
+                                    "ama_node_editor_sync"
+                                    if show_code()
+                                    else "ama_node_editor_sync_no_code"
+                                ),
+                                label=self.node.label,
+                                requirements="\n".join(
+                                    f"* {x}" for x in self.node.requirements or []
+                                ),
+                                code="\n".join(self.node.code or []),
+                            ),
+                            False,
+                        )
+                with c[3]:
+                    rebuild = st.button(
+                        "Regenerate",
+                        icon=":material/manufacturing:",
+                        disabled=self.pending_ama is not None,
+                    )
+
+                    if rebuild:
+                        self.regenerate()
+                        st.rerun(scope="fragment")
+
+    def table(self):
+        if self.node.predecessors:
+            return "Nodes that load datasets cannot have predecessors."
+
+        uploaded_file = st.file_uploader(
+            "Upload new dataset", type=["csv"], accept_multiple_files=False
+        )
+        if uploaded_file is not None:
+            fs_write(uploaded_file.name, uploaded_file.getvalue().decode("utf-8"))
+            label = uploaded_file.name
+        else:
+            files = [file for file in fs_glob("", "*.csv")] + sns.get_dataset_names()
+            label = st.pills("Select existing dataset", files, key="new_node_file")
+
+        if label is not None:
+
+            df = table_df(label)
+            st.write("**Preview**")
+            st.dataframe(df)
+
+            function_return_type = ExtendedType.from_value(df)
+            function_return_type.description += f"The DataFrame for the {self.node.pill} dataset.  Here are the first few rows:\n```\n{df.head()}\n```\n"
+            requirements = [
+                f"The result is the dataframe for the `{self.node.pill}` data set.",
+            ]
+
+            self.node = self.node.update(
+                pill=file_path_to_table_name(label),
+                label=f"Load the `{label}` table",
+                requirements=requirements,
+                function_return_type=function_return_type,
+            )
+            return None
+        else:
+            return "Select a dataset."
+
+    def compute_or_plot(self):
+        container = st.container(height=200, border=True, key="chat_container_node")
+        with container:
+            for message in self.ama.messages():
+                with st.chat_message(message.role):
+                    st.markdown(message.content, unsafe_allow_html=True)
+
+            if self.pending_ama:
+                pending_ama = self.pending_ama
+                if pending_ama.show_prompt:
+                    with st.chat_message("user"):
+                        st.markdown(self.pending_ama.prompt)
+                with st.chat_message("assistant"):
+                    response = st.write_stream(
+                        self.ama.complete(
+                            pending_ama.prompt,
+                            self.node,
+                            pending_ama.show_prompt,
+                        )
+                    )
+                self.node = self.ama.updated_node() or self.node
+                with logger("ama updating pill"):
+                    self.node = self.dfg.update_node_pill(self.node)
+
+                self.pending_ama = None
                 st.rerun(scope="fragment")
 
-            container = st.container(height=200, border=True, key="chat_container_node")
-            with container:
-                for message in self.ama.messages():
-                    with st.chat_message(message.role):
-                        st.markdown(message.content, unsafe_allow_html=True)
+        st.audio_input(
+            "Record a voice message",
+            label_visibility="collapsed",
+            key="voice_input_node",
+            on_change=lambda: self.register_pending_voice(container),
+            # disabled=not self.graph_is_editable(),
+        )
 
-                if self.pending_ama:
-                    pending_ama = self.pending_ama
-                    if pending_ama.show_prompt:
-                        with st.chat_message("user"):
-                            st.markdown(self.pending_ama.prompt)
-                    with st.chat_message("assistant"):
-                        response = st.write_stream(
-                            self.ama.complete(
-                                pending_ama.prompt,
-                                self.node,
-                                pending_ama.show_prompt,
-                            )
-                        )
-                    self.node = self.ama.updated_node() or self.node
-                    with logger("ama updating pill"):
-                        self.node = self.dfg.update_node_pill(self.node)
+        with st.container(key="ama_columns_node"):
+            if prompt := st.chat_input(
+                "Ask me to make changes, fix problems, or suggest improvements. Or edit the node directly below.",
+                key="ama_input_node",
+            ):
+                self.register_pending_ama(prompt, True)
+                st.rerun(scope="fragment")
 
-                    self.pending_ama = None
-                    st.rerun(scope="fragment")
+        with st.container(key="edit_dialog"):
+            self.node_component_editors()
 
-            st.audio_input(
-                "Record a voice message",
-                label_visibility="collapsed",
-                key="voice_input_node",
-                on_change=lambda: self.register_pending_voice(container),
-                # disabled=not self.graph_is_editable(),
-            )
+        if self.node.kind == NodeKind.plot:
+            successors = self.dfg.successors(self.node.id)
+            if successors:
+                return "Nodes that make plots cannot have successors."
 
-            with st.container(key="ama_columns_node"):
-                if prompt := st.chat_input(
-                    "Ask me to make changes, fix problems, or suggest improvements. Or edit the node directly below.",
-                    key="ama_input_node",
-                ):
-                    self.register_pending_ama(prompt, True)
-                    st.rerun(scope="fragment")
+        if self.node.pill == "..." or self.node.pill == "":
+            return "The node must have a title."
+
+        if self.node.label == "":
+            return "The node must have a label."
+
+        return None
 
 
 def edit_node(node_id: str):
