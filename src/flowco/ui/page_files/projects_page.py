@@ -1,6 +1,8 @@
+from ast import Global
 from io import StringIO
 from flowco.dataflow.dfg import Node
 from flowco.page.page import Page
+from flowco.page.tables import GlobalTables
 from flowco.session.session_file_system import (
     fs_copy,
     fs_exists,
@@ -12,7 +14,6 @@ from flowco.session.session_file_system import (
 import streamlit as st
 
 from flowco import __main__
-from flowco.ui.dialogs.data_files import data_files_dialog
 from flowco.ui.page_files.base_page import FlowcoPage
 from flowco.ui.ui_dialogs import confirm
 from flowco.ui.ui_page import set_ui_page
@@ -157,7 +158,6 @@ class ProjectsPage(FlowcoPage):
 
             if st.session_state.just_created_project:
                 st.session_state.just_created_project = False
-                data_files_dialog()
 
     def get_project_names(self):
         flowco_files = fs_glob("", "*.flowco")
@@ -175,8 +175,9 @@ class ProjectsPage(FlowcoPage):
     def download_files(self):
         ui_page = st.session_state.ui_page
         flowco_name = ui_page.page().file_name
+        tables = GlobalTables.from_dfg(ui_page.dfg())
         data_files = [
-            x for x in ui_page.page().tables.all_files() if x.endswith(".csv")
+            x for x in tables.all_files() if x.endswith(".csv")
         ]
 
         with st.spinner("Creating ZIP file..."):

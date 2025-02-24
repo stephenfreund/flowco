@@ -19,9 +19,6 @@ class CacheEntry(BaseModel):
 
     def __init__(self, **data):
         super().__init__(**data)
-        # assert self.valid, "Cache entry is invalid"
-        # assert set(self.in_values.keys()) == set(self.descriptor.in_fields), "Invalid in values"
-        # assert set(self.out_values.keys()) == set(self.descriptor.out_fields), "Invalid out values"
 
     def matches_in(self, in_node: BaseModel) -> bool:
         in_values = in_node.model_dump(include=self.in_values.keys())
@@ -70,7 +67,7 @@ class BuildCache(BaseModel):
         self._descriptors = {
             Phase.requirements: PhaseCacheDescriptor(
                 phase=Phase.requirements,
-                in_fields=["function_parameters", "preconditions", "label", "pill"],
+                in_fields=["function_parameters", "preconditions", "label", "pill", "kind"],
                 out_fields=[
                     "requirements",
                     "function_parameters",
