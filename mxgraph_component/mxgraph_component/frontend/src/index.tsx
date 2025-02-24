@@ -819,7 +819,7 @@ function findFirstUnusedStepId() {
 }
 
 graph.connectionHandler.isCreateTarget = function (evt) {
-  return evt.currentTarget != null && (evt.currentTarget as HTMLElement).getAttribute("id") === 'graph-container';
+  return evt.currentTarget != null; // && (evt.currentTarget as HTMLElement).getAttribute("id") === 'graph-container';
 }
 
 
@@ -869,7 +869,7 @@ function streamlitResponse() {
 
     if (currentDiagram !== undefined) {
       const original_version = currentDiagram.version;
-      // console.log("Setting Value: " + selected_node)
+      console.log("Setting Value: " + selected_node)
       sessionStorage.setItem("selected_node", selected_node == null ? "" : selected_node);
 
       const translation = graph.view.translate;

@@ -277,13 +277,9 @@ class NodeEditor:
 
         dfg = ui_page.dfg()  # must reload
 
-        for phase in visible_phases():
-            node = node.update(cache=node.cache.update(phase=phase, node=node))
-
-        log(
-            "Updating node",
-            node.update(cache=BuildCache()).model_dump_json(indent=2),
-        )
+        if original_node.kind == node.kind:
+            for phase in visible_phases():
+                node = node.update(cache=node.cache.update(phase=phase, node=node))
 
         dfg = dfg.with_node(node)
 

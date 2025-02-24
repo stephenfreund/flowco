@@ -461,6 +461,7 @@ class FlowcoPage:
         new_dfg = st.session_state.ui_page.dfg()
         for node in new_dfg.nodes:
             if node.id not in original_dfg.node_ids():
+                log("Edit new node", node)
                 new_node_dialog(node)
                 return
 
