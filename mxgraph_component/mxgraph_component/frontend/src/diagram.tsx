@@ -540,55 +540,67 @@ class CustomHierarchicalLayout extends mx.mxHierarchicalLayout {
 
 
 export function layoutDiagram(graph: mxGraph) {
+
     graph.getModel().beginUpdate();
     try {
-        // console.log(graph)
-
-        // add an implicit edge from each node to the group of the target if that gropu is not the default parent
-        const cells = graph.getChildCells(graph.getDefaultParent(), true, true);
-        for (const cell of cells) {
-            // find edges to point into some group
-            const edges = graph.getModel().getEdges(cell);
-            for (const edge of edges) {
-                const source = edge.source;
-                const target = edge.target;
-                if (source && target) {
-                    if (target.getParent() !== graph.getDefaultParent()) {
-                        const newEdge = graph.insertEdge(graph.getDefaultParent(), 'null', 'implicit', source, target.getParent());
-                    }
-                    if (source.getParent() !== graph.getDefaultParent()) {
-                        const newEdge = graph.insertEdge(graph.getDefaultParent(), 'null', 'implicit', source.getParent(), target);
-                    }
-                }
-            }
-        }
-
-        const parent = graph.getDefaultParent();
-        const layout = new CustomHierarchicalLayout(graph);
-        layout.execute(parent);
-
-        const childCount = graph.getModel().getChildCount(parent);
-        for (let i = 0; i < childCount; i++) {
-            const cell = graph.getModel().getChildAt(parent, i);
-            if (graph.getModel().getChildCount(cell) > 0 && !graph.isCellCollapsed(cell)) {
-                const layoutGroup = new CustomHierarchicalLayout(graph);
-                layoutGroup.execute(cell);
-                graph.updateGroupBounds([cell], 20);
-            }
-        }
-
-        // remove all those implicit edges
-        const edges = graph.getChildEdges(graph.getDefaultParent());
-        for (const edge of edges) {
-            if (edge.value === 'implicit') {
-                graph.getModel().remove(edge);
-            }
-        }
-        // console.log(graph)
+        const layout = new mx.mxHierarchicalLayout(graph);
+        layout.execute(graph.getDefaultParent());
     } finally {
         graph.getModel().endUpdate();
     }
 }
+
+
+
+    // graph.getModel().beginUpdate();
+    // try {
+    //     // console.log(graph)
+
+    //     // add an implicit edge from each node to the group of the target if that gropu is not the default parent
+    //     const cells = graph.getChildCells(graph.getDefaultParent(), true, true);
+    //     for (const cell of cells) {
+    //         // find edges to point into some group
+    //         const edges = graph.getModel().getEdges(cell);
+    //         for (const edge of edges) {
+    //             const source = edge.source;
+    //             const target = edge.target;
+    //             if (source && target) {
+    //                 if (target.getParent() !== graph.getDefaultParent()) {
+    //                     const newEdge = graph.insertEdge(graph.getDefaultParent(), 'null', 'implicit', source, target.getParent());
+    //                 }
+    //                 if (source.getParent() !== graph.getDefaultParent()) {
+    //                     const newEdge = graph.insertEdge(graph.getDefaultParent(), 'null', 'implicit', source.getParent(), target);
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     const parent = graph.getDefaultParent();
+    //     const layout = new CustomHierarchicalLayout(graph);
+    //     layout.execute(parent);
+
+    //     const childCount = graph.getModel().getChildCount(parent);
+    //     for (let i = 0; i < childCount; i++) {
+    //         const cell = graph.getModel().getChildAt(parent, i);
+    //         if (graph.getModel().getChildCount(cell) > 0 && !graph.isCellCollapsed(cell)) {
+    //             const layoutGroup = new CustomHierarchicalLayout(graph);
+    //             layoutGroup.execute(cell);
+    //             graph.updateGroupBounds([cell], 20);
+    //         }
+    //     }
+
+    //     // remove all those implicit edges
+    //     const edges = graph.getChildEdges(graph.getDefaultParent());
+    //     for (const edge of edges) {
+    //         if (edge.value === 'implicit') {
+    //             graph.getModel().remove(edge);
+    //         }
+    //     }
+    //     // console.log(graph)
+    // } finally {
+    //     graph.getModel().endUpdate();
+    // }
+// }
 
 
 // /**

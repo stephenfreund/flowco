@@ -6,10 +6,12 @@ from typing import Annotated, Iterable, List, Literal
 from openai.types.chat.chat_completion_content_part_text_param import (
     ChatCompletionContentPartTextParam,
 )
+from regex import P
 
 
 from flowco.assistant.flowco_assistant import flowco_assistant, flowco_assistant_fast
 from flowco.builder.graph_completions import json_for_graph_view
+from flowco.builder.synthesize import create_parameters, create_preconditions
 from flowco.dataflow.dfg import Geometry, NodeKind
 from flowco.dataflow.extended_type import ExtendedType
 from flowco.dataflow.phase import Phase
@@ -324,11 +326,23 @@ class AskMeAnything:
         )
 
         node = dfg[id]
+
+
         node = node.update(
             requirements=requirements,
             function_return_type=ExtendedType.model_validate(function_return_type),
             kind=NodeKind.compute,
         )
+
+        if all(dfg[x].phase >= Phase.requirements for x in node.predecessors):
+            node = node.update(
+                function_parameters=create_parameters(dfg, node),
+                preconditions=create_preconditions(dfg, node),
+                phase=Phase.requirements,
+            )
+            cache = node.cache.update(Phase.requirements, node)
+            node = node.update(cache=cache)
+
         dfg = dfg.with_node(node)
 
         self.page.update_dfg(dfg)
