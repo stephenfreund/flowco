@@ -452,8 +452,7 @@ class BuildPage(FlowcoPage):
             with right:
                 st.markdown("###### Node Kinds")
                 with st.container(key="node_shapes"):
-                    # st.image("static/nodes.png")
-                    pass
+                    st.image("static/nodes.png")
             st.write(
                 textwrap.dedent(
                     """\

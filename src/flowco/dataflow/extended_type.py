@@ -1106,37 +1106,42 @@ def schema_to_text(schema: Dict[str, Any]) -> str:
 
 
 def ext_type_to_summary(ext_type: ExtendedType) -> str:
-    def rep_to_summary(the_type: TypeRepresentation) -> str:
-        t = the_type.type
-        if t == "Any":
-            return "Any"
-        elif t == "None":
-            return "None"
-        elif t == "float":
-            return "float"
-        elif t == "int":
-            return "int"
-        elif t == "str":
-            return "str"
-        elif t == "bool":
-            return "bool"
-        elif t == "optional":
-            return f"Optional[{rep_to_summary(the_type.wrapped_type)}]"
-        elif t == "Dict":
-            return f"Dict[str, {rep_to_summary(the_type.value_type)}]"
-        elif t == "record":
-            return "Record"
-        elif t == "pd.DataFrame":
-            return "DataFrame"
-        elif t in ["np.ndarray", "List", "Set", "pd.Series"]:
-            return f"{t.capitalize()}[{rep_to_summary(the_type.element_type)}]"
-        elif t == "class":
-            return ext_type.the_type.name
-        else:
-            warn(f"Unknown type: {t}")
-            return t
+    try:
 
-    return rep_to_summary(ext_type.the_type)
+        def rep_to_summary(the_type: TypeRepresentation) -> str:
+            t = the_type.type
+            if t == "Any":
+                return "Any"
+            elif t == "None":
+                return "None"
+            elif t == "float":
+                return "float"
+            elif t == "int":
+                return "int"
+            elif t == "str":
+                return "str"
+            elif t == "bool":
+                return "bool"
+            elif t == "optional":
+                return f"Optional[{rep_to_summary(the_type.wrapped_type)}]"
+            elif t == "Dict":
+                return f"Dict[str, {rep_to_summary(the_type.value_type)}]"
+            elif t == "record":
+                return "Record"
+            elif t == "pd.DataFrame":
+                return "DataFrame"
+            elif t in ["np.ndarray", "List", "Set", "pd.Series"]:
+                return f"{t.capitalize()}[{rep_to_summary(the_type.element_type)}]"
+            elif t == "class":
+                return ext_type.name
+            else:
+                warn(f"Unknown type: {t}")
+                return t
+
+        return rep_to_summary(ext_type.the_type)
+    except Exception as e:
+        error(e)
+        return "??"
 
 
 # -----------------------

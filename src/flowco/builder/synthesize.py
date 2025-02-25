@@ -31,7 +31,7 @@ def requirements(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> N
         # Compute inputs
         node = node.update(
             function_parameters=create_parameters(graph, node),
-            preconditions=create_preconditions(pass_config, graph, node),
+            preconditions=create_preconditions(graph, node),
         )
 
         # Check cache
@@ -238,9 +238,7 @@ def summarize_changes(node: Node, phase: Phase, diff_map: Dict[str, List[str]]):
         )
 
 
-def create_preconditions(
-    pass_config: PassConfig, graph: DataFlowGraph, node: Node
-) -> Dict[str, List[str]]:
+def create_preconditions(graph: DataFlowGraph, node: Node) -> Dict[str, List[str]]:
     preconditions: Dict[str, List[str]] = {}
     if node.predecessors:
         for pred in node.predecessors:

@@ -416,9 +416,9 @@ class NodeEditor:
                         disabled=self.pending_ama is not None,
                     )
 
-                    if rebuild:
-                        self.regenerate()
-                        st.rerun(scope="fragment")
+                if rebuild:
+                    self.regenerate()
+                    st.rerun(scope="fragment")
 
     def table(self):
         if self.node.predecessors:

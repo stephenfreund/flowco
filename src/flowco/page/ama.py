@@ -327,21 +327,11 @@ class AskMeAnything:
 
         node = dfg[id]
 
-
         node = node.update(
             requirements=requirements,
             function_return_type=ExtendedType.model_validate(function_return_type),
             kind=NodeKind.compute,
         )
-
-        if all(dfg[x].phase >= Phase.requirements for x in node.predecessors):
-            node = node.update(
-                function_parameters=create_parameters(dfg, node),
-                preconditions=create_preconditions(dfg, node),
-                phase=Phase.requirements,
-            )
-            cache = node.cache.update(Phase.requirements, node)
-            node = node.update(cache=cache)
 
         dfg = dfg.with_node(node)
 

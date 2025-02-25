@@ -1145,238 +1145,208 @@ function updateGraphWithDiagram(diagram: mxDiagram) {
 /*****/
 
 
+// disable groups for now.
+
+// graph.foldingEnabled = true; // Enable collapsible groups
+
+// // Only cells with children are considered foldable
+// graph.isCellFoldable = function (cell, collapse) {
+//   return this.model.getChildCount(cell) > 0;
+// };
+
+// // ************************************
+// // Preserve Collapsed Size When Resizing
+// // ************************************
+// // When a collapsed group is resized by the user, save the new geometry
+// // on a custom property (manualCollapsedSize) so that future layout calls remember it.
+// graph.addListener(mx.mxEvent.RESIZE_CELLS, function (sender, evt) {
+//   var cells = evt.getProperty('cells');
+//   for (var i = 0; i < cells.length; i++) {
+//     var cell = cells[i];
+//     if (cell.collapsed) {
+//       var geo = graph.getModel().getGeometry(cell);
+//       if (geo != null) {
+//         cell.manualCollapsedSize = geo.clone();
+//       }
+//     }
+//   }
+// });
 
 
-graph.foldingEnabled = true; // Enable collapsible groups
+// // ************************************
+// // Grouping and Ungrouping Functionality
+// // ************************************
 
-// Only cells with children are considered foldable
-graph.isCellFoldable = function (cell, collapse) {
-  return this.model.getChildCount(cell) > 0;
-};
+// /**
+//  * Groups the currently selected cells according to these rules:
+//  *
+//  * 1. If all selected cells are regular nodes, then create a new group.
+//  * 2. If one group cell is selected along with one or more regular nodes (that are not already grouped),
+//  *    then add those nodes to the selected group.
+//  * 3. Otherwise, alert the user that the selection is invalid.
+//  */
+// function groupCells() {
+//   var cells = graph.getSelectionCells();
+//   if (!cells || cells.length === 0) {
+//     return;
+//   }
 
-// ************************************
-// Preserve Collapsed Size When Resizing
-// ************************************
-// When a collapsed group is resized by the user, save the new geometry
-// on a custom property (manualCollapsedSize) so that future layout calls remember it.
-graph.addListener(mx.mxEvent.RESIZE_CELLS, function (sender, evt) {
-  var cells = evt.getProperty('cells');
-  for (var i = 0; i < cells.length; i++) {
-    var cell = cells[i];
-    if (cell.collapsed) {
-      var geo = graph.getModel().getGeometry(cell);
-      if (geo != null) {
-        cell.manualCollapsedSize = geo.clone();
-      }
-    }
-  }
-});
+//   // Helper function to determine if a cell is a group.
+//   // In this example, a cell is considered a group if its style is 'group'.
+//   function isGroup(cell: mxCell) {
+//     return cell.getStyle && cell.getStyle() === 'group';
+//   }
 
+//   // Separate the selection into group cells and regular cells.
+//   var groupCellsArr = [];
+//   var regularCellsArr = [];
 
-// ************************************
-// Grouping and Ungrouping Functionality
-// ************************************
+//   for (var i = 0; i < cells.length; i++) {
+//     var cell = cells[i];
+//     if (isGroup(cell)) {
+//       groupCellsArr.push(cell);
+//     } else {
+//       regularCellsArr.push(cell);
+//     }
+//   }
+
+//   // Get the default parent used for ungrouped nodes.
+//   var defaultParent = graph.getDefaultParent();
+
+//   // CASE 1: All selected cells are regular nodes.
+//   if (groupCellsArr.length === 0 && regularCellsArr.length > 0) {
+//     graph.getModel().beginUpdate();
+//     try {
+//       // Group all the selected regular nodes into a new group.
+//       var newGroup = graph.groupCells(null, 0, cells);
+//       if (newGroup != null) {
+//         // Set a new id and the custom style.
+//         newGroup.setId("group-" + uuidv4());
+//         update_group_style(graph, newGroup);
+//         graph.getModel().setGeometry(newGroup, new mx.mxGeometry(0, 0, 200, 150));
+//         // If no label is set, assign a default one.
+//         if (!newGroup.value) {
+//           newGroup.value = 'Group';
+//         }
+//         // Select the new group cell.
+//         graph.setSelectionCell(newGroup);
+//       }
+//     } finally {
+//       graph.getModel().endUpdate();
+//       layoutDiagram(graph);
+//     }
+//   }
+//   // CASE 2: One group cell and one or more regular nodes.
+//   else if (groupCellsArr.length === 1 && regularCellsArr.length > 0) {
+//     var targetGroup = groupCellsArr[0];
+//     // Verify that each selected regular node is not already in a group.
+//     for (var j = 0; j < regularCellsArr.length; j++) {
+//       var regCell = regularCellsArr[j];
+//       // A regular node is considered ungrouped if its parent is the default parent.
+//       if (regCell.parent !== defaultParent) {
+//         alert("You can only group nodes that are not already part of a group.");
+//         return;
+//       }
+//     }
+//     // All checks passed; add the regular nodes to the target group.
+//     graph.getModel().beginUpdate();
+//     try {
+//       for (var k = 0; k < regularCellsArr.length; k++) {
+//         var cellToAdd = regularCellsArr[k];
+//         // This call moves the cell into the target group.
+//         graph.getModel().add(targetGroup, cellToAdd, targetGroup.getChildCount());
+//       }
+//       // Optionally, update the selection to include both the target group and the newly added nodes.
+//       graph.setSelectionCells([targetGroup].concat(regularCellsArr));
+//     } finally {
+//       graph.getModel().endUpdate();
+//       layoutDiagram(graph);
+//     }
+//   }
+//   // CASE 3: Any other combination of selections.
+//   else {
+//     alert("You cannot group two existing groups.");
+//   }
+// }
 
 
 // /**
-//  * Groups the currently selected cells into a new group.
-//  * The new group uses the custom 'group' style (swimlane) so that it has an editable header.
+//  * Ungroups each selected group cell.
 //  */
-// function groupCells() {
-//     var cells = graph.getSelectionCells();
-//     if (cells && cells.length > 0) {
-//         graph.getModel().beginUpdate();
-//         try {
-//             // Group the selected cells (they become children of the new group cell)
-//             var group = graph.groupCells(null, 0, cells);
-//             group.setId("group-" + group.id);
-//             if (group != null) {
-//                 // Apply the custom group style (swimlane).
-//                 group.setStyle('group');
-//                 // If no label is set, assign a default one.
-//                 if (!group.value) {
-//                     group.value = 'Group';
-//                 }
-//                 // Select the new group cell.
-//                 graph.setSelectionCell(group);
-//             }
-//         } finally {
-//             graph.getModel().endUpdate();
-//             layoutDiagram(graph);
+// function ungroupCells() {
+//   var cells = graph.getSelectionCells();
+//   if (cells && cells.length > 0) {
+//     graph.getModel().beginUpdate();
+//     try {
+//       for (var i = 0; i < cells.length; i++) {
+//         if (graph.getModel().getChildCount(cells[i]) > 0) {
+//           graph.ungroupCells([cells[i]]);
 //         }
+//       }
+//     } finally {
+//       graph.getModel().endUpdate();
+//       layoutDiagram(graph);
 //     }
+//   }
 // }
 
-/**
- * Groups the currently selected cells according to these rules:
- *
- * 1. If all selected cells are regular nodes, then create a new group.
- * 2. If one group cell is selected along with one or more regular nodes (that are not already grouped),
- *    then add those nodes to the selected group.
- * 3. Otherwise, alert the user that the selection is invalid.
- */
-function groupCells() {
-  var cells = graph.getSelectionCells();
-  if (!cells || cells.length === 0) {
-    return;
-  }
-
-  // Helper function to determine if a cell is a group.
-  // In this example, a cell is considered a group if its style is 'group'.
-  function isGroup(cell: mxCell) {
-    return cell.getStyle && cell.getStyle() === 'group';
-  }
-
-  // Separate the selection into group cells and regular cells.
-  var groupCellsArr = [];
-  var regularCellsArr = [];
-
-  for (var i = 0; i < cells.length; i++) {
-    var cell = cells[i];
-    if (isGroup(cell)) {
-      groupCellsArr.push(cell);
-    } else {
-      regularCellsArr.push(cell);
-    }
-  }
-
-  // Get the default parent used for ungrouped nodes.
-  var defaultParent = graph.getDefaultParent();
-
-  // CASE 1: All selected cells are regular nodes.
-  if (groupCellsArr.length === 0 && regularCellsArr.length > 0) {
-    graph.getModel().beginUpdate();
-    try {
-      // Group all the selected regular nodes into a new group.
-      var newGroup = graph.groupCells(null, 0, cells);
-      if (newGroup != null) {
-        // Set a new id and the custom style.
-        newGroup.setId("group-" + uuidv4());
-        update_group_style(graph, newGroup);
-        graph.getModel().setGeometry(newGroup, new mx.mxGeometry(0, 0, 200, 150));
-        // If no label is set, assign a default one.
-        if (!newGroup.value) {
-          newGroup.value = 'Group';
-        }
-        // Select the new group cell.
-        graph.setSelectionCell(newGroup);
-      }
-    } finally {
-      graph.getModel().endUpdate();
-      layoutDiagram(graph);
-    }
-  }
-  // CASE 2: One group cell and one or more regular nodes.
-  else if (groupCellsArr.length === 1 && regularCellsArr.length > 0) {
-    var targetGroup = groupCellsArr[0];
-    // Verify that each selected regular node is not already in a group.
-    for (var j = 0; j < regularCellsArr.length; j++) {
-      var regCell = regularCellsArr[j];
-      // A regular node is considered ungrouped if its parent is the default parent.
-      if (regCell.parent !== defaultParent) {
-        alert("You can only group nodes that are not already part of a group.");
-        return;
-      }
-    }
-    // All checks passed; add the regular nodes to the target group.
-    graph.getModel().beginUpdate();
-    try {
-      for (var k = 0; k < regularCellsArr.length; k++) {
-        var cellToAdd = regularCellsArr[k];
-        // This call moves the cell into the target group.
-        graph.getModel().add(targetGroup, cellToAdd, targetGroup.getChildCount());
-      }
-      // Optionally, update the selection to include both the target group and the newly added nodes.
-      graph.setSelectionCells([targetGroup].concat(regularCellsArr));
-    } finally {
-      graph.getModel().endUpdate();
-      layoutDiagram(graph);
-    }
-  }
-  // CASE 3: Any other combination of selections.
-  else {
-    alert("You cannot group two existing groups.");
-  }
-}
+// // // ************************************
+// // // Button Event Listeners
+// // // ************************************
+// document.getElementById('groupBtn')!.addEventListener('click', groupCells);
+// document.getElementById('ungroupBtn')!.addEventListener('click', ungroupCells);
 
 
-/**
- * Ungroups each selected group cell.
- */
-function ungroupCells() {
-  var cells = graph.getSelectionCells();
-  if (cells && cells.length > 0) {
-    graph.getModel().beginUpdate();
-    try {
-      for (var i = 0; i < cells.length; i++) {
-        if (graph.getModel().getChildCount(cells[i]) > 0) {
-          graph.ungroupCells([cells[i]]);
-        }
-      }
-    } finally {
-      graph.getModel().endUpdate();
-      layoutDiagram(graph);
-    }
-  }
-}
+// // Add a listener for selection changes
+// graph.getSelectionModel().addListener(mx.mxEvent.CHANGE, function(sender, evt) {
+//   // Get the currently selected cells
+//   var cells = graph.getSelectionCells();
+//   var btn = document.getElementById('groupBtn')!;
+//   var ungroupBtn = document.getElementById('ungroupBtn')!;
 
-// // ************************************
-// // Button Event Listeners
-// // ************************************
-document.getElementById('groupBtn')!.addEventListener('click', groupCells);
-document.getElementById('ungroupBtn')!.addEventListener('click', ungroupCells);
+//   // Initially hide the button
+//   btn.style.display = 'none';
+//   ungroupBtn.style.display = 'none';
 
+//   if (cells.length > 1) {
+//     var countWithChildren = 0;
+//     for (var i = 0; i < cells.length; i++) {
+//       if (graph.getModel().getChildCount(cells[i]) > 0) {
+//         countWithChildren++;
+//       }
+//     }
+//     if (countWithChildren <= 1) {
+//       btn.innerText = 'Group';
+//       btn.style.display = ''; // Show the button
+//     }
+//   } else if (cells.length === 1 && graph.getModel().getChildCount(cells[0]) > 0) {
+//     ungroupBtn.style.display = ''; // Show the button
+//   }
+// });
 
-// Add a listener for selection changes
-graph.getSelectionModel().addListener(mx.mxEvent.CHANGE, function(sender, evt) {
-  // Get the currently selected cells
-  var cells = graph.getSelectionCells();
-  var btn = document.getElementById('groupBtn')!;
-  var ungroupBtn = document.getElementById('ungroupBtn')!;
+// // Re-run layout (and update group bounds) when groups are collapsed/expanded.
+// graph.addListener(mx.mxEvent.FOLD_CELLS, function (sender, evt) {
+//   var cells = evt.getProperty('cells');
+//   var collapsed = evt.getProperty('collapsed');
+//   for (var i = 0; i < cells.length; i++) {
+//     var cell = cells[i];
+//     if (graph.isSwimlane(cell)) {
+//       update_group_style(graph, cell);
+//     }
+//   }
 
-  // Initially hide the button
-  btn.style.display = 'none';
-  ungroupBtn.style.display = 'none';
+//   layoutDiagram(graph);
+// });
 
-  if (cells.length > 1) {
-    var countWithChildren = 0;
-    for (var i = 0; i < cells.length; i++) {
-      if (graph.getModel().getChildCount(cells[i]) > 0) {
-        countWithChildren++;
-      }
-    }
-    if (countWithChildren <= 1) {
-      btn.innerText = 'Group';
-      btn.style.display = ''; // Show the button
-    }
-  } else if (cells.length === 1 && graph.getModel().getChildCount(cells[0]) > 0) {
-    ungroupBtn.style.display = ''; // Show the button
-  }
-});
-
-// Re-run layout (and update group bounds) when groups are collapsed/expanded.
-graph.addListener(mx.mxEvent.FOLD_CELLS, function (sender, evt) {
-  var cells = evt.getProperty('cells');
-  var collapsed = evt.getProperty('collapsed');
-  for (var i = 0; i < cells.length; i++) {
-    var cell = cells[i];
-    if (graph.isSwimlane(cell)) {
-      update_group_style(graph, cell);
-    }
-  }
-
-  layoutDiagram(graph);
-});
-
-// Assume 'graph' is your mxGraph instance
-graph.isCellMovable = function (cell) {
-  // If the cell is not in the default parent, then it belongs to a group
-  if (cell.parent !== this.getDefaultParent()) {
-    return false;
-  }
-  // Otherwise, use the default behavior
-  return mx.mxGraph.prototype.isCellMovable.apply(this, arguments as unknown as [mxCell]);
-};
+// // Assume 'graph' is your mxGraph instance
+// graph.isCellMovable = function (cell) {
+//   // If the cell is not in the default parent, then it belongs to a group
+//   if (cell.parent !== this.getDefaultParent()) {
+//     return false;
+//   }
+//   // Otherwise, use the default behavior
+//   return mx.mxGraph.prototype.isCellMovable.apply(this, arguments as unknown as [mxCell]);
+// };
 
 
 
