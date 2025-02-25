@@ -96,7 +96,7 @@ class BuildPage(FlowcoPage):
                             ),
                             disabled=st.session_state.ama_responding,
                             help=(
-                                "Build and run the whole diagram"
+                                "Build and run the diagram"
                                 if st.session_state.builder is None
                                 else "Stop building"
                             ),
@@ -184,7 +184,7 @@ class BuildPage(FlowcoPage):
                         ),
                         disabled=st.session_state.ama_responding,
                         help=(
-                            "Build and run the whole diagram"
+                            "Build and run the diagram"
                             if st.session_state.builder is None
                             else "Stop building"
                         ),
@@ -436,28 +436,35 @@ class BuildPage(FlowcoPage):
             ("#fef2d0", "Completed"),
             ("#ddf1da", "Checked"),
         ]
-        st.markdown("###### Node Colors")
-        lines = (
-            ["<div style='background-color:#FFFFFF;padding:0.5rem;'>"]
-            + [
-                f"<div style='background-color:{color};padding:0.2rem;'>{label}</div>"
-                for color, label in colors
-            ]
-            + ["</div>"]
-        )
-        st.html("\n".join(lines))
-        st.write(
-            textwrap.dedent(
-                """\
-            ###### Graph Operations
-            * **Scroll canvas:** Drag around canvas
-            * **Select node:** Click on it
-            * **Create node:** Shift-click on canvas
-            * **Move node:** Click on it and drag
-            * **Edit node:** Hover over node and press pencil
-            * **Delete node:** Hover over node and press trash can
-            * **Add edge:** Hover over node and drag from the (+) icon to the other node
-            * **Add edge and node:** Hover over node and drag from the (+) icon to the other node
-            * **Delete edge:** Hover over edge and press trash can"""
+        with st.container():
+            left, right = st.columns(2)
+            with left:
+                st.markdown("###### Node Colors")
+                lines = (
+                    ["<div style='background-color:#FFFFFF;padding:0.5rem;'>"]
+                    + [
+                        f"<div style='background-color:{color};padding:0.2rem;'>{label}</div>"
+                        for color, label in colors
+                    ]
+                    + ["</div>"]
+                )
+                st.html("\n".join(lines))
+            with right:
+                st.markdown("###### Node Kinds")
+                with st.container(key="node_shapes"):
+                    st.image("static/nodes.png")
+            st.write(
+                textwrap.dedent(
+                    """\
+                ###### Graph Operations
+                * **Scroll canvas:** Drag around canvas
+                * **Select node:** Click on it
+                * **Create node:** Shift-click on canvas
+                * **Move node:** Click on it and drag
+                * **Edit node:** Hover over node and press pencil
+                * **Delete node:** Hover over node and press trash can
+                * **Add edge:** Hover over node and drag from the (+) icon to the other node
+                * **Add edge and node:** Hover over node and drag from the (+) icon to the other node
+                * **Delete edge:** Hover over edge and press trash can"""
+                )
             )
-        )

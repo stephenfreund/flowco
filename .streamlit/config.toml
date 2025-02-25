@@ -3,3 +3,6 @@ messageFormat = "%(message)s"
 
 [client]
 toolbarMode = "developer"
+
+[server]
+enableStaticServing = true

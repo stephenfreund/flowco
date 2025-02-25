@@ -88,6 +88,7 @@ class FlowcoPage:
                     disabled=not self.graph_is_editable(),
                     on_click=lambda cmd: zoom(cmd),
                     args=("in",),
+                    help="Zoom in",
                 )
                 c3.button(
                     label="",
@@ -95,6 +96,7 @@ class FlowcoPage:
                     disabled=not self.graph_is_editable(),
                     on_click=lambda cmd: zoom(cmd),
                     args=("out",),
+                    help="Zoom out",
                 )
                 c4.button(
                     label="",
@@ -102,6 +104,7 @@ class FlowcoPage:
                     disabled=not self.graph_is_editable(),
                     on_click=lambda cmd: zoom(cmd),
                     args=("reset",),
+                    help="Reset zoom",
                 )
 
     def right_panel(self):

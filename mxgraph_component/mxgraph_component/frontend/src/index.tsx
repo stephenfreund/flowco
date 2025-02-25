@@ -3,7 +3,7 @@ import mx from './mxgraph';
 import { mxGraphModel, mxCellState, mxCell, mxConstants, mxHierarchicalLayout, mxRectangle, mxAbstractCanvas2D, mxRectangleShape } from 'mxgraph';
 import { v4 as uuidv4 } from "uuid";
 
-import { mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, node_style, labelForEdge, clean_color, isDiagramNode, layoutDiagram, DiagramNode, phase_to_color, update_group_style } from "./diagram";
+import { mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, node_style, labelForEdge, clean_color, isDiagramNode, layoutDiagram, DiagramNode, phase_to_color, update_group_style, style_for_node } from "./diagram";
 import { clearImageCache } from "./cache";
 
 var currentDiagram: mxDiagram | undefined = undefined;
@@ -554,7 +554,7 @@ function cleanReachableNodes(
     // Check if the vertex ID does NOT start with "output-"
     if (cellKind(current) !== "output") {
       // Update style based on phase
-      const style = node_style + `fillColor=${clean_color()};`;
+      const style = style_for_node(current.value) + `fillColor=${clean_color()};`;
       current.value.phase = 0;
       graph.setCellStyle(style, [current]);
     }

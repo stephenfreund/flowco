@@ -155,7 +155,7 @@ function kind_to_shape(kind: number): string {
     }
 }
 
-function style_for_node(node: DiagramNode): string {
+export function style_for_node(node: DiagramNode): string {
     let style = node_style + kind_to_shape(node.kind) + `fillColor=${phase_to_color(node.phase, node.build_status)};`;
     if (node.has_messages) {
         style += "shape=label;strokeColor=#DD0000;strokeWidth=4;imageAlign=center;imageVerticalAlign=middle;imageWidth=80;imageHeight=80;image=error.png;";

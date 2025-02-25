@@ -379,6 +379,9 @@ div .st-key-node_colors * {
     background-color: #FFFFFF;
 }
 
+.st-key-node_shapes img {
+    max-height: 144px;
+}
 """
 
 

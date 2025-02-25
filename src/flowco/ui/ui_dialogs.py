@@ -31,7 +31,8 @@ def settings(ui_page: UIPage):
     config.retries = int(st.number_input("Repair retries", value=config.retries))
 
     if st.button("Reset Demo Files"):
-        make_default_files()
+        with st.spinner("Resetting demo files"):
+            make_default_files()
 
     with st.expander("Experimental Features"):
         config.x_no_image_cache = st.toggle(

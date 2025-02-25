@@ -60,16 +60,17 @@ def process_chat_message(message) -> Dict[str, Any]:
     return {key: parse_json_strings(value) for key, value in message.items()}
 
 
-# Example usage
-message = {
-    "role": "user",
-    "content": 'Here is some text and a JSON block:\n```\n{"key": "value"}\n``` and some more text.',
-    "extra": {
-        "nested_content": 'Another block:\n```\n{"nested_key": "nested_value"}\n``` and plain text.',
-        "more_text": "no json here",
-    },
-}
+if __name__ == "__main__":
+    # Example usage
+    message = {
+        "role": "user",
+        "content": 'Here is some text and a JSON block:\n```\n{"key": "value"}\n``` and some more text.',
+        "extra": {
+            "nested_content": 'Another block:\n```\n{"nested_key": "nested_value"}\n``` and plain text.',
+            "more_text": "no json here",
+        },
+    }
 
-processed_message = process_chat_message(message)
-formatted_message = json.dumps(processed_message, indent=2)
-print(formatted_message)
+    processed_message = process_chat_message(message)
+    formatted_message = json.dumps(processed_message, indent=2)
+    print(formatted_message)
