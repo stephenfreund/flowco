@@ -13,7 +13,7 @@
       answer: | 
         AMA lets you explore, create, and modify a Flowco graph via chat.  AMA responds to any questions about the diagram or data, can run code, and can modify the dataflow diagram based on your requests.  You can ask AMA questions like "What is the average value of column X?" or "Show me the graph for the dataflow from X to Y."  You can also ask AMA to modify the graph by saying things like "Add a node for to compute the mean of column X" or "Connect nodes X and Y with an edge."
 
-    - question: AMA didn't modify the graph when I asked it to.
+    - question: AMA didn't modify the graph when I wanted it to.
       answer: |
         The AMA dialog may misinterpret your request. Following your request with one that simply says `Make that change` usually does the trick.  Starting your request with `Modify the graph to ...` leads to more reliable results in this case.
 
