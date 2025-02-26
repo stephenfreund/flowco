@@ -371,12 +371,17 @@ class mxIconSet {
       mx.mxEvent.addListener(deleteImg, 'click', mx.mxUtils.bind(this, (evt: MouseEvent) => {
         // eslint-disable-next-line no-restricted-globals
         if (can_edit && (evt.shiftKey || confirm("Delete Node?"))) {
-          graph.removeCells([this.state.cell], true);
+          graph.getModel().beginUpdate();
+          try {
+            graph.removeCells([this.state.cell], true);
 
-          // remove the output node for the cell too
-          const outputNode = graph.getModel().getCell(`output-${this.state.cell.id}`);
-          if (outputNode) {
-            graph.removeCells([outputNode], true);
+            // remove the output node for the cell too
+            const outputNode = graph.getModel().getCell(`output-${this.state.cell.id}`);
+            if (outputNode) {
+              graph.removeCells([outputNode], true);
+            }
+          } finally {
+            graph.getModel().endUpdate();
           }
 
           streamlitResponse()

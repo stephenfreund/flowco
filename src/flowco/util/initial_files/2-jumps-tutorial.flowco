@@ -1,0 +1,104 @@
+{
+  "file_name": "2-jumps-tutorial.flowco",
+  "dfg": {
+    "version": 77,
+    "description": "1. Compute Pearson Correlation.\n2. Compute slope and intercept.\n3. Plot regression line and data on same plot.  Be sure to select \"Make a Plot\" as the node type when creating a plotting node.\n4. Plot residuals.\n5. Compute R^2\n6. Predict vertical jump for Triple jump of length 700.\n",
+    "nodes": [
+      {
+        "id": "Step-1",
+        "kind": 1,
+        "pill": "triple_vertical",
+        "label": "Load the `triple_vertical.csv` table",
+        "geometry": {
+          "x": 140.0,
+          "y": 160.0,
+          "width": 160.0,
+          "height": 80.0
+        },
+        "output_geometry": {
+          "x": 290.0,
+          "y": 270.0,
+          "width": 200.0,
+          "height": 150.0
+        },
+        "is_locked": false,
+        "force_show_output": true,
+        "function_name": "triple_vertical",
+        "function_result_var": "triple_vertical",
+        "predecessors": [],
+        "phase": 0,
+        "function_parameters": null,
+        "preconditions": null,
+        "requirements": null,
+        "description": null,
+        "function_return_type": null,
+        "function_computed_value": null,
+        "algorithm": null,
+        "code": null,
+        "assertions": null,
+        "assertion_checks": null,
+        "assertion_outcomes": null,
+        "unit_tests": null,
+        "messages": [],
+        "build_status": null,
+        "result": null,
+        "cache": {
+          "caches": {}
+        }
+      },
+      {
+        "id": "Step-2",
+        "kind": 2,
+        "pill": "Scatter-Plot",
+        "label": "Scatter Plot",
+        "geometry": {
+          "x": 440.0,
+          "y": 160.0,
+          "width": 160.0,
+          "height": 80.0
+        },
+        "output_geometry": {
+          "x": 680.0,
+          "y": 160.0,
+          "width": 200.0,
+          "height": 150.0
+        },
+        "is_locked": false,
+        "force_show_output": true,
+        "function_name": "scatter_plot",
+        "function_result_var": "scatter_plot",
+        "predecessors": [
+          "Step-1"
+        ],
+        "phase": 0,
+        "function_parameters": null,
+        "preconditions": null,
+        "requirements": null,
+        "description": null,
+        "function_return_type": null,
+        "function_computed_value": null,
+        "algorithm": null,
+        "code": null,
+        "assertions": null,
+        "assertion_checks": null,
+        "assertion_outcomes": null,
+        "unit_tests": null,
+        "messages": [],
+        "build_status": null,
+        "result": null,
+        "cache": {
+          "caches": {}
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "2",
+        "src": "Step-1",
+        "dst": "Step-2"
+      }
+    ],
+    "groups": [],
+    "image": null
+  }
+}

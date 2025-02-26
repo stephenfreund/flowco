@@ -63,11 +63,14 @@ def sign_in(authorization_url: str):
         * Click the "Report Bug" whenever you see anything fishy!
 
         [Version Release Notes](https://github.com/stephenfreund/flowco/releases)
+
         """
     )
     # st.write(f"Please sign in to continue.")
     st.write(instructions)
     st.link_button("Sign In", authorization_url)
+    with st.sidebar:
+        st.image("static/flowco.png")
 
 
 # Function to fetch user information from id_token
