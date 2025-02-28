@@ -1033,7 +1033,8 @@ function addListeners() {
       return false;
     }
     const node = graph.getModel().getCell(cell.id).value as DiagramNode;
-    return node.kind !== 2;
+    //return node.kind !== 2;
+    return true;
   };
     
   

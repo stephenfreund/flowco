@@ -1,7 +1,3 @@
-from io import StringIO
-import pandas as pd
-import seaborn as sns
-from functools import lru_cache
 from flowco.builder.synthesize import requirements, compile
 from flowco.dataflow.extended_type import ExtendedType
 from flowco.dataflow.phase import Phase
@@ -9,7 +5,6 @@ from flowco.builder.build import PassConfig, node_pass
 
 from flowco.dataflow.dfg import DataFlowGraph, Node, NodeKind
 from flowco.page.tables import file_path_to_table_name, table_df
-from flowco.session.session_file_system import fs_read
 from flowco.util.output import logger
 
 

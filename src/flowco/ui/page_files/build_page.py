@@ -73,17 +73,6 @@ class BuildPage(FlowcoPage):
                 if st.session_state.builder is None:
                     cols = st.columns(8)
                     with cols[0]:
-                        #     update_button = self.update_button()
-                        #     st.button(
-                        #         update_button.label,
-                        #         icon=update_button.icon,
-                        #         on_click=lambda: set_session_state(
-                        #             "trigger_build_toggle", update_button
-                        #         ),
-                        #         disabled=not self.graph_is_editable(),
-                        #         help="Build and run any nodes that have changed since the last Run",
-                        #     )
-                        # with cols[1]:
                         if st.session_state.builder is None:
                             run_button = self.run_button()
                         else:
@@ -237,18 +226,6 @@ class BuildPage(FlowcoPage):
             builder.stop()
             self.clear_builder_and_reset_state()
 
-    # def new_node_to_message(self, node: Node) -> str:
-    #     if node.phase == Phase.requirements:
-    #         assert node.requirements is not None, "Node has no requirements"
-    #         requirements = [f"* {x}" for x in node.requirements]
-    #         return f"##### {node.pill}: Requirements\n" + "\n".join(requirements)
-    #     elif node.phase == Phase.runnable:
-    #         if AbstractionLevel.show_code(st_abstraction_level()):
-    #             code = "\n".join(node.code)
-    #             return f"##### {node.pill}: Code\n```\n{code}\n```\n"
-    #     elif node.phase == Phase.run_checked:
-    #         return f"##### {node.pill}: Result\n...\n"
-    #     return ""
 
     def get_builder_updates(self):
         ui_page: UIPage = st.session_state.ui_page
@@ -437,20 +414,19 @@ class BuildPage(FlowcoPage):
             ("#ddf1da", "Checked"),
         ]
         with st.container():
+            st.markdown("###### Node Colors and Kinds")
             left, right = st.columns(2)
             with left:
-                st.markdown("###### Node Colors")
                 lines = (
                     ["<div style='background-color:#FFFFFF;padding:0.5rem;'>"]
                     + [
-                        f"<div style='background-color:{color};padding:0.2rem;'>{label}</div>"
+                        f"<div style='background-color:{color};padding:0.2rem; font-size:12px;'>{label}</div>"
                         for color, label in colors
                     ]
                     + ["</div>"]
                 )
                 st.html("\n".join(lines))
             with right:
-                st.markdown("###### Node Kinds")
                 with st.container(key="node_shapes"):
                     st.image("static/nodes.png")
             st.write(

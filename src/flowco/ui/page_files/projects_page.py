@@ -154,7 +154,7 @@ class ProjectsPage(FlowcoPage):
                     )
 
             ui_page = st.session_state.ui_page
-            st.write(ui_page.dfg().description)
+            # st.write(ui_page.dfg().description)
 
             if st.session_state.just_created_project:
                 st.session_state.just_created_project = False

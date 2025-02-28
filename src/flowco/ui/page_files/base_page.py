@@ -11,7 +11,7 @@ import pandas as pd
 
 
 from flowco.dataflow import dfg_update
-from flowco.dataflow.dfg import Node
+from flowco.dataflow.dfg import Node, NodeKind
 from flowco.dataflow.phase import Phase
 from flowco.page.output import OutputType
 from flowco.ui.dialogs.node_creator import new_node_dialog
@@ -276,40 +276,32 @@ class FlowcoPage:
     def show_node_details(self, node: Node):
         with st.container(border=True):
             st.write("###### Output")
-            # if (
-            #     node.function_return_type is not None
-            #     and not node.function_return_type.is_None_type()
-            # ):
-            #     st.caption(f"{node.function_return_type.description}")
             self.show_output(node)
 
-        with st.container(key="node_requirements", border=True):
-            st.write("###### Requirements")
-            st.write(
-                "\n".join(
-                    [
-                        "* " + x
-                        for x in (
-                            node.requirements if node.requirements is not None else []
-                        )
-                    ]
+        if node.kind != NodeKind.table and node.requirements:
+            with st.container(key="node_requirements", border=True):
+                st.write("###### Requirements")
+                st.write(
+                    "\n".join(
+                        [
+                            "* " + x
+                            for x in (
+                                node.requirements if node.requirements is not None else []
+                            )
+                        ]
+                    )
                 )
-            )
 
-        with st.container(key="node_type", border=True):
-            st.write("###### Output Type")
-            function_return_type = node.function_return_type
-            if function_return_type is not None:
-                if not function_return_type.is_None_type():
-                    st.caption(f"{function_return_type.description}")
+        if node.kind != NodeKind.plot and node.function_return_type is not None:
+            with st.container(key="node_type", border=True):
+                st.write("###### Output Type")
+                function_return_type = node.function_return_type
+                if function_return_type is not None:
+                    if not function_return_type.is_None_type():
+                        st.caption(f"{function_return_type.description}")
+                    st.code(schema_to_text(function_return_type.type_schema()))
 
-                # st.code(function_return_type)
-                # log(schema_to_markdown(function_return_type.type_schema()))
-                # st.markdown(schema_to_markdown(function_return_type.type_schema()))
-                # st.write(function_return_type.type_schema())
-                st.code(schema_to_text(function_return_type.type_schema()))
-
-        if AbstractionLevel.show_code(st.session_state.abstraction_level):
+        if AbstractionLevel.show_code(st.session_state.abstraction_level) and node.code:
             with st.container(key="node_code", border=True):
                 st.write("###### Code")
                 if node.code is not None:
