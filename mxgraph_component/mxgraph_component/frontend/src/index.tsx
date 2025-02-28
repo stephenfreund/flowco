@@ -78,6 +78,7 @@ let zoomedInContainer = document.getElementById("customBox")!;
 // Function to display zoomed-in content (with image handling)
 function showZoomedInContent(cell: mxCell) {
   // zoomedInContainer.innerHTML = cell.value;  // Clear any previous content
+  zoomedInContainer.style.left = '10px';
   const style = cell.style;
 
   // Check if the style contains a background image
@@ -108,6 +109,7 @@ function showZoomedInNodeContent(cell: mxCell) {
   const html = node.html 
   
   if (html) {
+    zoomedInContainer.style.left = '10px';
     zoomedInContainer.innerHTML = html;
     // Show the container and position it near the mouse
     zoomedInContainer.style.display = "block";
@@ -127,6 +129,8 @@ zoomedInContainer.style.maxWidth = "100%";
 
 function hideZoomedInContent() {
   zoomedInContainer.style.display = 'none';
+  // move the container out of the visible area
+  zoomedInContainer.style.left = '-9999px';
 }
 
 zoomedInContainer.addEventListener("mouseup", (event) => {
