@@ -712,24 +712,7 @@ function handleHover(isEntering: boolean): void {
     } else {
       if (currentlyHoveredCell) {
         hideZoomedInContent();
-        //  else if (cellKind(currentlyHoveredCell) === "node") {
-        //   graph.toggleCellStyle("shadow", true, currentlyHoveredCell);
-        // }
-        // const cells = graph.getSelectionCells();
-        // const selectedIds = cells.map(cell => cell.id);
-        // node = selectedIds.length === 0 ? null : selectedIds[0];
       }
-
-      // console.log("Hovering: ", currentlyHoveredCell, node)
-
-      // if (!(currentlyHoveredCell && cellKind(currentlyHoveredCell) === "output")) {
-      //   const diagram_str = JSON.stringify(convertMxGraphToDiagramUpdate(graph, currentDiagram!.version));
-      //   Streamlit.setComponentValue({
-      //     command: "update",
-      //     diagram: diagram_str,
-      //     selected_node: node,
-      //   });
-      // }
     }
   }
 }
