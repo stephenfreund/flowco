@@ -1,8 +1,7 @@
 
 
 # Flowco
-
-![flowco](https://github.com/user-attachments/assets/204370ce-cd79-418c-a76b-37f01197def1)
+![flowco](https://github.com/user-attachments/assets/9591f546-ef52-4c16-999a-ca9e2a149586)
 
 Flowco needs a better description.
 
