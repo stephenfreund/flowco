@@ -79,7 +79,8 @@ class Config:
         )
         self.x_trust_ama = _flowco_get_env("x_trust_ama", "1") != "0"
         self.x_algorithm_phase = _flowco_get_env("a_algorithm_phase", "0") != "0"
-        self.x_no_image_cache = _flowco_get_env("x_no_image_cache", "0") != "0"
+        self.x_no_image_cache = _flowco_get_env("x_no_image_cache", "0") != "0" 
+        self.x_no_right_panel = _flowco_get_env("x_no_right_panel", "0") != "0"
 
     def get_x_options(self) -> Dict[str, Any]:
         return {k: v for k, v in vars(self).items() if k.startswith("x_")}
@@ -245,6 +246,15 @@ class Config:
             nargs=0,
             default=self.x_no_image_cache,
             help="Disable cache images in the UI",
+            action=StoreTrueConfigAction,
+            config=self,
+        )
+        parser.add_argument(
+            "--x_no_right_panel",
+            type=bool,
+            nargs=0,
+            default=self.x_no_right_panel,
+            help="Hide right panel",
             action=StoreTrueConfigAction,
             config=self,
         )

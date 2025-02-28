@@ -35,6 +35,10 @@ def settings(ui_page: UIPage):
             make_default_files()
 
     with st.expander("Experimental Features"):
+        config.x_no_right_panel = st.toggle(
+            "Hide right panel", value=config.x_no_right_panel
+        )
+        
         config.x_no_image_cache = st.toggle(
             "Don't cache images", value=config.x_no_image_cache
         )

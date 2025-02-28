@@ -108,6 +108,7 @@ class FlowcoPage:
                 )
 
     def right_panel(self):
+
         ui_page: UIPage = st.session_state.ui_page
         node_id: str | None = st.session_state.selected_node
 
@@ -469,7 +470,10 @@ class FlowcoPage:
 
         if st.session_state.ui_page is not None:
 
-            left, right = self.main_columns()
+            if config.x_no_right_panel:
+                left, right = st.container(), None
+            else:
+                left, right = self.main_columns()
 
             with left:
 
@@ -529,8 +533,9 @@ class FlowcoPage:
                     else:
                         st.session_state.selected_node = result["selected_node"]
 
-            with right:
-                self.right_panel()
+            if right:
+                with right:
+                    self.right_panel()
 
         with st.sidebar:
             self.sidebar()
