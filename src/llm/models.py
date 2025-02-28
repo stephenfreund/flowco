@@ -69,6 +69,17 @@ _models = {
         prompt_token_rate=2.50 / 10**6,
         cached_token_rate=1.25 / 10**6,
     ),
+    "gpt-4.5": Model(
+        name="gpt-4.5-preview",
+        use_proxy=False,
+        supports_vision=True,
+        supports_audio=False,
+        supports_temperature=True,
+        supports_prediction=True,
+        completion_token_rate=150 / 10**6,
+        prompt_token_rate=75 / 10**6,
+        cached_token_rate=35 / 10**6,
+    ),
     "gpt-4o-mini": Model(
         name="gpt-4o-mini",
         use_proxy=False,
