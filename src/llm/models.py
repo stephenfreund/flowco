@@ -65,7 +65,7 @@ _models = {
         supports_audio=False,
         supports_temperature=True,
         supports_prediction=True,
-        completion_token_rate=4.4 / 10**6,
+        completion_token_rate=10 / 10**6,
         prompt_token_rate=2.50 / 10**6,
         cached_token_rate=1.25 / 10**6,
     ),
