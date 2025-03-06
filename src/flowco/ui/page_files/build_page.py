@@ -226,7 +226,6 @@ class BuildPage(FlowcoPage):
             builder.stop()
             self.clear_builder_and_reset_state()
 
-
     def get_builder_updates(self):
         ui_page: UIPage = st.session_state.ui_page
         if st.session_state.builder is not None:

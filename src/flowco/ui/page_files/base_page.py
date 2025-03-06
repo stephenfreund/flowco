@@ -216,7 +216,7 @@ class FlowcoPage:
             st.session_state.ama = AskMeAnything(page)
 
         with st.container():
-            height = 400
+            height = 400 if not config.x_no_right_panel else 200
             container = st.container(height=height, border=True, key="chat_container")
             with container:
                 for message in st.session_state.ama.messages():
@@ -287,7 +287,9 @@ class FlowcoPage:
                         [
                             "* " + x
                             for x in (
-                                node.requirements if node.requirements is not None else []
+                                node.requirements
+                                if node.requirements is not None
+                                else []
                             )
                         ]
                     )

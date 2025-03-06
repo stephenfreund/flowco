@@ -274,6 +274,8 @@ class NodeEditor:
                 node = node.update(phase=Phase.clean)
             else:
                 node = node.update(phase=Phase.requirements)
+        elif original_node.code != node.code:
+            node = node.update(phase=Phase.code)
 
         dfg = ui_page.dfg()  # must reload
 

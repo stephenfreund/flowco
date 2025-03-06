@@ -353,6 +353,13 @@ class Node(NodeLike, BaseModel):
             with logger(f"Renaming {old_name} to {new_name}"):
                 new_node = new_node.alpha_rename(old_name, new_name)
 
+        if new_node.kind != self.kind and self.kind == NodeKind.plot:
+            new_node = new_node.update(
+                output_geometry=Geometry(
+                    x=self.geometry.x, y=self.geometry.y, width=300, height=200
+                )
+            )
+
         if new_node == self:
             return self
         else:
