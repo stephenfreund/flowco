@@ -176,6 +176,10 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
     font-size: 16px !important;
 }
 
+[aria-label="dialog"]:has(.st-key-unit-test-ui) {
+    width: 90% !important;
+}
+
 /* Edit Dialog */
 
 [aria-label="dialog"]:has(.st-key-edit_dialog) {
@@ -382,6 +386,8 @@ div .st-key-node_colors * {
 .st-key-node_shapes img {
     max-height: 144px;
 }
+
+
 """
 
 
