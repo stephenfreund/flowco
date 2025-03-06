@@ -6,6 +6,8 @@ node-passes:
     - flowco.builder.check_run.check_run
     - flowco.builder.assertions.compile_assertions  
     - flowco.builder.assertions.check_assertions  
+    - flowco.builder.unit_tests.compile_unit_tests
+    - flowco.builder.unit_tests.check_unit_tests
 
 repair-checks-passes:
     - flowco.builder.synthesize_kinds.requirements

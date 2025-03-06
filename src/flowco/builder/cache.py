@@ -67,7 +67,13 @@ class BuildCache(BaseModel):
         self._descriptors = {
             Phase.requirements: PhaseCacheDescriptor(
                 phase=Phase.requirements,
-                in_fields=["function_parameters", "preconditions", "label", "pill", "kind"],
+                in_fields=[
+                    "function_parameters",
+                    "preconditions",
+                    "label",
+                    "pill",
+                    "kind",
+                ],
                 out_fields=[
                     "requirements",
                     "function_parameters",
@@ -101,6 +107,17 @@ class BuildCache(BaseModel):
                     "assertions",
                 ],
                 out_fields=["assertion_checks"],
+            ),
+            Phase.unit_tests_code: PhaseCacheDescriptor(
+                phase=Phase.unit_tests_code,
+                in_fields=[
+                    "preconditions",
+                    "requirements",
+                    "function_parameters",
+                    "function_return_type",
+                    "unit_tests",
+                ],
+                out_fields=["unit_test_checks"],
             ),
         }
 

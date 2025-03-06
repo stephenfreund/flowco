@@ -4,8 +4,10 @@ import streamlit as st
 
 # from flowco.builder.unit_tests import suggest_unit_tests
 from flowco.builder.build import BuildEngine
+from flowco.builder.unit_tests import suggest_unit_tests
 from flowco.dataflow.dfg import Node
 from flowco.dataflow.phase import Phase
+from flowco.dataflow.tests import UnitTest
 from flowco.ui.page_files.build_page import BuildButton, BuildPage
 from flowco.ui.ui_page import UIPage
 from flowco.ui.ui_util import (
@@ -48,21 +50,20 @@ class TestPage(BuildPage):
         )
 
     def build_target_phase(self) -> Phase:
-        return Phase.tests_checked
+        return Phase.unit_tests_checked
 
     def node_header(self, node: Node):
         super().node_header(node)
-        test_failures = node.filter_messages(Phase.tests_checked, "error")
+        test_failures = node.filter_messages(Phase.unit_tests_checked, "error")
         if test_failures:
             fix_button = self.fix_button()
             st.button(
                 fix_button.label,
                 on_click=lambda: set_session_state("trigger_build_toggle", fix_button),
-                disabled=not self.graph_is_editable(),
                 help="Fix any errors in the tests",
             )
         else:
-            if node.phase >= Phase.tests_checked:
+            if node.phase >= Phase.unit_tests_checked:
                 st.success("All tests passed")
 
     @st.dialog("Edit Tests", width="large")
@@ -94,7 +95,10 @@ class TestPage(BuildPage):
         ]
         editable_df = st.data_editor(
             pd.DataFrame(
-                st.session_state.tmp_unit_tests,
+                [
+                    {"inputs": x.inputs, "expected outcome": x.expected}
+                    for x in st.session_state.tmp_unit_tests
+                ],
                 columns=["inputs", "expected outcome"],
                 dtype=str,
             ),
@@ -103,7 +107,11 @@ class TestPage(BuildPage):
             use_container_width=True,
         )
 
-        new_unit_tests = list([x for x in editable_df["checks"] if x])
+        fixed = editable_df.fillna("")
+        new_unit_tests = [
+            UnitTest(inputs=x.get("inputs", ""), expected=x.get("expected outcome", ""))
+            for x in fixed.to_dict(orient="records")
+        ]
         dfg = st.session_state.tmp_dfg
         node = dfg[node_id]
         if new_unit_tests != node.unit_tests or node.phase < Phase.unit_tests_code:
@@ -160,9 +168,11 @@ class TestPage(BuildPage):
         if node.unit_test_checks:
             for unit_test in node.unit_tests or []:
                 st.divider()
-                check = node.unit_test_checks.get(unit_test, None)
+                check = node.unit_test_checks.get(str(unit_test), None)
                 if check:
-                    st.write(f"**{unit_test}**")
+                    st.write(f"**Test:** {unit_test.description}")
+                    st.write(f"**Inputs:** {unit_test.inputs}")
+                    st.write(f"**Expected:** {unit_test.expected}")
                     if check.warning:
                         st.warning(check.warning)
 

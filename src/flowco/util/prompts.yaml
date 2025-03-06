@@ -1699,3 +1699,121 @@ lift_up_changes_from_editing_no_alg: |
        {new_label}
        ```
        and make any necessary changes to reflect the changes from step 1.
+
+
+#####
+
+unit_tests-code: |
+    Here are the input variables for a function:
+    ```
+    {input_vars}
+    ```
+    The inputs satisfy the following requirements:
+    ```
+    {preconditions}
+    ```
+    The output for the function is stored in the variable:
+    ```
+    {output_var}
+    ```
+    These are the postconditions for the function.
+    ```
+    {postconditions}
+    ```
+    Write unit tests code to check each of the following additional unit test description.
+    ```
+    {unit_tests}
+    ```    
+
+    For each test:
+        1.  Write code to construct function input values that satisfy the preconditions and the 
+            test specification.
+        
+            Then use a quantative check containing an assertion if possible.  Use this form and
+            no function definitions:
+    ```
+    {input_lines}
+    {output_var}_result = {call_to_node}
+    assert ..., "...message..."
+    ```
+            The assertion's error messages should targeted to non-programmers and 
+            provide detailed information about the failure,
+            including the expected value and observed value.
+
+        2.  If the postconditions do not ensure the requirement will be met for all
+            inputs matching the preconditions, provide a warning 
+            message indicating why.  Otherwise, the error message should be empty.
+
+suggest-unit_tests-code: |
+    Here are the input variables for a function:
+    ```
+    {input_vars}
+    ```
+    The inputs satisfy the following requirements:
+    ```
+    {preconditions}
+    ```
+    The output for the function is stored in the variable:
+    ```
+    {output_var}
+    ```
+    These are the postconditions for the function.
+    ```
+    {postconditions}
+    ```
+    I have the following suggestions for additional checks:
+    ```
+    {unit_tests}
+    ```
+    Suggest additional, non-redundant unit tests that we can perform to gain confidence
+    that the function is correct.  Each should be a short description of the inputs
+    and expected outcome.  Do not include any code.
+
+
+unit_tests-inspect: |
+    Here are the input variables for a function:
+    ```
+    {input_vars}
+    ```
+    The inputs satisfy the following requirements:
+    ```
+    {preconditions}
+    ```
+    These are the postconditions for the function.
+    ```
+    {postconditions}
+    ```
+    The output will be provided to you as either a string or image.
+    Write qualitative checks to check each of the following additional requirements.
+    ```
+    {requirements}
+    ```    
+    For each requirement:
+        1. Explain exactly what to look for in the visual representation of the output to 
+    verify that the requirement is met.
+        2.  If the postconditions do not ensure the requirement will be met for all
+            inputs matching the preconditions, a warning message
+            indicating why.  Otherwise, the error message should be empty.
+
+
+suggest-unit_tests-inspect: |
+    Here are the input variables for a function:
+    ```
+    {input_vars}
+    ```
+    The inputs satisfy the following requirements:
+    ```
+    {preconditions}
+    ```
+    These are the postconditions for the function.
+    ```
+    {postconditions}
+    ```
+    I have the following suggestions for additional checks:
+    ```
+    {unit_tests}
+    ```
+    Suggest additional, non-redundant unit tests that we can perform to gain confidence
+    that the function is correct.  Each should be a short description of the inputs
+    and expected outcome.  Do not include any code.
+
