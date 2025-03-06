@@ -241,6 +241,14 @@ class Node(NodeLike, BaseModel):
         default=None, description="A list of unit tests that the node must pass."
     )
 
+    unit_test_checks: Optional[OrderedDict[str, Check]] = Field(
+        default_factory=OrderedDict, description="The generated unit_tests."
+    )
+
+    unit_test_outcomes: Optional[CheckOutcomes] = Field(
+        default_factory=CheckOutcomes, description="The outcomes of the unit_tests."
+    )
+
     ###
 
     messages: List[NodeMessage] = Field(
@@ -284,6 +292,9 @@ class Node(NodeLike, BaseModel):
             and self.assertions == other.assertions
             and self.assertion_checks == other.assertion_checks
             and self.assertion_outcomes == other.assertion_outcomes
+            and self.unit_tests == other.unit_tests
+            and self.unit_test_checks == other.unit_test_checks
+            and self.unit_test_outcomes == other.unit_test_outcomes
         )
 
     def diff(self, other: "Node") -> dict:
@@ -442,6 +453,8 @@ class Node(NodeLike, BaseModel):
             code=None,
             assertion_checks=None,
             assertion_outcomes=None,
+            unit_test_checks=None,
+            unit_test_outcomes=None,
             result=None,
             messages=[],
             build_status=None,
@@ -458,6 +471,7 @@ class Node(NodeLike, BaseModel):
                 "code",
                 "result",
                 "assertions",
+                "unit_tests",
             ]
             if self.algorithm is not None:
                 keys.append("algorithm")
@@ -521,6 +535,10 @@ class Node(NodeLike, BaseModel):
             if "assertions" == key and self.assertions is not None:
                 assertions = "\n".join([f"* {x}" for x in self.assertions])
                 md += f"**Checks**\n\n{assertions}\n\n"
+
+            if "unit_tests" == key and self.unit_tests is not None:
+                unit_tests = "\n".join([f"* {x}" for x in self.unit_tests])
+                md += f"**Checks**\n\n{unit_tests}\n\n"
 
         return md
 
@@ -680,6 +698,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                         function_result_var=node["function_result_var"],
                         predecessors=node["predecessors"],
                         assertions=node.get("assertions", None),
+                        unit_tests=node.get("unit_tests", None),
                         phase=Phase.clean,
                         cache=BuildCache(),
                         requirements=node.get("requirements", None),

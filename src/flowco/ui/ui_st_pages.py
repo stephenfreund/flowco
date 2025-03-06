@@ -9,6 +9,7 @@ from flowco.ui.page_files.build_page import BuildPage
 from flowco.ui.page_files.check_page import CheckPage
 from flowco.ui.page_files.help_page import HelpPage
 from flowco.ui.page_files.projects_page import ProjectsPage
+from flowco.ui.page_files.test_page import TestPage
 from flowco.util.output import error
 
 
@@ -28,9 +29,8 @@ def st_pages():
     def test_main():
         st.session_state.current_page = "test"
         # st.session_state.image_cache.clear()
-        st.write("")
-        st.write("")
-        st.write("This space for rent.")
+        # st.session_state.selected_node = "<<<<<"
+        TestPage().main()
 
     def projects_main():
         st.session_state.current_page = "projects"
@@ -61,6 +61,10 @@ def st_pages():
                 title="Check",
             ),
             st.Page(
+                test_main,
+                title="Test",
+            ),
+            st.Page(
                 help_main,
                 title="Help",
             ),
@@ -74,6 +78,10 @@ def st_pages():
         elif st.session_state.current_page == "check":
             pages = [
                 st.Page(check_main, title="Check"),
+            ]
+        elif st.session_state.current_page == "test":
+            pages = [
+                st.Page(check_main, title="Test"),
             ]
         else:
             assert (

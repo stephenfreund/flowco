@@ -1,10 +1,209 @@
-from flowco.ui.page_files.base_page import FlowcoPage
+import textwrap
+import pandas as pd
+import streamlit as st
+
+# from flowco.builder.unit_tests import suggest_unit_tests
+from flowco.builder.build import BuildEngine
+from flowco.dataflow.dfg import Node
+from flowco.dataflow.phase import Phase
+from flowco.ui.page_files.build_page import BuildButton, BuildPage
+from flowco.ui.ui_page import UIPage
+from flowco.ui.ui_util import (
+    set_session_state,
+    show_code,
+)
 
 
-class TestPage(FlowcoPage):
+import streamlit as st
 
-    def button_bar(self):
-        pass
 
-    def graph_is_editable(self) -> bool:
-        return True  # False
+from flowco import __main__
+from flowco.ui.ui_page import UIPage
+
+
+class TestPage(BuildPage):
+
+    # Override for other pages
+
+    def update_button(self) -> BuildButton:
+        return BuildButton(
+            label="Update",
+            icon=":material/refresh:",
+            action="Update",
+        )
+
+    def run_button(self) -> BuildButton:
+        return BuildButton(
+            label="Check",
+            icon=":material/play_circle:",
+            action="Run",
+        )
+
+    def fix_button(self) -> BuildButton:
+        return BuildButton(
+            label="Fix",
+            icon=":material/build:",
+            action="Run",
+            passes_key="repair-tests-passes",
+        )
+
+    def build_target_phase(self) -> Phase:
+        return Phase.tests_checked
+
+    def node_header(self, node: Node):
+        super().node_header(node)
+        test_failures = node.filter_messages(Phase.tests_checked, "error")
+        if test_failures:
+            fix_button = self.fix_button()
+            st.button(
+                fix_button.label,
+                on_click=lambda: set_session_state("trigger_build_toggle", fix_button),
+                disabled=not self.graph_is_editable(),
+                help="Fix any errors in the tests",
+            )
+        else:
+            if node.phase >= Phase.tests_checked:
+                st.success("All tests passed")
+
+    @st.dialog("Edit Tests", width="large")
+    def edit_checks(self, node_id: str):
+
+        def make_suggestions():
+            st.session_state.make_suggestions = True
+
+        node = st.session_state.tmp_dfg[node_id]
+        buttons = st.empty()
+
+        if st.session_state.make_suggestions:
+            with st.spinner("Making suggestions..."):
+                st.session_state.make_suggestions = False
+                suggested_unit_tests = suggest_unit_tests(
+                    st.session_state.tmp_dfg, st.session_state.tmp_dfg[node_id]
+                )
+                st.session_state.tmp_unit_tests = (
+                    st.session_state.tmp_unit_tests + suggested_unit_tests
+                )
+                dfg = st.session_state.tmp_dfg
+                node = dfg[node_id]
+                dfg = dfg.reduce_phases_to_below_target(node.id, Phase.unit_tests_code)
+                st.session_state.tmp_dfg = dfg
+
+        st.write("### Checks")
+        st.session_state.tmp_unit_tests = [
+            x for x in st.session_state.tmp_unit_tests if x
+        ]
+        editable_df = st.data_editor(
+            pd.DataFrame(
+                st.session_state.tmp_unit_tests,
+                columns=["inputs", "expected outcome"],
+                dtype=str,
+            ),
+            key="edit_checks",
+            num_rows="dynamic",
+            use_container_width=True,
+        )
+
+        new_unit_tests = list([x for x in editable_df["checks"] if x])
+        dfg = st.session_state.tmp_dfg
+        node = dfg[node_id]
+        if new_unit_tests != node.unit_tests or node.phase < Phase.unit_tests_code:
+            dfg = dfg.with_node(node.update(unit_tests=new_unit_tests))
+            dfg = dfg.reduce_phases_to_below_target(node.id, Phase.unit_tests_code)
+            st.session_state.tmp_dfg = dfg
+
+        with buttons.container():
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                if st.button("Save", icon=":material/save:"):
+                    ui_page: UIPage = st.session_state.ui_page
+                    ui_page.page().update_dfg(st.session_state.tmp_dfg)
+                    st.session_state.force_update = True
+                    st.rerun(scope="app")
+
+            with c2:
+                st.button(
+                    "Suggest",
+                    icon=":material/format_list_bulleted:",
+                    on_click=make_suggestions,
+                )
+
+            with c3:
+                if show_code():
+                    if st.button("Regenerate"):
+                        with st.spinner("Regenerating..."):
+                            dfg = st.session_state.tmp_dfg
+                            dfg = dfg.reduce_phases_to_below_target(
+                                node_id, Phase.unit_tests_code
+                            )
+                            node = dfg[node_id]
+                            dfg = dfg.with_node(
+                                node.update(
+                                    cache=node.cache.invalidate(Phase.unit_tests_code)
+                                )
+                            )
+                            st.session_state.tmp_dfg = dfg
+
+        dfg = st.session_state.tmp_dfg
+
+        if dfg[node_id].phase < Phase.unit_tests_code:
+            with st.spinner("Generating validation steps..."):
+                ui_page: UIPage = st.session_state.ui_page
+                build_config = ui_page.page().base_build_config(repair=False)
+                engine = BuildEngine.get_builder()
+                for build_updated in engine.build_with_worklist(
+                    build_config, dfg, Phase.unit_tests_code, node_id
+                ):
+                    dfg = build_updated.new_graph
+                st.session_state.tmp_dfg = dfg
+
+        node = st.session_state.tmp_dfg[node_id]
+        if node.unit_test_checks:
+            for unit_test in node.unit_tests or []:
+                st.divider()
+                check = node.unit_test_checks.get(unit_test, None)
+                if check:
+                    st.write(f"**{unit_test}**")
+                    if check.warning:
+                        st.warning(check.warning)
+
+                    if show_code():
+                        if check.type == "quantitative":
+                            code = check.code
+                            if code:
+                                st.code(textwrap.indent("\n".join(code), "    "))
+                            else:
+                                st.write("    *Code not available*")
+                        else:
+                            st.write(f"    *{check.requirement}*")
+        else:
+            st.write("*No details available*")
+
+    def edit_node(self, node_id: str):
+        ui_page: UIPage = st.session_state.ui_page
+        with ui_page.page():
+            st.session_state.tmp_dfg = ui_page.dfg()
+            st.session_state.tmp_unit_tests = ui_page.dfg()[node_id].unit_tests or []
+            self.edit_checks(node_id)
+
+    def show_node_details(self, node: Node):
+        with st.container(key="node_checks", border=True):
+            st.write("###### Tests")
+            unit_tests = node.unit_tests or []
+            if unit_tests:
+                st.write("\n".join(["* " + x for x in str(unit_tests)]))
+            else:
+                st.write("*Edit node to add tests!*")
+
+        super().show_node_details(node)
+
+    def node_parts_for_diagram(self):
+        keys = [
+            "pill",
+            "messages",
+            "unit_tests",
+            "requirements",
+            "function_return_type",
+        ]
+        if show_code():
+            keys += ["code"]
+        return keys

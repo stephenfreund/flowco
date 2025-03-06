@@ -11,10 +11,8 @@ class Phase(IntEnum):
     run_checked = 5
     assertions_code = 6
     assertions_checked = 7
-    sanity_checks = 8
-    unit_tests = 9
-    tests_runnable = 10
-    tests_checked = 11
+    unit_tests_code = 8
+    unit_tests_checked = 9
 
     def __repr__(self):
         return self.name
