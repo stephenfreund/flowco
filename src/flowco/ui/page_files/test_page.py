@@ -9,6 +9,7 @@ from flowco.dataflow.dfg import Node
 from flowco.dataflow.phase import Phase
 from flowco.dataflow.tests import UnitTest
 from flowco.ui.page_files.build_page import BuildButton, BuildPage
+from flowco.ui.ui_builder import Builder
 from flowco.ui.ui_page import UIPage
 from flowco.ui.ui_util import (
     set_session_state,
@@ -47,6 +48,14 @@ class TestPage(BuildPage):
             icon=":material/build:",
             action="Run",
             passes_key="repair-tests-passes",
+        )
+
+    def suggest_button(self) -> BuildButton:
+        return BuildButton(
+            label="Suggest Tests",
+            icon=":material/format_list_bulleted:",
+            action="Run",
+            passes_key="suggest-unit-test-passes",
         )
 
     def build_target_phase(self) -> Phase:
@@ -278,5 +287,27 @@ class TestPage(BuildPage):
         if nodes_with_no_tests:
             items = "\n".join([f"* {x}" for x in nodes_with_no_tests])
             st.info(f"**These nodes have no tests:**\n{items}")
+
+            suggest_button = self.suggest_button()
+            if st.button(
+                suggest_button.label,
+                icon=suggest_button.icon,
+                disabled=st.session_state.ama_responding or st.session_state.builder is not None,
+                help=(
+                    "Suggest tests for nodes that have none. "
+                ),
+            ):
+                if st.session_state.builder is None:
+                    st.session_state.builder = Builder(
+                        ui_page.page(),
+                        [x.id for x in ui_page.dfg().nodes if not x.unit_tests],
+                        target_phase=Phase.unit_tests_code,
+                        passes_key="suggest-unit-test-passes",
+                        force=True,
+                        repair=False,
+                    )
+                    st.session_state.builder_progress = 0
+                
+
 
         self.help_details()

@@ -39,6 +39,26 @@ def suggest_unit_tests(graph: DataFlowGraph, node: Node) -> List[UnitTest]:
     return suggestions.suggestions
 
 
+@node_pass(
+    required_phase=Phase.requirements,
+    target_phase=Phase.unit_tests_code,
+)
+def suggest_unit_tests_pass(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
+    with logger("Suggest Unit Test step"):
+
+        if not node.unit_tests:
+            suggestions = suggest_unit_tests(graph, node)
+            if suggestions:
+                phase = node.phase
+                node = node.update(unit_tests=suggestions)
+                node = compile_unit_tests(pass_config, graph, node)
+                node = node.update(phase=phase)
+
+        return node
+
+
+
+
 def none_return_type_completion(node):
     class UnitTestCompletion(BaseModel):
         code: List[str] = Field(

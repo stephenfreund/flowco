@@ -9,6 +9,14 @@ node-passes:
     - flowco.builder.unit_tests.compile_unit_tests
     - flowco.builder.unit_tests.check_unit_tests
 
+suggest-assertions-passes:
+    - flowco.builder.synthesize_kinds.requirements
+    - flowco.builder.assertions.suggest_assertions_pass
+
+suggest-unit-test-passes:
+    - flowco.builder.synthesize_kinds.requirements
+    - flowco.builder.unit_tests.suggest_unit_tests_pass
+
 repair-checks-passes:
     - flowco.builder.synthesize_kinds.requirements
     - flowco.builder.synthesize.algorithm
@@ -17,6 +25,17 @@ repair-checks-passes:
     - flowco.builder.check_run.check_run
     - flowco.builder.assertions.compile_assertions  
     - flowco.builder.assertions.repair_assertions  
+
+repair-tests-passes:
+    - flowco.builder.synthesize_kinds.requirements
+    - flowco.builder.synthesize.algorithm
+    - flowco.builder.synthesize_kinds.compile
+    - flowco.builder.check_syntax.check_syntax
+    - flowco.builder.check_run.check_run
+    - flowco.builder.assertions.compile_assertions  
+    - flowco.builder.assertions.repair_assertions  
+    - flowco.builder.unit_tests.compile_unit_tests
+    - flowco.builder.unit_tests.repair_unit_tests 
 
 
 full-passes:
