@@ -405,12 +405,16 @@ class BuildPage(FlowcoPage):
             ):
                 self.edit_description()
 
+        self.help_details()
+
+    def help_details(self):
         st.divider()
         colors = [
             ("#dfedf7", "Modified"),
             ("#fac4b3", "Running"),
             ("#fef2d0", "Completed"),
             ("#ddf1da", "Checked"),
+            ("#dedbec", "Tested"),
         ]
         with st.container():
             st.markdown("###### Node Colors and Kinds")

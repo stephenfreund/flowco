@@ -1251,6 +1251,14 @@ repair-node-assertions: |
     {context}
     ```
 
+repair-node-unit_tests: | 
+    A node in the dataflow graph failed to pass some tests.  
+    Fix it.  These are the messages for the test failures:
+    ```
+    {errors}
+    ```
+    Make minimal changes to that node's code to fix the errors.
+
 
 
 
@@ -1771,7 +1779,7 @@ suggest-unit_tests-code: |
 
 
 unit_tests-inspect: |
-    Here are the input variables for a function:
+    Here are the input variables for a function `{function_name}`:
     ```
     {input_vars}
     ```
@@ -1784,17 +1792,26 @@ unit_tests-inspect: |
     {postconditions}
     ```
     The output will be provided to you as either a string or image.
-    Write qualitative checks to check each of the following additional requirements.
+    Write unit test code and qualitativ checks 
+    to check each of the following additional unit test descriptions.
     ```
-    {requirements}
+    {unit_tests}
     ```    
-    For each requirement:
-        1. Explain exactly what to look for in the visual representation of the output to 
-    verify that the requirement is met.
-        2.  If the postconditions do not ensure the requirement will be met for all
-            inputs matching the preconditions, a warning message
-            indicating why.  Otherwise, the error message should be empty.
 
+    For each test:
+        1.  Write code to construct function input values that satisfy the preconditions and the 
+            test specification.  Then call the function `{function_name}`, which is
+            already defined -- do not write it.  Use this exact form:
+            ```
+            {input_lines}
+            {call_to_node}
+            ```
+            Explain exactly what to look for in the visual representation of the output to 
+            verify that the unit test passes.
+
+        2.  If the postconditions do not ensure the unit test will be met for all
+            inputs matching the preconditions, provide a warning 
+            message indicating why.  Otherwise, the error message should be empty.
 
 suggest-unit_tests-inspect: |
     Here are the input variables for a function:
@@ -1816,4 +1833,3 @@ suggest-unit_tests-inspect: |
     Suggest additional, non-redundant unit tests that we can perform to gain confidence
     that the function is correct.  Each should be a short description of the inputs
     and expected outcome.  Do not include any code.
-

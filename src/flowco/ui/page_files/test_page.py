@@ -36,7 +36,7 @@ class TestPage(BuildPage):
 
     def run_button(self) -> BuildButton:
         return BuildButton(
-            label="Check",
+            label="Test",
             icon=":material/play_circle:",
             action="Run",
         )
@@ -197,6 +197,15 @@ class TestPage(BuildPage):
                                     st.code(textwrap.indent("\n".join(code), "    "))
                                 else:
                                     st.write("    *Code not available*")
+                            elif check.type == "qualitative-code":
+                                code = check.code
+                                if code:
+                                    st.write("Setup code:")
+                                    st.code(textwrap.indent("\n".join(code), "    "))
+                                else:
+                                    st.write("    *Code not available*")
+
+                                st.write(f"    *{check.requirement}*")
                             else:
                                 st.write(f"    *{check.requirement}*")
             else:
@@ -214,7 +223,7 @@ class TestPage(BuildPage):
             st.write("###### Tests")
             unit_tests = node.unit_tests or []
             if unit_tests:
-                st.write("\n".join(["* " + x for x in str(unit_tests)]))
+                st.write("\n".join([f"* {x}" for x in unit_tests]))
             else:
                 st.write("*Edit node to add tests!*")
 
@@ -231,3 +240,43 @@ class TestPage(BuildPage):
         if show_code():
             keys += ["code"]
         return keys
+
+    def global_sidebar(self):
+        ui_page: UIPage = st.session_state.ui_page
+
+        # st.write("##### Tests")
+        # data = [
+        #     {"Node": node.pill, "Tests": len(node.unit_tests or [])}
+        #     for node in ui_page.dfg().nodes
+        # ]
+        # data.sort(key=lambda x: x["Tests"])
+        # st.table(data)
+
+        failed_tests = [
+            node.pill
+            for node in ui_page.dfg().nodes
+            if node.filter_messages(Phase.unit_tests_checked, "error")
+        ]
+        if failed_tests:
+            items = "\n".join([f"* {x}" for x in failed_tests])
+            st.error(f"**These nodes have failing tests:**\n{items}")
+
+        warnings = [
+            node.pill
+            for node in ui_page.dfg().nodes
+            if node.filter_messages(Phase.unit_tests_code, "warning")
+        ]
+        if warnings:
+            items = "\n".join([f"* {x}" for x in warnings])
+            st.warning(f"**These nodes have test warnings:**\n{items}")
+
+        nodes_with_no_tests = [
+            node.pill for node in ui_page.dfg().nodes if not node.unit_tests
+        ]
+        nodes_with_no_tests.sort()
+
+        if nodes_with_no_tests:
+            items = "\n".join([f"* {x}" for x in nodes_with_no_tests])
+            st.info(f"**These nodes have no tests:**\n{items}")
+
+        self.help_details()

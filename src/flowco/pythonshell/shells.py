@@ -86,6 +86,15 @@ class PythonShells:
         finally:
             self._put_shell(shell)
 
+    def run_unit_tests(
+        self, tables: GlobalTables, dfg: DataFlowGraph, node: Node
+    ) -> Node:
+        shell = self._get_shell()
+        try:
+            return shell.run_unit_tests(tables, dfg, node)
+        finally:
+            self._put_shell(shell)
+
     def close_all(self) -> None:
         while not self.queue.empty():
             shell = self.queue.get()

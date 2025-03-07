@@ -81,7 +81,7 @@ def st_pages():
             ]
         elif st.session_state.current_page == "test":
             pages = [
-                st.Page(check_main, title="Test"),
+                st.Page(test_main, title="Test"),
             ]
         else:
             assert (

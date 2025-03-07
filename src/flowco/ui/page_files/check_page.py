@@ -204,3 +204,35 @@ class CheckPage(BuildPage):
         if show_code():
             keys += ["code"]
         return keys
+
+    def global_sidebar(self):
+        ui_page: UIPage = st.session_state.ui_page
+
+        failed_assertions = [
+            node.pill
+            for node in ui_page.dfg().nodes
+            if node.filter_messages(Phase.assertions_checked, "error")
+        ]
+        if failed_assertions:
+            items = "\n".join([f"* {x}" for x in failed_assertions])
+            st.error(f"**These nodes have failing assertions:**\n{items}")
+
+        warnings = [
+            node.pill
+            for node in ui_page.dfg().nodes
+            if node.filter_messages(Phase.assertions_code, "warning")
+        ]
+        if warnings:
+            items = "\n".join([f"* {x}" for x in warnings])
+            st.warning(f"**These nodes have assertion warnings:**\n{items}")
+
+        nodes_with_no_assertions = [
+            node.pill for node in ui_page.dfg().nodes if not node.assertions
+        ]
+        nodes_with_no_assertions.sort()
+
+        if nodes_with_no_assertions:
+            items = "\n".join([f"* {x}" for x in nodes_with_no_assertions])
+            st.info(f"**These nodes have no assertions:**\n{items}")
+
+        self.help_details()

@@ -17,6 +17,24 @@ class QuantitiveCheck(BaseModel):
 
 class QualitativeCheck(BaseModel):
     type: Literal["qualitative"]
+    code: Optional[List[str]] = Field(
+        default=None,
+        description="Code to run to generate the output to examine, or None if no code is needed.  The code is stored as a list of source lines.",
+    )
+    requirement: str = Field(
+        description="A description of the requirement for this test."
+    )
+    warning: Optional[str] = Field(
+        default=None,
+        description="A warning message if the check is not guaranteed by the requirements.",
+    )
+
+
+class QualitativeCheckWithCode(BaseModel):
+    type: Literal["qualitative-code"]
+    code: List[str] = Field(
+        description="Code to run to generate the output to examine.  The code is stored as a list of source lines.",
+    )
     requirement: str = Field(
         description="A description of the requirement for this test."
     )
@@ -36,4 +54,4 @@ class CheckOutcomes(BaseModel):
     )
 
 
-Check = Union[QuantitiveCheck, QualitativeCheck]
+Check = Union[QuantitiveCheck, QualitativeCheck, QualitativeCheckWithCode]
