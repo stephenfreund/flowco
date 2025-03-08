@@ -89,6 +89,26 @@ def not_none_return_type_completion(node):
     return checks
 
 
+@node_pass(
+    required_phase=Phase.requirements,
+    target_phase=Phase.assertions_code,
+)
+def suggest_assertions_pass(
+    pass_config: PassConfig, graph: DataFlowGraph, node: Node
+) -> Node:
+    with logger("Suggest Unit Test step"):
+
+        if not node.assertions:
+            suggestions = suggest_assertions(graph, node)
+            if suggestions:
+                phase = node.phase
+                node = node.update(assertions=suggestions)
+                node = compile_assertions(pass_config, graph, node)
+                node = node.update(phase=phase)
+
+        return node
+
+
 @node_pass(required_phase=Phase.run_checked, target_phase=Phase.assertions_code)
 def compile_assertions(
     pass_config: PassConfig, graph: DataFlowGraph, node: Node
@@ -116,6 +136,10 @@ def compile_assertions(
             checks = not_none_return_type_completion(node)
 
         new_node = node.update(assertion_checks=checks, phase=Phase.assertions_code)
+
+        new_node = new_node.update(
+            messages=[x for x in new_node.messages if x.phase != Phase.assertions_code]
+        )
 
         if any([x.warning for x in checks.values()]):
             for assertion, check in checks.items():
@@ -166,6 +190,7 @@ def assertions_assistant(node: Node, suggest=False):
         "preconditions": json.dumps(node.preconditions, indent=2),
         "output_var": node.function_result_var,
         "postconditions": "\n".join([f"* {r}" for r in node.requirements]),
+        "return_type": node.function_return_type.model_dump_json(indent=2),
         "requirements": json.dumps(node.assertions or [], indent=2),
     }
 
@@ -202,9 +227,13 @@ def repair_assertions(
 
     # NOTE: This will modify the node, even if locked, by design!
 
+    node = node.update(
+        messages=[x for x in node.messages if x.phase != Phase.assertions_checked]
+    )
+
     try:
         return _repair_assertions(
-            pass_config, graph, node, max_retries=pass_config.max_retries
+            pass_config, graph, node, max_retries=pass_config.max_retries_for_node(node)
         )
 
     except CellExecutionError as e:

@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 import textwrap
-from typing import Literal
+from typing import List, Literal
 import streamlit as st
-from flowco.dataflow.dfg import Geometry, Node
+from flowco.dataflow.dfg import Geometry, Node, NodeMessage
 from flowco.dataflow.phase import Phase
 from flowco.page.ama import VisibleMessage
 from flowco.ui.dialogs.data_files import data_files_dialog
@@ -182,6 +182,9 @@ class BuildPage(FlowcoPage):
     def second_bar(self):
         if st.session_state.builder is None:
             super().second_bar()
+
+    def filter_messages(self, node: Node) -> List[NodeMessage]:
+        return [x for x in node.messages if x.phase <= Phase.run_checked]
 
     def auto_update(self):
         self.toggle_building(force=False, repair=True)

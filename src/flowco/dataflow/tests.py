@@ -7,4 +7,4 @@ class UnitTest(BaseModel):
     expected: str = Field(description="The expected result.")
 
     def __str__(self):
-        return f"{self.inputs} -> {self.expected}"
+        return f"{self.description}"

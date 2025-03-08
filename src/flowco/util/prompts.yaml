@@ -564,6 +564,10 @@ assertions-code: |
     ```
     {output_var}
     ```
+    that has this type:
+    ```
+    {return_type}
+    ```
     These are the postconditions for the function.
     ```
     {postconditions}
@@ -600,6 +604,10 @@ suggest-assertions-code: |
     The output for the function is stored in the variable:
     ```
     {output_var}
+    ```
+    that has this type:
+    ```
+    {return_type}
     ```
     These are the postconditions for the function.
     ```
@@ -1724,6 +1732,10 @@ unit_tests-code: |
     ```
     {output_var}
     ```
+    The function has this return type:
+    ```
+    {return_type}
+    ```
     These are the postconditions for the function.
     ```
     {postconditions}
@@ -1765,6 +1777,10 @@ suggest-unit_tests-code: |
     ```
     {output_var}
     ```
+    The function has this return type:
+    ```
+    {return_type}
+    ```
     These are the postconditions for the function.
     ```
     {postconditions}
@@ -1786,6 +1802,10 @@ unit_tests-inspect: |
     The inputs satisfy the following requirements:
     ```
     {preconditions}
+    ```
+    The function has this return type:
+    ```
+    {return_type}
     ```
     These are the postconditions for the function.
     ```
@@ -1821,6 +1841,10 @@ suggest-unit_tests-inspect: |
     The inputs satisfy the following requirements:
     ```
     {preconditions}
+    ```
+    The function has this return type:
+    ```
+    {return_type}
     ```
     These are the postconditions for the function.
     ```

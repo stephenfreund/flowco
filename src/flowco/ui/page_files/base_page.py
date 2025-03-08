@@ -11,7 +11,7 @@ import pandas as pd
 
 
 from flowco.dataflow import dfg_update
-from flowco.dataflow.dfg import Node, NodeKind
+from flowco.dataflow.dfg import Node, NodeKind, NodeMessage
 from flowco.dataflow.phase import Phase
 from flowco.page.output import OutputType
 from flowco.ui.dialogs.node_creator import new_node_dialog
@@ -187,14 +187,18 @@ class FlowcoPage:
                 f"Total cost: {total_cost():.2f} USD &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        {':gray[:material/bigtop_updates:]' * inflight()}"
             )
 
+    def filter_messages(self, node: Node) -> List[NodeMessage]:
+        return node.messages
+
     def show_messages(self, node: Node):
-        for message in node.messages:
+        messages = self.filter_messages(node)
+        for message in messages:
             if message.level == "error":
                 st.error(message.text)
-        for message in node.messages:
+        for message in messages:
             if message.level == "warning":
                 st.warning(message.text)
-        for message in node.messages:
+        for message in messages:
             if message.level == "info":
                 st.success(message.text)
 

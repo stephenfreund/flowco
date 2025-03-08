@@ -430,8 +430,10 @@ class PythonShell:
                         with logger(f"Evaluating quantitative assertion {assertion}"):
                             assertion_message = None
                             try:
+                                print(check.code)
                                 self._run_cell("\n".join(check.code))
                             except nb_exceptions.CellExecutionError as e:
+                                print(e)
                                 if e.ename == "AssertionError":
                                     assertion_message = (
                                         self.extract_assertion_error_message(

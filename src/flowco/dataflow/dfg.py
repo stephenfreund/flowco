@@ -422,16 +422,21 @@ class Node(NodeLike, BaseModel):
         return self.update(messages=messages)
 
     def filter_messages(
-        self, phase: Phase, level: str | None = None
+        self, phase: Phase | List[Phase], level: str | None = None
     ) -> List[NodeMessage]:
+        if not isinstance(phase, list):
+            phases = [phase]
+        else:
+            phases = phase
+
         if level is not None:
             return [
                 message
                 for message in self.messages
-                if message.phase == phase and message.level == level
+                if message.phase in phases and message.level == level
             ]
         else:
-            return [message for message in self.messages if message.phase == phase]
+            return [message for message in self.messages if message.phase in phases]
 
     def reset(self, reset_requirements=False) -> Node:
         if reset_requirements:
@@ -538,7 +543,7 @@ class Node(NodeLike, BaseModel):
 
             if "unit_tests" == key and self.unit_tests is not None:
                 unit_tests = "\n".join([f"* {x}" for x in self.unit_tests])
-                md += f"**Checks**\n\n{unit_tests}\n\n"
+                md += f"**Unit Tests**\n\n{unit_tests}\n\n"
 
         return md
 
@@ -1188,6 +1193,15 @@ class DataFlowGraph(GraphLike, BaseModel):
             md += node.to_markdown()
 
         return md
+
+    def filter_messages(
+        self, phase: Phase | List[Phase], level: str | None = None
+    ) -> List[NodeMessage]:
+        messages = []
+        for node_id in self.topological_sort():
+            node = self[node_id]
+            messages += node.filter_messages(phase, level)
+        return messages
 
 
 def dataflow_graph_to_image(

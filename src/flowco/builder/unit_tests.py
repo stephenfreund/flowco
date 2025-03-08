@@ -43,7 +43,9 @@ def suggest_unit_tests(graph: DataFlowGraph, node: Node) -> List[UnitTest]:
     required_phase=Phase.requirements,
     target_phase=Phase.unit_tests_code,
 )
-def suggest_unit_tests_pass(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
+def suggest_unit_tests_pass(
+    pass_config: PassConfig, graph: DataFlowGraph, node: Node
+) -> Node:
     with logger("Suggest Unit Test step"):
 
         if not node.unit_tests:
@@ -55,8 +57,6 @@ def suggest_unit_tests_pass(pass_config: PassConfig, graph: DataFlowGraph, node:
                 node = node.update(phase=phase)
 
         return node
-
-
 
 
 def none_return_type_completion(node):
@@ -143,12 +143,16 @@ def compile_unit_tests(
 
         new_node = node.update(unit_test_checks=checks, phase=Phase.unit_tests_code)
 
+        new_node = new_node.update(
+            messages=[x for x in new_node.messages if x.phase != Phase.unit_tests_code]
+        )
+
         if any([x.warning for x in checks.values()]):
             for unit_test, check in checks.items():
                 if check.warning:
                     new_node = new_node.warn(
                         phase=Phase.unit_tests_code,
-                        message=f"**Check '{unit_test}'**: {check.warning}",
+                        message=f"**Test '{unit_test}'**: {check.warning}",
                     )
             return new_node
 
@@ -198,6 +202,7 @@ def unit_tests_assistant(node: Node, suggest=False):
         "input_lines": input_lines,
         "preconditions": json.dumps(node.preconditions, indent=2),
         "output_var": node.function_result_var,
+        "return_type": node.function_return_type.model_dump_json(indent=2),
         "postconditions": "\n".join([f"* {r}" for r in node.requirements]),
         "unit_tests": json.dumps(unit_tests or [], indent=2),
     }
@@ -234,10 +239,13 @@ def repair_unit_tests(
 ) -> Node:
 
     # NOTE: This will modify the node, even if locked, by design!
+    node = node.update(
+        messages=[x for x in node.messages if x.phase != Phase.unit_tests_checked]
+    )
 
     try:
         return _repair_unit_tests(
-            pass_config, graph, node, max_retries=pass_config.max_retries
+            pass_config, graph, node, max_retries=pass_config.max_retries_for_node(node)
         )
 
     except CellExecutionError as e:

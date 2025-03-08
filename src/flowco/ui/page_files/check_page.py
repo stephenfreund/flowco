@@ -1,11 +1,13 @@
 import textwrap
+from typing import List
 import pandas as pd
 import streamlit as st
 from flowco.builder.assertions import suggest_assertions
 from flowco.builder.build import BuildEngine
-from flowco.dataflow.dfg import Node
+from flowco.dataflow.dfg import Node, NodeMessage
 from flowco.dataflow.phase import Phase
 from flowco.ui.page_files.build_page import BuildButton, BuildPage
+from flowco.ui.ui_builder import Builder
 from flowco.ui.ui_page import UIPage
 from flowco.ui.ui_util import (
     set_session_state,
@@ -46,6 +48,14 @@ class CheckPage(BuildPage):
             icon=":material/build:",
             action="Run",
             passes_key="repair-checks-passes",
+        )
+
+    def suggest_button(self) -> BuildButton:
+        return BuildButton(
+            label="Suggest Checks",
+            icon=":material/format_list_bulleted:",
+            action="Run",
+            passes_key="suggest-assertions-passes",
         )
 
     def build_target_phase(self) -> Phase:
@@ -215,7 +225,7 @@ class CheckPage(BuildPage):
         ]
         if failed_assertions:
             items = "\n".join([f"* {x}" for x in failed_assertions])
-            st.error(f"**These nodes have failing assertions:**\n{items}")
+            st.error(f"**These nodes have failing checks:**\n{items}")
 
         warnings = [
             node.pill
@@ -224,7 +234,7 @@ class CheckPage(BuildPage):
         ]
         if warnings:
             items = "\n".join([f"* {x}" for x in warnings])
-            st.warning(f"**These nodes have assertion warnings:**\n{items}")
+            st.warning(f"**These nodes have check warnings:**\n{items}")
 
         nodes_with_no_assertions = [
             node.pill for node in ui_page.dfg().nodes if not node.assertions
@@ -233,6 +243,28 @@ class CheckPage(BuildPage):
 
         if nodes_with_no_assertions:
             items = "\n".join([f"* {x}" for x in nodes_with_no_assertions])
-            st.info(f"**These nodes have no assertions:**\n{items}")
+            st.info(f"**These nodes have no checks:**\n{items}")
+
+            suggest_button = self.suggest_button()
+            if st.button(
+                suggest_button.label,
+                icon=suggest_button.icon,
+                disabled=st.session_state.ama_responding
+                or st.session_state.builder is not None,
+                help=("Suggest tests for nodes that have none. "),
+            ):
+                if st.session_state.builder is None:
+                    st.session_state.builder = Builder(
+                        ui_page.page(),
+                        [x.id for x in ui_page.dfg().nodes if not x.assertions],
+                        target_phase=Phase.assertions_code,
+                        passes_key="suggest-assertions-passes",
+                        force=True,
+                        repair=False,
+                    )
+                    st.session_state.builder_progress = 0
 
         self.help_details()
+
+    def filter_messages(self, node: Node) -> List[NodeMessage]:
+        return [x for x in node.messages if x.phase <= Phase.assertions_checked]

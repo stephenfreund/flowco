@@ -1,11 +1,12 @@
 import textwrap
+from typing import List
 import pandas as pd
 import streamlit as st
 
 # from flowco.builder.unit_tests import suggest_unit_tests
 from flowco.builder.build import BuildEngine
 from flowco.builder.unit_tests import suggest_unit_tests
-from flowco.dataflow.dfg import Node
+from flowco.dataflow.dfg import Node, NodeMessage
 from flowco.dataflow.phase import Phase
 from flowco.dataflow.tests import UnitTest
 from flowco.ui.page_files.build_page import BuildButton, BuildPage
@@ -292,10 +293,9 @@ class TestPage(BuildPage):
             if st.button(
                 suggest_button.label,
                 icon=suggest_button.icon,
-                disabled=st.session_state.ama_responding or st.session_state.builder is not None,
-                help=(
-                    "Suggest tests for nodes that have none. "
-                ),
+                disabled=st.session_state.ama_responding
+                or st.session_state.builder is not None,
+                help=("Suggest tests for nodes that have none. "),
             ):
                 if st.session_state.builder is None:
                     st.session_state.builder = Builder(
@@ -307,7 +307,12 @@ class TestPage(BuildPage):
                         repair=False,
                     )
                     st.session_state.builder_progress = 0
-                
-
 
         self.help_details()
+
+    def filter_messages(self, node: Node) -> List[NodeMessage]:
+        return [
+            x
+            for x in node.messages
+            if x.phase <= Phase.run_checked or x.phase >= Phase.unit_tests_code
+        ]
