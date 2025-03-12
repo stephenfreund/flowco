@@ -1028,7 +1028,7 @@ class DataFlowGraph(GraphLike, BaseModel):
     ) -> "DataFlowGraph":
         new_graph = self.lower_phase_with_successors(
             node_ids,
-            Phase(target_phase - 1) if target_phase is not None else Phase.clean,
+            Phase(max(target_phase - 1, 0)) if target_phase is not None else Phase.clean,
         )
         return new_graph
 

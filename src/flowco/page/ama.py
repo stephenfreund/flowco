@@ -144,6 +144,8 @@ class AskMeAnything:
                     content=None,
                 )
 
+
+
     def update_node(
         self,
         id: Annotated[str, "The id of the node to update"],
@@ -705,6 +707,7 @@ class AskMeAnything:
                 "requirements",
                 "function_return_type",
                 "code",
+                "messages"
             ]
 
             self.assistant.add_text("user", "Here is the current data flow graph:")
