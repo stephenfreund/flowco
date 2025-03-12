@@ -1,3 +1,5 @@
+from copy import deepcopy
+from dataclasses import dataclass
 import inspect
 import os
 import subprocess
@@ -134,6 +136,14 @@ class ToolDefinition(BaseModel):
     function_schema: ChatCompletionToolParam
     function: Callable[..., ToolCallResult]
 
+T = TypeVar("T", bound=BaseModel)
+
+
+@dataclass 
+class NthCompletion:
+    t: T
+    assistant: "Assistant"
+    
 
 class AssistantLogger:
     def log(self, message: str) -> None:
@@ -552,9 +562,103 @@ class Assistant:
                     for tool_call in choice.message.tool_calls:
                         _ = self.make_call(tool_call)
 
+    def model_k_completions(self, response_model: Type[T], k: int = 1) -> List[T]:
+        with self.logger:
+            while True:
+                try:
+                    client = self.client
+                    completion = client.beta.chat.completions.parse(
+                        model=self.model.name,
+                        messages=self.messages,
+                        response_format=response_model,  # type: ignore
+                        n=1,
+                        **self._args(),
+                    )
+                except openai.OpenAIError as e:
+                    self.logger.error(str(e))
+                    for i, m in enumerate(self.messages):
+                        self.logger.error(f"Message {i}:")
+                        self.logger.error(json.dumps(m, indent=2))
+                    raise (e)
+
+                # cost
+                self.compute_and_log_cost(completion.usage)
+
+                # message
+                choice: ParsedChoice = completion.choices[0]
+                message: ParsedChatCompletionMessage = choice.message
+                assert message is not None, "Message is None"
+
+                self._add_completion(message)
+
+                # stop or do tool calls
+                assert choice.finish_reason in [
+                    "stop",
+                    "tool_calls",
+                ], f"Unexpected finish reason: {choice.finish_reason}"
+                if choice.finish_reason == "stop":
+                    parsed = completion.choices[0].message.parsed
+                    assert parsed is not None, "parsed is None"
+                    return parsed
+                else:
+                    assert choice.message.tool_calls, "No tool calls"
+                    for tool_call in choice.message.tool_calls:
+                        _ = self.make_call(tool_call)
+
+
     def replace_placeholders_with_base64_images(self, markdown: str) -> str:
         for key, image_url in self.cached_images.items():
             markdown = markdown.replace(
                 f"![tool_result]({key}.png)", f'\n\n<img src="{image_url}"/>\n\n'
             )
         return markdown
+
+    def model_n_completions(self, response_model: Type[T], n: int = 1) -> List[NthCompletion]:
+        with self.logger:
+            while True:
+                try:
+                    client = self.client
+                    completion = client.beta.chat.completions.parse(
+                        model=self.model.name,
+                        messages=self.messages,
+                        response_format=response_model,  # type: ignore
+                        n=n,
+                        **self._args(),
+                    )
+                except openai.OpenAIError as e:
+                    self.logger.error(str(e))
+                    for i, m in enumerate(self.messages):
+                        self.logger.error(f"Message {i}:")
+                        self.logger.error(json.dumps(m, indent=2))
+                    raise (e)
+
+                # cost
+                self.compute_and_log_cost(completion.usage)
+
+                results = []
+                print(len(completion.choices))
+                for choice in completion.choices:
+                    parsed_choice: ParsedChoice = choice
+                    message: ParsedChatCompletionMessage = parsed_choice.message
+                    assert message is not None, "Message is None"
+
+                    # make new assistant, preserving all fields and extending the messages to have message
+                    assistant = Assistant(
+                        model=self.model.name,
+                        functions=self.functions,
+                        logger=self.logger,
+                        temperature=self.temperature,
+                        max_tokens=self.max_tokens,
+                    )
+                    assistant.messages = deepcopy(self.messages)
+                    assistant._add_completion(message)
+
+                    # stop or do tool calls
+                    assert choice.finish_reason in [
+                        "stop",
+                    ], f"Unexpected finish reason: {choice.finish_reason}"
+
+                    parsed = parsed_choice.message.parsed
+                    assert parsed is not None, "parsed is None"
+                    results.append(NthCompletion(t=parsed, assistant=assistant))
+                return results
