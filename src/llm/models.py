@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from multiprocessing import Value
 from typing import List
 from openai.types.completion_usage import CompletionUsage
 
@@ -132,4 +133,10 @@ def supported_models() -> List[str]:
 
 
 def get_model(model_name: str) -> Model:
-    return _models[model_name]
+    by_name = _models.get(model_name, None)
+    if by_name is not None:
+        return by_name
+    for model in _models.values():
+        if model.name == model_name:
+            return model
+    raise ValueError(f"Model {model_name} not found")
