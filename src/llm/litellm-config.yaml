@@ -1,4 +1,8 @@
 model_list:
+  - model_name: claude-3-7-sonnet
+    litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
+      model: claude-3-7-sonnet-20250219 ### MODEL NAME sent to `litellm.completion()` ###
+      api_key: "os.environ/ANTHROPIC_API_KEY" # does os.getenv("AZURE_API_KEY_EU")
   - model_name: claude-3-sonnet ### RECEIVED MODEL NAME ###
     litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
       model: claude-3-5-sonnet-20241022 ### MODEL NAME sent to `litellm.completion()` ###

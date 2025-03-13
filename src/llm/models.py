@@ -102,6 +102,17 @@ _models = {
         prompt_token_rate=3 / 10**6,
         cached_token_rate=3 / 10**6,
     ),
+    "claude-3-7-sonnet": Model(
+        name="claude-3-7-sonnet",
+        use_proxy=True,
+        supports_vision=True,
+        supports_audio=False,
+        supports_temperature=False,
+        supports_prediction=False,
+        completion_token_rate=15 / 10**6,
+        prompt_token_rate=3 / 10**6,
+        cached_token_rate=3 / 10**6,
+    ),
     "claude-3-haiku": Model(
         name="claude-3-haiku",
         use_proxy=True,

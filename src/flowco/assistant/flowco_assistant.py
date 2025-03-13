@@ -42,7 +42,7 @@ def flowco_assistant(
     assistant.add_text("system", config.get_prompt("system-prompt"))
     if prompt_key:
         prompt = config.get_prompt(prompt_key, **prompt_substitutions)
-        assistant.add_text("system", prompt)
+        assistant.add_text("assistant", prompt)
     return assistant
 
 
