@@ -95,13 +95,16 @@ class PythonShell:
         # Define the import statements to be executed once
         import_code = textwrap.dedent(
             """\
-            import pandas as pd
             import numpy as np
-            from numpy import nan
+            import pandas as pd
             import matplotlib.pyplot as plt
             import seaborn as sns
-            import sklearn
+            import statsmodels
+            import statsmodels.api as sm
             import scipy
+            import scipy.stats as stats
+            import sklearn
+            from numpy import nan
             import pickle
             import base64
             from io import StringIO                          

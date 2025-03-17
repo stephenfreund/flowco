@@ -111,7 +111,7 @@ def to_base_model(func: Callable) -> Type[BaseModel]:
             fields[name] = (ann, default)
 
     # Create a model whose name is based on the function name.
-    model_name = func.__name__.title() + "Params"
+    model_name = func.__name__
     return create_model(model_name, **fields, __module__=func.__module__)
 
 
@@ -136,14 +136,15 @@ class ToolDefinition(BaseModel):
     function_schema: ChatCompletionToolParam
     function: Callable[..., ToolCallResult]
 
+
 T = TypeVar("T", bound=BaseModel)
 
 
-@dataclass 
+@dataclass
 class NthCompletion:
     t: T
     assistant: "Assistant"
-    
+
 
 class AssistantLogger:
     def log(self, message: str) -> None:
@@ -247,11 +248,10 @@ class Assistant:
         )
 
     def add_json(self, role: str, content: Dict[str, Any]) -> None:
+        text = json.dumps(content, indent=2)
         self.add_content_parts(
             role,
-            ChatCompletionContentPartTextParam(
-                type="text", text=json.dumps(content, indent=2)
-            ),
+            ChatCompletionContentPartTextParam(type="text", text=text),
         )
 
     def add_audio(
@@ -384,6 +384,13 @@ class Assistant:
 
         T = role_to_param.get(role)
         assert T is not None, f"Unknown role: {role}"
+
+        # Remove any text message that is empty
+        content = [
+            message
+            for message in content
+            if not (message["type"] == "text" and not message["text"])
+        ]
 
         self.append(
             T(
@@ -605,7 +612,6 @@ class Assistant:
                     for tool_call in choice.message.tool_calls:
                         _ = self.make_call(tool_call)
 
-
     def replace_placeholders_with_base64_images(self, markdown: str) -> str:
         for key, image_url in self.cached_images.items():
             markdown = markdown.replace(
@@ -613,7 +619,9 @@ class Assistant:
             )
         return markdown
 
-    def model_n_completions(self, response_model: Type[T], n: int = 1) -> List[NthCompletion]:
+    def model_n_completions(
+        self, response_model: Type[T], n: int = 1
+    ) -> List[NthCompletion]:
         with self.logger:
             while True:
                 try:

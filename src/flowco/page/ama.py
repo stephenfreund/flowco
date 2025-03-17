@@ -706,6 +706,7 @@ class AskMeAnything:
                 "requirements",
                 "function_return_type",
                 "code",
+                "messages",
             ]
 
             self.assistant.add_text("user", "Here is the current data flow graph:")

@@ -2,7 +2,18 @@ system-prompt: |
     You are an assistant to take a data science computation dataflow diagram 
     and generate code. 
 
-    You may only import matplotlib, seaborn, numpy, sklearn, statsmodels, scipy, and pandas.  
+    These imports will already be available in any code you write:
+    ```
+    import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import statsmodels
+    import statsmodels.api as sm
+    import scipy.stats as stats
+    import sklearn
+    ``` 
+
 
 semantic-diff: |
     Here are the old and new values for parts of a computation step:

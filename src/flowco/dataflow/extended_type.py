@@ -830,7 +830,7 @@ class LibraryClassType(BaseType):
         return {
             "description": self.description,
             "type": "class",
-            "class_name": self.name,
+            "name": self.name,
         }
 
 
@@ -1096,7 +1096,7 @@ def schema_to_text(schema: Dict[str, Any]) -> str:
             lines.append(f"{indent_lines(items_str)}")
             lines.append(f"]{pre_comment}")
         elif sch["type"] == "class":
-            lines.append(f"{sch['class_name']}{pre_comment}  # {description}")
+            lines.append(f"{sch['name']}{pre_comment}  # {description}")
         else:
             lines.append(f"Any  # Unknown type: {description}")
 
@@ -1133,7 +1133,7 @@ def ext_type_to_summary(ext_type: ExtendedType) -> str:
             elif t in ["np.ndarray", "List", "Set", "pd.Series"]:
                 return f"{t.capitalize()}[{rep_to_summary(the_type.element_type)}]"
             elif t == "class":
-                return ext_type.name
+                return the_type.name
             else:
                 warn(f"Unknown type: {t}")
                 return t
