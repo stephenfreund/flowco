@@ -18,48 +18,51 @@ def settings(ui_page: UIPage):
 
     supported_models = models.supported_models()
     current_model = (
-        supported_models.index(config.model) if config.model in supported_models else 0
+        supported_models.index(config().model)
+        if config().model in supported_models
+        else 0
     )
     model = st.selectbox("LLM model", supported_models, current_model)
     if model != None:
-        config.model = model
+        config().model = model
 
-    config.zero_temp = st.toggle("Zero temperature", value=config.zero_temp)
+    config().zero_temp = st.toggle("Zero temperature", value=config().zero_temp)
 
-    config.debug = st.toggle("Show llm messages [debugging]", value=config.debug)
+    config().debug = st.toggle("Show llm messages [debugging]", value=config().debug)
 
-    config.retries = int(st.number_input("Repair retries", value=config.retries))
+    config().retries = int(st.number_input("Repair retries", value=config().retries))
 
     if st.button("Reset Demo Files"):
         with st.spinner("Resetting demo files"):
             make_default_files()
 
     with st.expander("Experimental Features"):
-        config.x_no_right_panel = st.toggle(
-            "Hide right panel", value=config.x_no_right_panel
-        )
-        
-        config.x_no_image_cache = st.toggle(
-            "Don't cache images", value=config.x_no_image_cache
+        config().x_no_right_panel = st.toggle(
+            "Hide right panel", value=config().x_no_right_panel
         )
 
-        config.x_lock_stops_updates = st.toggle(
+        config().x_no_image_cache = st.toggle(
+            "Don't cache images", value=config().x_no_image_cache
+        )
+
+        config().x_lock_stops_updates = st.toggle(
             "Use the LLM to check for precondition changes",
-            value=config.x_lock_stops_updates,
+            value=config().x_lock_stops_updates,
         )
-        config.x_no_dfg_image_in_prompt = st.toggle(
-            "Dont' send dataflow image in prompt", value=config.x_no_dfg_image_in_prompt
+        config().x_no_dfg_image_in_prompt = st.toggle(
+            "Dont' send dataflow image in prompt",
+            value=config().x_no_dfg_image_in_prompt,
         )
-        config.x_trust_ama = st.toggle(
-            "Trust AMA to provide correct completions", value=config.x_trust_ama
+        config().x_trust_ama = st.toggle(
+            "Trust AMA to provide correct completions", value=config().x_trust_ama
         )
-        config.x_algorithm_phase = st.toggle(
-            "Include algorithm phase", value=config.x_algorithm_phase
+        config().x_algorithm_phase = st.toggle(
+            "Include algorithm phase", value=config().x_algorithm_phase
         )
 
-        builders = config.get_build_passes_keys()
-        config.builder = st.selectbox(
-            "Builder", builders, index=builders.index(config.builder)
+        builders = config().get_build_passes_keys()
+        config().builder = st.selectbox(
+            "Builder", builders, index=builders.index(config().builder)
         )
 
     if st.button("Done"):

@@ -89,7 +89,7 @@ def requirements_assistant(
         prompt = "postconditions-for-plot"
 
     assistant = flowco_assistant("system-prompt")
-    prompt_text = config.get_prompt(
+    prompt_text = config().get_prompt(
         prompt_key=prompt,
         preconditions=json.dumps(node.preconditions),
         function_return_var=node.function_result_var,
@@ -271,7 +271,7 @@ def algorithm(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node
     assert node.requirements is not None, "Requirements must be defined."
     assert node.description is not None, "Description must be defined."
 
-    if config.x_algorithm_phase:
+    if config().x_algorithm_phase:
         if graph.successors(node.id):
             assert node.function_return_type is not None, "Return type must be defined."
             assert (
@@ -303,7 +303,7 @@ def algorithm(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node
 
 def algorithm_assistant(node, diff_instructions):
 
-    assert config.x_algorithm_phase, "Algorithm phase must be enabled."
+    assert config().x_algorithm_phase, "Algorithm phase must be enabled."
 
     assistant = flowco_assistant(
         prompt_key="algorithm",
@@ -337,7 +337,7 @@ def algorithm_assistant(node, diff_instructions):
 
 def algorithm_completion_model():
 
-    assert config.x_algorithm_phase, "Algorithm phase must be enabled."
+    assert config().x_algorithm_phase, "Algorithm phase must be enabled."
 
     completion_model = node_completion_model("algorithm")
     return completion_model
@@ -411,7 +411,7 @@ def compile(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
         assert node.requirements is not None, "Requirements must be defined."
         assert node.description is not None, "Description must be defined."
 
-        if config.x_algorithm_phase:
+        if config().x_algorithm_phase:
             assert node.algorithm is not None, "Algorithm must be defined."
 
         # if graph.successors(node.id):
@@ -478,7 +478,7 @@ def code_assistant(node: Node, diff_instructions):
         # "function_result_var",
     ]
 
-    # if config.x_algorithm_phase:
+    # if config().x_algorithm_phase:
     #     node_fields.append("algorithm")
 
     assistant.add_text(

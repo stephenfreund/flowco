@@ -244,7 +244,7 @@ if __name__ == "__main__":
         editor.unit_test = editor.unit_test.update(
             requirement="Only 'fortis' finches in output"
         )
-        config.debug = True
+        config().debug = True
         editor.refresh()
 
         # print()
@@ -289,7 +289,7 @@ if __name__ == "__main__":
             type="pd.DataFrame[{'species': 'str', 'Beak length, mm': 'float', 'Beak depth, mm': 'float'}]"
         )
 
-        config.model = "gpt-4o"
+        config().model = "gpt-4o"
         assistant = Assistant(
             "unit-test-input", preconditions=requirements, type=field_type
         )
@@ -340,7 +340,7 @@ if __name__ == "__main__":
             },
         }
 
-        config.model = "gpt-4o"
+        config().model = "gpt-4o"
         assistant = Assistant("unit-test-inputs", requirements=requirements)
 
         class Result(BaseModel):

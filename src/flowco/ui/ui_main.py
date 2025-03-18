@@ -7,6 +7,7 @@ from flowco.ui.ui_init import st_init
 from flowco.ui.ui_page import UIPage, set_ui_page
 from flowco.ui.ui_st_pages import st_pages
 from flowco.ui.ui_util import zip_bug
+from flowco.util.config import Config
 from flowco.util.files import setup_flowco_files
 import streamlit as st
 
@@ -22,17 +23,18 @@ def init_service():
         global session
         session = StreamlitSession()
 
-        st.session_state.args = parse_args()
+        config, args = parse_args()
 
         # if st.session_state.args.page is a directory...
-        if os.path.isdir(st.session_state.args.page):
-            page_path = os.path.abspath(st.session_state.args.page)
+        if os.path.isdir(args.page):
+            page_path = os.path.abspath(args.page)
             page_file = None
         else:
-            page_path = os.path.abspath(os.path.dirname(st.session_state.args.page))
-            page_file = os.path.basename(st.session_state.args.page)
+            page_path = os.path.abspath(os.path.dirname(args.page))
+            page_file = os.path.basename(args.page)
 
         session.set(
+            config=config,
             output=Output(),
             costs=CostTracker(),
             shells=PythonShells(),
@@ -69,11 +71,13 @@ except Exception as e:
     except Exception as e2:
         print("Error zipping bug report", e2)
     print("Restarting Session Components...")
-    if os.path.isdir(st.session_state.args.page):
-        page_path = os.path.abspath(st.session_state.args.page)
+    config, args = parse_args()
+    if os.path.isdir(args.page):
+        page_path = os.path.abspath(args.page)
     else:
-        page_path = os.path.abspath(os.path.dirname(st.session_state.args.page))
+        page_path = os.path.abspath(os.path.dirname(args.page))
     session.set(
+        config=config,
         output=Output(),
         costs=CostTracker(),
         shells=PythonShells(),

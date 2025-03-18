@@ -293,7 +293,7 @@ def _repair_assertions(
         else:
             retries += 1
 
-        message(f"Repair attempt {retries} of {config.retries}")
+        message(f"Repair attempt {retries} of {config().retries}")
 
         assistant.add_text("user", f"Here is the current state of node {node.pill}:")
         assistant.add_json(
@@ -313,7 +313,7 @@ def _repair_assertions(
             ),
         )
 
-        repair_prompt = config.get_prompt(
+        repair_prompt = config().get_prompt(
             "repair-node-assertions",
             errors=[
                 x for x in node.assertion_outcomes.outcomes.values() if x is not None

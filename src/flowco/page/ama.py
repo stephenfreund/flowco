@@ -214,7 +214,7 @@ class AskMeAnything:
         if node.phase == Phase.clean:
             dfg = dfg.lower_phase_with_successors(node.id, Phase.clean)
 
-        if config.x_trust_ama:
+        if config().x_trust_ama:
             if "requirements" in mods or "return-type" in mods:
                 node = node.update(cache=node.cache.update(Phase.requirements, node))
                 node = node.update(phase=Phase.requirements)
@@ -222,7 +222,7 @@ class AskMeAnything:
                 node = node.update(cache=node.cache.update(Phase.code, node))
                 node = node.update(phase=Phase.code)
 
-        dfg = dfg.with_node(node)
+        dfg = dfg.with_node(node).reduce_phases_to_below_target(node.id, node.phase)
         self.page.update_dfg(dfg)
 
         mod_str = ", ".join(reversed(mods))
@@ -333,8 +333,7 @@ class AskMeAnything:
             kind=NodeKind.compute,
         )
 
-        dfg = dfg.with_node(node)
-
+        dfg = dfg.with_node(node).reduce_phases_to_below_target(node.id, node.phase)
         self.page.update_dfg(dfg)
 
         src_pills = ", ".join(dfg[x].pill for x in predecessors)
@@ -444,7 +443,7 @@ class AskMeAnything:
         )
         dfg = dfg.with_node(node)
 
-        self.page.update_dfg(dfg)
+        dfg = dfg.with_node(node).reduce_phases_to_below_target(node.id, node.phase)
 
         src_pills = ", ".join(dfg[x].pill for x in predecessors)
         if src_pills:
@@ -475,7 +474,9 @@ class AskMeAnything:
                     user_message=f"**:red[Node {id} does not exist]", content=None
                 )
 
-        dfg = dfg.with_new_edge(src_id, dst_id)
+        dfg = dfg.with_new_edge(src_id, dst_id).lower_phase_with_successors(
+            dst_id, Phase.clean
+        )
         self.page.update_dfg(dfg)
 
         # find id for that edge
@@ -542,7 +543,7 @@ class AskMeAnything:
         )
 
         dfg = update_dataflow_graph(dfg, dfg_update)
-        self.page.update_dfg(dfg)
+        dfg = dfg.with_node(node).reduce_phases_to_below_target(node.id, Phase.clean)
         return ToolCallResult(
             user_message=f"**:blue[I removed node {node.pill}]**", content=None
         )
@@ -598,7 +599,9 @@ class AskMeAnything:
         src_pill = dfg[edge_to_remove.src].pill
         dst_pill = dfg[edge_to_remove.dst].pill
 
-        dfg = update_dataflow_graph(dfg, dfg_update)
+        dfg = update_dataflow_graph(dfg, dfg_update).lower_phase_with_successors(
+            dst_pill, Phase.clean
+        )
         self.page.update_dfg(dfg)
 
         return ToolCallResult(
@@ -726,7 +729,7 @@ class AskMeAnything:
             )
 
         self.visible_messages += [VisibleMessage(role="user", content=prompt)]
-        self.assistant.add_text("system", config.get_prompt(system_prompt))
+        self.assistant.add_text("system", config().get_prompt(system_prompt))
         self.assistant.add_text("user", prompt)
 
         for x in self.assistant.stream():

@@ -400,7 +400,7 @@ class Assistant:
         )
 
     # def add_prompt_by_key(self, key: str, **prompt_substitutions) -> None:
-    #     self.add_text("system", config.get_prompt(key, **prompt_substitutions))
+    #     self.add_text("system", config().get_prompt(key, **prompt_substitutions))
 
     def compute_and_log_cost(self, usage: CompletionUsage | None) -> None:
         assert usage is not None, "No usage"

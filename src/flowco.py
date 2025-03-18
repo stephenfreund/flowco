@@ -1,3 +1,4 @@
+import argparse
 from flowco.session.session import StreamlitSession, session
 
 import os
@@ -10,22 +11,10 @@ from flowco.ui.authenticate import authenticate
 from flowco.ui.ui_page import UIPage, set_ui_page
 from flowco.ui.ui_st_pages import st_pages
 
-from flowco.util.config import config
+from flowco.util.config import Config
 from flowco.util.costs import CostTracker
 from flowco.util.files import get_flowco_files, setup_flowco_files
 from flowco.util.output import Output, log, log_timestamp
-
-
-@st.cache_data
-def parse_args():
-    parser = config.parser()
-    parser.add_argument(
-        "--user_email",
-        default=None,
-        type=str,
-    )
-    args = parser.parse_args(sys.argv[1:])
-    return args
 
 
 @st.cache_resource
@@ -34,8 +23,14 @@ def python_shells():
 
 
 if "user_email" not in st.session_state:
-    st.session_state.args = parse_args()
-    st.session_state.user_email = st.session_state.args.user_email
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--user_email",
+        default=None,
+        type=str,
+    )
+    args, _ = parser.parse_known_args(sys.argv[1:])
+    st.session_state.user_email = args.user_email
 
 
 def init_service():
@@ -47,6 +42,7 @@ def init_service():
         key = st.context.cookies["_streamlit_xsrf"].split("|")[-1]
 
         session.set(
+            config=Config(),
             output=Output(prefix=f"{key}_{st.session_state.user_email}"),
             costs=CostTracker(),
             shells=python_shells(),

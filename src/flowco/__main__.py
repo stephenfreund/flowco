@@ -20,7 +20,7 @@ from flowco.page.page import Page
 from flowco.pythonshell.shells import PythonShells
 from flowco.session.session import session
 from flowco.session.session_file_system import SessionFileSystem
-from flowco.util.config import AbstractionLevel, config
+from flowco.util.config import AbstractionLevel, Config, config
 from flowco.util.costs import CostTracker, call_count, total_cost
 from flowco.util.output import Output, error, log, log_timestamp, message, logger
 
@@ -158,7 +158,7 @@ class ExportCommand(Command):
         )
         self.parser.add_argument("--json", help="export as json", action="store_true")
 
-        if config.x_algorithm_phase:
+        if config().x_algorithm_phase:
             self.parser.add_argument(
                 "--algorithm", help="show algorithm", action="store_true"
             )
@@ -177,7 +177,7 @@ class ExportCommand(Command):
     def run(self, page, args):
         if args.code:
             level = AbstractionLevel.code
-        elif args.algorithm and config.x_algorithm_phase:
+        elif args.algorithm and config().x_algorithm_phase:
             level = AbstractionLevel.algorithm
         else:
             level = AbstractionLevel.spec
@@ -259,8 +259,8 @@ class BuildCommand(Command):
         "check": Phase.assertions_checked,
     }
 
-    if config.x_algorithm_phase:
-        build_target_to_phase["algorithm"] = Phase.algorithm
+    # if config().x_algorithm_phase:
+    #     build_target_to_phase["algorithm"] = Phase.algorithm
 
     always_force_to_run = ["run", "all", "check"]
 
@@ -293,7 +293,7 @@ class BuildCommand(Command):
                 Phase.assertions_code,
             ]
 
-            if config.x_algorithm_phase:
+            if config().x_algorithm_phase:
                 phases_with_cache.append(Phase.algorithm)
 
             if target_phase in phases_with_cache:
@@ -360,7 +360,7 @@ def create_commands(
 
 
 def main_core(page: Optional[Page], argv: List[str]):
-    parser = config.parser()
+    parser = config().parser()
 
     if page is None:
         parser.add_argument("page", type=str, help="Name of the page")
@@ -390,6 +390,7 @@ def main_core(page: Optional[Page], argv: List[str]):
 
 def main(page: Optional[Page] = None, argv: List[str] = sys.argv[1:]):
     session.set(
+        config=Config(),
         output=Output(),
         costs=CostTracker(),
         shells=PythonShells(),

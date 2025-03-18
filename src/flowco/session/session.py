@@ -1,6 +1,5 @@
 from __future__ import annotations
 import os
-import sys
 from threading import current_thread
 from typing import Type, TypeVar, cast
 from abc import ABC, abstractmethod

@@ -114,7 +114,7 @@ class AskMeAnythingNode:
             node = node.update(label=label, phase=Phase.clean)
             mods.append("label")
 
-        if config.x_trust_ama:
+        if config().x_trust_ama:
             if "requirements" in mods:
                 node = node.update(cache=node.cache.update(Phase.requirements, node))
                 node = node.update(phase=Phase.requirements)
@@ -197,7 +197,7 @@ class AskMeAnythingNode:
             node = node.update(label=label, phase=Phase.clean)
             mods.append("label")
 
-        if config.x_trust_ama:
+        if config().x_trust_ama:
             if "requirements" in mods:
                 node = node.update(cache=node.cache.update(Phase.requirements, node))
                 node = node.update(phase=Phase.requirements)
@@ -271,7 +271,7 @@ class AskMeAnythingNode:
             node = node.update(label=label, phase=Phase.clean)
             mods.append("label")
 
-        if config.x_trust_ama:
+        if config().x_trust_ama:
             if "requirements" in mods:
                 node = node.update(cache=node.cache.update(Phase.requirements, node))
                 node = node.update(phase=Phase.requirements)
@@ -338,7 +338,7 @@ class AskMeAnythingNode:
             node = node.update(label=label, phase=Phase.clean)
             mods.append("label")
 
-        if config.x_trust_ama:
+        if config().x_trust_ama:
             if "requirements" in mods:
                 node = node.update(cache=node.cache.update(Phase.requirements, node))
                 node = node.update(phase=Phase.requirements)

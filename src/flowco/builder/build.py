@@ -205,7 +205,7 @@ class BuildEngine:
         ]
         graph = graph.update(nodes=nodes)
 
-        if config.sequential:
+        if config().sequential:
             yield from self.build_with_worklist_sequential(
                 pass_config, graph, target_phase, node_ids, should_stop
             )
@@ -585,7 +585,7 @@ class BuildEngine:
     def get_builder(passes_key: str | None = None) -> "BuildEngine":
         with logger(f"Making build engine: {passes_key}"):
             builder = BuildEngine()
-            builder_passes = config.get_build_passes(passes_key=passes_key)
+            builder_passes = config().get_build_passes(passes_key=passes_key)
             for qual_name in builder_passes:
                 builder.add_pass(BuildEngine.import_function(qual_name))
             return builder
