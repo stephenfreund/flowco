@@ -58,7 +58,7 @@ def _repair_run(
     while True:
         try:
             result = session.get("shells", PythonShells).run_node(
-                pass_config().tables, graph, node
+                pass_config.tables, graph, node
             )
 
             node = node.update(result=result)
