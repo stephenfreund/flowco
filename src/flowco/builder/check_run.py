@@ -24,7 +24,7 @@ from flowco.util.text import strip_ansi
 )
 def check_run(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
 
-    max_retries = pass_config().max_retries
+    max_retries = pass_config.max_retries
     if node.is_locked:
         max_retries = 0
 
@@ -58,7 +58,7 @@ def _repair_run(
     while True:
         try:
             result = session.get("shells", PythonShells).run_node(
-                pass_config().tables, graph, node
+                pass_config.tables, graph, node
             )
 
             node = node.update(result=result)
