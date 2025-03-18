@@ -25,7 +25,7 @@ from flowco.util.text import strip_ansi
 @node_pass(required_phase=Phase.code, target_phase=Phase.runnable)
 def check_syntax(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
 
-    max_retries = pass_config.max_retries
+    max_retries = pass_config().max_retries
     if node.is_locked:
         max_retries = 0
 
@@ -33,7 +33,7 @@ def check_syntax(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> N
     if success:
         new_node = new_node.update(phase=Phase.runnable)
 
-    if config.diff:
+    if config().diff:
         diff = node.diff(new_node)
         if diff:
             message(diff)
@@ -164,7 +164,7 @@ def _repair_node_syntax(node: Node, max_retries: int) -> Tuple[Node, bool]:
                     False,
                 )
 
-            message(f"Repair attempt {retries} of {config.retries}")
+            message(f"Repair attempt {retries} of {config().retries}")
 
             initial_node = make_node_like(
                 node,
@@ -180,7 +180,7 @@ def _repair_node_syntax(node: Node, max_retries: int) -> Tuple[Node, bool]:
                 ),
             )
 
-            prompt = config.get_prompt(
+            prompt = config().get_prompt(
                 "repair-syntax",
                 node=initial_node.model_dump_json(indent=2),
                 signature=node.signature_str(),

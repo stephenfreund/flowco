@@ -21,7 +21,7 @@ from flowco.page.page import Page
 from flowco.pythonshell.shells import PythonShells
 from flowco.session.session import session
 from flowco.session.session_file_system import SessionFileSystem
-from flowco.util.config import AbstractionLevel, config
+from flowco.util.config import AbstractionLevel, Config, config
 from flowco.util.costs import CostTracker, call_count, total_cost
 from flowco.util.output import Output, error, log_timestamp, message, logger
 
@@ -100,7 +100,7 @@ class CreateCommand(Command):
         self.parser = subparsers.add_parser("create", help="Make Flowthon file")
         self.parser.add_argument("--flowco", type=str, help="Convert from flowco file")
 
-        if config.x_algorithm_phase:
+        if config().x_algorithm_phase:
             self.parser.add_argument(
                 "--algorithm", help="show algorithm", action="store_true"
             )
@@ -119,7 +119,7 @@ class CreateCommand(Command):
     def run(self, args):
         if args.code:
             level = AbstractionLevel.code
-        elif config.x_algorithm_phase and args.algorithm:
+        elif config().x_algorithm_phase and args.algorithm:
             level = AbstractionLevel.algorithm
         else:
             level = AbstractionLevel.spec
@@ -214,7 +214,7 @@ class RunCommand(Command):
 
             if any(x.code and "    ..." not in x.code for x in flowthon.nodes.values()):
                 level = AbstractionLevel.code
-            elif config.x_algorithm_phase and any(
+            elif config().x_algorithm_phase and any(
                 x.algorithm for x in flowthon.nodes.values()
             ):
                 level = AbstractionLevel.algorithm
@@ -304,7 +304,7 @@ class ToSourceCommand(Command):
 
         if any(x.code != None for x in flowthon.nodes.values()):
             level = AbstractionLevel.code
-        elif config.x_algorithm_phase and any(
+        elif config().x_algorithm_phase and any(
             x.algorithm != None for x in flowthon.nodes.values()
         ):
             level = AbstractionLevel.algorithm
@@ -353,7 +353,7 @@ class ToJsonCommand(Command):
 
         if any(x.code != None for x in flowthon.nodes.values()):
             level = AbstractionLevel.code
-        elif config.x_algorithm_phase and any(
+        elif config().x_algorithm_phase and any(
             x.algorithm != None for x in flowthon.nodes.values()
         ):
             level = AbstractionLevel.algorithm
@@ -392,7 +392,7 @@ def create_commands(
 
 
 def main_core(argv: List[str]):
-    parser = config.parser()
+    parser = config().parser()
 
     subparsers = parser.add_subparsers(dest="command", help="Sub-commands")
     subparsers.required = True  # Ensures that a subcommand is required
@@ -412,6 +412,7 @@ def main_core(argv: List[str]):
 
 def main(argv: List[str] = sys.argv[1:]):
     session.set(
+        config=Config(),
         output=Output(),
         costs=CostTracker(),
         shells=PythonShells(),

@@ -33,15 +33,15 @@ class FlowcoLogger(AssistantLogger):
 def flowco_assistant(
     prompt_key: str | None = None, **prompt_substitutions
 ) -> Assistant:
-    model = config.model
-    temperature = 0 if config.zero_temp else None
+    model = config().model
+    temperature = 0 if config().zero_temp else None
 
     assert "functions" not in prompt_substitutions, "functions is a reserved key"
 
     assistant = Assistant(model, logger=FlowcoLogger(), temperature=temperature)
-    assistant.add_text("system", config.get_prompt("system-prompt"))
+    assistant.add_text("system", config().get_prompt("system-prompt"))
     if prompt_key:
-        prompt = config.get_prompt(prompt_key, **prompt_substitutions)
+        prompt = config().get_prompt(prompt_key, **prompt_substitutions)
         assistant.add_text("system", prompt)
     return assistant
 
@@ -49,13 +49,13 @@ def flowco_assistant(
 def flowco_assistant_fast(
     prompt_key: str | None = None, **prompt_substitutions
 ) -> Assistant:
-    temperature = 0 if config.zero_temp else None
+    temperature = 0 if config().zero_temp else None
 
     assert "functions" not in prompt_substitutions, "functions is a reserved key"
 
     assistant = Assistant("gpt-4o-mini", logger=FlowcoLogger(), temperature=temperature)
     if prompt_key:
-        prompt = config.get_prompt(prompt_key, **prompt_substitutions)
+        prompt = config().get_prompt(prompt_key, **prompt_substitutions)
         assistant.add_text("system", prompt)
     return assistant
 

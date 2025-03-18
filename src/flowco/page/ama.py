@@ -144,8 +144,6 @@ class AskMeAnything:
                     content=None,
                 )
 
-
-
     def update_node(
         self,
         id: Annotated[str, "The id of the node to update"],
@@ -216,7 +214,7 @@ class AskMeAnything:
         if node.phase == Phase.clean:
             dfg = dfg.lower_phase_with_successors(node.id, Phase.clean)
 
-        if config.x_trust_ama:
+        if config().x_trust_ama:
             if "requirements" in mods or "return-type" in mods:
                 node = node.update(cache=node.cache.update(Phase.requirements, node))
                 node = node.update(phase=Phase.requirements)
@@ -476,7 +474,9 @@ class AskMeAnything:
                     user_message=f"**:red[Node {id} does not exist]", content=None
                 )
 
-        dfg = dfg.with_new_edge(src_id, dst_id).lower_phase_with_successors(dst_id, Phase.clean)
+        dfg = dfg.with_new_edge(src_id, dst_id).lower_phase_with_successors(
+            dst_id, Phase.clean
+        )
         self.page.update_dfg(dfg)
 
         # find id for that edge
@@ -599,7 +599,9 @@ class AskMeAnything:
         src_pill = dfg[edge_to_remove.src].pill
         dst_pill = dfg[edge_to_remove.dst].pill
 
-        dfg = update_dataflow_graph(dfg, dfg_update).lower_phase_with_successors(dst_pill, Phase.clean)
+        dfg = update_dataflow_graph(dfg, dfg_update).lower_phase_with_successors(
+            dst_pill, Phase.clean
+        )
         self.page.update_dfg(dfg)
 
         return ToolCallResult(
@@ -707,7 +709,7 @@ class AskMeAnything:
                 "requirements",
                 "function_return_type",
                 "code",
-                "messages"
+                "messages",
             ]
 
             self.assistant.add_text("user", "Here is the current data flow graph:")
@@ -727,7 +729,7 @@ class AskMeAnything:
             )
 
         self.visible_messages += [VisibleMessage(role="user", content=prompt)]
-        self.assistant.add_text("system", config.get_prompt(system_prompt))
+        self.assistant.add_text("system", config().get_prompt(system_prompt))
         self.assistant.add_text("user", prompt)
 
         for x in self.assistant.stream():

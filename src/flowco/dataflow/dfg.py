@@ -1028,7 +1028,11 @@ class DataFlowGraph(GraphLike, BaseModel):
     ) -> "DataFlowGraph":
         new_graph = self.lower_phase_with_successors(
             node_ids,
-            Phase(max(target_phase - 1, 0)) if target_phase is not None else Phase.clean,
+            (
+                Phase(max(target_phase - 1, 0))
+                if target_phase is not None
+                else Phase.clean
+            ),
         )
         return new_graph
 
@@ -1070,7 +1074,7 @@ class DataFlowGraph(GraphLike, BaseModel):
 
     def to_image_url(self) -> str | None:
 
-        if not config.x_no_dfg_image_in_prompt:
+        if not config().x_no_dfg_image_in_prompt:
             if self.image is None:
                 with logger("Generating image"):
                     self.image = dataflow_graph_to_image(self, show_outputs=False)

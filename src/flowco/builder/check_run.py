@@ -24,7 +24,7 @@ from flowco.util.text import strip_ansi
 )
 def check_run(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
 
-    max_retries = pass_config.max_retries
+    max_retries = pass_config().max_retries
     if node.is_locked:
         max_retries = 0
 
@@ -58,7 +58,7 @@ def _repair_run(
     while True:
         try:
             result = session.get("shells", PythonShells).run_node(
-                pass_config.tables, graph, node
+                pass_config().tables, graph, node
             )
 
             node = node.update(result=result)
@@ -87,7 +87,7 @@ def _repair_run(
             if retries > max_retries:
                 raise stashed_error
 
-            message(f"Repair attempt {retries} of {config.retries}")
+            message(f"Repair attempt {retries} of {config().retries}")
 
             node_fields = [
                 "description",
@@ -98,12 +98,12 @@ def _repair_run(
                 "code",
             ]
 
-            if config.x_algorithm_phase:
+            if config().x_algorithm_phase:
                 node_fields.append("algorithm")
 
             initial_node = make_node_like(node, node_like_model(node_fields))
 
-            repair_prompt = config.get_prompt(
+            repair_prompt = config().get_prompt(
                 "repair-node-run",
                 error=strip_ansi(str(e)),
                 signature=node.signature_str(),

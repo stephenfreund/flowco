@@ -90,12 +90,12 @@
 #         nb = nbf.v4.new_notebook()
 
 #         # Add markdown cell with graph description
-#         dfg = self.config.dfg
+#         dfg = self.config().dfg
 #         if dfg.description:
 #             md_cell = nbf.v4.new_markdown_cell(dfg.description)
 #             nb.cells.append(md_cell)
 
-#         import_lines = "\n".join(self.imports) + "\n" + config.api.imports_code()
+#         import_lines = "\n".join(self.imports) + "\n" + config().api.imports_code()
 #         # Disable all warnings
 #         nb.cells.append(
 #             nbf.v4.new_code_cell(
@@ -104,7 +104,7 @@
 #         )
 
 #         # With modules, we need to add globals for the input parameters
-#         for input in config.api.inputs:
+#         for input in config().api.inputs:
 #             code = f"{input.name} = {input.default_value}"
 #             nb.cells.append(nbf.v4.new_code_cell(code))
 
@@ -121,7 +121,7 @@
 #         self.notebook = nb
 #         self.add_json_encoding()
 
-#         self.file_name = self.config.file_name
+#         self.file_name = self.config().file_name
 #         self.write()
 
 #     def write(self):
@@ -150,7 +150,7 @@
 #         return outputs
 
 #     def __iter__(self):
-#         with Sandbox(self.config.data_files) as sandbox:
+#         with Sandbox(self.config().data_files) as sandbox:
 #             client = NotebookClient(self.notebook, kernel_name="python3")
 #             with client.setup_kernel(cwd=sandbox.get_sandbox_path()):
 #                 for i, cell in enumerate(self.notebook.cells):
@@ -228,7 +228,7 @@
 
 #         # Build map from node id to the cell so we can extract outputs later.
 #         self.node_outputs = []
-#         driver = self.config.dfg.make_driver()
+#         driver = self.config().dfg.make_driver()
 #         for call in driver:
 #             node_id = call.node_id
 #             code = f"{call.result} = {call.function_name}({','.join(call.arguments)})\nencode({call.result})"

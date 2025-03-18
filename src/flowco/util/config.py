@@ -8,6 +8,8 @@ import yaml
 from typing import TypeVar
 from pydantic import BaseModel
 
+from flowco.session.session import session
+
 
 class AbstractionLevel(StrEnum):
     # label = "Graph"
@@ -79,7 +81,7 @@ class Config:
         )
         self.x_trust_ama = _flowco_get_env("x_trust_ama", "1") != "0"
         self.x_algorithm_phase = _flowco_get_env("a_algorithm_phase", "0") != "0"
-        self.x_no_image_cache = _flowco_get_env("x_no_image_cache", "0") != "0" 
+        self.x_no_image_cache = _flowco_get_env("x_no_image_cache", "0") != "0"
         self.x_no_right_panel = _flowco_get_env("x_no_right_panel", "0") != "0"
 
     def get_x_options(self) -> Dict[str, Any]:
@@ -330,13 +332,15 @@ class StoreTrueConfigAction(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-config = Config()
+def config() -> Config:
+    return session.get("config", Config)
+
 
 # Example usage:
 if __name__ == "__main__":
-    config = Config()
-    parser = config.parser()
+    c = Config()
+    parser = c.parser()
     args = parser.parse_args()
 
-    print(f"Config: {vars(config)}")
+    print(f"Config: {vars(c)}")
     print(f"Args: {vars(args)}")

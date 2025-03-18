@@ -284,7 +284,7 @@
 #             image_exists = any(message["type"] == "image_url" for message in content)
 #             if image_exists:
 #                 warn(
-#                     f"Skipping image message because model {config.model} does not support vision."
+#                     f"Skipping image message because model {config().model} does not support vision."
 #                 )
 
 #             content = [
@@ -310,7 +310,7 @@
 #         )
 
 #     def add_prompt_by_key(self, key: str, **prompt_substitutions) -> None:
-#         self.add_text("system", config.get_prompt(key, **prompt_substitutions))
+#         self.add_text("system", config().get_prompt(key, **prompt_substitutions))
 
 #     def compute_and_log_cost(self, usage: CompletionUsage | None) -> None:
 #         assert usage is not None, "No usage"
@@ -334,7 +334,7 @@
 #     def _args(self) -> Dict[str, Any]:
 #         args = {}
 #         if self.model.supports_temperature:
-#             args["temperature"] = 0 if config.zero_temp else None
+#             args["temperature"] = 0 if config().zero_temp else None
 
 #         if len(self.functions) > 0:
 #             args["tools"] = [tool.function_schema for tool in self.functions.values()]

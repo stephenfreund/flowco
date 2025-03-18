@@ -116,7 +116,7 @@ class Output(threading.local):
     ###
 
     def timing_context(self, key):
-        if config.quiet:
+        if config().quiet:
             return self.NoOpContextManager()
         else:
             return self.OutputContext(
@@ -270,12 +270,12 @@ class Output(threading.local):
 
     def log(self, *args):
         with self.lock:
-            if not config.quiet:
+            if not config().quiet:
                 self._print("cyan", args, start="[", end="]")
 
     def debug(self, *args):
         with self.lock:
-            if config.debug:
+            if config().debug:
                 self._print("cyan", args, start="[", end="]")
 
     def message(self, *args):

@@ -319,7 +319,7 @@ class Page(BaseModel, extra="allow"):
 
         return PassConfig(
             tables=GlobalTables.from_dfg(self.dfg),
-            max_retries=config.retries if repair else 0,
+            max_retries=config().retries if repair else 0,
         )
 
     @atomic_method

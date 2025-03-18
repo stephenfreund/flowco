@@ -1,6 +1,7 @@
 import streamlit as st
 
 from flowco.ui.mx_diagram import UIImageCache
+from flowco.util.config import AbstractionLevel
 
 css = """
 
@@ -404,8 +405,6 @@ def st_init(page_config=True):
     if "init" not in st.session_state:
         import uuid
 
-        from flowco.util.config import config
-
         st.session_state.init = True
         st.session_state.last_sequence_number = -1
 
@@ -425,7 +424,7 @@ def st_init(page_config=True):
 
         st.session_state.image_cache = UIImageCache()
 
-        st.session_state.abstraction_level = config.abstraction_level
+        st.session_state.abstraction_level = AbstractionLevel.spec
 
         st.session_state.wide_right_panel = False
         st.session_state.pinned_nodes = []
