@@ -81,7 +81,7 @@ class CheckPage(BuildPage):
 
         @st.dialog(f"Output Checks for {node.pill}", width="large")
         def for_real(node_id: str):
-                
+
             def make_suggestions():
                 st.session_state.make_suggestions = True
 
@@ -99,7 +99,9 @@ class CheckPage(BuildPage):
                     )
                     dfg = st.session_state.tmp_dfg
                     node = dfg[node_id]
-                    dfg = dfg.reduce_phases_to_below_target(node.id, Phase.assertions_code)
+                    dfg = dfg.reduce_phases_to_below_target(
+                        node.id, Phase.assertions_code
+                    )
                     st.session_state.tmp_dfg = dfg
 
             # st.write(f"### Output Checks for {node.pill}")
@@ -148,7 +150,9 @@ class CheckPage(BuildPage):
                                 node = dfg[node_id]
                                 dfg = dfg.with_node(
                                     node.update(
-                                        cache=node.cache.invalidate(Phase.assertions_code)
+                                        cache=node.cache.invalidate(
+                                            Phase.assertions_code
+                                        )
                                     )
                                 )
                                 st.session_state.tmp_dfg = dfg
@@ -169,9 +173,9 @@ class CheckPage(BuildPage):
             node = st.session_state.tmp_dfg[node_id]
             if node.assertion_checks:
                 for assertion in node.assertions or []:
-                    st.divider()
                     check = node.assertion_checks.get(assertion, None)
-                    if check:
+                    if False and check and (check.warning or show_code()):
+                        st.divider()
                         st.write(f"**{assertion}**")
                         if check.warning:
                             st.warning(check.warning)
@@ -187,6 +191,7 @@ class CheckPage(BuildPage):
                                 st.write(f"    *{check.requirement}*")
             else:
                 st.write("*No details available*")
+
         for_real(node_id)
 
     def edit_node(self, node_id: str):
@@ -271,4 +276,8 @@ class CheckPage(BuildPage):
         self.help_details()
 
     def filter_messages(self, node: Node) -> List[NodeMessage]:
-        return [x for x in node.messages if x.phase <= Phase.assertions_checked]
+        return [
+            x
+            for x in node.messages
+            if x.phase <= Phase.assertions_checked and x.level == "error"
+        ]

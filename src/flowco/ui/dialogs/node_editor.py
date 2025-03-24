@@ -87,7 +87,10 @@ class NodeEditor:
                 "Label": ["Requirements", "Return Type"],
                 "Requirements": ["Label", "Return Type"],
             }
-        return " and ".join(l[title])
+        fields = l[title]
+        if self.node.kind == NodeKind.plot:
+            fields.remove("Return Type")
+        return " and ".join(fields)
 
     def component_editor(
         self,
@@ -234,11 +237,12 @@ class NodeEditor:
                 )
 
         with st.container(key="output_type_schema"):
-            st.write("#### Output Type")
-            extended_type = self.node.function_return_type
-            if extended_type is not None:
-                st.caption(extended_type.description)
-                st.code(schema_to_text(extended_type.type_schema()))
+            if self.node.kind is not NodeKind.plot:
+                st.write("#### Output Type")
+                extended_type = self.node.function_return_type
+                if extended_type is not None:
+                    st.caption(extended_type.description)
+                    st.code(schema_to_text(extended_type.type_schema()))
 
         if show_code():
 

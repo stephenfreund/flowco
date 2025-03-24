@@ -522,7 +522,7 @@ compile-pydoc: |
     # put all imports here
     def {signature}:
         """
-        {pydoc}
+    {pydoc}
         """
         # code goes here
     ```
@@ -555,7 +555,7 @@ compile-pydoc-for-plot: |
     # put all imports here
     def {signature}:
         """
-        {pydoc}
+    {pydoc}
         """
         # code goes here
     ```

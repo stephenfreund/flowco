@@ -423,6 +423,9 @@ def st_init(page_config=True):
         st.session_state.trigger_build_toggle = None
         st.session_state.builder = None
         st.session_state.builder_progress = 0.0
+        st.session_state.global_error_check = False
+
+        st.session_state.pending_ama = None
 
         st.session_state.force_update = False
         st.session_state.clear_graph = False

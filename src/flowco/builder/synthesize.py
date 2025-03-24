@@ -10,7 +10,7 @@ from flowco.builder.graph_completions import (
     node_completion_model,
     update_node_with_completion,
 )
-from flowco.dataflow.extended_type import ExtendedType, NoneType
+from flowco.dataflow.extended_type import ExtendedType, NoneType, schema_to_text
 from flowco.dataflow.phase import Phase
 from flowco.util.output import logger, log
 from flowco.builder.build import PassConfig, node_pass
@@ -375,14 +375,21 @@ def generate_docstring_for_node(node: Node) -> str:
         modified_requirement = requirement.replace(
             f"`{node.function_result_var}`", "the result"
         )
-        lines.append(f"        - {modified_requirement}")
+        if modified_requirement.startswith("- "):
+            lines.append(f"  {modified_requirement}")
+        else:
+            lines.append(f"- {modified_requirement}")
 
     # Args section: list each parameter with its type, description, and associated preconditions.
+    lines.append("")
     lines.append("Args:")
     for param in node.function_parameters:
         # Document the parameter.
-        lines.append(
-            f"    {param.name} ({param.type.to_python_type()}): {param.type.description}"
+        param_str = f"{param.name} ({schema_to_text(param.type.type_schema())}): {param.type.description}"
+        lines.extend(
+            textwrap.indent(
+                param_str, prefix="    ", predicate=lambda x: True
+            ).splitlines()
         )
         # Append preconditions if they exist for this parameter.
         if param.name in node.preconditions:
@@ -394,12 +401,18 @@ def generate_docstring_for_node(node: Node) -> str:
 
     # Returns section: include return type and any additional return requirements.
     lines.append("Returns:")
-    lines.append(
-        f"    {node.function_return_type.to_python_type()}: {node.function_return_type.description}"
+    return_str = f"{schema_to_text(node.function_return_type.type_schema())}: {node.function_return_type.description}"
+    lines.extend(
+        textwrap.indent(
+            return_str, prefix="    ", predicate=lambda x: True
+        ).splitlines()
     )
     lines.append("")
 
-    return "\n".join(lines)
+    result = "\n".join(lines)
+    print(result)
+
+    return result
 
 
 @node_pass(required_phase=Phase.algorithm, target_phase=Phase.code)

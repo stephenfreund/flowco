@@ -4,7 +4,7 @@ import html
 from collections import deque
 import os
 import textwrap
-from typing import Any, Dict, List, Literal, Optional, OrderedDict, Set, Union
+from typing import Any, Dict, List, Literal, Optional, OrderedDict, Set, Tuple, Union
 from graphviz import Digraph
 from pydantic import BaseModel, Field
 
@@ -1200,11 +1200,13 @@ class DataFlowGraph(GraphLike, BaseModel):
 
     def filter_messages(
         self, phase: Phase | List[Phase], level: str | None = None
-    ) -> List[NodeMessage]:
+    ) -> List[Tuple[Node, NodeMessage]]:
         messages = []
         for node_id in self.topological_sort():
             node = self[node_id]
-            messages += node.filter_messages(phase, level)
+            messages += [
+                (node, message) for message in node.filter_messages(phase, level)
+            ]
         return messages
 
 

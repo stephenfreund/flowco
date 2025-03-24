@@ -992,9 +992,7 @@ class ExtendedType(BaseModel):
                 )
             return AnyType(description="Automatically inferred as AnyType.")
 
-        return cls(
-            the_type=infer_type(value), description="Automatically generated type"
-        )
+        return cls(the_type=infer_type(value), description="")
 
     def check_value(self, value: Any) -> None:
         """

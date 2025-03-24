@@ -244,6 +244,11 @@ class FlowcoPage:
                 ):
                     self.ama_completion(container, prompt)
 
+            if st.session_state.pending_ama:
+                prompt = st.session_state.pending_ama
+                st.session_state.pending_ama = None
+                self.ama_completion(container, prompt)
+
     def ama_voice_input(self, container):
         toggle("ama_responding")
         voice = st.session_state.voice_input
@@ -325,14 +330,14 @@ class FlowcoPage:
                 if type(value) in [np.ndarray, list, pd.Series]:
                     value = pd.DataFrame(value)
                 if type(value) == pd.DataFrame:
-                    st.dataframe(value, height=200)
+                    st.dataframe(value, hide_index=True, height=200)
                 elif type(value) == dict:
                     for k, v in list(value.items())[0:10]:
                         st.write(f"**{k}**:")
                         if type(v) in [np.ndarray, list, pd.Series]:
                             v = pd.DataFrame(v)
                         if type(v) == pd.DataFrame:
-                            st.dataframe(v, height=200)
+                            st.dataframe(v, hide_index=True, height=200)
                         elif type(v) == dict:
                             st.json(v)
                         elif type(v) == str:

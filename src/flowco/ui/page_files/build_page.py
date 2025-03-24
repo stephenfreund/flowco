@@ -2,16 +2,16 @@ from dataclasses import dataclass
 import textwrap
 from typing import List, Literal
 import streamlit as st
-from flowco.dataflow.dfg import Geometry, Node, NodeMessage
+from flowco.dataflow.dfg import DataFlowGraph, Geometry, Node, NodeMessage
 from flowco.dataflow.phase import Phase
-from flowco.page.ama import VisibleMessage
+from flowco.page.ama import AskMeAnything, VisibleMessage
 from flowco.ui.dialogs.data_files import data_files_dialog
 from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_page import UIPage
 from flowco.ui.ui_util import phase_for_last_shown_part, set_session_state
 from flowco.util.config import AbstractionLevel, config
 from flowco.util.costs import inflight
-from flowco.util.output import debug, log
+from flowco.util.output import debug, error, log
 from flowco.ui.page_files.base_page import FlowcoPage
 
 import queue
@@ -275,6 +275,32 @@ class BuildPage(FlowcoPage):
     def init(self):
         self.get_builder_updates()
 
+    def global_error_check(self):
+        @st.dialog("Errors", width="large")
+        def global_error_fix(error_messages):
+            if st.button("Fix All"):
+                errors_as_string = "\n".join(
+                    [
+                        f"* **{node.pill}**: {message.message()}\n"
+                        for node, message in error_messages
+                    ]
+                )
+                prompt = f"For each error, identify the root cause, working backwards from the node with the error if necessary.  Make minimal changes to the graph and nodes to fix each error.\n{errors_as_string}\n"
+
+                st.session_state.pending_ama = prompt
+                st.rerun()
+
+            for node, message in error_messages:
+                st.error(f"**{node.pill}**: {message.message()}")
+
+        dfg: DataFlowGraph = st.session_state.ui_page.dfg()
+        error_run_messages = dfg.filter_messages(
+            [x for x in Phase],  #  if x.value <= Phase.run_checked.value],
+            level="error",
+        )
+        if error_run_messages:
+            global_error_fix(error_run_messages)
+
     def fini(self):
 
         if st.session_state.trigger_build_toggle is not None:
@@ -295,10 +321,15 @@ class BuildPage(FlowcoPage):
             if not builder.is_alive():
                 self.get_builder_updates()
                 self.clear_builder_and_reset_state()
+                st.session_state.global_error_check = True
                 st.rerun()
             else:
                 time.sleep(0.25)
                 st.rerun()
+
+        if st.session_state.global_error_check:
+            st.session_state.global_error_check = False
+            self.global_error_check()
 
     def clear_builder_and_reset_state(self):
         st.session_state.force_update = True
