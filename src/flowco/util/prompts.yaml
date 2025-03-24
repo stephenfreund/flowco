@@ -1868,3 +1868,15 @@ suggest-unit_tests-inspect: |
     Suggest additional, non-redundant unit tests that we can perform to gain confidence
     that the function is correct.  Each should be a short description of the inputs
     and expected outcome.  Do not include any code.
+
+load-table-return-type: |
+    Here are the first few lines of a table that will be loaded by a function:
+    ```
+    {table}
+    ```
+    Finish constructing the extended type by adding descriptions to each component 
+    of this type:
+    ```
+    {return_type}
+    ```
+    Keep the descriptions short, and don't repeat the actual type in them.  

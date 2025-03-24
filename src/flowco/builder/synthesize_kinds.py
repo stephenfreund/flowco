@@ -1,3 +1,4 @@
+from flowco.assistant.flowco_assistant import flowco_assistant
 from flowco.builder.synthesize import requirements, compile
 from flowco.dataflow.extended_type import ExtendedType
 from flowco.dataflow.phase import Phase
@@ -5,6 +6,7 @@ from flowco.builder.build import PassConfig, node_pass
 
 from flowco.dataflow.dfg import DataFlowGraph, Node, NodeKind
 from flowco.page.tables import file_path_to_table_name, table_df
+from flowco.util.config import config
 from flowco.util.output import logger
 
 
@@ -19,10 +21,20 @@ def table_requirements(
         requirements = [
             f"The result is the dataframe for the `{node.pill}` data set.",
         ]
+
+        assistant = flowco_assistant("system-prompt")
+        prompt = config().get_prompt(
+            "load-table-return-type",
+            table=str(df.head()),
+            return_type=function_return_type.model_dump_json(indent=2),
+        )
+        assistant.add_text("user", prompt)
+        completion = assistant.model_completion(ExtendedType)
+        print(completion)
         return node.update(
             function_parameters=[],
             preconditions=dict(),
-            function_return_type=function_return_type,
+            function_return_type=completion,
             requirements=requirements,
             function_computed_value="",
             description="",
