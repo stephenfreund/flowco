@@ -483,8 +483,9 @@ class NodeEditor:
                         )
                     )
                 self.node = self.ama.updated_node() or self.node
-                with logger("ama updating pill"):
-                    self.node = self.dfg.update_node_pill(self.node)
+
+                # with logger("ama updating pill"):
+                #     self.node = self.dfg.update_node_pill(self.node)
 
                 self.pending_ama = None
                 st.rerun(scope="fragment")

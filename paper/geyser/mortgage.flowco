@@ -210,8 +210,8 @@
           "height": 80.0
         },
         "output_geometry": {
-          "x": 580.0,
-          "y": 70.0,
+          "x": 560.0,
+          "y": 50.0,
           "width": 270.0,
           "height": 130.0
         },
@@ -3276,16 +3276,16 @@
         "pill": "Female-Coefficients",
         "label": "Histogram of female coefficients",
         "geometry": {
-          "x": 360.0,
+          "x": 350.0,
           "y": 260.0,
           "width": 160.0,
           "height": 80.0
         },
         "output_geometry": {
           "x": 560.0,
-          "y": 250.0,
-          "width": 310.0,
-          "height": 180.0
+          "y": 200.0,
+          "width": 300.0,
+          "height": 230.0
         },
         "is_locked": false,
         "force_show_output": true,

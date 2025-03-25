@@ -304,7 +304,7 @@ class AskMeAnything:
                 )
 
         pill = dfg.make_pill(label)
-        geometry = Geometry(x=0, y=0, width=0, height=0)
+        geometry = Geometry(x=100, y=100, width=120, height=80)
         output_geometry = geometry.translate(geometry.width + 100, 0).resize(120, 80)
         node_updates = {
             x.id: DiagramNodeUpdate(
@@ -414,7 +414,7 @@ class AskMeAnything:
                 )
 
         pill = dfg.make_pill(label)
-        geometry = Geometry(x=0, y=0, width=0, height=0)
+        geometry = Geometry(x=100, y=100, width=120, height=80)
         output_geometry = geometry.translate(geometry.width + 100, 0).resize(120, 80)
         node_updates = {
             x.id: DiagramNodeUpdate(
@@ -474,6 +474,7 @@ class AskMeAnything:
         dfg = dfg.with_node(node)
 
         dfg = dfg.with_node(node).reduce_phases_to_below_target(node.id, node.phase)
+        self.page.update_dfg(dfg)
 
         src_pills = ", ".join(dfg[x].pill for x in predecessors)
         if src_pills:
