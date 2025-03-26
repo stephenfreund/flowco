@@ -117,6 +117,8 @@ class PythonShell:
             import logging
             logging.disable(logging.ERROR)
             
+            sns.set_theme(context='talk', style='whitegrid', palette='tab10')
+
             %matplotlib inline
         """
         )
