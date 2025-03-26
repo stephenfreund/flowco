@@ -396,6 +396,8 @@ def generate_docstring_for_node(node: Node) -> str:
             lines.append("        Preconditions:")
             for condition in node.preconditions[param.name]:
                 condition = condition.replace("output", param.name)
+                condition = condition.replace("The result", param.name)
+                condition = condition.replace("the result", param.name)
                 lines.append(f"            - {condition}")
     lines.append("")
 

@@ -19,7 +19,7 @@ def table_requirements(
         function_return_type = ExtendedType.from_value(df)
         function_return_type.description += f"The DataFrame for the {name} dataset."  #  Here are the first few rows:\n```\n{df.head()}\n```\n"
         requirements = [
-            f"The result is the dataframe for the `{node.pill}` data set.",
+            f"The result is the dataframe for the `{node.pill}` dataset.",
         ]
 
         assistant = flowco_assistant("system-prompt")
