@@ -83,3 +83,4 @@ except Exception as e:
         shells=PythonShells(),
         filesystem=SessionFileSystem(f"file://{page_path}"),
     )
+    st.rerun()  # Restart the Streamlit app to reset the session state

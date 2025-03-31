@@ -49,25 +49,6 @@ def purge_stale_entries(cache_dict):
 
 
 def sign_in(authorization_url: str):
-    release = os.getenv("RELEASE_VERSION", "unknown")
-    commit_sha = os.getenv("COMMIT_SHA", "unknown")[:7]
-    build_date = os.getenv("BUILD_DATE", "unknown")
-
-    instructions = textwrap.dedent(
-        f"""\
-        # Flowco {release}!
-        
-        * Flowco uses Google Sign-In to authenticate users.
-        * Your email address will be used to create a unique account.
-        * Flowco uses an Amazon S3 bucket to store all user files.
-        * Click the "Report Bug" whenever you see anything fishy!
-
-        [Version Release Notes](https://github.com/stephenfreund/flowco/releases)
-
-        """
-    )
-    # st.write(f"Please sign in to continue.")
-    st.write(instructions)
     st.link_button("Sign In", authorization_url)
     with st.sidebar:
         st.image("static/flowco.png")
@@ -194,10 +175,42 @@ def sign_out():
 
 
 def authenticate():
+    release = os.getenv("RELEASE_VERSION", "unknown")
+
+    instructions = textwrap.dedent(
+        f"""\
+        # Flowco {release}!
+        
+        * Flowco uses Google Sign-In to authenticate users.
+        * Your email address will be used to create a unique account.
+        * Flowco uses an Amazon S3 bucket to store all user files.
+        * Click the "Report Bug" whenever you see anything fishy!
+
+        [Version Release Notes](https://github.com/stephenfreund/flowco/releases)
+
+        """
+    )
+    # st.write(f"Please sign in to continue.")
+    st.write(instructions)
+
     if st.session_state.credentials is None:
         oauth_authenticate()
         # while st.session_state.credentials is None:
         oauth_authenticate()
+
+        if st.button("Guest"):
+            cache_dict = cache()
+            purge_stale_entries(cache_dict)
+            key = st.context.cookies["_streamlit_xsrf"].split("|")[-1]
+            st.session_state.credentials = "Guest"
+            st.session_state.user_email = "guest" 
+            st.session_state.auth_state = "authenticated"
+            cache_dict[key] = CacheEntry(
+                credentials=st.session_state.credentials,
+                user_email=st.session_state.user_email,
+                timestamp=datetime.now(),
+            )       
+            st.rerun()
 
         if st.session_state.credentials is None:
             st.stop()
