@@ -52,6 +52,36 @@ class AskMeAnything:
         self.reset()
         self.visible_messages: List[VisibleMessage] = []
 
+    #             VisibleMessage(role="user", content="Describe the dataset"),
+    #             VisibleMessage(
+    #                 role="assistant",
+    #                 content="""\
+    # ### 1. Restating the Question
+    # The question asks for a description of the dataset, which involves understanding its structure, content, and any notable characteristics. Specifically, we want to explore the columns, data types, and any patterns or distributions in the data.
+
+    # ---
+
+    # ### 2. Approach
+    # To describe the dataset, I will:
+    # 1. Examine the structure of the dataset, including column names and data types.
+    # 2. Summarize the data to understand its size and basic statistics.
+    # 3. Check for missing values or anomalies.
+    # 4. Explore the distribution of key variables, such as `Beak length, mm` and `Beak depth, mm`.
+
+    # ---
+
+    # ### 3. Steps of Analysis
+    # I will perform the following steps:
+    # 1. **Inspect the structure of the dataset**: This includes column names, data types, and a preview of the data.
+    # 2. **Summarize the dataset**: Generate descriptive statistics for numerical columns.
+    # 3. **Check for missing values**: Identify if any columns have missing data.
+    # 4. **Visualize distributions**: Plot histograms or boxplots for numerical columns to understand their distributions.
+
+    # Let me start by inspecting the dataset.
+    # """,
+    #             ),
+    #         ]
+
     def reset(self):
         """Reset internals"""
         self.assistant = flowco_assistant(prompt_key="ama_general")
@@ -64,26 +94,14 @@ class AskMeAnything:
         """
         Evaluate python code.  You may assume numpy, scipy, and pandas are available.",
         """
-        init_code = ""
-        for node in self.page.dfg.nodes:
-            result = node.result
-            if (
-                result is not None
-                and result.result is not None
-                and node.function_return_type is not None
-                and not node.function_return_type.is_None_type()
-            ):
-                value, _ = result.result.to_repr()
-                init_code += f"{node.function_result_var} = {value}\n"
 
         tables = GlobalTables.from_dfg(self.page.dfg)
-        init_code += "\n".join(tables.function_defs())
 
-        shell_code = f"{init_code}\n{code}"
         with logger("python_eval"):
             try:
-                log(f"Code:\n{shell_code}")
-                result = session.get("shells", PythonShells).run(shell_code)
+                log(f"Code:\n{code}")
+                result = session.get("shells", PythonShells).run_full_dfg_context(tables, self.page.dfg, code)
+                log(f"Result:\n{result}")
                 result_output = result.as_result_output()
                 if result_output is not None:
                     log(f"Result:\n{result_output}")
@@ -274,7 +292,7 @@ class AskMeAnything:
                 )
 
         pill = dfg.make_pill(label)
-        geometry = Geometry(x=0, y=0, width=0, height=0)
+        geometry = Geometry(x=100, y=100, width=120, height=80)
         output_geometry = geometry.translate(geometry.width + 100, 0).resize(120, 80)
         node_updates = {
             x.id: DiagramNodeUpdate(
@@ -338,9 +356,9 @@ class AskMeAnything:
 
         src_pills = ", ".join(dfg[x].pill for x in predecessors)
         if src_pills:
-            message = f"I add a new node {node.pill}, and connected these nodes to it: {src_pills}"
+            message = f"I added a new node {node.pill}, and connected these nodes to it: {src_pills}"
         else:
-            message = f"I add a new node {node.pill}"
+            message = f"I added a new node {node.pill}"
         return ToolCallResult(
             user_message=f"**:blue[{message}]**",
             content=ChatCompletionContentPartTextParam(
@@ -384,7 +402,7 @@ class AskMeAnything:
                 )
 
         pill = dfg.make_pill(label)
-        geometry = Geometry(x=0, y=0, width=0, height=0)
+        geometry = Geometry(x=100, y=100, width=120, height=80)
         output_geometry = geometry.translate(geometry.width + 100, 0).resize(120, 80)
         node_updates = {
             x.id: DiagramNodeUpdate(
@@ -444,12 +462,13 @@ class AskMeAnything:
         dfg = dfg.with_node(node)
 
         dfg = dfg.with_node(node).reduce_phases_to_below_target(node.id, node.phase)
+        self.page.update_dfg(dfg)
 
         src_pills = ", ".join(dfg[x].pill for x in predecessors)
         if src_pills:
-            message = f"I add a new node {node.pill}, and connected these nodes to it: {src_pills}"
+            message = f"I added a new node {node.pill}, and connected these nodes to it: {src_pills}"
         else:
-            message = f"I add a new node {node.pill}"
+            message = f"I added a new node {node.pill}"
         return ToolCallResult(
             user_message=f"**:blue[{message}]**",
             content=ChatCompletionContentPartTextParam(

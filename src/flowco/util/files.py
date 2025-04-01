@@ -63,6 +63,15 @@ def make_default_files():
             fs_write(file["name"], content)
     except Exception as e:
         error(f"Error making default files: {e}")
+        error("Using built in default files instead.")
+        dir = os.path.join(os.path.dirname(__file__), "initial_files")
+        # Fallback to local initial files if Google Drive fails
+        for file in os.listdir(dir):
+            log(f"Making {file} from local initial files")
+            file_path = os.path.join(dir, file)
+            with open(file_path, "r") as f:
+                content = f.read()
+                fs_write(file, content)
 
 
 def setup_flowco_files():

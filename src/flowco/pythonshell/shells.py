@@ -68,6 +68,15 @@ class PythonShells:
         finally:
             self._put_shell(shell)
 
+    def run_full_dfg_context(
+        self, tables: GlobalTables, dfg: DataFlowGraph, code: str
+    ) -> EvalResult:
+        shell = self._get_shell()
+        try:
+            return shell.run_full_dfg_context(tables, dfg, code)
+        finally:
+            self._put_shell(shell)
+
     def run_node(
         self, tables: GlobalTables, dfg: DataFlowGraph, node: Node
     ) -> NodeResult:
@@ -77,12 +86,22 @@ class PythonShells:
         finally:
             self._put_shell(shell)
 
+
     def run_assertions(
         self, tables: GlobalTables, dfg: DataFlowGraph, node: Node
     ) -> Node:
         shell = self._get_shell()
         try:
             return shell.run_assertions(tables, dfg, node)
+        finally:
+            self._put_shell(shell)
+
+    def run_unit_tests(
+        self, tables: GlobalTables, dfg: DataFlowGraph, node: Node
+    ) -> Node:
+        shell = self._get_shell()
+        try:
+            return shell.run_unit_tests(tables, dfg, node)
         finally:
             self._put_shell(shell)
 

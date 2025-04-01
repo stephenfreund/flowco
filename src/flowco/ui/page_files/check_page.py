@@ -1,11 +1,13 @@
 import textwrap
+from typing import List
 import pandas as pd
 import streamlit as st
 from flowco.builder.assertions import suggest_assertions
 from flowco.builder.build import BuildEngine
-from flowco.dataflow.dfg import Node
+from flowco.dataflow.dfg import Node, NodeMessage
 from flowco.dataflow.phase import Phase
 from flowco.ui.page_files.build_page import BuildButton, BuildPage
+from flowco.ui.ui_builder import Builder
 from flowco.ui.ui_page import UIPage
 from flowco.ui.ui_util import (
     set_session_state,
@@ -48,6 +50,14 @@ class CheckPage(BuildPage):
             passes_key="repair-checks-passes",
         )
 
+    def suggest_button(self) -> BuildButton:
+        return BuildButton(
+            label="Suggest Checks",
+            icon=":material/format_list_bulleted:",
+            action="Run",
+            passes_key="suggest-assertions-passes",
+        )
+
     def build_target_phase(self) -> Phase:
         return Phase.assertions_checked
 
@@ -66,114 +76,123 @@ class CheckPage(BuildPage):
             if node.phase >= Phase.assertions_checked:
                 st.success("All checks passed")
 
-    @st.dialog("Edit Checks", width="large")
     def edit_checks(self, node_id: str):
-
-        def make_suggestions():
-            st.session_state.make_suggestions = True
-
         node = st.session_state.tmp_dfg[node_id]
-        buttons = st.empty()
 
-        if st.session_state.make_suggestions:
-            with st.spinner("Making suggestions..."):
-                st.session_state.make_suggestions = False
-                suggested_assertions = suggest_assertions(
-                    st.session_state.tmp_dfg, st.session_state.tmp_dfg[node_id]
-                )
-                st.session_state.tmp_assertions = (
-                    st.session_state.tmp_assertions + suggested_assertions
-                )
-                dfg = st.session_state.tmp_dfg
-                node = dfg[node_id]
+        @st.dialog(f"Output Checks for {node.pill}", width="large")
+        def for_real(node_id: str):
+
+            def make_suggestions():
+                st.session_state.make_suggestions = True
+
+            node = st.session_state.tmp_dfg[node_id]
+            buttons = st.empty()
+
+            if st.session_state.make_suggestions:
+                with st.spinner("Making suggestions..."):
+                    st.session_state.make_suggestions = False
+                    suggested_assertions = suggest_assertions(
+                        st.session_state.tmp_dfg, st.session_state.tmp_dfg[node_id]
+                    )
+                    st.session_state.tmp_assertions = (
+                        st.session_state.tmp_assertions + suggested_assertions
+                    )
+                    dfg = st.session_state.tmp_dfg
+                    node = dfg[node_id]
+                    dfg = dfg.reduce_phases_to_below_target(
+                        node.id, Phase.assertions_code
+                    )
+                    st.session_state.tmp_dfg = dfg
+
+            # st.write(f"### Output Checks for {node.pill}")
+            st.session_state.tmp_assertions = [
+                x for x in st.session_state.tmp_assertions if x
+            ]
+            editable_df = st.data_editor(
+                pd.DataFrame({"checks": st.session_state.tmp_assertions}, dtype=str),
+                key="edit_checks",
+                num_rows="dynamic",
+                use_container_width=True,
+            )
+
+            new_assertions = list([x for x in editable_df["checks"] if x])
+            dfg = st.session_state.tmp_dfg
+            node = dfg[node_id]
+            if new_assertions != node.assertions or node.phase < Phase.assertions_code:
+                dfg = dfg.with_node(node.update(assertions=new_assertions))
                 dfg = dfg.reduce_phases_to_below_target(node.id, Phase.assertions_code)
                 st.session_state.tmp_dfg = dfg
 
-        st.write("### Checks")
-        st.session_state.tmp_assertions = [
-            x for x in st.session_state.tmp_assertions if x
-        ]
-        editable_df = st.data_editor(
-            pd.DataFrame({"checks": st.session_state.tmp_assertions}, dtype=str),
-            key="edit_checks",
-            num_rows="dynamic",
-            use_container_width=True,
-        )
+            with buttons.container():
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    if st.button("Save", icon=":material/save:"):
+                        ui_page: UIPage = st.session_state.ui_page
+                        ui_page.page().update_dfg(st.session_state.tmp_dfg)
+                        st.session_state.force_update = True
+                        st.rerun(scope="app")
 
-        new_assertions = list([x for x in editable_df["checks"] if x])
-        dfg = st.session_state.tmp_dfg
-        node = dfg[node_id]
-        if new_assertions != node.assertions or node.phase < Phase.assertions_code:
-            dfg = dfg.with_node(node.update(assertions=new_assertions))
-            dfg = dfg.reduce_phases_to_below_target(node.id, Phase.assertions_code)
-            st.session_state.tmp_dfg = dfg
+                with c2:
+                    st.button(
+                        "Suggest",
+                        icon=":material/format_list_bulleted:",
+                        on_click=make_suggestions,
+                    )
 
-        with buttons.container():
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                if st.button("Save", icon=":material/save:"):
-                    ui_page: UIPage = st.session_state.ui_page
-                    ui_page.page().update_dfg(st.session_state.tmp_dfg)
-                    st.session_state.force_update = True
-                    st.rerun(scope="app")
-
-            with c2:
-                st.button(
-                    "Suggest",
-                    icon=":material/format_list_bulleted:",
-                    on_click=make_suggestions,
-                )
-
-            with c3:
-                if show_code():
-                    if st.button("Regenerate"):
-                        with st.spinner("Regenerating..."):
-                            dfg = st.session_state.tmp_dfg
-                            dfg = dfg.reduce_phases_to_below_target(
-                                node_id, Phase.assertions_code
-                            )
-                            node = dfg[node_id]
-                            dfg = dfg.with_node(
-                                node.update(
-                                    cache=node.cache.invalidate(Phase.assertions_code)
-                                )
-                            )
-                            st.session_state.tmp_dfg = dfg
-
-        dfg = st.session_state.tmp_dfg
-
-        if dfg[node_id].phase < Phase.assertions_code:
-            with st.spinner("Generating validation steps..."):
-                ui_page: UIPage = st.session_state.ui_page
-                build_config = ui_page.page().base_build_config(repair=False)
-                engine = BuildEngine.get_builder()
-                for build_updated in engine.build_with_worklist(
-                    build_config, dfg, Phase.assertions_code, node_id
-                ):
-                    dfg = build_updated.new_graph
-                st.session_state.tmp_dfg = dfg
-
-        node = st.session_state.tmp_dfg[node_id]
-        if node.assertion_checks:
-            for assertion in node.assertions or []:
-                st.divider()
-                check = node.assertion_checks.get(assertion, None)
-                if check:
-                    st.write(f"**{assertion}**")
-                    if check.warning:
-                        st.warning(check.warning)
-
+                with c3:
                     if show_code():
-                        if check.type == "quantitative":
-                            code = check.code
-                            if code:
-                                st.code(textwrap.indent("\n".join(code), "    "))
+                        if st.button("Regenerate"):
+                            with st.spinner("Regenerating..."):
+                                dfg = st.session_state.tmp_dfg
+                                dfg = dfg.reduce_phases_to_below_target(
+                                    node_id, Phase.assertions_code
+                                )
+                                node = dfg[node_id]
+                                dfg = dfg.with_node(
+                                    node.update(
+                                        cache=node.cache.invalidate(
+                                            Phase.assertions_code
+                                        )
+                                    )
+                                )
+                                st.session_state.tmp_dfg = dfg
+
+            dfg = st.session_state.tmp_dfg
+
+            if dfg[node_id].phase < Phase.assertions_code:
+                with st.spinner("Generating validation steps..."):
+                    ui_page: UIPage = st.session_state.ui_page
+                    build_config = ui_page.page().base_build_config(repair=False)
+                    engine = BuildEngine.get_builder()
+                    for build_updated in engine.build_with_worklist(
+                        build_config, dfg, Phase.assertions_code, node_id
+                    ):
+                        dfg = build_updated.new_graph
+                    st.session_state.tmp_dfg = dfg
+
+            node = st.session_state.tmp_dfg[node_id]
+            if node.assertion_checks:
+                for assertion in node.assertions or []:
+                    check = node.assertion_checks.get(assertion, None)
+                    if False and check and (check.warning or show_code()):
+                        st.divider()
+                        st.write(f"**{assertion}**")
+                        if check.warning:
+                            st.warning(check.warning)
+
+                        if show_code():
+                            if check.type == "quantitative":
+                                code = check.code
+                                if code:
+                                    st.code(textwrap.indent("\n".join(code), "    "))
+                                else:
+                                    st.write("    *Code not available*")
                             else:
-                                st.write("    *Code not available*")
-                        else:
-                            st.write(f"    *{check.requirement}*")
-        else:
-            st.write("*No details available*")
+                                st.write(f"    *{check.requirement}*")
+            else:
+                st.write("*No details available*")
+
+        for_real(node_id)
 
     def edit_node(self, node_id: str):
         ui_page: UIPage = st.session_state.ui_page
@@ -204,3 +223,61 @@ class CheckPage(BuildPage):
         if show_code():
             keys += ["code"]
         return keys
+
+    def global_sidebar(self):
+        ui_page: UIPage = st.session_state.ui_page
+
+        failed_assertions = [
+            node.pill
+            for node in ui_page.dfg().nodes
+            if node.filter_messages(Phase.assertions_checked, "error")
+        ]
+        if failed_assertions:
+            items = "\n".join([f"* {x}" for x in failed_assertions])
+            st.error(f"**These nodes have failing checks:**\n{items}")
+
+        warnings = [
+            node.pill
+            for node in ui_page.dfg().nodes
+            if node.filter_messages(Phase.assertions_code, "warning")
+        ]
+        if warnings:
+            items = "\n".join([f"* {x}" for x in warnings])
+            st.warning(f"**These nodes have check warnings:**\n{items}")
+
+        nodes_with_no_assertions = [
+            node.pill for node in ui_page.dfg().nodes if not node.assertions
+        ]
+        nodes_with_no_assertions.sort()
+
+        if nodes_with_no_assertions:
+            items = "\n".join([f"* {x}" for x in nodes_with_no_assertions])
+            st.info(f"**These nodes have no checks:**\n{items}")
+
+            suggest_button = self.suggest_button()
+            if st.button(
+                suggest_button.label,
+                icon=suggest_button.icon,
+                disabled=st.session_state.ama_responding
+                or st.session_state.builder is not None,
+                help=("Suggest tests for nodes that have none. "),
+            ):
+                if st.session_state.builder is None:
+                    st.session_state.builder = Builder(
+                        ui_page.page(),
+                        [x.id for x in ui_page.dfg().nodes if not x.assertions],
+                        target_phase=Phase.assertions_code,
+                        passes_key="suggest-assertions-passes",
+                        force=True,
+                        repair=False,
+                    )
+                    st.session_state.builder_progress = 0
+
+        self.help_details()
+
+    def filter_messages(self, node: Node) -> List[NodeMessage]:
+        return [
+            x
+            for x in node.messages
+            if x.phase <= Phase.assertions_checked and x.level == "error"
+        ]

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from multiprocessing import Value
 from typing import List
 from openai.types.completion_usage import CompletionUsage
 
@@ -102,6 +103,17 @@ _models = {
         prompt_token_rate=3 / 10**6,
         cached_token_rate=3 / 10**6,
     ),
+    "claude-3-7-sonnet": Model(
+        name="claude-3-7-sonnet",
+        use_proxy=True,
+        supports_vision=True,
+        supports_audio=False,
+        supports_temperature=False,
+        supports_prediction=False,
+        completion_token_rate=15 / 10**6,
+        prompt_token_rate=3 / 10**6,
+        cached_token_rate=3 / 10**6,
+    ),
     "claude-3-haiku": Model(
         name="claude-3-haiku",
         use_proxy=True,
@@ -121,4 +133,10 @@ def supported_models() -> List[str]:
 
 
 def get_model(model_name: str) -> Model:
-    return _models[model_name]
+    by_name = _models.get(model_name, None)
+    if by_name is not None:
+        return by_name
+    for model in _models.values():
+        if model.name == model_name:
+            return model
+    raise ValueError(f"Model {model_name} not found")

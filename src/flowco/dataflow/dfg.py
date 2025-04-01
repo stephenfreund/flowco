@@ -4,7 +4,7 @@ import html
 from collections import deque
 import os
 import textwrap
-from typing import Any, Dict, List, Literal, Optional, OrderedDict, Set, Union
+from typing import Any, Dict, List, Literal, Optional, OrderedDict, Set, Tuple, Union
 from graphviz import Digraph
 from pydantic import BaseModel, Field
 
@@ -241,6 +241,14 @@ class Node(NodeLike, BaseModel):
         default=None, description="A list of unit tests that the node must pass."
     )
 
+    unit_test_checks: Optional[OrderedDict[str, Check]] = Field(
+        default_factory=OrderedDict, description="The generated unit_tests."
+    )
+
+    unit_test_outcomes: Optional[CheckOutcomes] = Field(
+        default_factory=CheckOutcomes, description="The outcomes of the unit_tests."
+    )
+
     ###
 
     messages: List[NodeMessage] = Field(
@@ -284,6 +292,9 @@ class Node(NodeLike, BaseModel):
             and self.assertions == other.assertions
             and self.assertion_checks == other.assertion_checks
             and self.assertion_outcomes == other.assertion_outcomes
+            and self.unit_tests == other.unit_tests
+            and self.unit_test_checks == other.unit_test_checks
+            and self.unit_test_outcomes == other.unit_test_outcomes
         )
 
     def diff(self, other: "Node") -> dict:
@@ -411,16 +422,21 @@ class Node(NodeLike, BaseModel):
         return self.update(messages=messages)
 
     def filter_messages(
-        self, phase: Phase, level: str | None = None
+        self, phase: Phase | List[Phase], level: str | None = None
     ) -> List[NodeMessage]:
+        if not isinstance(phase, list):
+            phases = [phase]
+        else:
+            phases = phase
+
         if level is not None:
             return [
                 message
                 for message in self.messages
-                if message.phase == phase and message.level == level
+                if message.phase in phases and message.level == level
             ]
         else:
-            return [message for message in self.messages if message.phase == phase]
+            return [message for message in self.messages if message.phase in phases]
 
     def reset(self, reset_requirements=False) -> Node:
         if reset_requirements:
@@ -442,6 +458,8 @@ class Node(NodeLike, BaseModel):
             code=None,
             assertion_checks=None,
             assertion_outcomes=None,
+            unit_test_checks=None,
+            unit_test_outcomes=None,
             result=None,
             messages=[],
             build_status=None,
@@ -458,6 +476,7 @@ class Node(NodeLike, BaseModel):
                 "code",
                 "result",
                 "assertions",
+                "unit_tests",
             ]
             if self.algorithm is not None:
                 keys.append("algorithm")
@@ -521,6 +540,10 @@ class Node(NodeLike, BaseModel):
             if "assertions" == key and self.assertions is not None:
                 assertions = "\n".join([f"* {x}" for x in self.assertions])
                 md += f"**Checks**\n\n{assertions}\n\n"
+
+            if "unit_tests" == key and self.unit_tests is not None:
+                unit_tests = "\n".join([f"* {x}" for x in self.unit_tests])
+                md += f"**Unit Tests**\n\n{unit_tests}\n\n"
 
         return md
 
@@ -680,6 +703,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                         function_result_var=node["function_result_var"],
                         predecessors=node["predecessors"],
                         assertions=node.get("assertions", None),
+                        unit_tests=node.get("unit_tests", None),
                         phase=Phase.clean,
                         cache=BuildCache(),
                         requirements=node.get("requirements", None),
@@ -1173,6 +1197,17 @@ class DataFlowGraph(GraphLike, BaseModel):
             md += node.to_markdown()
 
         return md
+
+    def filter_messages(
+        self, phase: Phase | List[Phase], level: str | None = None
+    ) -> List[Tuple[Node, NodeMessage]]:
+        messages = []
+        for node_id in self.topological_sort():
+            node = self[node_id]
+            messages += [
+                (node, message) for message in node.filter_messages(phase, level)
+            ]
+        return messages
 
 
 def dataflow_graph_to_image(

@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from flowco.dataflow.dfg import DataFlowGraph, Node, Geometry
 from flowco.dataflow.extended_type import ext_type_to_summary
+from flowco.dataflow.phase import Phase
 from flowco.util.config import config, AbstractionLevel
 from flowco.util.output import log
 from flowco.util.text import md_to_html
@@ -127,6 +128,21 @@ def from_dfg(
     for node in dfg.nodes:
         md = node.to_markdown(node_parts)
         html = md_to_html(md)
+
+        messages = [x for x in node.messages if x.phase <= Phase.run_checked]
+        if "assertions" in node_parts:
+            messages += [
+                x
+                for x in node.messages
+                if x.phase in [Phase.assertions_code, Phase.assertions_checked]
+            ]
+        if "unit_tests" in node_parts:
+            messages += [
+                x
+                for x in node.messages
+                if x.phase in [Phase.unit_tests_code, Phase.unit_tests_checked]
+            ]
+
         diagram_node = DiagramNode(
             id=node.id,
             kind=node.kind.value,  # Convert NodeKind enum to int
@@ -134,7 +150,7 @@ def from_dfg(
             label=node.label,
             geometry=node.geometry,
             phase=node.phase.value,  # Convert Phase enum to int
-            has_messages=len(node.messages) > 0,
+            has_messages=len(messages) > 0,
             output_geometry=(
                 node.output_geometry if node.output_geometry else node.geometry
             ),

@@ -2,7 +2,18 @@ system-prompt: |
     You are an assistant to take a data science computation dataflow diagram 
     and generate code. 
 
-    You may only import matplotlib, seaborn, numpy, sklearn, statsmodels, scipy, and pandas.  
+    These imports will already be available in any code you write:
+    ```
+    import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import statsmodels
+    import statsmodels.api as sm
+    import scipy.stats as stats
+    import sklearn
+    ``` 
+
 
 semantic-diff: |
     Here are the old and new values for parts of a computation step:
@@ -511,7 +522,7 @@ compile-pydoc: |
     # put all imports here
     def {signature}:
         """
-        {pydoc}
+    {pydoc}
         """
         # code goes here
     ```
@@ -544,7 +555,7 @@ compile-pydoc-for-plot: |
     # put all imports here
     def {signature}:
         """
-        {pydoc}
+    {pydoc}
         """
         # code goes here
     ```
@@ -563,6 +574,10 @@ assertions-code: |
     The output for the function is stored in the variable:
     ```
     {output_var}
+    ```
+    that has this type:
+    ```
+    {return_type}
     ```
     These are the postconditions for the function.
     ```
@@ -600,6 +615,10 @@ suggest-assertions-code: |
     The output for the function is stored in the variable:
     ```
     {output_var}
+    ```
+    that has this type:
+    ```
+    {return_type}
     ```
     These are the postconditions for the function.
     ```
@@ -1251,6 +1270,14 @@ repair-node-assertions: |
     {context}
     ```
 
+repair-node-unit_tests: | 
+    A node in the dataflow graph failed to pass some tests.  
+    Fix it.  These are the messages for the test failures:
+    ```
+    {errors}
+    ```
+    Make minimal changes to that node's code to fix the errors.
+
 
 
 
@@ -1699,3 +1726,157 @@ lift_up_changes_from_editing_no_alg: |
        {new_label}
        ```
        and make any necessary changes to reflect the changes from step 1.
+
+
+#####
+
+unit_tests-code: |
+    Here are the input variables for a function:
+    ```
+    {input_vars}
+    ```
+    The inputs satisfy the following requirements:
+    ```
+    {preconditions}
+    ```
+    The output for the function is stored in the variable:
+    ```
+    {output_var}
+    ```
+    The function has this return type:
+    ```
+    {return_type}
+    ```
+    These are the postconditions for the function.
+    ```
+    {postconditions}
+    ```
+    Write unit tests code to check each of the following additional unit test description.
+    ```
+    {unit_tests}
+    ```    
+
+    For each test:
+        1.  Write code to construct function input values that satisfy the preconditions and the 
+            test specification.
+        
+            Then use a quantative check containing an assertion if possible.  Use this form and
+            no function definitions:
+    ```
+    {input_lines}
+    {output_var}_result = {call_to_node}
+    assert ..., "...message..."
+    ```
+            The assertion's error messages should targeted to non-programmers and 
+            provide detailed information about the failure,
+            including the expected value and observed value.
+
+        2.  If the postconditions do not ensure the requirement will be met for all
+            inputs matching the preconditions, provide a warning 
+            message indicating why.  Otherwise, the error message should be empty.
+
+suggest-unit_tests-code: |
+    Here are the input variables for a function:
+    ```
+    {input_vars}
+    ```
+    The inputs satisfy the following requirements:
+    ```
+    {preconditions}
+    ```
+    The output for the function is stored in the variable:
+    ```
+    {output_var}
+    ```
+    The function has this return type:
+    ```
+    {return_type}
+    ```
+    These are the postconditions for the function.
+    ```
+    {postconditions}
+    ```
+    I have the following suggestions for additional checks:
+    ```
+    {unit_tests}
+    ```
+    Suggest additional, non-redundant unit tests that we can perform to gain confidence
+    that the function is correct.  Each should be a short description of the inputs
+    and expected outcome.  Do not include any code.
+
+
+unit_tests-inspect: |
+    Here are the input variables for a function `{function_name}`:
+    ```
+    {input_vars}
+    ```
+    The inputs satisfy the following requirements:
+    ```
+    {preconditions}
+    ```
+    The function has this return type:
+    ```
+    {return_type}
+    ```
+    These are the postconditions for the function.
+    ```
+    {postconditions}
+    ```
+    The output will be provided to you as either a string or image.
+    Write unit test code and qualitativ checks 
+    to check each of the following additional unit test descriptions.
+    ```
+    {unit_tests}
+    ```    
+
+    For each test:
+        1.  Write code to construct function input values that satisfy the preconditions and the 
+            test specification.  Then call the function `{function_name}`, which is
+            already defined -- do not write it.  Use this exact form:
+            ```
+            {input_lines}
+            {call_to_node}
+            ```
+            Explain exactly what to look for in the visual representation of the output to 
+            verify that the unit test passes.
+
+        2.  If the postconditions do not ensure the unit test will be met for all
+            inputs matching the preconditions, provide a warning 
+            message indicating why.  Otherwise, the error message should be empty.
+
+suggest-unit_tests-inspect: |
+    Here are the input variables for a function:
+    ```
+    {input_vars}
+    ```
+    The inputs satisfy the following requirements:
+    ```
+    {preconditions}
+    ```
+    The function has this return type:
+    ```
+    {return_type}
+    ```
+    These are the postconditions for the function.
+    ```
+    {postconditions}
+    ```
+    I have the following suggestions for additional checks:
+    ```
+    {unit_tests}
+    ```
+    Suggest additional, non-redundant unit tests that we can perform to gain confidence
+    that the function is correct.  Each should be a short description of the inputs
+    and expected outcome.  Do not include any code.
+
+load-table-return-type: |
+    Here are the first few lines of a table that will be loaded by a function:
+    ```
+    {table}
+    ```
+    Finish constructing the extended type by adding descriptions to each component 
+    of this type:
+    ```
+    {return_type}
+    ```
+    Keep the descriptions short, and don't repeat the actual type in them.  
