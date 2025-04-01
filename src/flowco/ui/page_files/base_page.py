@@ -11,7 +11,7 @@ import pandas as pd
 
 
 from flowco.dataflow import dfg_update
-from flowco.dataflow.dfg import Node, NodeKind
+from flowco.dataflow.dfg import Node, NodeKind, NodeMessage
 from flowco.dataflow.phase import Phase
 from flowco.page.output import OutputType
 from flowco.ui.dialogs.node_creator import new_node_dialog
@@ -187,14 +187,18 @@ class FlowcoPage:
                 f"Total cost: {total_cost():.2f} USD &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        {':gray[:material/bigtop_updates:]' * inflight()}"
             )
 
+    def filter_messages(self, node: Node) -> List[NodeMessage]:
+        return node.messages
+
     def show_messages(self, node: Node):
-        for message in node.messages:
+        messages = self.filter_messages(node)
+        for message in messages:
             if message.level == "error":
                 st.error(message.text)
-        for message in node.messages:
+        for message in messages:
             if message.level == "warning":
                 st.warning(message.text)
-        for message in node.messages:
+        for message in messages:
             if message.level == "info":
                 st.success(message.text)
 
@@ -239,6 +243,11 @@ class FlowcoPage:
                     disabled=not self.graph_is_editable(),
                 ):
                     self.ama_completion(container, prompt)
+
+            if st.session_state.pending_ama:
+                prompt = st.session_state.pending_ama
+                st.session_state.pending_ama = None
+                self.ama_completion(container, prompt)
 
     def ama_voice_input(self, container):
         toggle("ama_responding")
@@ -321,14 +330,14 @@ class FlowcoPage:
                 if type(value) in [np.ndarray, list, pd.Series]:
                     value = pd.DataFrame(value)
                 if type(value) == pd.DataFrame:
-                    st.dataframe(value, height=200)
+                    st.dataframe(value, hide_index=True, height=200)
                 elif type(value) == dict:
                     for k, v in list(value.items())[0:10]:
                         st.write(f"**{k}**:")
                         if type(v) in [np.ndarray, list, pd.Series]:
                             v = pd.DataFrame(v)
                         if type(v) == pd.DataFrame:
-                            st.dataframe(v, height=200)
+                            st.dataframe(v, hide_index=True, height=200)
                         elif type(v) == dict:
                             st.json(v)
                         elif type(v) == str:

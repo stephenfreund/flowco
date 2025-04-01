@@ -9,9 +9,21 @@ import pickle
 import base64
 import pandas as pd
 import numpy as np
-from typing import Any
-
-
+import sklearn
+import statsmodels
+import seaborn
+from typing import (
+    Any,
+    TypedDict,
+    List,
+    Dict,
+    Union,
+    Tuple,
+    Optional,
+    Type,
+    get_origin,
+    get_args,
+)
 
 # These are for the typchecker in str_to_type
 import pandas as pd
@@ -26,6 +38,7 @@ def str_to_type(type_str: str) -> type:
         #        log(f"Converted {type_str} to {t}")
         return t
     except Exception as e:
+        print(e)
         raise SyntaxError(
             f"`{type_str}` is not a valid type.  If that is a TypedDict, inline the definition.  If it is a library class, use the fully qualified type name, e.g. `sklean.linear_model.LinearRegression`."
         )
@@ -35,6 +48,8 @@ def types_equal(type1_str: str, type2_str: str) -> bool:
     def check() -> bool:
         if type1_str == type2_str:
             return True
+
+        print("typeeq", type1_str, type2_str)
 
         type1 = str_to_type(
             type1_str

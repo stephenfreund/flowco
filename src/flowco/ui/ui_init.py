@@ -6,11 +6,6 @@ from flowco.util.config import AbstractionLevel
 css = """
 
 
-.st-key-node_edit_top .stColumn {
-    width: fit-content !important;
-    flex: unset !important;
-}
-
 
 .stMainBlockContainer {
     padding: 0rem;
@@ -18,6 +13,7 @@ css = """
 }
 .stSidebar {
     min-width: 350px;
+    width: 350px;
     max-width:1000px;
 }
 
@@ -177,7 +173,14 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
     font-size: 16px !important;
 }
 
+[aria-label="dialog"]:has(.st-key-unit-test-ui) {
+    width: 90% !important;
+}
+
 /* Edit Dialog */
+
+
+
 
 [aria-label="dialog"]:has(.st-key-edit_dialog) {
     width: 90% !important;
@@ -383,6 +386,8 @@ div .st-key-node_colors * {
 .st-key-node_shapes img {
     max-height: 144px;
 }
+
+
 """
 
 
@@ -417,6 +422,9 @@ def st_init(page_config=True):
         st.session_state.trigger_build_toggle = None
         st.session_state.builder = None
         st.session_state.builder_progress = 0.0
+        st.session_state.global_error_check = False
+
+        st.session_state.pending_ama = None
 
         st.session_state.force_update = False
         st.session_state.clear_graph = False

@@ -1,6 +1,6 @@
 # This is needed for the Dockerfile
 openai>=1.50.2
-litellm>=1.48.7
+litellm[proxy]>=1.48.7
 graphviz>=0.20.3
 black>=24.0
 pytest>=6.2.5

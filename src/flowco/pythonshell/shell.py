@@ -14,7 +14,11 @@ from nbclient import NotebookClient, exceptions as nb_exceptions
 
 from flowco.assistant.flowco_assistant import flowco_assistant
 from flowco.builder.type_ops import convert_np_float64, decode, encode
-from flowco.dataflow.checks import CheckOutcomes, QualitativeCheck
+from flowco.dataflow.checks import (
+    CheckOutcomes,
+    QualitativeCheck,
+    QualitativeCheckWithCode,
+)
 from flowco.dataflow.dfg import Node, DataFlowGraph
 from flowco.page.output import NodeResult, OutputType, ResultOutput, ResultValue
 from flowco.page.tables import GlobalTables
@@ -91,13 +95,16 @@ class PythonShell:
         # Define the import statements to be executed once
         import_code = textwrap.dedent(
             """\
-            import pandas as pd
             import numpy as np
-            from numpy import nan
+            import pandas as pd
             import matplotlib.pyplot as plt
             import seaborn as sns
-            import sklearn
+            import statsmodels
+            import statsmodels.api as sm
             import scipy
+            import scipy.stats as stats
+            import sklearn
+            from numpy import nan
             import pickle
             import base64
             from io import StringIO                          
@@ -110,6 +117,8 @@ class PythonShell:
             import logging
             logging.disable(logging.ERROR)
             
+            sns.set_theme(context='talk', style='whitegrid', palette='tab10')
+
             %matplotlib inline
         """
         )
@@ -277,10 +286,46 @@ class PythonShell:
         Load the result variable from the previous node into the PythonShell.
         """
         if node.result is not None and node.result.result is not None:
-            repr_val, _ = node.result.result.to_repr()
-            self._run_cell(f"{node.function_result_var} = {repr_val}")
+            with TemporaryDirectory(dir=self.sandbox_dir) as temp_dir:
+                temp_file_path = os.path.join(temp_dir, uuid.uuid4().hex + ".pickle")
+                with open(temp_file_path, "wb") as f:
+                    assert node.result is not None
+                    assert node.result.result is not None
+                    f.write(node.result.result.pickle.encode())
+
+                self._run_cell(
+                    f"{node.function_result_var} = decode(open('{temp_file_path}', 'rb').read().decode())"
+                )
+            # repr_val, _ = node.result.result.to_repr()
+            # self._run_cell(f"{node.function_result_var} = {repr_val}")
         else:
             self._run_cell(f"{node.function_result_var} = None")
+
+    def run_full_dfg_context(self, tables: GlobalTables, dfg: DataFlowGraph, code: str) -> EvalResult:
+        with logger("Loading tables"):
+            self.load_tables(tables)
+        with logger("Loading results"):
+            with TemporaryDirectory(dir=self.sandbox_dir) as temp_dir:
+                result_code = []
+                for node in dfg.nodes:
+                    if node.result is not None and node.result.result is not None:
+                        temp_file_path = os.path.join(
+                            temp_dir, uuid.uuid4().hex + ".pickle"
+                        )
+                        with open(temp_file_path, "wb") as f:
+                            f.write(node.result.result.pickle.encode())
+                            result_code.append(
+                                f"{node.function_result_var} = decode(open('{temp_file_path}', 'rb').read().decode())"
+                            )
+
+                with logger("Running cell to load parameters"):
+                    code_str = "\n".join(result_code)
+                    self._run_cell(code_str)
+
+        result = self.run(code)
+        return result
+
+
 
     def run_node(
         self, tables: GlobalTables, dfg: DataFlowGraph, node: Node
@@ -426,8 +471,10 @@ class PythonShell:
                         with logger(f"Evaluating quantitative assertion {assertion}"):
                             assertion_message = None
                             try:
+                                print(check.code)
                                 self._run_cell("\n".join(check.code))
                             except nb_exceptions.CellExecutionError as e:
+                                print(e)
                                 if e.ename == "AssertionError":
                                     assertion_message = (
                                         self.extract_assertion_error_message(
@@ -450,6 +497,85 @@ class PythonShell:
 
                 node = node.update(
                     assertion_outcomes=CheckOutcomes(outcomes=outcomes, context=context)
+                )
+                return node
+
+            except Exception as e:
+                error(f"Error evaluating node '{node.id}'", e)
+                raise (e)
+
+    def _run_qualitative_unit_test(
+        self, node: Node, unit_test: str, check: QualitativeCheckWithCode
+    ) -> str | None:
+
+        result = self.run("\n".join(check.code))
+
+        if result is not None:
+            result_output = result.as_result_output()
+            assert result_output is not None, "No output found."
+            result_messages = result_output.to_content_part()
+        else:
+            result_messages = []
+
+        class InspectionCompletion(BaseModel):
+            error: bool
+            message: str | None
+
+        requirement = check.requirement
+
+        assistant = flowco_assistant(
+            prompt_key="inspect-output",
+            requirements=requirement,
+        )
+        assistant.add_text("user", "Here is the output.")
+        assistant.add_content_parts("user", result_messages)
+
+        completion = assistant.model_completion(InspectionCompletion)
+        if completion.error:
+            return completion.message
+        else:
+            return None
+
+    def run_unit_tests(
+        self, tables: GlobalTables, dfg: DataFlowGraph, node: Node
+    ) -> Node:
+
+        with logger(f"Evaluating unit tests for node '{node.id}'"):
+            try:
+                outcomes = {}
+                assert node.unit_test_checks is not None, "No unit test checks found."
+
+                with logger("Running node code"):
+                    self._run_cell("\n".join(node.code or []))
+
+                for unit_test, check in node.unit_test_checks.items():
+                    if check.type == "quantitative":
+                        with logger(f"Evaluating quantitative unit_test {unit_test}"):
+                            unit_test_message = None
+                            try:
+                                self._run_cell("\n".join(check.code))
+                            except nb_exceptions.CellExecutionError as e:
+                                if e.ename == "AssertionError":
+                                    unit_test_message = (
+                                        self.extract_assertion_error_message(
+                                            strip_ansi(e.traceback)
+                                        )
+                                    )
+                            except Exception as e:
+                                raise e
+                            log(unit_test_message)
+                            outcomes[unit_test] = unit_test_message
+
+                with logger(f"Evaluating qualitative assertions"):
+                    for unit_test, check in node.unit_test_checks.items():
+                        if check.type == "qualitative-code":
+                            unit_test_message = self._run_qualitative_unit_test(
+                                node, unit_test, check
+                            )
+                            outcomes[unit_test] = unit_test_message
+
+                node = node.update(
+                    assertion_outcomes=CheckOutcomes(outcomes=outcomes, context={})
                 )
                 return node
 

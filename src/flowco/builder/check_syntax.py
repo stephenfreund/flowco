@@ -26,6 +26,7 @@ from flowco.util.text import strip_ansi
 def check_syntax(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node:
 
     max_retries = pass_config.max_retries
+
     if node.is_locked:
         max_retries = 0
 

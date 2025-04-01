@@ -2204,3 +2204,7 @@ if __name__ == "__main__":
     print([lighten_color(x, 0.60) for x in get_colorbrewer_palette("Spectral", 10)])
 
     print([lighten_color(x, 0.80) for x in get_colorbrewer_palette("Spectral", 10)])
+
+    print([lighten_color(x, 0.60) for x in get_colorbrewer_palette("Spectral", 11)])
+
+    print([lighten_color(x, 0.80) for x in get_colorbrewer_palette("Spectral", 11)])

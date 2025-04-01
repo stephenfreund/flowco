@@ -121,8 +121,8 @@ const phase_colors = [
     '#fef2d0', // run_checked
     '#fef2d0', // checks compiled
     '#ddf1da', // checked
-    '#c1e6db',
-    '#adcfe4',
+    '#fef2d0', // tests compiled
+    '#dedbec', // tests checked
     '#beb8d9'
 ];
 
