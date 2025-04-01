@@ -7,9 +7,7 @@ from code_editor import code_editor
 import streamlit as st
 
 from flowco.assistant.flowco_assistant import fast_transcription
-from flowco.builder.cache import BuildCache
 from flowco.builder.synthesize import algorithm, requirements, compile
-from flowco.builder.synthesize_kinds import table_requirements
 from flowco.dataflow.dfg import DataFlowGraph, Node, NodeKind
 from flowco.dataflow.extended_type import ExtendedType, schema_to_text
 from flowco.dataflow.phase import Phase
@@ -24,7 +22,6 @@ from flowco.ui.ui_util import (
     visible_phases,
 )
 from flowco.util.config import config
-from flowco.util.output import log, logger
 
 
 @dataclass
@@ -59,6 +56,7 @@ class Response:
 class PendingAMA:
     prompt: str
     show_prompt: bool
+    consistent_at_end: bool
 
 
 class NodeEditor:
@@ -73,6 +71,7 @@ class NodeEditor:
         self.dfg = dfg
         self.node = node
         self.original_node = node
+        self.last_checked = node
         self.ama = AskMeAnythingNode(dfg, show_code(), node.kind == NodeKind.plot)
 
     def others(self, title):
@@ -157,20 +156,26 @@ class NodeEditor:
             key=f"editor_{title}",
             height=height,
             allow_reset=True,
-            response_mode=["blur"],  # type: ignore
+            response_mode=["blur", "debounce"],  # type: ignore
             props=props,
             options=options,
             info=info_bar,
             buttons=buttons,
             focus=focus,
         )
+
+        if response["type"] == "change":
+            if value != response["text"]:
+                self.last_checked = None
+            return None
+
         last_response = self.last_update.get(title, None)
         if response["id"] != "" and (
             last_response is None
             or (last_response is not None and last_response["id"] != response["id"])
         ):
-            print(f"Last response: {last_response}")
-            print(f"Current response: {response}")
+            # print(f"Last response: {last_response}")
+            # print(f"Current response: {response}")
             self.last_update[title] = response
             return Response(response["text"], response["type"] == "submit")
         else:
@@ -216,8 +221,9 @@ class NodeEditor:
             self.node = self.node.update(label=label_response.text)
             if label_response.is_submit:
                 self.pending_ama = PendingAMA(
-                    f"The label has been modified.  Propagate those changes to the {self.others('Label')}.",
+                    f"The label has been modified.  Propagate those changes to the {self.others('Label')}. Don't change the label.",
                     False,
+                    True,
                 )
 
         requirements_md = "\n".join(f"* {x}" for x in self.node.requirements or [])
@@ -232,8 +238,9 @@ class NodeEditor:
             )
             if requirements_response.is_submit:
                 self.pending_ama = PendingAMA(
-                    f"The requirements have been modified.  Propagate those changes to the {self.others('Requirements')}.",
+                    f"The requirements have been modified.  Propagate those changes to the {self.others('Requirements')}. Don't change the requirements.",
                     False,
+                    True,
                 )
 
         with st.container(key="output_type_schema"):
@@ -252,8 +259,9 @@ class NodeEditor:
                 self.node = self.node.update(code=code_response.text.split("\n"))
                 if code_response.is_submit:
                     self.pending_ama = PendingAMA(
-                        f"The code has been modified.  Propagate those changes to the {self.others('Code')}.",
+                        f"The code has been modified.  Propagate those changes to the {self.others('Code')}.  Don't change the code.",
                         False,
+                        True,
                     )
 
     def save(self):
@@ -411,10 +419,15 @@ class NodeEditor:
                                 requirements="\n".join(
                                     f"* {x}" for x in self.node.requirements or []
                                 ),
+                                return_type=self.node.function_return_type.model_dump_json(
+                                    indent=2
+                                ),
                                 code="\n".join(self.node.code or []),
                             ),
                             False,
+                            True,
                         )
+                        self.last_checked = self.node
                 with c[3]:
                     rebuild = st.button(
                         "Regenerate",
@@ -424,7 +437,11 @@ class NodeEditor:
 
                 if rebuild:
                     self.regenerate()
+                    self.last_checked = self.node
                     st.rerun(scope="fragment")
+
+        if self.pending_ama:
+            st.rerun(scope="fragment")
 
     def table(self):
         if self.node.predecessors:
@@ -483,9 +500,8 @@ class NodeEditor:
                         )
                     )
                 self.node = self.ama.updated_node() or self.node
-
-                # with logger("ama updating pill"):
-                #     self.node = self.dfg.update_node_pill(self.node)
+                if pending_ama.consistent_at_end:
+                    self.last_checked = self.node
 
                 self.pending_ama = None
                 st.rerun(scope="fragment")
@@ -503,7 +519,7 @@ class NodeEditor:
                 "Ask me to make changes, fix problems, or suggest improvements. Or edit the node directly below.",
                 key="ama_input_node",
             ):
-                self.register_pending_ama(prompt, True)
+                self.register_pending_ama(prompt, True, False)
                 st.rerun(scope="fragment")
 
         with st.container(key="edit_dialog"):
@@ -519,6 +535,14 @@ class NodeEditor:
 
         if self.node.label == "":
             return "The node must have a label."
+
+        if self.last_checked is None or (
+            self.last_checked.kind != self.node.kind
+            or self.last_checked.requirements != self.node.requirements
+            or self.last_checked.label != self.node.label
+            or self.last_checked.code != self.node.code
+        ):
+            return "Check the node for consistency before saving."
 
         return None
 

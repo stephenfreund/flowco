@@ -1,6 +1,7 @@
 import os
 import textwrap
 from typing import Dict
+import uuid
 import streamlit as st
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
@@ -9,6 +10,8 @@ from google_auth_oauthlib.flow import Flow
 import json
 from datetime import datetime, timedelta
 from dataclasses import dataclass
+
+from flowco.session import session_file_system
 
 
 # Constants
@@ -23,10 +26,6 @@ FILE_EXTENSION = ".flowco"
 # Initialize Streamlit session state for credentials
 if "credentials" not in st.session_state:
     st.session_state.credentials = None
-
-# Cache dictionary to store data and timestamps
-google_client_config = st.secrets["google_client_secrets"]
-environment = st.secrets["FLOWCO_ENVIRONMENT"]
 
 
 @dataclass
@@ -49,7 +48,22 @@ def purge_stale_entries(cache_dict):
 
 
 def sign_in(authorization_url: str):
-    st.link_button("Sign In", authorization_url)
+
+    release = os.getenv("RELEASE_VERSION", "unknown")
+
+    instructions = textwrap.dedent(
+        f"""\
+        * **Signing in with Google** creates an account on our server associated with your email address.
+        * **Signing in as Guest** creates a temporary account for the current session that will be deleted when you close the browser tab.
+        * Click "Report Bug" whenever you see something fishy!
+        """
+    )
+
+    st.write(f"# Flowco {release}!")
+    st.write(instructions)
+
+
+    st.link_button("Sign In With Google", authorization_url)
     with st.sidebar:
         st.image("static/flowco.png")
 
@@ -57,6 +71,8 @@ def sign_in(authorization_url: str):
 # Function to fetch user information from id_token
 def fetch_user_info_from_id_token(id_token_str):
     try:
+        google_client_config = st.secrets["google_client_secrets"]
+
         # Specify the CLIENT_ID of the app that accesses the backend:
         CLIENT_ID = google_client_config["client_id"]
         # Verify the integrity of the id_token
@@ -97,6 +113,9 @@ def oauth_authenticate():
 
         if "auth_state" not in st.session_state:
             st.session_state.auth_state = "initial"
+
+        environment = st.secrets["FLOWCO_ENVIRONMENT"]
+        google_client_config = st.secrets["google_client_secrets"]
 
         if environment == "production":
             redirect_uri = google_client_config["redirect_uris"][1]  # Production URI
@@ -175,35 +194,18 @@ def sign_out():
 
 
 def authenticate():
-    release = os.getenv("RELEASE_VERSION", "unknown")
-
-    instructions = textwrap.dedent(
-        f"""\
-        # Flowco {release}!
-        
-        * Flowco uses Google Sign-In to authenticate users.
-        * Your email address will be used to create a unique account.
-        * Flowco uses an Amazon S3 bucket to store all user files.
-        * Click the "Report Bug" whenever you see anything fishy!
-
-        [Version Release Notes](https://github.com/stephenfreund/flowco/releases)
-
-        """
-    )
-    # st.write(f"Please sign in to continue.")
-    st.write(instructions)
 
     if st.session_state.credentials is None:
         oauth_authenticate()
         # while st.session_state.credentials is None:
         oauth_authenticate()
 
-        if st.button("Guest"):
+        if st.button("Sign In As Guest"):
             cache_dict = cache()
             purge_stale_entries(cache_dict)
             key = st.context.cookies["_streamlit_xsrf"].split("|")[-1]
             st.session_state.credentials = "Guest"
-            st.session_state.user_email = "guest" 
+            st.session_state.user_email = session_file_system.SessionFileSystem.make_unique_path("s3://go-flowco/", "guest")
             st.session_state.auth_state = "authenticated"
             cache_dict[key] = CacheEntry(
                 credentials=st.session_state.credentials,
