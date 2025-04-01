@@ -53,8 +53,8 @@ def sign_in(authorization_url: str):
 
     instructions = textwrap.dedent(
         f"""\
-        * **Signing in with Google** creates an account on our server associated with your email address.
-        * **Signing in as Guest** creates a temporary account for the current session that will be deleted when you close the browser tab.
+        * **Signing in with Google** creates an account on the Flowco server associated with your email address.
+        * **Signing in as Guest** creates a temporary account for the current session.
         * Click "Report Bug" whenever you see something fishy!
         """
     )
