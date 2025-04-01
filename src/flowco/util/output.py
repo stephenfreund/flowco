@@ -7,7 +7,6 @@ import traceback
 
 from httpx import get
 import termcolor
-from termcolor._types import Color
 
 import threading
 
@@ -166,14 +165,14 @@ class Output(threading.local):
             self,
             outer,
             message,
-            color: Color = "cyan",
+            color = "cyan",
             start="",
             time_prefix="",
             end="",
         ):
             self.outer = outer
             self.message = termcolor.colored(message + "...", color=color)
-            self.color: Color = color
+            self.color = color
             self.start = termcolor.colored(start, color)
             self.time_prefix = termcolor.colored(time_prefix, color)
             self.end = termcolor.colored(end, color)
