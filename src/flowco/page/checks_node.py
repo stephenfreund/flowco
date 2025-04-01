@@ -52,9 +52,9 @@ def check_node_consistency(
         )
 
     if assistant.show_code:
-        prompt = config.get_prompt("ama_node_editor_sync")
+        prompt = config().get_prompt("ama_node_editor_sync")
     else:
-        prompt = config.get_prompt("ama_node_editor_sync_no_code")
+        prompt = config().get_prompt("ama_node_editor_sync_no_code")
 
     completion = assistant.model_completion(
         prompt=prompt, node=node, response_model=ConsistencyWarnings

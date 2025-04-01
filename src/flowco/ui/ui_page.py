@@ -30,7 +30,7 @@ def st_abstraction_level():
         "abstraction_level" not in st.session_state
         or st.session_state.abstraction_level is None
     ):
-        st.session_state.abstraction_level = config.abstraction_level
+        st.session_state.abstraction_level = config().abstraction_level
     return st.session_state.abstraction_level
 
 

@@ -49,7 +49,7 @@ class FlowthonNode(BaseModel):
         if self.requirements:
             map["requirements"] = self.requirements
         if (
-            config.x_algorithm_phase
+            config().x_algorithm_phase
             and self.algorithm
             and level
             in [
@@ -76,7 +76,7 @@ class FlowthonNode(BaseModel):
             "imports",
         ]
 
-        if config.x_algorithm_phase:
+        if config().x_algorithm_phase:
             keys.append("algorithm")
 
         assert all(key in keys for key in node_data), f"Missing keys in {node_data}"
@@ -102,7 +102,7 @@ class FlowthonNode(BaseModel):
                 isinstance(x, str) for x in node_data["requirements"]
             ), f"Expected list of str, got {node_data['requirements']}"
 
-        if config.x_algorithm_phase:
+        if config().x_algorithm_phase:
             if "algorithm" in node_data:
                 assert isinstance(
                     node_data["algorithm"], list
@@ -144,7 +144,7 @@ class FlowthonNode(BaseModel):
             label=node_data.get("label", ""),
             requirements=node_data.get("requirements", None),
             algorithm=(
-                node_data.get("algorithm", None) if config.x_algorithm_phase else None
+                node_data.get("algorithm", None) if config().x_algorithm_phase else None
             ),
             imports=node_data.get("imports", None),
             code=node_data.get("code", None),
@@ -503,7 +503,9 @@ class FlowthonProgram(BaseModel):
                     label=sections.get("short_description", ""),  # Wrap in list
                     requirements=sections.get("requirements"),
                     algorithm=(
-                        sections.get("algorithm") if config.x_algorithm_phase else None
+                        sections.get("algorithm")
+                        if config().x_algorithm_phase
+                        else None
                     ),
                     code=code,
                     assertions=sections.get("assertions"),
@@ -638,7 +640,7 @@ class FlowthonProgram(BaseModel):
                 if section == "code" and abstraction_level != AbstractionLevel.code:
                     continue
 
-                if config.x_algorithm_phase:
+                if config().x_algorithm_phase:
                     if section == "algorithm" and (
                         abstraction_level != AbstractionLevel.algorithm
                         and abstraction_level != AbstractionLevel.code
@@ -776,7 +778,7 @@ class FlowthonProgram(BaseModel):
                     ),
                     algorithm=(
                         (node.algorithm if node.algorithm else new_node.algorithm)
-                        if config.x_algorithm_phase
+                        if config().x_algorithm_phase
                         else None
                     ),
                     code=(node.code if node.code else new_node.code),
@@ -784,7 +786,7 @@ class FlowthonProgram(BaseModel):
 
                 phase = original.phase
 
-                if config.x_algorithm_phase:
+                if config().x_algorithm_phase:
                     if new_node.code != original.code:
                         phase = min(phase, Phase.algorithm)
                     if new_node.algorithm != original.algorithm:
@@ -807,7 +809,7 @@ class FlowthonProgram(BaseModel):
                 if node.requirements and node.requirements != original.requirements:
                     edits.append("requirements")
 
-                if config.x_algorithm_phase:
+                if config().x_algorithm_phase:
                     if node.algorithm and node.algorithm != original.algorithm:
                         edits.append("algorithm")
 

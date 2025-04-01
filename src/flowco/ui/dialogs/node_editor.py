@@ -283,7 +283,11 @@ class NodeEditor:
             for phase in visible_phases():
                 node = node.update(cache=node.cache.update(phase=phase, node=node))
 
+<<<<<<< HEAD
         dfg = dfg.with_node(node).reduce_phases_to_below_target(node.id, node.phase)
+=======
+        dfg = dfg.with_node(node)  # .reduce_phases_to_below_target(node.id, node.phase)
+>>>>>>> e73b6cb1a2a9eb08a5eaf3cb93d8005dfd480b5b
 
         # gen new pill if label changed but pill did not.
         # if original_node.label != node.label and original_node.pill == node.pill:
@@ -397,7 +401,7 @@ class NodeEditor:
                         disabled=self.pending_ama is not None,
                     ):
                         self.pending_ama = PendingAMA(
-                            config.get_prompt(
+                            config().get_prompt(
                                 (
                                     "ama_node_editor_sync"
                                     if show_code()

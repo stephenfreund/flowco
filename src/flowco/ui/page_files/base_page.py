@@ -62,7 +62,7 @@ class FlowcoPage:
                         "Abstraction Level",
                         (
                             AbstractionLevel
-                            if config.x_algorithm_phase
+                            if config().x_algorithm_phase
                             else [AbstractionLevel.spec, AbstractionLevel.code]
                         ),
                         key="al",
@@ -216,7 +216,7 @@ class FlowcoPage:
             st.session_state.ama = AskMeAnything(page)
 
         with st.container():
-            height = 400 if not config.x_no_right_panel else 200
+            height = 400 if not config().x_no_right_panel else 200
             container = st.container(height=height, border=True, key="chat_container")
             with container:
                 for message in st.session_state.ama.messages():
@@ -472,7 +472,7 @@ class FlowcoPage:
 
         if st.session_state.ui_page is not None:
 
-            if config.x_no_right_panel:
+            if config().x_no_right_panel:
                 left, right = st.container(), None
             else:
                 left, right = self.main_columns()
@@ -486,7 +486,7 @@ class FlowcoPage:
 
                 cache = (
                     st.session_state.image_cache
-                    if not config.x_no_image_cache
+                    if not config().x_no_image_cache
                     else None
                 )
 

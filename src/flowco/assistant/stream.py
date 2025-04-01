@@ -28,16 +28,16 @@
 
 
 # class StreamingAssistant(AssistantBase):
-#     def str_completion(self, model: str = config.model) -> Iterator[str]:
+#     def str_completion(self, model: str = config().model) -> Iterator[str]:
 #         return self._str_stream_completion(model)
 
 #     def _str_stream_completion(self, model: str) -> Iterator[str]:
 #         with logger("Streaming Completion"):
 #             stream = litellm.completion(
-#                 model=config.model,
+#                 model=config().model,
 #                 messages=self.messages,
 #                 stream=True,
-#                 # temperature=0 if config.zero_temp else None,
+#                 # temperature=0 if config().zero_temp else None,
 #             )
 
 #             for chunk in stream:
@@ -46,7 +46,7 @@
 #     T = TypeVar("T", bound=BaseModel)
 
 #     def model_completion(
-#         self, response_model: type[T], model: str = config.model
+#         self, response_model: type[T], model: str = config().model
 #     ) -> Iterator[T]:
 #         return self._model_stream_completion(response_model, model)
 
@@ -56,7 +56,7 @@
 #         with logger("Streaming Completion"):
 #             self.add_message("system", "Respond with JSON.")
 #             stream = self.instructor_client.chat.completions.create_partial(
-#                 # model=config.model,
+#                 # model=config().model,
 #                 messages=self.messages,
 #                 response_model=response_model,
 #                 stream=True,
@@ -65,7 +65,7 @@
 #                     stop=tenacity.stop_after_attempt(3),
 #                     after=lambda e: log(f"Bad response: {e}"),
 #                 ),  # type: ignore
-#                 # temperature=0 if config.zero_temp else None,
+#                 # temperature=0 if config().zero_temp else None,
 #             )
 #             for response in stream:
 #                 yield response
@@ -79,11 +79,11 @@
 
 #     def __iter__(self) -> Iterator[str]:
 #         stream = litellm.completion(
-#             model=config.model,
+#             model=config().model,
 #             messages=self.messages,
 #             stream=True,
 #             response_format={"type": "text"},
-#             # temperature=0 if config.zero_temp else None,
+#             # temperature=0 if config().zero_temp else None,
 #         )
 #         self.chunks: List[Any] = []
 #         for chunk in stream:
@@ -110,7 +110,7 @@
 #         self._functions = {}
 #         for f in functions:
 #             self._add_function(f)
-#         self.model = config.model
+#         self.model = config().model
 #         self.image_cache = {}
 
 #     def _add_function(self, function: Callable | Tuple[Callable, Dict[str, Any]]):
@@ -173,7 +173,7 @@
 #                 stream=True,
 #                 response_format={"type": "text"},
 #                 max_completion_tokens=8192 * 2,
-#                 # temperature=0 if config.zero_temp else None,
+#                 # temperature=0 if config().zero_temp else None,
 #             )
 
 #             chunks = []
@@ -227,7 +227,7 @@
 #     def model_completion(self, response_model: type[T]) -> T:
 #         response, completion = (
 #             self.instructor_client.chat.completions.create_with_completion(
-#                 model=config.model,
+#                 model=config().model,
 #                 messages=self.messages,
 #                 response_model=response_model,
 #                 response_format={"type": "json_object"},
@@ -237,7 +237,7 @@
 #                         f"Bad response, retrying up to limit:\n{textwrap.indent(str(e), prefix='    ')}"
 #                     ),
 #                 ),  # type: ignore
-#                 # temperature=0 if config.zero_temp else None,
+#                 # temperature=0 if config().zero_temp else None,
 #             )
 #         )
 #         self.add_message("assistant", response.model_dump_json(indent=2))  # type: ignore
