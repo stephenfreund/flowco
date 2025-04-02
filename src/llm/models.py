@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from multiprocessing import Value
-from typing import List
+from typing import Dict, List
 from openai.types.completion_usage import CompletionUsage
 
 
@@ -8,6 +8,7 @@ from openai.types.completion_usage import CompletionUsage
 class Model:
     name: str
     use_proxy: bool
+    api_key_name: str
 
     supports_vision: bool
     supports_audio: bool
@@ -40,6 +41,7 @@ _models = {
     "o3-mini": Model(
         name="o3-mini",
         use_proxy=False,
+        api_key_name="OPENAI_API_KEY",
         supports_vision=False,
         supports_audio=False,
         supports_temperature=False,
@@ -51,6 +53,7 @@ _models = {
     "o1": Model(
         name="o1",
         use_proxy=False,
+        api_key_name="OPENAI_API_KEY",
         supports_vision=True,
         supports_audio=False,
         supports_temperature=True,
@@ -62,6 +65,7 @@ _models = {
     "gpt-4o": Model(
         name="gpt-4o-2024-11-20",
         use_proxy=False,
+        api_key_name="OPENAI_API_KEY",
         supports_vision=True,
         supports_audio=False,
         supports_temperature=True,
@@ -73,6 +77,7 @@ _models = {
     "gpt-4.5": Model(
         name="gpt-4.5-preview",
         use_proxy=False,
+        api_key_name="OPENAI_API_KEY",
         supports_vision=True,
         supports_audio=False,
         supports_temperature=True,
@@ -84,6 +89,7 @@ _models = {
     "gpt-4o-mini": Model(
         name="gpt-4o-mini",
         use_proxy=False,
+        api_key_name="OPENAI_API_KEY",
         supports_vision=False,
         supports_audio=False,
         supports_temperature=True,
@@ -95,6 +101,7 @@ _models = {
     "claude-3-sonnet": Model(
         name="claude-3-sonnet",
         use_proxy=True,
+        api_key_name="ANTHROPIC_API_KEY",
         supports_vision=True,
         supports_audio=False,
         supports_temperature=False,
@@ -107,6 +114,7 @@ _models = {
         name="claude-3-7-sonnet",
         use_proxy=True,
         supports_vision=True,
+        api_key_name="ANTHROPIC_API_KEY",
         supports_audio=False,
         supports_temperature=False,
         supports_prediction=False,
@@ -117,6 +125,7 @@ _models = {
     "claude-3-haiku": Model(
         name="claude-3-haiku",
         use_proxy=True,
+        api_key_name="ANTHROPIC_API_KEY",
         supports_vision=False,
         supports_audio=False,
         supports_temperature=False,
@@ -126,6 +135,11 @@ _models = {
         cached_token_rate=3 / 10**6,
     ),
 }
+
+
+def models_for_config() -> Dict[str, Model]:
+
+    return _models
 
 
 def supported_models() -> List[str]:

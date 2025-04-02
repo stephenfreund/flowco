@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, Iterator, List, Literal, Type, TypeVar
 import openai
 from flowco.util.output import logger
 from llm.message_format import process_chat_message
-from llm.models import get_model
+from llm.models import Model, get_model
 from pydantic import BaseModel
 
 from openai.types.chat import (
@@ -146,6 +146,30 @@ class NthCompletion:
     assistant: "Assistant"
 
 
+class AssistantError(Exception):
+    messages = {
+        openai.APIConnectionError: "Issue connecting to the LLM.  Try again.",
+        openai.APITimeoutError: "LLM request timed out.",
+        openai.AuthenticationError: "Your API key or token was invalid, expired, or revoked.  Add a valid API key under Settings.  You can find your API key at https://platform.openai.com/account/api-keys.",
+        openai.BadRequestError: "Internal error.  Bad Request.  Please click the 'Report Bug' button.",
+        openai.ConflictError: "Internal error.  Conflict Error.  Please click the 'Report Bug' button.",
+        openai.InternalServerError: "LLM Server error.  Try again.",
+        openai.NotFoundError: "Internal Error.  Requested resource does not exist.  Please click the 'Report Bug' button.",
+        openai.PermissionDeniedError: "Internal Error.  You don't have access to the requested resource. Please click the 'Report Bug' button.",
+        openai.RateLimitError: "You have hit your LLM rate limit.",
+        openai.UnprocessableEntityError: "The request was well-formed but was unable to be followed due to semantic errors.",
+    }
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+
+    @staticmethod
+    def from_openai_error(e: openai.OpenAIError) -> "AssistantError":
+        return AssistantError(
+            AssistantError.messages.get(type(e), "An unknown error occurred.")
+        )
+
+
 class AssistantLogger:
     def log(self, message: str) -> None:
         print(message)
@@ -178,12 +202,14 @@ class Assistant:
     def __init__(
         self,
         model: str,
+        api_key: str,
         functions: List[Callable[..., ToolCallResult]] = [],
         logger: AssistantLogger = AssistantLogger(),
         temperature: float | None = None,
         max_tokens: int | None = None,
     ) -> None:
         self.model = get_model(model)
+        self.api_key = api_key
         self.messages: List[ChatCompletionMessageParam] = []
         self.set_functions(functions)
         self.cached_images = {}
@@ -195,14 +221,17 @@ class Assistant:
             self.logger.warn(
                 f"Using proxy model {self.model.name}. This model is not suitable for production use."
             )
-            self.start_proxy(self.model.name)
-            self.client = openai.Client(base_url=f"{proxy_url}:{proxy_port}")
+            self.start_proxy(api_key=api_key)
+            # shouldn't need a real key here...
+            self.client = openai.Client(
+                base_url=f"{proxy_url}:{proxy_port}", api_key=api_key
+            )
         else:
-            self.client = openai.Client()
+            self.client = openai.Client(api_key=api_key)
 
     proxy_lock = threading.Lock()
 
-    def start_proxy(self, model_name: str) -> None:
+    def start_proxy(self, api_key: str) -> None:
         with Assistant.proxy_lock:
             import socket
 
@@ -210,10 +239,13 @@ class Assistant:
                 if s.connect_ex(("localhost", proxy_port)) != 0:
                     self.logger.log("Starting proxy model")
                     config_file = os.path.dirname(__file__) + "/litellm-config.yaml"
+                    env = os.environ.copy()
+                    env[self.model.api_key_name] = api_key
                     p = subprocess.Popen(
                         f"litellm --port {proxy_port} --config {config_file}".split(
                             " "
                         ),
+                        env=env,
                     )
                     sleep(3)  # wait for the proxy to start
 
@@ -321,7 +353,7 @@ class Assistant:
                 response = f"The result is the image `{key}.png`."
                 call_text += f"![tool_result]({key}.png)"
             else:
-                raise ValueError(f"Unknown result type: {content_type}")
+                raise AssistantError(f"Unknown result type: {content_type}")
         else:
             response = result.user_message
 
@@ -425,112 +457,120 @@ class Assistant:
 
     def completion(self, prediction: str | None = None) -> str:
         with self.logger:
-            full_completion_text = ""
-            while True:
-                try:
+            try:
+                full_completion_text = ""
+                while True:
                     client = self.client
                     completion = client.chat.completions.create(
                         model=self.model.name,
                         messages=self.messages,
                         **self._args(prediction),
                     )
-                except openai.OpenAIError as e:
-                    self.logger.error(str(e))
-                    for i, m in enumerate(self.messages):
-                        self.logger.error(f"Message {i}:")
-                        self.logger.error(json.dumps(m, indent=2))
-                    raise (e)
+                    # cost
+                    self.compute_and_log_cost(completion.usage)
 
-                # cost
-                self.compute_and_log_cost(completion.usage)
+                    # message
+                    choice: Choice = completion.choices[0]
+                    message: ChatCompletionMessage = choice.message
+                    assert message is not None, "Message is None"
+                    self._add_completion(message)
 
-                # message
-                choice: Choice = completion.choices[0]
-                message: ChatCompletionMessage = choice.message
-                assert message is not None, "Message is None"
-                self._add_completion(message)
+                    # yield any text
+                    content = message.content
+                    if content is not None:
+                        full_completion_text += content
 
-                # yield any text
-                content = message.content
-                if content is not None:
-                    full_completion_text += content
-
-                # stop or do tool calls
-                assert choice.finish_reason in [
-                    "stop",
-                    "tool_calls",
-                ], f"Unexpected finish reason: {choice.finish_reason}"
-                if choice.finish_reason == "stop":
-                    break
-                assert choice.message.tool_calls, "No tool calls"
-                for tool_call in choice.message.tool_calls:
-                    full_completion_text += self.make_call(tool_call)
-            return full_completion_text
+                    # stop or do tool calls
+                    assert choice.finish_reason in [
+                        "stop",
+                        "tool_calls",
+                    ], f"Unexpected finish reason: {choice.finish_reason}"
+                    if choice.finish_reason == "stop":
+                        break
+                    assert choice.message.tool_calls, "No tool calls"
+                    for tool_call in choice.message.tool_calls:
+                        full_completion_text += self.make_call(tool_call)
+                return full_completion_text
+            except openai.OpenAIError as e:
+                self.logger.error(str(e))
+                for i, m in enumerate(self.messages):
+                    self.logger.error(f"Message {i}:")
+                    self.logger.error(json.dumps(m, indent=2))
+                raise AssistantError.from_openai_error(e)
 
     def stream(self, prediction: str | None = None) -> Iterator[str]:
         with self.logger:
-            while True:
-                client = self.client
-                stream = client.chat.completions.create(
-                    model=self.model.name,
-                    messages=self.messages,
-                    **self._args(prediction),
-                    stream=True,
-                    stream_options={"include_usage": True},
-                )
+            try:
+                while True:
+                    client = self.client
+                    stream = client.chat.completions.create(
+                        model=self.model.name,
+                        messages=self.messages,
+                        **self._args(prediction),
+                        stream=True,
+                        stream_options={"include_usage": True},
+                    )
+                    final_tool_calls: Dict[int, ChoiceDeltaToolCall] = {}
+                    final_content = ""
+                    for chunk in stream:
+                        if chunk.choices:
+                            choice = chunk.choices[0]
+                            delta = choice.delta
+                            if delta.content is not None:
+                                final_content += delta.content
+                                yield delta.content
+                            for tool_call in chunk.choices[0].delta.tool_calls or []:
+                                index = tool_call.index
 
-                final_tool_calls: Dict[int, ChoiceDeltaToolCall] = {}
-                final_content = ""
-                for chunk in stream:
-                    if chunk.choices:
-                        choice = chunk.choices[0]
-                        delta = choice.delta
-                        if delta.content is not None:
-                            final_content += delta.content
-                            yield delta.content
-                        for tool_call in chunk.choices[0].delta.tool_calls or []:
-                            index = tool_call.index
+                                if index not in final_tool_calls:
+                                    final_tool_calls[index] = tool_call
 
-                            if index not in final_tool_calls:
-                                final_tool_calls[index] = tool_call
+                                if tool_call.function:
+                                    function = final_tool_calls[index].function
+                                    assert function is not None, "No function"
+                                    if tool_call.function.name:
+                                        function.name = tool_call.function.name
+                                    if function.arguments is None:
+                                        function.arguments = ""
+                                    if tool_call.function.arguments:
+                                        function.arguments += (
+                                            tool_call.function.arguments
+                                        )
+                        if chunk.usage:
+                            self.compute_and_log_cost(chunk.usage)
 
-                            if tool_call.function:
-                                function = final_tool_calls[index].function
-                                assert function is not None, "No function"
-                                if tool_call.function.name:
-                                    function.name = tool_call.function.name
-                                if function.arguments is None:
-                                    function.arguments = ""
-                                if tool_call.function.arguments:
-                                    function.arguments += tool_call.function.arguments
-                    if chunk.usage:
-                        self.compute_and_log_cost(chunk.usage)
+                    message = ChatCompletionMessage(
+                        role="assistant",
+                        content=final_content,
+                        tool_calls=[
+                            ChatCompletionMessageToolCall(
+                                **tool_call.model_dump(),
+                            )
+                            for tool_call in final_tool_calls.values()
+                        ],
+                    )
 
-                message = ChatCompletionMessage(
-                    role="assistant",
-                    content=final_content,
-                    tool_calls=[
-                        ChatCompletionMessageToolCall(
-                            **tool_call.model_dump(),
-                        )
-                        for tool_call in final_tool_calls.values()
-                    ],
-                )
+                    self._add_completion(message)
 
-                self._add_completion(message)
+                    if message.tool_calls:
+                        for tool_call in message.tool_calls:
+                            yield self.make_call(tool_call)
+                    else:
+                        return
 
-                if message.tool_calls:
-                    for tool_call in message.tool_calls:
-                        yield self.make_call(tool_call)
-                else:
-                    return
+            except openai.OpenAIError as e:
+                self.logger.error(str(e))
+                for i, m in enumerate(self.messages):
+                    self.logger.error(f"Message {i}:")
+                    self.logger.error(json.dumps(m, indent=2))
+                raise AssistantError.from_openai_error(e)
 
     T = TypeVar("T", bound=BaseModel)
 
     def model_completion(self, response_model: Type[T]) -> T:
         with self.logger:
-            while True:
-                try:
+            try:
+                while True:
                     client = self.client
                     completion = client.beta.chat.completions.parse(
                         model=self.model.name,
@@ -538,41 +578,42 @@ class Assistant:
                         response_format=response_model,  # type: ignore
                         **self._args(),
                     )
-                except openai.OpenAIError as e:
-                    self.logger.error(str(e))
-                    for i, m in enumerate(self.messages):
-                        self.logger.error(f"Message {i}:")
-                        self.logger.error(json.dumps(m, indent=2))
-                    raise (e)
 
-                # cost
-                self.compute_and_log_cost(completion.usage)
+                    # cost
+                    self.compute_and_log_cost(completion.usage)
 
-                # message
-                choice: ParsedChoice = completion.choices[0]
-                message: ParsedChatCompletionMessage = choice.message
-                assert message is not None, "Message is None"
+                    # message
+                    choice: ParsedChoice = completion.choices[0]
+                    message: ParsedChatCompletionMessage = choice.message
+                    assert message is not None, "Message is None"
 
-                self._add_completion(message)
+                    self._add_completion(message)
 
-                # stop or do tool calls
-                assert choice.finish_reason in [
-                    "stop",
-                    "tool_calls",
-                ], f"Unexpected finish reason: {choice.finish_reason}"
-                if choice.finish_reason == "stop":
-                    parsed = completion.choices[0].message.parsed
-                    assert parsed is not None, "parsed is None"
-                    return parsed
-                else:
-                    assert choice.message.tool_calls, "No tool calls"
-                    for tool_call in choice.message.tool_calls:
-                        _ = self.make_call(tool_call)
+                    # stop or do tool calls
+                    assert choice.finish_reason in [
+                        "stop",
+                        "tool_calls",
+                    ], f"Unexpected finish reason: {choice.finish_reason}"
+                    if choice.finish_reason == "stop":
+                        parsed = completion.choices[0].message.parsed
+                        assert parsed is not None, "parsed is None"
+                        return parsed
+                    else:
+                        assert choice.message.tool_calls, "No tool calls"
+                        for tool_call in choice.message.tool_calls:
+                            _ = self.make_call(tool_call)
+
+            except openai.OpenAIError as e:
+                self.logger.error(str(e))
+                for i, m in enumerate(self.messages):
+                    self.logger.error(f"Message {i}:")
+                    self.logger.error(json.dumps(m, indent=2))
+                raise AssistantError.from_openai_error(e)
 
     def model_k_completions(self, response_model: Type[T], k: int = 1) -> List[T]:
         with self.logger:
-            while True:
-                try:
+            try:
+                while True:
                     client = self.client
                     completion = client.beta.chat.completions.parse(
                         model=self.model.name,
@@ -581,36 +622,37 @@ class Assistant:
                         n=1,
                         **self._args(),
                     )
-                except openai.OpenAIError as e:
-                    self.logger.error(str(e))
-                    for i, m in enumerate(self.messages):
-                        self.logger.error(f"Message {i}:")
-                        self.logger.error(json.dumps(m, indent=2))
-                    raise (e)
 
-                # cost
-                self.compute_and_log_cost(completion.usage)
+                    # cost
+                    self.compute_and_log_cost(completion.usage)
 
-                # message
-                choice: ParsedChoice = completion.choices[0]
-                message: ParsedChatCompletionMessage = choice.message
-                assert message is not None, "Message is None"
+                    # message
+                    choice: ParsedChoice = completion.choices[0]
+                    message: ParsedChatCompletionMessage = choice.message
+                    assert message is not None, "Message is None"
 
-                self._add_completion(message)
+                    self._add_completion(message)
 
-                # stop or do tool calls
-                assert choice.finish_reason in [
-                    "stop",
-                    "tool_calls",
-                ], f"Unexpected finish reason: {choice.finish_reason}"
-                if choice.finish_reason == "stop":
-                    parsed = completion.choices[0].message.parsed
-                    assert parsed is not None, "parsed is None"
-                    return parsed
-                else:
-                    assert choice.message.tool_calls, "No tool calls"
-                    for tool_call in choice.message.tool_calls:
-                        _ = self.make_call(tool_call)
+                    # stop or do tool calls
+                    assert choice.finish_reason in [
+                        "stop",
+                        "tool_calls",
+                    ], f"Unexpected finish reason: {choice.finish_reason}"
+                    if choice.finish_reason == "stop":
+                        parsed = completion.choices[0].message.parsed
+                        assert parsed is not None, "parsed is None"
+                        return parsed
+                    else:
+                        assert choice.message.tool_calls, "No tool calls"
+                        for tool_call in choice.message.tool_calls:
+                            _ = self.make_call(tool_call)
+
+            except openai.OpenAIError as e:
+                self.logger.error(str(e))
+                for i, m in enumerate(self.messages):
+                    self.logger.error(f"Message {i}:")
+                    self.logger.error(json.dumps(m, indent=2))
+                raise AssistantError.from_openai_error(e)
 
     def replace_placeholders_with_base64_images(self, markdown: str) -> str:
         for key, image_url in self.cached_images.items():
@@ -623,8 +665,8 @@ class Assistant:
         self, response_model: Type[T], n: int = 1
     ) -> List[NthCompletion]:
         with self.logger:
-            while True:
-                try:
+            try:
+                while True:
                     client = self.client
                     completion = client.beta.chat.completions.parse(
                         model=self.model.name,
@@ -633,40 +675,42 @@ class Assistant:
                         n=n,
                         **self._args(),
                     )
-                except openai.OpenAIError as e:
-                    self.logger.error(str(e))
-                    for i, m in enumerate(self.messages):
-                        self.logger.error(f"Message {i}:")
-                        self.logger.error(json.dumps(m, indent=2))
-                    raise (e)
 
-                # cost
-                self.compute_and_log_cost(completion.usage)
+                    # cost
+                    self.compute_and_log_cost(completion.usage)
 
-                results = []
-                print(len(completion.choices))
-                for choice in completion.choices:
-                    parsed_choice: ParsedChoice = choice
-                    message: ParsedChatCompletionMessage = parsed_choice.message
-                    assert message is not None, "Message is None"
+                    results = []
+                    print(len(completion.choices))
+                    for choice in completion.choices:
+                        parsed_choice: ParsedChoice = choice
+                        message: ParsedChatCompletionMessage = parsed_choice.message
+                        assert message is not None, "Message is None"
 
-                    # make new assistant, preserving all fields and extending the messages to have message
-                    assistant = Assistant(
-                        model=self.model.name,
-                        functions=self.functions,
-                        logger=self.logger,
-                        temperature=self.temperature,
-                        max_tokens=self.max_tokens,
-                    )
-                    assistant.messages = deepcopy(self.messages)
-                    assistant._add_completion(message)
+                        # make new assistant, preserving all fields and extending the messages to have message
+                        assistant = Assistant(
+                            model=self.model.name,
+                            api_key=self.api_key,
+                            functions=self.functions,
+                            logger=self.logger,
+                            temperature=self.temperature,
+                            max_tokens=self.max_tokens,
+                        )
+                        assistant.messages = deepcopy(self.messages)
+                        assistant._add_completion(message)
 
-                    # stop or do tool calls
-                    assert choice.finish_reason in [
-                        "stop",
-                    ], f"Unexpected finish reason: {choice.finish_reason}"
+                        # stop or do tool calls
+                        assert choice.finish_reason in [
+                            "stop",
+                        ], f"Unexpected finish reason: {choice.finish_reason}"
 
-                    parsed = parsed_choice.message.parsed
-                    assert parsed is not None, "parsed is None"
-                    results.append(NthCompletion(t=parsed, assistant=assistant))
-                return results
+                        parsed = parsed_choice.message.parsed
+                        assert parsed is not None, "parsed is None"
+                        results.append(NthCompletion(t=parsed, assistant=assistant))
+                    return results
+
+            except openai.OpenAIError as e:
+                self.logger.error(str(e))
+                for i, m in enumerate(self.messages):
+                    self.logger.error(f"Message {i}:")
+                    self.logger.error(json.dumps(m, indent=2))
+                raise AssistantError.from_openai_error(e)

@@ -32,7 +32,7 @@ from flowco.dataflow.dfg_update import (
     update_dataflow_graph,
 )
 from flowco.util.text import strip_ansi
-from llm.assistant import ToolCallResult
+from llm.assistant import AssistantError, ToolCallResult
 
 
 class VisibleMessage(BaseModel):
@@ -675,6 +675,15 @@ class AskMeAnything:
                     )
                 else:
                     raise ValueError(f"Unknown kind: {kind}")
+        except AssistantError as e:
+            error(e)
+            self.visible_messages += [
+                VisibleMessage(
+                    role="assistant",
+                    content=e.message,
+                    is_error=True,
+                )
+            ]
         except Exception as e:
             error(e)
             self.visible_messages += [

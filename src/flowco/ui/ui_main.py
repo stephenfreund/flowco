@@ -1,11 +1,13 @@
 import os
 import traceback
+from flowco.assistant.flowco_keys import KeyEnv
 from flowco.pythonshell.shells import PythonShells
 from flowco.session.session_file_system import SessionFileSystem
 from flowco.ui.ui_args import parse_args
 from flowco.ui.ui_init import st_init
 from flowco.ui.ui_page import UIPage, set_ui_page
 from flowco.ui.ui_st_pages import st_pages
+
 # from flowco.ui.ui_util import zip_bug
 from flowco.util.config import Config
 from flowco.util.files import setup_flowco_files
@@ -39,6 +41,7 @@ def init_service():
             costs=CostTracker(),
             shells=PythonShells(),
             filesystem=SessionFileSystem(f"file://{page_path}"),
+            keys=KeyEnv(),
         )
         log_timestamp()
         setup_flowco_files()
@@ -82,5 +85,6 @@ except Exception as e:
         costs=CostTracker(),
         shells=PythonShells(),
         filesystem=SessionFileSystem(f"file://{page_path}"),
+        keys=KeyEnv(),
     )
     st.rerun()  # Restart the Streamlit app to reset the session state

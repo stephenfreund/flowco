@@ -1,8 +1,10 @@
 import openai
+from flowco.assistant.flowco_keys import get_api_key
 from flowco.util.config import config
 from flowco.util.costs import add_cost, decrement_inflight, increment_inflight
 from flowco.util.output import error, log, warn, debug
 from llm.assistant import Assistant, AssistantLogger
+from llm.models import get_model
 
 
 class FlowcoLogger(AssistantLogger):
@@ -33,16 +35,20 @@ class FlowcoLogger(AssistantLogger):
 def flowco_assistant(
     prompt_key: str | None = None, **prompt_substitutions
 ) -> Assistant:
-    model = config().model
+    model_name = config().model
+    model = get_model(model_name)
     temperature = 0 if config().zero_temp else None
+    api_key = get_api_key(model.api_key_name)
 
     assert "functions" not in prompt_substitutions, "functions is a reserved key"
 
-    assistant = Assistant(model, logger=FlowcoLogger(), temperature=temperature)
+    assistant = Assistant(
+        model_name, api_key=api_key, logger=FlowcoLogger(), temperature=temperature
+    )
     assistant.add_text("system", config().get_prompt("system-prompt"))
     if prompt_key:
         prompt = config().get_prompt(prompt_key, **prompt_substitutions)
-        assistant.add_text("system", prompt)
+        assistant.add_text("user", prompt)
     return assistant
 
 
@@ -53,21 +59,32 @@ def flowco_assistant_fast(
 
     assert "functions" not in prompt_substitutions, "functions is a reserved key"
 
-    assistant = Assistant("gpt-4o-mini", logger=FlowcoLogger(), temperature=temperature)
+    model = get_model("gpt-4o-mini")
+    api_key = get_api_key(model.api_key_name)
+
+    assistant = Assistant(
+        model.name, api_key=api_key, logger=FlowcoLogger(), temperature=temperature
+    )
     if prompt_key:
         prompt = config().get_prompt(prompt_key, **prompt_substitutions)
-        assistant.add_text("system", prompt)
+        assistant.add_text("user", prompt)
     return assistant
 
 
 def fast_text_complete(prompt: str) -> str:
-    assistant = Assistant("gpt-4o-mini", logger=FlowcoLogger(), max_tokens=10)
-    assistant.add_text("system", prompt)
+    model = get_model("gpt-4o-mini")
+    api_key = get_api_key(model.api_key_name)
+    assistant = Assistant(
+        model.name, api_key=api_key, logger=FlowcoLogger(), max_tokens=10
+    )
+    assistant.add_text("user", prompt)
     return assistant.completion()
 
 
 def fast_transcription(voice):
-    transcription = openai.audio.transcriptions.create(
+    api_key = get_api_key("OPENAI_API_KEY")
+    client = openai.Client(api_key=api_key)
+    transcription = client.audio.transcriptions.create(
         model="whisper-1", file=voice, response_format="verbose_json"
     )
     cost = round(float(transcription.duration)) * 0.006 / 60

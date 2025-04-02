@@ -26,6 +26,7 @@ from flowco.util.text import function_name_to_title
 from flowco.util.output import log, warn, error, buffer_output
 
 from flowco.util.config import config
+from llm.assistant import AssistantError
 
 
 class BuildUpdate(BaseModel):
@@ -479,6 +480,9 @@ class BuildEngine:
                                     phase=target_phase,
                                     message=f"{pass_to_reach_target.title()} failed on `{node.pill}`",
                                 )
+                        except AssistantError as e:
+                            error(f"Error processing node {node_id}", e)
+                            new_node = node.error(phase=target_phase, message=e.message)
                         except Exception as e:
                             error(f"Error processing node {node_id}", e)
                             new_node = node.error(

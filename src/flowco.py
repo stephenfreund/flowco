@@ -1,4 +1,5 @@
 import argparse
+from flowco.assistant.flowco_keys import KeyFile, UserKeys
 from flowco.session.session import StreamlitSession, session
 
 import os
@@ -49,6 +50,7 @@ def init_service():
             filesystem=SessionFileSystem(
                 f"s3://go-flowco/{st.session_state.user_email}"
             ),
+            keys=UserKeys(),
         )
         log_timestamp()
         log(f"Initialized session for {st.session_state.user_email}")
@@ -56,11 +58,11 @@ def init_service():
         setup_flowco_files()
         set_ui_page(UIPage(get_flowco_files()[0]))
 
-        if os.environ.get("OPENAI_API_KEY", None) is None:
-            st.write(
-                "No OpenAI API key found. Please set the OPENAI_API_KEY environment variable."
-            )
-            st.stop()
+        # if os.environ.get("OPENAI_API_KEY", None) is None:
+        #     st.write(
+        #         "No OpenAI API key found. Please set the OPENAI_API_KEY environment variable."
+        #     )
+        #     st.stop()
 
         st.session_state.service_initialized = True
 
