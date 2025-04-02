@@ -13,6 +13,7 @@ import webbrowser
 
 import nbformat
 
+from flowco.assistant.flowco_keys import KeyEnv
 from flowthon.nbflowthon import convert_notebook_to_flowthon
 from flowthon.nbsplit import split_notebook_by_heading_level
 from flowco.builder.build import BuildEngine
@@ -417,6 +418,7 @@ def main(argv: List[str] = sys.argv[1:]):
         costs=CostTracker(),
         shells=PythonShells(),
         filesystem=SessionFileSystem(f"file://{os.getcwd()}"),
+        keys=KeyEnv(),
     )
     log_timestamp()
 

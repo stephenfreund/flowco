@@ -1,22 +1,18 @@
 from __future__ import annotations
 
-from typing import Annotated, Callable, Iterable, List, Literal, Tuple
+from typing import Annotated, Iterable, List
 
 from openai.types.chat.chat_completion_content_part_text_param import (
     ChatCompletionContentPartTextParam,
 )
 from flowco.assistant.flowco_assistant import flowco_assistant
 from flowco.builder.graph_completions import json_for_graph_view, json_for_node_view
-from flowco.dataflow.dfg import DataFlowGraph, Geometry, Node
+from flowco.dataflow.dfg import DataFlowGraph, Node
 from flowco.dataflow.extended_type import ExtendedType
 from flowco.dataflow.phase import Phase
-from flowco.page.page import Page
-from flowco.pythonshell.shells import PythonShells
-from flowco.session.session import session
 from flowco.util.config import config
-from flowco.util.errors import FlowcoError
-from flowco.util.output import error, log, logger
-from pydantic import BaseModel, Field
+from flowco.util.output import log
+from pydantic import BaseModel
 
 from llm.assistant import ToolCallResult
 

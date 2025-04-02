@@ -96,7 +96,7 @@ def requirements_assistant(
         diff=diff_instructions,
         label=node.label,
     )
-    assistant.add_text("system", prompt_text)
+    assistant.add_text("user", prompt_text)
 
     assistant.add_text("user", "Here is the current state of the graph:")
     assistant.add_json(
@@ -110,7 +110,7 @@ def requirements_assistant(
 
     image_url = graph.to_image_url()
     if image_url:
-        assistant.add_text("system", f"Here is the dataflow graph.")
+        assistant.add_text("user", f"Here is the dataflow graph.")
         assistant.add_image("user", image_url)
 
     assistant.add_text("user", f"Here is the current state of node {node.pill}:")

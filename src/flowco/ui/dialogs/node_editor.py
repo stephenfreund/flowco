@@ -22,6 +22,7 @@ from flowco.ui.ui_util import (
     visible_phases,
 )
 from flowco.util.config import config
+from llm.assistant import AssistantError
 
 
 @dataclass
@@ -345,103 +346,105 @@ class NodeEditor:
 
     @st.fragment
     def edit(self):
-
         top = st.empty()
+        try:
 
-        kinds = {
-            "Compute a value": NodeKind.compute,
-            "Load a dataset": NodeKind.table,
-            "Create a plot": NodeKind.plot,
-        }
+            kinds = {
+                "Compute a value": NodeKind.compute,
+                "Load a dataset": NodeKind.table,
+                "Create a plot": NodeKind.plot,
+            }
 
-        def update():
-            kind = kinds[st.session_state.new_node_type]
-            if kind != self.node.kind:
-                self.node = self.node.update(
-                    kind=kind,
-                    phase=Phase.clean,
-                    # requirements=[],
-                    # function_return_type=None,
-                    # code=[],
-                )
-
-        kind_str = st.selectbox(
-            "This node will:",
-            options=kinds.keys(),
-            index=self.node.kind,
-            key="new_node_type",
-            placeholder="Choose an option option",
-            # label_visibility="collapsed",
-            on_change=update,
-        )
-        assert kind_str in kinds
-        kind = kinds[kind_str]
-
-        if self.node.kind == NodeKind.table:
-            error = self.table()
-        else:
-            error = self.compute_or_plot()
-
-        with top.container(key="node_edit_top"):
-            if error is not None:
-                st.error(error)
-
-            c = st.columns(4, vertical_alignment="bottom")
-            with c[0]:
-                if st.button(
-                    "Save",
-                    icon=":material/save:",
-                    disabled=self.pending_ama is not None or error is not None,
-                ):
-                    with st.spinner("Saving..."):
-                        self.save()
-                        st.session_state.force_update = True
-                        st.rerun(scope="app")
-            with c[1]:
-                if st.button("Cancel", icon=":material/close:"):
-                    st.rerun(scope="app")
-
-            if kind != NodeKind.table:
-                with c[2]:
-                    if st.button(
-                        "Check Consistency",
-                        icon=":material/check:",
-                        disabled=self.pending_ama is not None,
-                    ):
-                        self.pending_ama = PendingAMA(
-                            config().get_prompt(
-                                (
-                                    "ama_node_editor_sync"
-                                    if show_code()
-                                    else "ama_node_editor_sync_no_code"
-                                ),
-                                label=self.node.label,
-                                requirements="\n".join(
-                                    f"* {x}" for x in self.node.requirements or []
-                                ),
-                                return_type=self.node.function_return_type.model_dump_json(
-                                    indent=2
-                                ),
-                                code="\n".join(self.node.code or []),
-                            ),
-                            False,
-                            True,
-                        )
-                        self.last_checked = self.node
-                with c[3]:
-                    rebuild = st.button(
-                        "Regenerate",
-                        icon=":material/manufacturing:",
-                        disabled=self.pending_ama is not None,
+            def update():
+                kind = kinds[st.session_state.new_node_type]
+                if kind != self.node.kind:
+                    self.node = self.node.update(
+                        kind=kind,
+                        phase=Phase.clean,
+                        # requirements=[],
+                        # function_return_type=None,
+                        # code=[],
                     )
 
-                if rebuild:
-                    self.regenerate()
-                    self.last_checked = self.node
-                    st.rerun(scope="fragment")
+            kind_str = st.selectbox(
+                "This node will:",
+                options=kinds.keys(),
+                index=self.node.kind,
+                key="new_node_type",
+                placeholder="Choose an option option",
+                # label_visibility="collapsed",
+                on_change=update,
+            )
+            assert kind_str in kinds
+            kind = kinds[kind_str]
 
-        if self.pending_ama:
-            st.rerun(scope="fragment")
+            if self.node.kind == NodeKind.table:
+                error = self.table()
+            else:
+                error = self.compute_or_plot()
+
+            with top.container(key="node_edit_top"):
+                if error is not None:
+                    st.error(error)
+
+                c = st.columns(4, vertical_alignment="bottom")
+                with c[0]:
+                    if st.button(
+                        "Save",
+                        icon=":material/save:",
+                        disabled=self.pending_ama is not None or error is not None,
+                    ):
+                        with st.spinner("Saving..."):
+                            self.save()
+                            st.session_state.force_update = True
+                            st.rerun(scope="app")
+                with c[1]:
+                    if st.button("Cancel", icon=":material/close:"):
+                        st.rerun(scope="app")
+
+                if kind != NodeKind.table:
+                    with c[2]:
+                        if st.button(
+                            "Check Consistency",
+                            icon=":material/check:",
+                            disabled=self.pending_ama is not None,
+                        ):
+                            self.pending_ama = PendingAMA(
+                                config().get_prompt(
+                                    (
+                                        "ama_node_editor_sync"
+                                        if show_code()
+                                        else "ama_node_editor_sync_no_code"
+                                    ),
+                                    label=self.node.label,
+                                    requirements="\n".join(
+                                        f"* {x}" for x in self.node.requirements or []
+                                    ),
+                                    return_type=self.node.function_return_type.model_dump_json(
+                                        indent=2
+                                    ),
+                                    code="\n".join(self.node.code or []),
+                                ),
+                                False,
+                                True,
+                            )
+                            self.last_checked = self.node
+                    with c[3]:
+                        rebuild = st.button(
+                            "Regenerate",
+                            icon=":material/manufacturing:",
+                            disabled=self.pending_ama is not None,
+                        )
+
+                    if rebuild:
+                        self.regenerate()
+                        self.last_checked = self.node
+                        st.rerun(scope="fragment")
+
+            if self.pending_ama:
+                st.rerun(scope="fragment")
+        except AssistantError as e:
+            top.error(e)
 
     def table(self):
         if self.node.predecessors:

@@ -278,6 +278,9 @@ class BuildPage(FlowcoPage):
     def global_error_check(self):
         @st.dialog("Errors", width="large")
         def global_error_fix(error_messages):
+            st.write(
+                "There are errors in the diagram that need to be fixed.  Proceed to try to fix them automatically?"
+            )
             if st.button("Fix All"):
                 errors_as_string = "\n".join(
                     [

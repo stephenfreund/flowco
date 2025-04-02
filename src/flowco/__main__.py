@@ -13,6 +13,7 @@ import webbrowser
 
 import markdown
 
+from flowco.assistant.flowco_keys import KeyEnv
 from flowco.dataflow.phase import Phase
 from flowco.builder.build import BuildEngine
 from flowco.page.ama import AskMeAnything
@@ -395,6 +396,7 @@ def main(page: Optional[Page] = None, argv: List[str] = sys.argv[1:]):
         costs=CostTracker(),
         shells=PythonShells(),
         filesystem=SessionFileSystem(f"file://{os.getcwd()}"),
+        keys=KeyEnv(),
     )
     log_timestamp()
 

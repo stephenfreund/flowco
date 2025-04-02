@@ -32,7 +32,7 @@ from flowco.dataflow.dfg_update import (
     update_dataflow_graph,
 )
 from flowco.util.text import strip_ansi
-from llm.assistant import ToolCallResult
+from llm.assistant import AssistantError, ToolCallResult
 
 
 class VisibleMessage(BaseModel):
@@ -100,7 +100,9 @@ class AskMeAnything:
         with logger("python_eval"):
             try:
                 log(f"Code:\n{code}")
-                result = session.get("shells", PythonShells).run_full_dfg_context(tables, self.page.dfg, code)
+                result = session.get("shells", PythonShells).run_full_dfg_context(
+                    tables, self.page.dfg, code
+                )
                 log(f"Result:\n{result}")
                 result_output = result.as_result_output()
                 if result_output is not None:
@@ -673,6 +675,15 @@ class AskMeAnything:
                     )
                 else:
                     raise ValueError(f"Unknown kind: {kind}")
+        except AssistantError as e:
+            error(e)
+            self.visible_messages += [
+                VisibleMessage(
+                    role="assistant",
+                    content=e.message,
+                    is_error=True,
+                )
+            ]
         except Exception as e:
             error(e)
             self.visible_messages += [
