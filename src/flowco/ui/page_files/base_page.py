@@ -33,6 +33,7 @@ from flowco.util.config import config
 from flowco.util.costs import inflight, total_cost
 from flowco.util.config import AbstractionLevel
 from flowco.util.output import error, log
+from llm.assistant import AssistantError
 
 
 class FlowcoPage:
@@ -43,7 +44,11 @@ class FlowcoPage:
             self.button_bar()
             self.second_bar()
 
-        self.show_ama()
+        try:
+            self.show_ama()
+        except AssistantError as e:
+            error(e)
+            st.error(e.message)
 
     def second_bar(self):
 

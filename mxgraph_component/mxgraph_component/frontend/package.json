@@ -27,7 +27,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && mkdir build/assets && cp -r node_modules/mxgraph/javascript/src build/assets/mxgraph",
+    "build": "react-scripts build && mkdir -p build/assets && cp -r node_modules/mxgraph/javascript/src build/assets/mxgraph",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

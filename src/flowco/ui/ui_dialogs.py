@@ -1,4 +1,6 @@
 import os
+from flowco.assistant.flowco_assistant import test_anthropic_key, test_openai_key
+from flowco.assistant.flowco_keys import get_api_key_status, set_api_key
 from llm import models
 from typing import Callable
 import pandas as pd
@@ -23,8 +25,45 @@ def settings(ui_page: UIPage):
         else 0
     )
     model = st.selectbox("LLM model", supported_models, current_model)
+
     if model != None:
         config().model = model
+
+    with st.expander("API Keys"):
+        openai_key = st.text_input(
+            f"OpenAI API Key",
+            value="",
+            placeholder="Enter new OpenAI API key",
+            label_visibility="collapsed",
+        )
+
+        # anthropic_key = st.text_input(
+        #     "Anthropic API Key",
+        #     value="",
+        #     placeholder="Enter new Anthropic API key",
+        #     label_visibility="collapsed",
+        # )
+
+        if openai_key:
+            set_api_key("OPENAI_API_KEY", openai_key)
+        # if anthropic_key:
+        #     set_api_key("ANTHROPIC_API_KEY", anthropic_key)
+
+        if st.button("Check Key Status"):
+            if test_openai_key():
+                st.success("OpenAI API key is valid")
+            else:
+                st.error("OpenAI API key is invalid")
+
+            # if test_anthropic_key():
+            #     st.success("Anthropic key is valid")
+            # else:
+            #     st.error("Anthropic key is invalid")
+
+            # st.write(get_api_key_status("OPENAI_API_KEY"))
+            # st.write(get_api_key_status("ANTHROPIC_API_KEY"))
+
+    st.divider()
 
     config().zero_temp = st.toggle("Zero temperature", value=config().zero_temp)
 
@@ -67,6 +106,7 @@ def settings(ui_page: UIPage):
 
     if st.button("Done"):
         st.session_state.selected_node = None
+
         st.rerun()
 
     st.divider()

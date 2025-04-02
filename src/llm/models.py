@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from multiprocessing import Value
+import os
 from typing import Dict, List
 from openai.types.completion_usage import CompletionUsage
 
@@ -98,43 +99,48 @@ _models = {
         prompt_token_rate=0.15 / 10**6,
         cached_token_rate=0.075 / 10**6,
     ),
-    "claude-3-sonnet": Model(
-        name="claude-3-sonnet",
-        use_proxy=True,
-        api_key_name="ANTHROPIC_API_KEY",
-        supports_vision=True,
-        supports_audio=False,
-        supports_temperature=False,
-        supports_prediction=False,
-        completion_token_rate=15 / 10**6,
-        prompt_token_rate=3 / 10**6,
-        cached_token_rate=3 / 10**6,
-    ),
-    "claude-3-7-sonnet": Model(
-        name="claude-3-7-sonnet",
-        use_proxy=True,
-        supports_vision=True,
-        api_key_name="ANTHROPIC_API_KEY",
-        supports_audio=False,
-        supports_temperature=False,
-        supports_prediction=False,
-        completion_token_rate=15 / 10**6,
-        prompt_token_rate=3 / 10**6,
-        cached_token_rate=3 / 10**6,
-    ),
-    "claude-3-haiku": Model(
-        name="claude-3-haiku",
-        use_proxy=True,
-        api_key_name="ANTHROPIC_API_KEY",
-        supports_vision=False,
-        supports_audio=False,
-        supports_temperature=False,
-        supports_prediction=False,
-        completion_token_rate=15 / 10**6,
-        prompt_token_rate=3 / 10**6,
-        cached_token_rate=3 / 10**6,
-    ),
-}
+} | (
+    {
+        "claude-3-sonnet": Model(
+            name="claude-3-sonnet",
+            use_proxy=True,
+            api_key_name="ANTHROPIC_API_KEY",
+            supports_vision=True,
+            supports_audio=False,
+            supports_temperature=False,
+            supports_prediction=False,
+            completion_token_rate=15 / 10**6,
+            prompt_token_rate=3 / 10**6,
+            cached_token_rate=3 / 10**6,
+        ),
+        "claude-3-7-sonnet": Model(
+            name="claude-3-7-sonnet",
+            use_proxy=True,
+            supports_vision=True,
+            api_key_name="ANTHROPIC_API_KEY",
+            supports_audio=False,
+            supports_temperature=False,
+            supports_prediction=False,
+            completion_token_rate=15 / 10**6,
+            prompt_token_rate=3 / 10**6,
+            cached_token_rate=3 / 10**6,
+        ),
+        "claude-3-haiku": Model(
+            name="claude-3-haiku",
+            use_proxy=True,
+            api_key_name="ANTHROPIC_API_KEY",
+            supports_vision=False,
+            supports_audio=False,
+            supports_temperature=False,
+            supports_prediction=False,
+            completion_token_rate=15 / 10**6,
+            prompt_token_rate=3 / 10**6,
+            cached_token_rate=3 / 10**6,
+        ),
+    }
+    if "ANTHROPIC_API_KEY" in os.environ
+    else {}
+)
 
 
 def models_for_config() -> Dict[str, Model]:

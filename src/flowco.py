@@ -1,5 +1,5 @@
 import argparse
-from flowco.assistant.flowco_keys import KeyFile, UserKeys
+from flowco.assistant.flowco_keys import UserKeys
 from flowco.session.session import StreamlitSession, session
 
 import os

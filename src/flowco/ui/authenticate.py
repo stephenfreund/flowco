@@ -55,13 +55,13 @@ def sign_in(authorization_url: str):
         f"""\
         * **Signing in with Google** creates an account on the Flowco server associated with your email address.
         * **Signing in as Guest** creates a temporary account for the current session.
+        * You will need to add your own OpenAI API key to continue using after 30 minutes.
         * Click "Report Bug" whenever you see something fishy!
         """
     )
 
     st.write(f"# Flowco {release}!")
     st.write(instructions)
-
 
     st.link_button("Sign In With Google", authorization_url)
     with st.sidebar:
@@ -205,13 +205,17 @@ def authenticate():
             purge_stale_entries(cache_dict)
             key = st.context.cookies["_streamlit_xsrf"].split("|")[-1]
             st.session_state.credentials = "Guest"
-            st.session_state.user_email = session_file_system.SessionFileSystem.make_unique_path("s3://go-flowco/", "guest")
+            st.session_state.user_email = (
+                session_file_system.SessionFileSystem.make_unique_path(
+                    "s3://go-flowco/", "guest"
+                )
+            )
             st.session_state.auth_state = "authenticated"
             cache_dict[key] = CacheEntry(
                 credentials=st.session_state.credentials,
                 user_email=st.session_state.user_email,
                 timestamp=datetime.now(),
-            )       
+            )
             st.rerun()
 
         if st.session_state.credentials is None:

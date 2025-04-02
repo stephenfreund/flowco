@@ -150,7 +150,7 @@ class AssistantError(Exception):
     messages = {
         openai.APIConnectionError: "Issue connecting to the LLM.  Try again.",
         openai.APITimeoutError: "LLM request timed out.",
-        openai.AuthenticationError: "Your API key or token was invalid, expired, or revoked.  Add a valid API key under Settings.  You can find your API key at https://platform.openai.com/account/api-keys.",
+        openai.AuthenticationError: "Your API key or token was invalid, expired, or revoked.  Add a valid API key under Settings.  For OpenAI, you can find your API key at https://platform.openai.com/account/api-keys.",
         openai.BadRequestError: "Internal error.  Bad Request.  Please click the 'Report Bug' button.",
         openai.ConflictError: "Internal error.  Conflict Error.  Please click the 'Report Bug' button.",
         openai.InternalServerError: "LLM Server error.  Try again.",

@@ -39,7 +39,7 @@ def flowco_assistant(
     model = get_model(model_name)
     temperature = 0 if config().zero_temp else None
     api_key = get_api_key(model.api_key_name)
-
+    print(api_key)
     assert "functions" not in prompt_substitutions, "functions is a reserved key"
 
     assistant = Assistant(
@@ -90,3 +90,31 @@ def fast_transcription(voice):
     cost = round(float(transcription.duration)) * 0.006 / 60
     add_cost(cost)  # this one is handled by the assistant
     return transcription.text
+
+
+def test_openai_key():
+    try:
+        model = get_model("gpt-4o-mini")
+        api_key = get_api_key(model.api_key_name)
+        assistant = Assistant(
+            model.name, api_key=api_key, logger=FlowcoLogger(), max_tokens=10
+        )
+        assistant.add_text("user", "Say hello")
+        result = assistant.completion()
+        return True
+    except Exception as e:
+        return False
+
+
+def test_anthropic_key():
+    try:
+        model = get_model("claude-3-haiku")
+        api_key = get_api_key(model.api_key_name)
+        assistant = Assistant(
+            model.name, api_key=api_key, logger=FlowcoLogger(), max_tokens=10
+        )
+        assistant.add_text("user", "Say hello")
+        result = assistant.completion()
+        return True
+    except Exception as e:
+        return False
