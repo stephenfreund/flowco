@@ -6,9 +6,13 @@ import os
 import textwrap
 from typing import Any, Dict, List, Literal, Optional, OrderedDict, Set, Tuple, Union
 from graphviz import Digraph
+import nbformat
 from pydantic import BaseModel, Field
 
 import base64
+
+from nbformat.v4 import new_markdown_cell, new_code_cell, new_notebook
+from nbformat import NotebookNode
 
 
 from flowco.assistant.flowco_assistant import fast_text_complete
@@ -1090,8 +1094,8 @@ class DataFlowGraph(GraphLike, BaseModel):
                 FunctionCall(
                     node_id=node.id,
                     function_name=node.function_name,
-                    arguments=[f"{x.function_result_var}" for x in preds],  # type: ignore
-                    result=node.function_result_var,
+                    arguments=[f"{x.function_result_var}_result" for x in preds],  # type: ignore
+                    result=f"{node.function_result_var}_result",
                 )
             ]
         return driver
@@ -1335,3 +1339,58 @@ def dataflow_graph_to_image(
     except Exception as e:
         error(f"Error generating image", e)
         return None
+
+
+def dataflow_graph_to_nb(dfg: DataFlowGraph) -> str:
+    nb = new_notebook()
+
+    # Add a markdown cell with the description
+    nb.cells.append(
+        new_markdown_cell(source=f"# Data Flow Graph\n\n{dfg.description}\n\n---")
+    )
+
+    # Add a markdown cell with the graph image
+    image_url = dfg.to_image_url()
+    if image_url is not None:
+        new_markdown_cell(source=f"![Data Flow Graph]({image_url})")
+
+    nb.cells.append(
+        new_code_cell(
+            source=textwrap.dedent(
+                """\
+            import numpy as np
+            import pandas as pd
+            import matplotlib.pyplot as plt
+            import seaborn as sns
+            import statsmodels
+            import statsmodels.api as sm
+            import scipy
+            import scipy.stats as stats
+            import sklearn
+            from numpy import nan
+            from typing import *
+            %matplotlib inline
+            """
+            )
+        )
+    )
+
+    # Add a markdown cell for each node
+    for node_id in dfg.topological_sort():
+        node = dfg[node_id]
+        nb.cells.append(
+            new_markdown_cell(
+                source=node.to_markdown(["pill", "label", "messages", "requirements"])
+            )
+        )
+        nb.cells.append(new_code_cell(source="\n".join(node.code or [])))
+
+    driver = dfg.make_driver()
+    for call in driver:
+        nb.cells.append(
+            new_code_cell(
+                source=f"{call.result} = {call.function_name}({', '.join(call.arguments)})"
+            )
+        )
+
+    return nbformat.writes(nb)

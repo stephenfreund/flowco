@@ -103,6 +103,7 @@ class AskMeAnything:
                 and node.function_return_type is not None
                 and not node.function_return_type.is_None_type()
             ):
+                # BUG: this should use the unpickling code to assign to the var.
                 value, _ = result.result.to_repr()
                 init_code += f"{node.function_result_var} = {value}\n"
 

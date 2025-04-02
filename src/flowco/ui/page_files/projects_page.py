@@ -1,6 +1,6 @@
 from ast import Global
 from io import StringIO
-from flowco.dataflow.dfg import Node
+from flowco.dataflow.dfg import Node, dataflow_graph_to_nb
 from flowco.page.page import Page
 from flowco.page.tables import GlobalTables
 from flowco.session.session_file_system import (
@@ -176,12 +176,13 @@ class ProjectsPage(FlowcoPage):
         ui_page = st.session_state.ui_page
         flowco_name = ui_page.page().file_name
         tables = GlobalTables.from_dfg(ui_page.dfg())
-        data_files = [
-            x for x in tables.all_files() if x.endswith(".csv")
-        ]
+        data_files = [x for x in tables.all_files() if x.endswith(".csv")]
 
         with st.spinner("Creating ZIP file..."):
-            zip_data = create_zip_in_memory([flowco_name] + data_files)
+            zip_data = create_zip_in_memory(
+                [flowco_name] + data_files,
+                additional_entries={"nb.ipynb": dataflow_graph_to_nb(ui_page.dfg())},
+            )
 
         st.write("ZIP ready for download!")
 
