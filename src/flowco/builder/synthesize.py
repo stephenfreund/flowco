@@ -412,7 +412,7 @@ def generate_docstring_for_node(node: Node) -> str:
     lines.append("")
 
     result = "\n".join(lines)
-    print(result)
+    # print(result)
 
     return result
 

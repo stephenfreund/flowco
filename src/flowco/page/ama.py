@@ -94,27 +94,16 @@ class AskMeAnything:
         """
         Evaluate python code.  You may assume numpy, scipy, and pandas are available.",
         """
-        init_code = ""
-        for node in self.page.dfg.nodes:
-            result = node.result
-            if (
-                result is not None
-                and result.result is not None
-                and node.function_return_type is not None
-                and not node.function_return_type.is_None_type()
-            ):
-                # BUG: this should use the unpickling code to assign to the var.
-                value, _ = result.result.to_repr()
-                init_code += f"{node.function_result_var} = {value}\n"
 
         tables = GlobalTables.from_dfg(self.page.dfg)
-        init_code += "\n".join(tables.function_defs())
 
-        shell_code = f"{init_code}\n{code}"
         with logger("python_eval"):
             try:
-                log(f"Code:\n{shell_code}")
-                result = session.get("shells", PythonShells).run(shell_code)
+                log(f"Code:\n{code}")
+                result = session.get("shells", PythonShells).run_full_dfg_context(
+                    tables, self.page.dfg, code
+                )
+                log(f"Result:\n{result}")
                 result_output = result.as_result_output()
                 if result_output is not None:
                     log(f"Result:\n{result_output}")
@@ -369,9 +358,9 @@ class AskMeAnything:
 
         src_pills = ", ".join(dfg[x].pill for x in predecessors)
         if src_pills:
-            message = f"I add a new node {node.pill}, and connected these nodes to it: {src_pills}"
+            message = f"I added a new node {node.pill}, and connected these nodes to it: {src_pills}"
         else:
-            message = f"I add a new node {node.pill}"
+            message = f"I added a new node {node.pill}"
         return ToolCallResult(
             user_message=f"**:blue[{message}]**",
             content=ChatCompletionContentPartTextParam(
@@ -479,9 +468,9 @@ class AskMeAnything:
 
         src_pills = ", ".join(dfg[x].pill for x in predecessors)
         if src_pills:
-            message = f"I add a new node {node.pill}, and connected these nodes to it: {src_pills}"
+            message = f"I added a new node {node.pill}, and connected these nodes to it: {src_pills}"
         else:
-            message = f"I add a new node {node.pill}"
+            message = f"I added a new node {node.pill}"
         return ToolCallResult(
             user_message=f"**:blue[{message}]**",
             content=ChatCompletionContentPartTextParam(

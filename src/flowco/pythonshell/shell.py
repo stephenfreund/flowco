@@ -117,6 +117,8 @@ class PythonShell:
             import logging
             logging.disable(logging.ERROR)
             
+            sns.set_theme(context='talk', style='whitegrid', palette='tab10')
+
             %matplotlib inline
         """
         )
@@ -284,10 +286,46 @@ class PythonShell:
         Load the result variable from the previous node into the PythonShell.
         """
         if node.result is not None and node.result.result is not None:
-            repr_val, _ = node.result.result.to_repr()
-            self._run_cell(f"{node.function_result_var} = {repr_val}")
+            with TemporaryDirectory(dir=self.sandbox_dir) as temp_dir:
+                temp_file_path = os.path.join(temp_dir, uuid.uuid4().hex + ".pickle")
+                with open(temp_file_path, "wb") as f:
+                    assert node.result is not None
+                    assert node.result.result is not None
+                    f.write(node.result.result.pickle.encode())
+
+                self._run_cell(
+                    f"{node.function_result_var} = decode(open('{temp_file_path}', 'rb').read().decode())"
+                )
+            # repr_val, _ = node.result.result.to_repr()
+            # self._run_cell(f"{node.function_result_var} = {repr_val}")
         else:
             self._run_cell(f"{node.function_result_var} = None")
+
+    def run_full_dfg_context(self, tables: GlobalTables, dfg: DataFlowGraph, code: str) -> EvalResult:
+        with logger("Loading tables"):
+            self.load_tables(tables)
+        with logger("Loading results"):
+            with TemporaryDirectory(dir=self.sandbox_dir) as temp_dir:
+                result_code = []
+                for node in dfg.nodes:
+                    if node.result is not None and node.result.result is not None:
+                        temp_file_path = os.path.join(
+                            temp_dir, uuid.uuid4().hex + ".pickle"
+                        )
+                        with open(temp_file_path, "wb") as f:
+                            f.write(node.result.result.pickle.encode())
+                            result_code.append(
+                                f"{node.function_result_var} = decode(open('{temp_file_path}', 'rb').read().decode())"
+                            )
+
+                with logger("Running cell to load parameters"):
+                    code_str = "\n".join(result_code)
+                    self._run_cell(code_str)
+
+        result = self.run(code)
+        return result
+
+
 
     def run_node(
         self, tables: GlobalTables, dfg: DataFlowGraph, node: Node

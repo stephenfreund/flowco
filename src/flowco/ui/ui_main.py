@@ -6,7 +6,7 @@ from flowco.ui.ui_args import parse_args
 from flowco.ui.ui_init import st_init
 from flowco.ui.ui_page import UIPage, set_ui_page
 from flowco.ui.ui_st_pages import st_pages
-from flowco.ui.ui_util import zip_bug
+# from flowco.ui.ui_util import zip_bug
 from flowco.util.config import Config
 from flowco.util.files import setup_flowco_files
 import streamlit as st
@@ -14,7 +14,7 @@ import streamlit as st
 from flowco.util.costs import CostTracker
 from flowco.util.output import Output, error, log_timestamp
 
-from flowco.session.session import StreamlitSession, session
+from flowco.session.session import StreamlitSession
 
 
 def init_service():
@@ -66,10 +66,10 @@ except Exception as e:
     print(traceback.format_exc())
     st.error(e)
     st.exception(e)
-    try:
-        zip_bug(f"""{str(e)}\n{traceback.format_exc()}""")
-    except Exception as e2:
-        print("Error zipping bug report", e2)
+    # try:
+    #     zip_bug(f"""{str(e)}\n{traceback.format_exc()}""")
+    # except Exception as e2:
+    #     print("Error zipping bug report", e2)
     print("Restarting Session Components...")
     config, args = parse_args()
     if os.path.isdir(args.page):
@@ -83,3 +83,4 @@ except Exception as e:
         shells=PythonShells(),
         filesystem=SessionFileSystem(f"file://{page_path}"),
     )
+    st.rerun()  # Restart the Streamlit app to reset the session state

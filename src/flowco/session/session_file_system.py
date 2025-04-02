@@ -1,3 +1,4 @@
+import uuid
 import fsspec
 import posixpath
 from typing import Any, List
@@ -15,6 +16,35 @@ class SessionFileSystem:
         root (str): The base path to all files. Can be a local path (e.g., 'file:///path')
                     or an S3 path (e.g., 's3://bucket/path').
     """
+
+    @staticmethod
+    def make_unique_path(fs_root: str, base: str) -> str:
+        """
+        Generates a unique path by appending a UUID to the given path.
+
+        Args:
+            base (str): The base path to which a UUID will be appended.
+
+        Returns:
+            str: A unique path.
+        """
+        fs, root_path = fsspec.core.url_to_fs(fs_root)
+        # Ensure the root_path ends with a '/'
+        if not root_path.endswith("/"):
+            root_path += "/"
+
+        while True:
+            path = f"{root_path}/{base}{uuid.uuid4().hex[:8]}/"
+            try:
+                fs.makedirs(path, exist_ok=False)
+                return path
+            except FileExistsError:
+                print(f"Directory {path} already exists, generating a new one.")
+                # If the directory already exists, generate a new one
+                pass
+        
+
+
 
     def __init__(self, root: str):
         """

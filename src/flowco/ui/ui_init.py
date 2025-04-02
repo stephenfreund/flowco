@@ -6,11 +6,6 @@ from flowco.util.config import AbstractionLevel
 css = """
 
 
-.st-key-node_edit_top .stColumn {
-    width: fit-content !important;
-    flex: unset !important;
-}
-
 
 .stMainBlockContainer {
     padding: 0rem;
@@ -18,6 +13,7 @@ css = """
 }
 .stSidebar {
     min-width: 350px;
+    width: 350px;
     max-width:1000px;
 }
 
@@ -182,6 +178,9 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
 }
 
 /* Edit Dialog */
+
+
+
 
 [aria-label="dialog"]:has(.st-key-edit_dialog) {
     width: 90% !important;
