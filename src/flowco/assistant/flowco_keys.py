@@ -66,8 +66,8 @@ class KeyFile(BaseModel):
     @staticmethod
     def _from_defaults() -> "KeyFile":
         openai_key = ApiKey(
-            key=os.environ.get("DEFAULT_OPENAI_API_KEY", ""),
-            expiration=datetime.now() + timedelta(hours=0.5),
+            key=os.environ.get("OPENAI_API_KEY", ""),
+            expiration=datetime.now() + timedelta(hours=1),
         )
         # anthropic_key = ApiKey(
         #     key=os.environ.get("DEFAULT_ANTHROPIC_API_KEY", ""),
