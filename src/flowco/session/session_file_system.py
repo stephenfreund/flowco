@@ -33,8 +33,10 @@ class SessionFileSystem:
         if not root_path.endswith("/"):
             root_path += "/"
 
+        print(root_path)
+
         while True:
-            path = f"{root_path}/{base}{uuid.uuid4().hex[:8]}/"
+            path = f"{base}{uuid.uuid4().hex[:8]}/"
             try:
                 fs.makedirs(path, exist_ok=False)
                 return path
@@ -42,9 +44,6 @@ class SessionFileSystem:
                 print(f"Directory {path} already exists, generating a new one.")
                 # If the directory already exists, generate a new one
                 pass
-        
-
-
 
     def __init__(self, root: str):
         """

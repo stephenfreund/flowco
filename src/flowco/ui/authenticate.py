@@ -49,21 +49,11 @@ def purge_stale_entries(cache_dict):
 
 def sign_in(authorization_url: str):
 
-    release = os.getenv("RELEASE_VERSION", "unknown")
-
-    instructions = textwrap.dedent(
-        f"""\
-        * **Signing in with Google** creates an account on the Flowco server associated with your email address.
-        * **Signing in as Guest** creates a temporary account for the current session.
-        * You will need to add your own OpenAI API key to continue using after 30 minutes.
-        * Click "Report Bug" whenever you see something fishy!
-        """
+    st.write(
+        "Create an account on the Flowco server associated with your Google email address."
     )
 
-    st.write(f"# Flowco {release}!")
-    st.write(instructions)
-
-    st.link_button("Sign In With Google", authorization_url)
+    st.link_button("Sign In With Google", authorization_url, type="primary")
     with st.sidebar:
         st.image("static/flowco.png")
 
@@ -183,6 +173,10 @@ def oauth_authenticate():
 
 
 def sign_out():
+    @st.dialog("You have been signed out.")
+    def stopped():
+        st.stop()
+
     key = st.context.cookies["_streamlit_xsrf"].split("|")[-1]
     del cache()[key]
     st.session_state.credentials = None
@@ -190,33 +184,48 @@ def sign_out():
     st.session_state.auth_state = "initial"
     st.session_state.token = None
     st.session_state.query_params = None
-    st.stop()
+    stopped()
 
 
 def authenticate():
 
     if st.session_state.credentials is None:
-        oauth_authenticate()
-        # while st.session_state.credentials is None:
-        oauth_authenticate()
+        if "auth_state" not in st.session_state:
+            st.session_state.auth_state = "initial"
 
-        if st.button("Sign In As Guest"):
-            cache_dict = cache()
-            purge_stale_entries(cache_dict)
-            key = st.context.cookies["_streamlit_xsrf"].split("|")[-1]
-            st.session_state.credentials = "Guest"
-            st.session_state.user_email = (
-                session_file_system.SessionFileSystem.make_unique_path(
-                    "s3://go-flowco/", "guest"
-                )
-            )
-            st.session_state.auth_state = "authenticated"
-            cache_dict[key] = CacheEntry(
-                credentials=st.session_state.credentials,
-                user_email=st.session_state.user_email,
-                timestamp=datetime.now(),
-            )
-            st.rerun()
+        if st.session_state.auth_state == "waiting_for_code":
+            release = os.getenv("RELEASE_VERSION", "unknown")
+            st.write(f"# Flowco {release}!")
+        cols = st.columns(2)
+        with cols[0]:
+            with st.container(border=True):
+                oauth_authenticate()
+                # while st.session_state.credentials is None:
+                oauth_authenticate()
+
+        with cols[1]:
+            if st.session_state.auth_state == "waiting_for_code":
+                with st.container(border=True):
+                    st.write(
+                        "Create an anonymous, temporary account for the current session."
+                    )
+                    if st.button("Sign In As Guest", type="primary"):
+                        cache_dict = cache()
+                        purge_stale_entries(cache_dict)
+                        key = st.context.cookies["_streamlit_xsrf"].split("|")[-1]
+                        st.session_state.credentials = "Guest"
+                        st.session_state.user_email = (
+                            session_file_system.SessionFileSystem.make_unique_path(
+                                "s3://go-flowco/", "guest"
+                            )
+                        )
+                        st.session_state.auth_state = "authenticated"
+                        cache_dict[key] = CacheEntry(
+                            credentials=st.session_state.credentials,
+                            user_email=st.session_state.user_email,
+                            timestamp=datetime.now(),
+                        )
+                        st.rerun()
 
         if st.session_state.credentials is None:
             st.stop()

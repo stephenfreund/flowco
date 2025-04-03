@@ -29,31 +29,32 @@ def settings(ui_page: UIPage):
     if model != None:
         config().model = model
 
-    with st.expander("API Keys"):
-        openai_key = st.text_input(
-            f"OpenAI API Key",
-            value="",
-            placeholder="Enter new OpenAI API key",
-            label_visibility="collapsed",
-        )
+    st.divider()
+    # with st.expander("API Keys"):
+    openai_key = st.text_input(
+        f"OpenAI API Key",
+        value="",
+        placeholder="Enter new OpenAI API key",
+        # label_visibility="collapsed",
+    )
 
-        # anthropic_key = st.text_input(
-        #     "Anthropic API Key",
-        #     value="",
-        #     placeholder="Enter new Anthropic API key",
-        #     label_visibility="collapsed",
-        # )
+    # anthropic_key = st.text_input(
+    #     "Anthropic API Key",
+    #     value="",
+    #     placeholder="Enter new Anthropic API key",
+    #     label_visibility="collapsed",
+    # )
 
-        if openai_key:
-            set_api_key("OPENAI_API_KEY", openai_key)
+    if openai_key:
+        set_api_key("OPENAI_API_KEY", openai_key)
         # if anthropic_key:
         #     set_api_key("ANTHROPIC_API_KEY", anthropic_key)
 
-        if st.button("Check Key Status"):
-            if test_openai_key():
-                st.success("OpenAI API key is valid")
-            else:
-                st.error("OpenAI API key is invalid")
+    if st.button("Check OpenAI API Key Status"):
+        if test_openai_key():
+            st.success("OpenAI API key is valid")
+        else:
+            st.error("OpenAI API key is invalid")
 
             # if test_anthropic_key():
             #     st.success("Anthropic key is valid")

@@ -39,7 +39,6 @@ def flowco_assistant(
     model = get_model(model_name)
     temperature = 0 if config().zero_temp else None
     api_key = get_api_key(model.api_key_name)
-    print(api_key)
     assert "functions" not in prompt_substitutions, "functions is a reserved key"
 
     assistant = Assistant(

@@ -74,9 +74,12 @@ def make_default_files():
                 fs_write(file, content)
 
 
-def setup_flowco_files():
+def setup_flowco_files() -> bool:
     if not fs_exists("welcome.flowco"):
         make_default_files()
+        return True
+    else:
+        return False
 
 
 def create_zip_in_memory(files, additional_entries: Dict[str, str] = {}):

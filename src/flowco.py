@@ -1,4 +1,5 @@
 import argparse
+import textwrap
 from flowco.assistant.flowco_keys import UserKeys
 from flowco.session.session import StreamlitSession, session
 
@@ -6,7 +7,7 @@ import os
 import sys
 import streamlit as st
 from flowco.pythonshell.shells import PythonShells
-from flowco.session.session_file_system import SessionFileSystem
+from flowco.session.session_file_system import SessionFileSystem, fs_exists
 from flowco.ui.ui_init import st_init
 from flowco.ui.authenticate import authenticate
 from flowco.ui.ui_page import UIPage, set_ui_page
@@ -34,6 +35,28 @@ if "user_email" not in st.session_state:
     st.session_state.user_email = args.user_email
 
 
+@st.dialog("Welcome to Flowco!", width="large")
+def splash_screen():
+    st.write(
+        textwrap.dedent(
+            """\
+        ### Getting started
+        * You'll begin by editing a simple diagram named "welcome.flowco".  Follow the instructions on the right-hand side of the screen to get started.
+        * Switch to other projects by selecting the **Projects** view in the top-left corner.  We recommend following the numbered tutorials to learn more about Flowco.
+        * If you have any questions, click the **Help** view in the top-left corner of the screen. 
+
+        ### OpenAI API Key
+        * For the next hour, you can use Flowco without providing an OpenAI API key.  After that, you'll need to provide an API key to continue using Flowco.
+
+        ### Bugs
+        * While many users have worked in Flowco, there are undoubtedly still bugs.  
+        * Please report any bugs you find by clicking the "Report Bug" button at the bottom of the screen.
+        """
+        )
+    )
+    st.image("static/flowco.png", width=200)
+
+
 def init_service():
     st_init(page_config=False)
     if "service_initialized" not in st.session_state:
@@ -55,14 +78,23 @@ def init_service():
         log_timestamp()
         log(f"Initialized session for {st.session_state.user_email}")
         log(f"  key is {key}")
-        setup_flowco_files()
-        set_ui_page(UIPage(get_flowco_files()[0]))
+
+        new_user = setup_flowco_files()
+
+        if fs_exists("welcome.flowco"):
+            file = "welcome.flowco"
+        else:
+            file = get_flowco_files()[0]
+        set_ui_page(UIPage(file))
 
         # if os.environ.get("OPENAI_API_KEY", None) is None:
         #     st.write(
         #         "No OpenAI API key found. Please set the OPENAI_API_KEY environment variable."
         #     )
         #     st.stop()
+
+        if new_user:
+            splash_screen()
 
         st.session_state.service_initialized = True
 
