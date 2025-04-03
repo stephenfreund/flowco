@@ -49,11 +49,21 @@ def purge_stale_entries(cache_dict):
 
 def sign_in(authorization_url: str):
 
-    st.write(
-        "Create an account on the Flowco server associated with your Google email address."
-    )
+    release = os.getenv("RELEASE_VERSION", "unknown")
+    st.write(f"# Flowco {release}!")
 
-    st.link_button("Sign In With Google", authorization_url, type="primary")
+    with st.container(border=True):
+        st.write(
+            "Create an account on the Flowco server associated with your Google email address."
+        )
+
+        st.link_button("Sign In With Google", authorization_url, type="primary")
+
+    with st.container(border=True):
+        st.write("Create an anonymous, temporary account for the current session.")
+        if st.button("Sign In As Guest", type="primary"):
+            guest_signin()
+
     with st.sidebar:
         st.image("static/flowco.png")
 
@@ -190,42 +200,28 @@ def sign_out():
 def authenticate():
 
     if st.session_state.credentials is None:
-        if "auth_state" not in st.session_state:
-            st.session_state.auth_state = "initial"
-
-        if st.session_state.auth_state == "waiting_for_code":
-            release = os.getenv("RELEASE_VERSION", "unknown")
-            st.write(f"# Flowco {release}!")
-        cols = st.columns(2)
-        with cols[0]:
-            with st.container(border=True):
-                oauth_authenticate()
-                # while st.session_state.credentials is None:
-                oauth_authenticate()
-
-        with cols[1]:
-            if st.session_state.auth_state == "waiting_for_code":
-                with st.container(border=True):
-                    st.write(
-                        "Create an anonymous, temporary account for the current session."
-                    )
-                    if st.button("Sign In As Guest", type="primary"):
-                        cache_dict = cache()
-                        purge_stale_entries(cache_dict)
-                        key = st.context.cookies["_streamlit_xsrf"].split("|")[-1]
-                        st.session_state.credentials = "Guest"
-                        st.session_state.user_email = (
-                            session_file_system.SessionFileSystem.make_unique_path(
-                                "s3://go-flowco/", "guest"
-                            )
-                        )
-                        st.session_state.auth_state = "authenticated"
-                        cache_dict[key] = CacheEntry(
-                            credentials=st.session_state.credentials,
-                            user_email=st.session_state.user_email,
-                            timestamp=datetime.now(),
-                        )
-                        st.rerun()
+        oauth_authenticate()
+        # while st.session_state.credentials is None:
+        oauth_authenticate()
 
         if st.session_state.credentials is None:
             st.stop()
+
+
+def guest_signin():
+    cache_dict = cache()
+    purge_stale_entries(cache_dict)
+    key = st.context.cookies["_streamlit_xsrf"].split("|")[-1]
+    st.session_state.credentials = "Guest"
+    st.session_state.user_email = (
+        session_file_system.SessionFileSystem.make_unique_path(
+            "s3://go-flowco/", "guest"
+        )
+    )
+    st.session_state.auth_state = "authenticated"
+    cache_dict[key] = CacheEntry(
+        credentials=st.session_state.credentials,
+        user_email=st.session_state.user_email,
+        timestamp=datetime.now(),
+    )
+    st.rerun()
