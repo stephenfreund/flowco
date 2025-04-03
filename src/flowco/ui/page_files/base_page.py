@@ -391,7 +391,11 @@ class FlowcoPage:
                     self.report_bug()
 
             with cols[2]:
-                if st.button(label="Logout", icon=":material/logout:", help="Sign out"):
+                if st.button(
+                    label="Logout",
+                    icon=":material/logout:",
+                    help=f"Sign out {st.session_state.user_email}",
+                ):
                     sign_out()
                     st.rerun()
 

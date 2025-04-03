@@ -61,8 +61,7 @@ def sign_in(authorization_url: str):
 
     with st.container(border=True):
         st.write("Create an anonymous, temporary account for the current session.")
-        if st.button("Sign In As Guest", type="primary"):
-            guest_signin()
+        st.button("Sign In As Guest", type="primary", on_click=guest_signin)
 
     with st.sidebar:
         st.image("static/flowco.png")
@@ -183,17 +182,21 @@ def oauth_authenticate():
 
 
 def sign_out():
-    @st.dialog("You have been signed out.")
+    @st.dialog("Flowco!")
     def stopped():
+        st.write("### You have been signed out.")
         st.stop()
 
     key = st.context.cookies["_streamlit_xsrf"].split("|")[-1]
     del cache()[key]
+    st.session_state.service_initialized = False
     st.session_state.credentials = None
     st.session_state.user_email = None
-    st.session_state.auth_state = "initial"
+    st.session_state.auth_state = None
     st.session_state.token = None
     st.session_state.query_params = None
+    st.info("You have been signed out.")
+    # st.stop()
     stopped()
 
 
@@ -217,7 +220,7 @@ def guest_signin():
         session_file_system.SessionFileSystem.make_unique_path(
             "s3://go-flowco/", "guest"
         )
-    )
+    )[:-1]
     st.session_state.auth_state = "authenticated"
     cache_dict[key] = CacheEntry(
         credentials=st.session_state.credentials,

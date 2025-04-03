@@ -6,3 +6,4 @@ toolbarMode = "developer"
 
 [server]
 enableStaticServing = true
+baseUrlPath = "service"
