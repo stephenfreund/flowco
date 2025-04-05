@@ -13,6 +13,11 @@ start-dev:
 
 
 
+lightsail:
+	docker build --platform linux/amd64 -t flowco-app .
+	aws lightsail push-container-image --region us-east-1 --service-name flowco-service
+ --label flowco-app --image flowco-app:latest
+
 # docker-image:
 # 	docker build --platform linux/amd64 -t flowco-app .
 

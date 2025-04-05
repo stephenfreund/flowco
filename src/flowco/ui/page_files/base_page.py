@@ -394,7 +394,7 @@ class FlowcoPage:
                 if st.button(
                     label="Logout",
                     icon=":material/logout:",
-                    help=f"Sign out {st.session_state.user_email}",
+                    help=f"Sign out {st.session_state.user_email if 'user_email' in st.session_state else ''}",
                 ):
                     sign_out()
                     st.rerun()

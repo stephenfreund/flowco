@@ -182,13 +182,15 @@ class NodeEditor:
         else:
             return None
 
-    def register_pending_ama(self, prompt: str, show_prompt: bool):
-        self.pending_ama = PendingAMA(prompt, show_prompt)
+    def register_pending_ama(
+        self, prompt: str, show_prompt: bool, consistent_at_end: bool
+    ):
+        self.pending_ama = PendingAMA(prompt, show_prompt, consistent_at_end)
 
     def register_pending_voice(self, container):
         voice = st.session_state.voice_input_node
         text = fast_transcription(voice)
-        self.pending_ama = PendingAMA(text, True)
+        self.pending_ama = PendingAMA(text, True, True)
 
     def node_component_editors(self) -> None:
 
@@ -503,8 +505,8 @@ class NodeEditor:
                         )
                     )
                 self.node = self.ama.updated_node() or self.node
-                if pending_ama.consistent_at_end:
-                    self.last_checked = self.node
+                # if pending_ama.consistent_at_end:
+                self.last_checked = self.node
 
                 self.pending_ama = None
                 st.rerun(scope="fragment")

@@ -835,10 +835,29 @@ export function updateDiagram(graph: mxGraph, diagram: mxDiagram): void {
             console.log("Checking node", node.id, node.geometry);
             if (node.geometry.x === 0 && node.geometry.y === 0 &&
                 node.geometry.width === 0 && node.geometry.height === 0) {
-                node.geometry = { x: 0, y: 0, width: 120, height: 60 };
-                node.output_geometry = { x: 0, y: 0, width: 120, height: 120 };
+                
+                // find maximum x and y of all edges pointing to this node
+                
+                let maxX = 0;
+                let maxY = 0;
+                for (const edgeId in diagram.edges) {
+                    const edge = diagram.edges[edgeId];
+                    if (edge.dst === node.id) {
+                        const srcNode = diagram.nodes[edge.src];
+                        maxX = Math.max(maxX, srcNode.geometry.x);
+                        maxY = Math.max(maxY, srcNode.geometry.y);
+                    }
+                }
+
+                // set the geometry of this node to be the maximum x and y of all edges pointing to it
+                node.geometry = { x: maxX + 100, y: maxY + 100, width: 160, height: 80 };
+                node.output_geometry = { x: maxX + 200, y: maxY + 100, width: 120, height: 60 };
+
+                // node.geometry = { x: 0, y: 0, width: 120, height: 60 };
+                // node.output_geometry = { x: 0, y: 0, width: 120, height: 120 };
                 update_node(graph, node);
-                layoutNeeded = true;
+                update_output_node(graph, node);
+                // layoutNeeded = true;
             }
         }
 
