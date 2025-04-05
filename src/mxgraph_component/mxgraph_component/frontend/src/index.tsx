@@ -1,10 +1,9 @@
 import { Streamlit, RenderData } from "streamlit-component-lib";
 import mx from './mxgraph';
-import { mxGraphModel, mxCellState, mxCell, mxConstants, mxHierarchicalLayout, mxRectangle, mxAbstractCanvas2D, mxRectangleShape } from 'mxgraph';
+import { mxGraphModel, mxCellState, mxCell, mxAbstractCanvas2D } from 'mxgraph';
 import { v4 as uuidv4 } from "uuid";
 
-import { mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, node_style, labelForEdge, clean_color, isDiagramNode, layoutDiagram, DiagramNode, phase_to_color, update_group_style, style_for_node } from "./diagram";
-import { clearImageCache } from "./cache";
+import { mxDiagram, updateDiagram, convertMxGraphToDiagramUpdate, node_style, labelForEdge, clean_color, isDiagramNode, DiagramNode, style_for_node } from "./diagram";
 
 var currentDiagram: mxDiagram | undefined = undefined;
 var currentRefreshPhase = 0;
@@ -62,11 +61,11 @@ function setZoomScale(scale: number) {
 }
 
 function zoom(cmd: string) {
-  if (cmd == "in") {
+  if (cmd === "in") {
     zoomIn();
-  } else if (cmd == "out") {
+  } else if (cmd === "out") {
     zoomOut();
-  } else if (cmd == "reset") {
+  } else if (cmd === "reset") {
     resetZoom();
   } else {
     // console.log("Unknown zoom command: ", cmd);
@@ -82,7 +81,7 @@ function showZoomedInContent(cell: mxCell) {
   const style = cell.style;
 
   // Check if the style contains a background image
-  const imageMatch = style && style.match('image=data:image/png,\(.*\)');
+  const imageMatch = style && style.match('image=data:image/png,(.*)');
 
   if (imageMatch && imageMatch[1]) {
     const title = `${cell.value.pill} Output`
@@ -163,9 +162,9 @@ delete edgeStyle[mx.mxConstants.STYLE_EDGE];
 
 // Extend the built-in mxRectangleShape to create a custom shape with two borders.
 class DoubleBorderShape extends mx.mxRectangleShape {
-  constructor(bounds: mxRectangle, fill: string, stroke: string, strokeWidth: number) {
-    super(bounds, fill, stroke, strokeWidth);
-  }
+  // constructor(bounds: mxRectangle, fill: string, stroke: string, strokeWidth: number) {
+  //   super(bounds, fill, stroke, strokeWidth);
+  // }
 
   // Override the paintForeground method to draw an additional inner border.
   paintForeground(c: mxAbstractCanvas2D, x: number, y: number, w: number, h: number): void {
@@ -192,9 +191,9 @@ mx.mxCellRenderer.registerShape('doubleBorder', DoubleBorderShape);
 
 // Extend mxRectangleShape to create a custom data table shape.
 class DataTableShape extends mx.mxRectangleShape {
-  constructor(bounds: mxRectangle, fill: string, stroke: string, strokeWidth: number) {
-    super(bounds, fill, stroke, strokeWidth);
-  }
+  // constructor(bounds: mxRectangle, fill: string, stroke: string, strokeWidth: number) {
+  //   super(bounds, fill, stroke, strokeWidth);
+  // }
 
   paintForeground(c: mxAbstractCanvas2D, x: number, y: number, w: number, h: number): void {
     // Translate the canvas so (0,0) is at the top-left corner of the shape.
@@ -583,20 +582,20 @@ function cleanReachableNodes(
   }
 }
 
-// collect list of all node pills in graph.
-function collectNodePills(): string[] {
-  const pills = [];
-  const cells = graph.getModel().cells;
-  for (var key in cells) {
-    if (cells.hasOwnProperty(key)) {
-      var cell = cells[key];
-      if (isDiagramNode(cell.value)) {
-        pills.push(cell.value.pill);
-      }
-    }
-  }
-  return pills;
-}
+// // collect list of all node pills in graph.
+// function collectNodePills(): string[] {
+//   const pills = [];
+//   const cells = graph.getModel().cells;
+//   for (var key in cells) {
+//     if (cells.hasOwnProperty(key)) {
+//       var cell = cells[key];
+//       if (isDiagramNode(cell.value)) {
+//         pills.push(cell.value.pill);
+//       }
+//     }
+//   }
+//   return pills;
+// }
 
 
 // Sets the new value for the given cell and trigger
@@ -922,7 +921,7 @@ function addListeners() {
             is_locked: false,
             force_show_output: true
           }
-          const newCell = graph.insertVertex(parent, id, value, pt.x, pt.y, 160, 80, node_style);
+          graph.insertVertex(parent, id, value, pt.x, pt.y, 160, 80, node_style);
         } finally {
           model.endUpdate();
         }
@@ -1019,7 +1018,7 @@ function addListeners() {
     if (cellKind(cell) !== "node") {
       return false;
     }
-    const node = graph.getModel().getCell(cell.id).value as DiagramNode;
+    // const node = graph.getModel().getCell(cell.id).value as DiagramNode;
     //return node.kind !== 2;
     return true;
   };
@@ -1065,65 +1064,64 @@ function addListeners() {
 }
 
 
-function generateTwoWordSummary(phrase: string): string {
-  // List of common English stop words to exclude
-  const stopWords: Set<string> = new Set([
-    'a', 'an', 'the', 'and', 'or', 'but', 'if', 'in', 'on', 'with', 'for',
-    'of', 'at', 'by', 'from', 'up', 'about', 'into', 'over', 'after',
-    'under', 'above', 'to', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'shall',
-    'should', 'can', 'could', 'may', 'might', 'must'
-  ]);
+// function generateTwoWordSummary(phrase: string): string {
+//   // List of common English stop words to exclude
+//   const stopWords: Set<string> = new Set([
+//     'a', 'an', 'the', 'and', 'or', 'but', 'if', 'in', 'on', 'with', 'for',
+//     'of', 'at', 'by', 'from', 'up', 'about', 'into', 'over', 'after',
+//     'under', 'above', 'to', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+//     'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'shall',
+//     'should', 'can', 'could', 'may', 'might', 'must'
+//   ]);
 
-  // Step 1: Normalize the input
-  const cleanedPhrase = phrase.toLowerCase().replace(/[^a-z0-9\s]/g, '');
+//   // Step 1: Normalize the input
+//   const cleanedPhrase = phrase.toLowerCase().replace(/[^a-z0-9\s]/g, '');
 
-  // Step 2: Split into words
-  const words = cleanedPhrase.split(/\s+/);
+//   // Step 2: Split into words
+//   const words = cleanedPhrase.split(/\s+/);
 
-  // Step 3: Remove stop words
-  const significantWords = words.filter(word => word.length > 0 && !stopWords.has(word));
+//   // Step 3: Remove stop words
+//   const significantWords = words.filter(word => word.length > 0 && !stopWords.has(word));
 
-  // Step 4: Select the first two significant words
-  const summaryWords = significantWords.slice(0, 2);
+//   // Step 4: Select the first two significant words
+//   const summaryWords = significantWords.slice(0, 2);
 
-  let pill: string;
+//   let pill: string;
 
-  // If not enough significant words, fallback to first two words
-  if (summaryWords.length < 2) {
-    const fallbackWords = words.filter(word => word.length > 0).slice(0, 2);
-    pill = fallbackWords.map(capitalize).join('-');
-  } else {
-    const titleCased = summaryWords.map(capitalize);
-    pill = titleCased.join('-');
-  }
-  const pills = collectNodePills()
-  // console.log(pills)
-  if (pills.includes(pill)) {
-    var pillNumber = 1;
-    while (pills.includes(pill + "-" + pillNumber)) {
-      pillNumber++;
-    }
-    return pill + "-" + pillNumber;
-  } else {
-    return pill;
-  }
-}
-
-
-function capitalize(word: string): string {
-  if (word.length === 0) return '';
-  return word[0].toUpperCase() + word.slice(1);
-}
+//   // If not enough significant words, fallback to first two words
+//   if (summaryWords.length < 2) {
+//     const fallbackWords = words.filter(word => word.length > 0).slice(0, 2);
+//     pill = fallbackWords.map(capitalize).join('-');
+//   } else {
+//     const titleCased = summaryWords.map(capitalize);
+//     pill = titleCased.join('-');
+//   }
+//   const pills = collectNodePills()
+//   // console.log(pills)
+//   if (pills.includes(pill)) {
+//     var pillNumber = 1;
+//     while (pills.includes(pill + "-" + pillNumber)) {
+//       pillNumber++;
+//     }
+//     return pill + "-" + pillNumber;
+//   } else {
+//     return pill;
+//   }
+// }
 
 
-function generatePill(userLabel: string, newCell: mxCell) {
-  const value = newCell.cloneValue();
-  value.label = userLabel.trim();
-  value.pill = generateTwoWordSummary(userLabel);
-  graph.getModel().setValue(newCell, value);
+// function capitalize(word: string): string {
+//   if (word.length === 0) return '';
+//   return word[0].toUpperCase() + word.slice(1);
+// }
 
-}
+
+// function generatePill(userLabel: string, newCell: mxCell) {
+//   const value = newCell.cloneValue();
+//   value.label = userLabel.trim();
+//   value.pill = generateTwoWordSummary(userLabel);
+//   graph.getModel().setValue(newCell, value);
+// }
 
 function updateGraphWithDiagram(diagram: mxDiagram) {
   console.log("Updating graph with diagram")

@@ -1,6 +1,5 @@
-import { get } from 'lodash';
 import mx from './mxgraph';
-import { mxCell, mxGeometry, mxGraph, mxHierarchicalLayout } from 'mxgraph';
+import { mxCell, mxGraph } from 'mxgraph';
 import { cacheImage, getCachedImage } from './cache';
 
 export interface Geometry {
@@ -196,8 +195,6 @@ function update_overlays_for_node(graph: mxGraph, node: DiagramNode, vertex: mxC
     }
     if (node.is_locked) {
         const iconImage = new mx.mxImage("lock.png", 16, 16);
-        const node_width = vertex.geometry.width;
-        const node_height = vertex.geometry.height;
         // const inset_factor = Math.min(node_width, node_height) / 15;
         const iconOverlay = new mx.mxCellOverlay(iconImage, "This node is locked");
         iconOverlay.align = mx.mxConstants.ALIGN_LEFT;
@@ -269,7 +266,7 @@ function make_output_node(graph: mxGraph, node: DiagramNode): mxCell | undefined
             throw new Error(`Unsupported output type: ${output.output_type}`);
         }
         vertex.setConnectable(false);
-        const cell = graph.insertEdge(
+        graph.insertEdge(
             graph.getDefaultParent(),
             `output-edge-${cellId}`,
             '',
@@ -388,35 +385,35 @@ function update_edge(graph: mxGraph, edge: DiagramEdge): void {
 export const group_style = 'shape=swimlane;strokeWidth=3;startSize=0;verticalAlign=bottom;spacingTop=10;margin=10;whiteSpace=wrap;fontSize=14;fontStyle=1;strokeColor=#880088;';
 export const group_collapsed_style = 'shape=swimlane;strokeWidth=3;startSize=0;verticalAlign=top;spacingTop=10;margin=10;whiteSpace=wrap;fontSize=14;fontStyle=1;strokeColor=#880088;';
 
-function lighten(col: string, amt: number) {
+// function lighten(col: string, amt: number) {
 
-    var usePound = false;
+//     var usePound = false;
 
-    if (col[0] == "#") {
-        col = col.slice(1);
-        usePound = true;
-    }
+//     if (col[0] == "#") {
+//         col = col.slice(1);
+//         usePound = true;
+//     }
 
-    var num = parseInt(col, 16);
+//     var num = parseInt(col, 16);
 
-    var r = (num >> 16) * amt;
+//     var r = (num >> 16) * amt;
 
-    if (r > 255) r = 255;
-    else if (r < 0) r = 0;
+//     if (r > 255) r = 255;
+//     else if (r < 0) r = 0;
 
-    var b = ((num >> 8) & 0x00FF) * amt;
+//     var b = ((num >> 8) & 0x00FF) * amt;
 
-    if (b > 255) b = 255;
-    else if (b < 0) b = 0;
+//     if (b > 255) b = 255;
+//     else if (b < 0) b = 0;
 
-    var g = (num & 0x0000FF) * amt;
+//     var g = (num & 0x0000FF) * amt;
 
-    if (g > 255) g = 255;
-    else if (g < 0) g = 0;
+//     if (g > 255) g = 255;
+//     else if (g < 0) g = 0;
 
-    return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16);
+//     return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16);
 
-}
+// }
 
 
 export function update_group_style(graph: mxGraph, cell: mxCell) {
@@ -454,89 +451,89 @@ export function update_group_style(graph: mxGraph, cell: mxCell) {
  *    edge is inside any group (regardless of collapsed state) then the group container is returned.
  *    When laying out inside a group, the actual terminal is returned.
  */
-class CustomHierarchicalLayout extends mx.mxHierarchicalLayout {
-    currentParent: any;
+// class CustomHierarchicalLayout extends mx.mxHierarchicalLayout {
+//     currentParent: any;
 
-    constructor(graph: any) {
-        super(graph);
-    }
+//     constructor(graph: any) {
+//         super(graph);
+//     }
 
-    // Override execute() to store the container being laid out.
-    execute(parent: any): void {
-        this.currentParent = parent;
-        this.edgeStyle = 3;
-        super.execute(parent);
-    }
+//     // Override execute() to store the container being laid out.
+//     execute(parent: any): void {
+//         this.currentParent = parent;
+//         this.edgeStyle = 3;
+//         super.execute(parent);
+//     }
 
-    // Helper: Returns true if cell is a descendant of parent.
-    isCellDescendant(cell: any, parent: any): boolean {
-        while (cell != null) {
-            if (cell === parent) {
-                return true;
-            }
-            cell = this.graph.getModel().getParent(cell);
-        }
-        return false;
-    }
+//     // Helper: Returns true if cell is a descendant of parent.
+//     isCellDescendant(cell: any, parent: any): boolean {
+//         while (cell != null) {
+//             if (cell === parent) {
+//                 return true;
+//             }
+//             cell = this.graph.getModel().getParent(cell);
+//         }
+//         return false;
+//     }
 
-    // Override getEdges():
-    // For any cell that is a group (has children), regardless of collapsed or expanded,
-    // iterate over its children and add any edge that connects to an external cell.
-    getEdges(cell: any): any[] {
-        const edges: any[] = super.getEdges(cell);
-        if (this.graph.getModel().getChildCount(cell) > 0) {
-            const childCount = this.graph.getModel().getChildCount(cell);
-            for (let i = 0; i < childCount; i++) {
-                const child = this.graph.getModel().getChildAt(cell, i);
-                const childEdges = this.graph.getModel().getEdges(child);
-                if (childEdges != null) {
-                    for (let j = 0; j < childEdges.length; j++) {
-                        const edge = childEdges[j];
-                        const source = this.graph.getModel().getTerminal(edge, true);
-                        const target = this.graph.getModel().getTerminal(edge, false);
-                        // If either terminal is not a descendant of cell, then the edge is external.
-                        if (!this.isCellDescendant(source, cell) || !this.isCellDescendant(target, cell)) {
-                            if (edges.indexOf(edge) < 0) {
-                                edges.push(edge);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return edges;
-    }
+//     // Override getEdges():
+//     // For any cell that is a group (has children), regardless of collapsed or expanded,
+//     // iterate over its children and add any edge that connects to an external cell.
+//     getEdges(cell: any): any[] {
+//         const edges: any[] = super.getEdges(cell);
+//         if (this.graph.getModel().getChildCount(cell) > 0) {
+//             const childCount = this.graph.getModel().getChildCount(cell);
+//             for (let i = 0; i < childCount; i++) {
+//                 const child = this.graph.getModel().getChildAt(cell, i);
+//                 const childEdges = this.graph.getModel().getEdges(child);
+//                 if (childEdges != null) {
+//                     for (let j = 0; j < childEdges.length; j++) {
+//                         const edge = childEdges[j];
+//                         const source = this.graph.getModel().getTerminal(edge, true);
+//                         const target = this.graph.getModel().getTerminal(edge, false);
+//                         // If either terminal is not a descendant of cell, then the edge is external.
+//                         if (!this.isCellDescendant(source, cell) || !this.isCellDescendant(target, cell)) {
+//                             if (edges.indexOf(edge) < 0) {
+//                                 edges.push(edge);
+//                             }
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//         return edges;
+//     }
 
-    // Override getVisibleTerminal():
-    // When laying out the top‑level graph (currentParent is the default parent),
-    // if an edge's terminal is inside one or more groups then climb the parent chain
-    // until reaching the outermost group (i.e. the group cell that is a direct child of the default parent).
-    // When laying out inside a group (currentParent !== default parent), simply return the actual terminal.
-    getVisibleTerminal(edge: any, source: boolean): any {
-        const cell = this.graph.getModel().getTerminal(edge, source);
-        const parent = cell.getParent();
-        const default_parent = this.graph.getDefaultParent();
+//     // Override getVisibleTerminal():
+//     // When laying out the top‑level graph (currentParent is the default parent),
+//     // if an edge's terminal is inside one or more groups then climb the parent chain
+//     // until reaching the outermost group (i.e. the group cell that is a direct child of the default parent).
+//     // When laying out inside a group (currentParent !== default parent), simply return the actual terminal.
+//     getVisibleTerminal(edge: any, source: boolean): any {
+//         const cell = this.graph.getModel().getTerminal(edge, source);
+//         const parent = cell.getParent();
+//         const default_parent = this.graph.getDefaultParent();
 
 
-        if (parent === default_parent) {
-            return cell;  // outermost cell
-        } else {
-            if (source) {
-                if (parent.isCollapsed()) {
-                    return parent;  // pointing out of collapsed group
-                } else {
-                    return cell;  // pointing out of expanded group
-                }
-            } else {
-                if (parent.isCollapsed()) {
-                    return parent;  // pointing into collapsed group
-                } else {
-                    return cell; // pointing into expanded group
-                }
-            }
-        }
-    }
-}
+//         if (parent === default_parent) {
+//             return cell;  // outermost cell
+//         } else {
+//             if (source) {
+//                 if (parent.isCollapsed()) {
+//                     return parent;  // pointing out of collapsed group
+//                 } else {
+//                     return cell;  // pointing out of expanded group
+//                 }
+//             } else {
+//                 if (parent.isCollapsed()) {
+//                     return parent;  // pointing into collapsed group
+//                 } else {
+//                     return cell; // pointing into expanded group
+//                 }
+//             }
+//         }
+//     }
+// }
 
 
 export function layoutDiagram(graph: mxGraph) {
@@ -653,31 +650,31 @@ export function layoutDiagram(graph: mxGraph) {
  *
  * @param {mxCell} cell The group cell to update.
  */
-function updateCollapsedGroups(graph: mxGraph, cell: mxCell) {
-    var model = graph.getModel();
-    if (model.isVertex(cell) && model.getChildCount(cell) > 0) {
-        if (graph.isCellCollapsed(cell)) {
-            if (cell.manualCollapsedSize) {
-                graph.getModel().setGeometry(cell, cell.manualCollapsedSize.clone());
-            } else {
-                var style = graph.getCellStyle(cell);
-                var startSize = parseInt(style[mx.mxConstants.STYLE_STARTSIZE]) || 30;
-                var geo = model.getGeometry(cell);
-                if (geo != null) {
-                    geo = geo.clone();
-                    geo.height = startSize;
-                    model.setGeometry(cell, geo);
-                }
-            }
-        } else {
-            // Process any nested groups.
-            var children = model.getChildCells(cell, true, false);
-            for (var i = 0; i < children.length; i++) {
-                updateCollapsedGroups(graph, children[i]);
-            }
-        }
-    }
-}
+// function updateCollapsedGroups(graph: mxGraph, cell: mxCell) {
+//     var model = graph.getModel();
+//     if (model.isVertex(cell) && model.getChildCount(cell) > 0) {
+//         if (graph.isCellCollapsed(cell)) {
+//             if (cell.manualCollapsedSize) {
+//                 graph.getModel().setGeometry(cell, cell.manualCollapsedSize.clone());
+//             } else {
+//                 var style = graph.getCellStyle(cell);
+//                 var startSize = parseInt(style[mx.mxConstants.STYLE_STARTSIZE]) || 30;
+//                 var geo = model.getGeometry(cell);
+//                 if (geo != null) {
+//                     geo = geo.clone();
+//                     geo.height = startSize;
+//                     model.setGeometry(cell, geo);
+//                 }
+//             }
+//         } else {
+//             // Process any nested groups.
+//             var children = model.getChildCells(cell, true, false);
+//             for (var i = 0; i < children.length; i++) {
+//                 updateCollapsedGroups(graph, children[i]);
+//             }
+//         }
+//     }
+// }
 
 // function runLayout(graph: mxGraph) {
 //     const layout = makeLayout(graph);
