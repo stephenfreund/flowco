@@ -9,14 +9,13 @@ all:
 	echo "If not, install it using 'sudo apt-get install graphviz' or similar"
 
 start-dev:
-	cd mxgraph_component/mxgraph_component/frontend; npm run start
+	cd src/mxgraph_component/mxgraph_component/frontend; npm run start
 
 
 
 lightsail:
 	docker build --platform linux/amd64 -t flowco-app .
-	aws lightsail push-container-image --region us-east-1 --service-name flowco-service
- --label flowco-app --image flowco-app:latest
+	aws lightsail push-container-image --region us-east-1 --service-name flowco-service --label flowco-app --image flowco-app:latest
 
 # docker-image:
 # 	docker build --platform linux/amd64 -t flowco-app .

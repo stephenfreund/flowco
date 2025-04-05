@@ -22,7 +22,8 @@ _RELEASE = os.environ.get("FLOWCO_DEV", "0") == "0"
 # best practice.
 
 if _RELEASE:
-    print("RELEASE MODE")
+    pass
+    # print("RELEASE MODE")
 else:
     print("DEVELOPMENT MODE")
 

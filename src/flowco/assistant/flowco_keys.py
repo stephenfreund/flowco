@@ -142,7 +142,7 @@ def get_api_key(api_key_name: str) -> str:
         raise AssistantError(
             f"Your API key {api_key_name} is invalid, expired, or revoked.  Add a valid API key under Settings.  For OpenAI, you can find your API key at https://platform.openai.com/account/api-keys."
         )
-    log(f"Using {api_key_name} key {key}")
+    # log(f"Using {api_key_name} key {key}")
     return key
 
 

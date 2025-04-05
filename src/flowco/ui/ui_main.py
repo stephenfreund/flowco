@@ -8,8 +8,6 @@ from flowco.ui.ui_init import st_init
 from flowco.ui.ui_page import UIPage, set_ui_page
 from flowco.ui.ui_st_pages import st_pages
 
-# from flowco.ui.ui_util import zip_bug
-from flowco.util.config import Config
 from flowco.util.files import setup_flowco_files
 import streamlit as st
 
@@ -51,6 +49,9 @@ def init_service():
             set_ui_page(UIPage("welcome.flowco"))
 
         if os.environ.get("OPENAI_API_KEY", None) is None:
+            error(
+                "No OpenAI API key found. Please set the OPENAI_API_KEY environment variable."
+            )
             st.write(
                 "No OpenAI API key found. Please set the OPENAI_API_KEY environment variable."
             )

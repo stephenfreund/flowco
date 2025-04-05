@@ -1,5 +1,6 @@
 [logger]
 messageFormat = "%(message)s"
+level = "error"
 
 [client]
 toolbarMode = "developer"

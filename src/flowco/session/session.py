@@ -27,7 +27,7 @@ class FlowcoSession(ABC):
         pass
 
 
-if os.environ.get("FLOWCO_ENVIRONMENT", None) == None:
+if os.environ.get("FLOWCO_ENVIRONMENT", None) == "cli":
 
     print("[Starting command line session]\n")
 
