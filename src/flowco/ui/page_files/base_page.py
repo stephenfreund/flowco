@@ -25,7 +25,7 @@ from flowco.ui.ui_util import (
 )
 import streamlit as st
 
-from mxgraph_component.mxgraph_component import mxgraph_component
+from mxgraph_component import mxgraph_component
 
 from flowco import __main__
 from flowco.ui.ui_page import UIPage

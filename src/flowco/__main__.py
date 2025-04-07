@@ -33,7 +33,7 @@ def main():
     if os.environ.get("OPENAI_API_KEY", None) is None:
         raise FlowcoError("You must set the OPENAI_API_KEY environment variable")
 
-    ui_path = os.path.dirname(__file__)
+    ui_path = os.path.join(os.path.dirname(__file__), "ui")
 
     env = os.environ.copy()
 

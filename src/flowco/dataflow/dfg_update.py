@@ -123,7 +123,7 @@ def update_dataflow_graph(
                 output_geometry=node_update.output_geometry
                 or node_update.geometry.translate(
                     node_update.geometry.width + 100, 0
-                ).resize(120, 80),
+                ).resize(240, 160),
                 is_locked=node_update.is_locked,
                 force_show_output=node_update.force_show_output,
             )

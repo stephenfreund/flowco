@@ -306,7 +306,7 @@ class AskMeAnything:
         geometry = Geometry(x=max_x + 100, y=max_y + 100, width=160, height=80)
 
         # geometry = Geometry(x=0, y=0, width=0, height=0)
-        output_geometry = geometry.translate(geometry.width + 100, 0).resize(120, 80)
+        output_geometry = geometry.translate(geometry.width + 100, 0).resize(240, 160)
         node_updates = {
             x.id: DiagramNodeUpdate(
                 id=x.id,
@@ -416,8 +416,18 @@ class AskMeAnything:
 
         pill = dfg.make_pill(label)
         # geometry = Geometry(x=100, y=100, width=120, height=80)
-        geometry = Geometry(x=0, y=0, width=0, height=0)
-        output_geometry = geometry.translate(geometry.width + 100, 0).resize(120, 80)
+
+        # get max x and y of predecessors
+        max_x = max_y = 0
+        for pred in predecessors:
+            pred_node = dfg[pred]
+            if pred_node is not None:
+                max_x = max(max_x, pred_node.geometry.x + pred_node.geometry.width)
+                max_y = max(max_y, pred_node.geometry.y + pred_node.geometry.height)
+        geometry = Geometry(x=max_x + 100, y=max_y + 100, width=160, height=80)
+
+        # geometry = Geometry(x=0, y=0, width=0, height=0)
+        output_geometry = geometry.translate(geometry.width + 100, 0).resize(240, 160)
         node_updates = {
             x.id: DiagramNodeUpdate(
                 id=x.id,
