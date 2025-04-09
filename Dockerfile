@@ -36,6 +36,8 @@ RUN pip install -r requirements.txt
 # Copy project files
 COPY . .
 
+RUN pip3 install -e .
+
 # Navigate to mxgraph_component and run `make build`
 # RUN make -C mxgraph_component build
 
