@@ -59,9 +59,9 @@ def sign_in(authorization_url: str):
 
         st.link_button("Sign In With Google", authorization_url, type="primary")
 
-    with st.container(border=True):
-        st.write("Create an anonymous, temporary account for the current session.")
-        st.button("Sign In As Guest", type="primary", on_click=guest_signin)
+    # with st.container(border=True):
+    #     st.write("Create an anonymous, temporary account for the current session.")
+    #     st.button("Sign In As Guest", type="primary", on_click=guest_signin)
 
     with st.sidebar:
         st.image("static/flowco.png")

@@ -202,7 +202,7 @@ class TestPage(BuildPage):
                             st.session_state.tmp_dfg = dfg
 
                     node = st.session_state.tmp_dfg[node_id]
-                    if False and node.unit_test_checks:
+                    if node.unit_test_checks:
                         for unit_test in node.unit_tests or []:
                             st.divider()
                             check = node.unit_test_checks.get(str(unit_test), None)
@@ -237,8 +237,7 @@ class TestPage(BuildPage):
                                     else:
                                         st.write(f"    *{check.requirement}*")
                     else:
-                        # st.write("*No details available*")
-                        pass
+                        st.write("*No details available*")
             except AssistantError as e:
                 top.error(e)
 
@@ -299,7 +298,7 @@ class TestPage(BuildPage):
             for node in ui_page.dfg().nodes
             if node.filter_messages(Phase.unit_tests_code, "warning")
         ]
-        if False and warnings:
+        if warnings:
             items = "\n".join([f"* {x}" for x in warnings])
             st.warning(f"**These nodes have test warnings:**\n{items}")
 
@@ -308,7 +307,7 @@ class TestPage(BuildPage):
         ]
         nodes_with_no_tests.sort()
 
-        if False and nodes_with_no_tests:
+        if nodes_with_no_tests:
             items = "\n".join([f"* {x}" for x in nodes_with_no_tests])
             st.info(f"**These nodes have no tests:**\n{items}")
 

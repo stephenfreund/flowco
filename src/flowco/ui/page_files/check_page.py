@@ -126,7 +126,7 @@ class CheckPage(BuildPage):
 
                 # st.write(f"### Output Checks for {node.pill}")
                 st.session_state.tmp_assertions = [
-                    x for x in st.session_state.tmp_assertions[:3] if x
+                    x for x in st.session_state.tmp_assertions if x
                 ]
                 editable_df = st.data_editor(
                     pd.DataFrame(
@@ -199,7 +199,7 @@ class CheckPage(BuildPage):
                         st.session_state.tmp_dfg = dfg
 
                 node = st.session_state.tmp_dfg[node_id]
-                if False and node.assertion_checks:
+                if node.assertion_checks:
                     for assertion in node.assertions or []:
                         check = node.assertion_checks.get(assertion, None)
                         if check and (check.warning or show_code()):
@@ -220,8 +220,7 @@ class CheckPage(BuildPage):
                                 else:
                                     st.write(f"    *{check.requirement}*")
                 else:
-                    # st.write("*No details available*")
-                    pass
+                    st.write("*No details available*")
             except AssistantError as e:
                 top.error(e)
 
@@ -276,7 +275,7 @@ class CheckPage(BuildPage):
             for node in ui_page.dfg().nodes
             if node.filter_messages(Phase.assertions_code, "warning")
         ]
-        if False and warnings:
+        if warnings:
             items = "\n".join([f"* {x}" for x in warnings])
             st.warning(f"**These nodes have check warnings:**\n{items}")
 
@@ -285,7 +284,7 @@ class CheckPage(BuildPage):
         ]
         nodes_with_no_assertions.sort()
 
-        if False and nodes_with_no_assertions:
+        if nodes_with_no_assertions:
             items = "\n".join([f"* {x}" for x in nodes_with_no_assertions])
             st.info(f"**These nodes have no checks:**\n{items}")
 

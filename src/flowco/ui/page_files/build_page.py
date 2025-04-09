@@ -284,8 +284,6 @@ class BuildPage(FlowcoPage):
         return error_run_messages
 
     def global_error_check(self):
-        print("GLOBAL ERROR CHECK")
-
         @st.dialog("Errors", width="large")
         def global_error_fix(error_messages):
             st.write(
@@ -307,7 +305,6 @@ class BuildPage(FlowcoPage):
                 st.error(f"**{node.pill}**: {message.message()}")
 
         error_run_messages = self.messages_triggering_global_error_check()
-        print("GLOBAL MESSAGES", len(error_run_messages))
         if error_run_messages:
             global_error_fix(error_run_messages)
 
@@ -337,7 +334,6 @@ class BuildPage(FlowcoPage):
                 time.sleep(0.25)
                 st.rerun()
 
-        print(st.session_state.global_error_check, "X")
         if st.session_state.global_error_check:
             st.session_state.global_error_check = False
             self.global_error_check()

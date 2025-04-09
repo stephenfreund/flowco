@@ -1,9 +1,6 @@
 
 all:
 	pip3 install -e .
-	cd mxgraph_component; make
-	pip3 uninstall mxgraph_component -y
-	pip3 install ./mxgraph_component/dist/mxgraph_component-0.0.1-py3-none-any.whl
 	echo ""
 	echo "Make sure dot is installed on your system"
 	echo "If not, install it using 'sudo apt-get install graphviz' or similar"
@@ -12,10 +9,6 @@ start-dev:
 	cd src/mxgraph_component/mxgraph_component/frontend; npm run start
 
 
-
-lightsail:
-	docker build --platform linux/amd64 -t flowco-app .
-	aws lightsail push-container-image --region us-east-1 --service-name flowco-service --label flowco-app --image flowco-app:latest
 
 # docker-image:
 # 	docker build --platform linux/amd64 -t flowco-app .

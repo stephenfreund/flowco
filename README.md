@@ -3,16 +3,15 @@
 # Flowco
 ![flowco](https://github.com/user-attachments/assets/9591f546-ef52-4c16-999a-ca9e2a149586)
 
-## Web
+Flowco is designed to run as a web service.  
+However, it can also be run locally by following these instructions.  
 
-[https://go-flow.co](https://go-flow.co)
+### Configuration
 
-## Local Install
-
-### Conda or other virtual env
-
-* Definitely use a conda virtual environment or some other virtual environment.
+* Use a conda virtual environment or some other virtual environment.
 * Use Python 3.11.  
+* Ensure `dot` is on your path.
+* Ensure `npm` and `node` are on your path to build the project from the source.
 
 ### API Key
 
@@ -26,22 +25,35 @@
 > export OPENAI_API_KEY=<your-api-key>
 > ```
 
-### Building
+### Installing
 
-Clone the repo and install with `make`: 
+#### From the source
+
+Clone the repo and install:
 
 ```bash
-make
+pip3 install -e .
 ```
 
-This installs a bunch of normal packages through a hatchling `pyproject.toml`, and then also a local wheel for the MXGraph component.
+This installs a bunch of normal packages and a custom component for Streamlit.  
+
+#### From a prebuilt wheel
+
+You can alternatively install
+a prebuilt wheel:
+
+```bash
+pip3 install dist/flowco-py3-none-any.whl 
+```
 
 ### Running
 
 On the command line, run `flowco`, passing it the directory in which to store its files.  That directory
 should already exist:
+
 ```bash
 mkdir /tmp/example
 flowco /tmp/example
 ```
 
+Use `-v` to turn on logging.
