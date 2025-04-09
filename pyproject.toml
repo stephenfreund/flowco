@@ -80,3 +80,16 @@ devel = [
 
 [tool.hatch.build.hooks.custom]
 hooks = ["hatch_build.Hook"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mxgraph_component"]
+include = true
+
+[tool.hatch.build]
+include = [
+  "src/mxgraph_component/**/*.py",
+  "src/mxgraph_component/mxgraph_component/frontend/dist/**",
+]
+
+[tool.hatch.build.targets.sdist]
+include = true
