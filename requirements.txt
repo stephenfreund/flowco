@@ -26,7 +26,6 @@ markdown
 nbformat
 pydantic
 streamlit_code_editor
-wheel
 pandas
 seaborn
 matplotlib

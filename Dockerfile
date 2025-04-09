@@ -30,17 +30,17 @@ WORKDIR /app
 
 # Update pip and install dependencies
 COPY requirements.txt .
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip setuptools wheel
 RUN pip install -r requirements.txt
 
 # Copy project files
 COPY . .
 
 # Navigate to mxgraph_component and run `make build`
-RUN make -C mxgraph_component build
+# RUN make -C mxgraph_component build
 
 # Install the mxgraph_component package
-RUN pip3 install ./mxgraph_component/dist/mxgraph_component-0.0.1-py3-none-any.whl
+# RUN pip3 install ./mxgraph_component/dist/mxgraph_component-0.0.1-py3-none-any.whl
 
 # Ensure the .streamlit directory exists
 RUN mkdir -p /app/.streamlit

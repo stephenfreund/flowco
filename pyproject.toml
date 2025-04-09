@@ -37,7 +37,6 @@ dependencies = [
   "nbformat",
   "pydantic",
   "streamlit_code_editor",
-  "wheel",
 
   # for the generated code...
   "pandas",
