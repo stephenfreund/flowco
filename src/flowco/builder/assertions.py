@@ -271,8 +271,6 @@ def _repair_assertions(
         if num_failed == 0:
             if original.requirements != node.requirements:
                 return node.update(phase=Phase.clean)
-            elif original.code != node.code:
-                return node.update(phase=Phase.code)
             else:
                 return node.update(phase=Phase.assertions_checked)
 

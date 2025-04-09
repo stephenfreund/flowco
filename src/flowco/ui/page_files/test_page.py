@@ -77,162 +77,172 @@ class TestPage(BuildPage):
             if node.phase >= Phase.unit_tests_checked:
                 st.success("All tests passed")
 
-    @st.dialog("Edit Tests", width="large")
     def edit_checks(self, node_id: str):
-        top = st.empty()
-        try:
-            with st.container(key="unit-test-ui"):
+        node = st.session_state.tmp_dfg[node_id]
 
-                def make_suggestions():
-                    st.session_state.make_suggestions = True
+        @st.dialog(f"Unit Tests for {node.pill}", width="large")
+        def for_real(node_id: str):
 
-                node = st.session_state.tmp_dfg[node_id]
-                buttons = st.empty()
+            top = st.empty()
+            try:
+                with st.container(key="unit-test-ui"):
 
-                if st.session_state.make_suggestions:
-                    with st.spinner("Making suggestions..."):
-                        st.session_state.make_suggestions = False
-                        suggested_unit_tests = suggest_unit_tests(
-                            st.session_state.tmp_dfg, st.session_state.tmp_dfg[node_id]
+                    def make_suggestions():
+                        st.session_state.make_suggestions = True
+
+                    node = st.session_state.tmp_dfg[node_id]
+                    buttons = st.empty()
+
+                    if st.session_state.make_suggestions:
+                        with st.spinner("Making suggestions..."):
+                            st.session_state.make_suggestions = False
+                            suggested_unit_tests = suggest_unit_tests(
+                                st.session_state.tmp_dfg,
+                                st.session_state.tmp_dfg[node_id],
+                            )
+                            st.session_state.tmp_unit_tests = (
+                                st.session_state.tmp_unit_tests + suggested_unit_tests
+                            )
+                            dfg = st.session_state.tmp_dfg
+                            node = dfg[node_id]
+                            dfg = dfg.reduce_phases_to_below_target(
+                                node.id, Phase.unit_tests_code
+                            )
+                            st.session_state.tmp_dfg = dfg
+
+                    st.session_state.tmp_unit_tests = [
+                        x for x in st.session_state.tmp_unit_tests if x
+                    ]
+                    editable_df = st.data_editor(
+                        pd.DataFrame(
+                            [
+                                {
+                                    "description": x.description,
+                                    "inputs": x.inputs,
+                                    "expected outcome": x.expected,
+                                }
+                                for x in st.session_state.tmp_unit_tests
+                            ],
+                            columns=["description", "inputs", "expected outcome"],
+                            dtype=str,
+                        ),
+                        key="edit_checks",
+                        num_rows="dynamic",
+                        use_container_width=True,
+                    )
+
+                    fixed = editable_df.fillna("")
+                    new_unit_tests = [
+                        UnitTest(
+                            description=x.get("description", ""),
+                            inputs=x.get("inputs", ""),
+                            expected=x.get("expected outcome", ""),
                         )
-                        st.session_state.tmp_unit_tests = (
-                            st.session_state.tmp_unit_tests + suggested_unit_tests
-                        )
-                        dfg = st.session_state.tmp_dfg
-                        node = dfg[node_id]
+                        for x in fixed.to_dict(orient="records")
+                    ]
+                    dfg = st.session_state.tmp_dfg
+                    node = dfg[node_id]
+                    if (
+                        new_unit_tests != node.unit_tests
+                        or node.phase < Phase.unit_tests_code
+                    ):
+                        dfg = dfg.with_node(node.update(unit_tests=new_unit_tests))
                         dfg = dfg.reduce_phases_to_below_target(
                             node.id, Phase.unit_tests_code
                         )
                         st.session_state.tmp_dfg = dfg
 
-                st.session_state.tmp_unit_tests = [
-                    x for x in st.session_state.tmp_unit_tests if x
-                ]
-                editable_df = st.data_editor(
-                    pd.DataFrame(
-                        [
-                            {
-                                "description": x.description,
-                                "inputs": x.inputs,
-                                "expected outcome": x.expected,
-                            }
-                            for x in st.session_state.tmp_unit_tests
-                        ],
-                        columns=["description", "inputs", "expected outcome"],
-                        dtype=str,
-                    ),
-                    key="edit_checks",
-                    num_rows="dynamic",
-                    use_container_width=True,
-                )
+                    with buttons.container():
+                        c1, c2, c3 = st.columns(3)
+                        with c1:
+                            if st.button("Save", icon=":material/save:"):
+                                ui_page: UIPage = st.session_state.ui_page
+                                ui_page.page().update_dfg(st.session_state.tmp_dfg)
+                                st.session_state.force_update = True
+                                st.rerun(scope="app")
 
-                fixed = editable_df.fillna("")
-                new_unit_tests = [
-                    UnitTest(
-                        description=x.get("description", ""),
-                        inputs=x.get("inputs", ""),
-                        expected=x.get("expected outcome", ""),
-                    )
-                    for x in fixed.to_dict(orient="records")
-                ]
-                dfg = st.session_state.tmp_dfg
-                node = dfg[node_id]
-                if (
-                    new_unit_tests != node.unit_tests
-                    or node.phase < Phase.unit_tests_code
-                ):
-                    dfg = dfg.with_node(node.update(unit_tests=new_unit_tests))
-                    dfg = dfg.reduce_phases_to_below_target(
-                        node.id, Phase.unit_tests_code
-                    )
-                    st.session_state.tmp_dfg = dfg
+                        with c2:
+                            st.button(
+                                "Suggest",
+                                icon=":material/format_list_bulleted:",
+                                on_click=make_suggestions,
+                            )
 
-                with buttons.container():
-                    c1, c2, c3 = st.columns(3)
-                    with c1:
-                        if st.button("Save", icon=":material/save:"):
-                            ui_page: UIPage = st.session_state.ui_page
-                            ui_page.page().update_dfg(st.session_state.tmp_dfg)
-                            st.session_state.force_update = True
-                            st.rerun(scope="app")
-
-                    with c2:
-                        st.button(
-                            "Suggest",
-                            icon=":material/format_list_bulleted:",
-                            on_click=make_suggestions,
-                        )
-
-                    with c3:
-                        if show_code():
-                            if st.button("Regenerate"):
-                                with st.spinner("Regenerating..."):
-                                    dfg = st.session_state.tmp_dfg
-                                    dfg = dfg.reduce_phases_to_below_target(
-                                        node_id, Phase.unit_tests_code
-                                    )
-                                    node = dfg[node_id]
-                                    dfg = dfg.with_node(
-                                        node.update(
-                                            cache=node.cache.invalidate(
-                                                Phase.unit_tests_code
+                        with c3:
+                            if show_code():
+                                if st.button("Regenerate"):
+                                    with st.spinner("Regenerating..."):
+                                        dfg = st.session_state.tmp_dfg
+                                        dfg = dfg.reduce_phases_to_below_target(
+                                            node_id, Phase.unit_tests_code
+                                        )
+                                        node = dfg[node_id]
+                                        dfg = dfg.with_node(
+                                            node.update(
+                                                cache=node.cache.invalidate(
+                                                    Phase.unit_tests_code
+                                                )
                                             )
                                         )
-                                    )
-                                    st.session_state.tmp_dfg = dfg
+                                        st.session_state.tmp_dfg = dfg
 
-                dfg = st.session_state.tmp_dfg
+                    dfg = st.session_state.tmp_dfg
 
-                if dfg[node_id].phase < Phase.unit_tests_code:
-                    with st.spinner("Generating validation steps..."):
-                        ui_page: UIPage = st.session_state.ui_page
-                        build_config = ui_page.page().base_build_config(repair=False)
-                        engine = BuildEngine.get_builder()
-                        for build_updated in engine.build_with_worklist(
-                            build_config, dfg, Phase.unit_tests_code, node_id
-                        ):
-                            dfg = build_updated.new_graph
-                        st.session_state.tmp_dfg = dfg
-
-                node = st.session_state.tmp_dfg[node_id]
-                if node.unit_test_checks:
-                    for unit_test in node.unit_tests or []:
-                        st.divider()
-                        check = node.unit_test_checks.get(str(unit_test), None)
-                        if check:
-                            st.write(f"**{unit_test.description}**")
-                            st.write(
-                                f"* **Input**: {unit_test.inputs}\n* **Expected:** {unit_test.expected}"
+                    if dfg[node_id].phase < Phase.unit_tests_code:
+                        with st.spinner("Generating validation steps..."):
+                            ui_page: UIPage = st.session_state.ui_page
+                            build_config = ui_page.page().base_build_config(
+                                repair=False
                             )
-                            if check.warning:
-                                st.warning(check.warning)
+                            engine = BuildEngine.get_builder()
+                            for build_updated in engine.build_with_worklist(
+                                build_config, dfg, Phase.unit_tests_code, node_id
+                            ):
+                                dfg = build_updated.new_graph
+                            st.session_state.tmp_dfg = dfg
 
-                            if show_code():
-                                if check.type == "quantitative":
-                                    code = check.code
-                                    if code:
-                                        st.code(
-                                            textwrap.indent("\n".join(code), "    ")
-                                        )
-                                    else:
-                                        st.write("    *Code not available*")
-                                elif check.type == "qualitative-code":
-                                    code = check.code
-                                    if code:
-                                        st.write("Setup code:")
-                                        st.code(
-                                            textwrap.indent("\n".join(code), "    ")
-                                        )
-                                    else:
-                                        st.write("    *Code not available*")
+                    node = st.session_state.tmp_dfg[node_id]
+                    if False and node.unit_test_checks:
+                        for unit_test in node.unit_tests or []:
+                            st.divider()
+                            check = node.unit_test_checks.get(str(unit_test), None)
+                            if check:
+                                st.write(f"**{unit_test.description}**")
+                                st.write(
+                                    f"* **Input**: {unit_test.inputs}\n* **Expected:** {unit_test.expected}"
+                                )
+                                if check.warning:
+                                    st.warning(check.warning)
 
-                                    st.write(f"    *{check.requirement}*")
-                                else:
-                                    st.write(f"    *{check.requirement}*")
-                else:
-                    st.write("*No details available*")
-        except AssistantError as e:
-            top.error(e)
+                                if show_code():
+                                    if check.type == "quantitative":
+                                        code = check.code
+                                        if code:
+                                            st.code(
+                                                textwrap.indent("\n".join(code), "    ")
+                                            )
+                                        else:
+                                            st.write("    *Code not available*")
+                                    elif check.type == "qualitative-code":
+                                        code = check.code
+                                        if code:
+                                            st.write("Setup code:")
+                                            st.code(
+                                                textwrap.indent("\n".join(code), "    ")
+                                            )
+                                        else:
+                                            st.write("    *Code not available*")
+
+                                        st.write(f"    *{check.requirement}*")
+                                    else:
+                                        st.write(f"    *{check.requirement}*")
+                    else:
+                        # st.write("*No details available*")
+                        pass
+            except AssistantError as e:
+                top.error(e)
+
+        for_real(node_id)
 
     def edit_node(self, node_id: str):
         ui_page: UIPage = st.session_state.ui_page
@@ -289,7 +299,7 @@ class TestPage(BuildPage):
             for node in ui_page.dfg().nodes
             if node.filter_messages(Phase.unit_tests_code, "warning")
         ]
-        if warnings:
+        if False and warnings:
             items = "\n".join([f"* {x}" for x in warnings])
             st.warning(f"**These nodes have test warnings:**\n{items}")
 
@@ -298,7 +308,7 @@ class TestPage(BuildPage):
         ]
         nodes_with_no_tests.sort()
 
-        if nodes_with_no_tests:
+        if False and nodes_with_no_tests:
             items = "\n".join([f"* {x}" for x in nodes_with_no_tests])
             st.info(f"**These nodes have no tests:**\n{items}")
 

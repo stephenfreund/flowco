@@ -62,14 +62,31 @@ class CheckPage(BuildPage):
     def build_target_phase(self) -> Phase:
         return Phase.assertions_checked
 
+    def messages_triggering_global_error_check(self):
+        node_id = st.session_state.node_id_with_fix_button
+        if node_id is None:
+            return []
+        ui_page: UIPage = st.session_state.ui_page
+        node = ui_page.dfg()[node_id]
+        error_run_messages = node.filter_messages(
+            [x for x in Phase],  #  if x.value <= Phase.run_checked.value],
+            level="error",
+        )
+        return [(node, m) for m in error_run_messages]
+
     def node_header(self, node: Node):
         super().node_header(node)
         assertion_failures = node.filter_messages(Phase.assertions_checked, "error")
         if assertion_failures:
             fix_button = self.fix_button()
+
+            def fire():
+                set_session_state("trigger_build_toggle", fix_button)
+                st.session_state.node_id_with_fix_button = node.id
+
             st.button(
                 fix_button.label,
-                on_click=lambda: set_session_state("trigger_build_toggle", fix_button),
+                on_click=fire,
                 disabled=not self.graph_is_editable(),
                 help="Fix any errors in the checks",
             )
@@ -109,7 +126,7 @@ class CheckPage(BuildPage):
 
                 # st.write(f"### Output Checks for {node.pill}")
                 st.session_state.tmp_assertions = [
-                    x for x in st.session_state.tmp_assertions if x
+                    x for x in st.session_state.tmp_assertions[:3] if x
                 ]
                 editable_df = st.data_editor(
                     pd.DataFrame(
@@ -121,6 +138,7 @@ class CheckPage(BuildPage):
                 )
 
                 new_assertions = list([x for x in editable_df["checks"] if x])
+                st.session_state.tmp_assertions = new_assertions
                 dfg = st.session_state.tmp_dfg
                 node = dfg[node_id]
                 if (
@@ -181,7 +199,7 @@ class CheckPage(BuildPage):
                         st.session_state.tmp_dfg = dfg
 
                 node = st.session_state.tmp_dfg[node_id]
-                if node.assertion_checks:
+                if False and node.assertion_checks:
                     for assertion in node.assertions or []:
                         check = node.assertion_checks.get(assertion, None)
                         if check and (check.warning or show_code()):
@@ -202,7 +220,8 @@ class CheckPage(BuildPage):
                                 else:
                                     st.write(f"    *{check.requirement}*")
                 else:
-                    st.write("*No details available*")
+                    # st.write("*No details available*")
+                    pass
             except AssistantError as e:
                 top.error(e)
 
@@ -241,6 +260,8 @@ class CheckPage(BuildPage):
     def global_sidebar(self):
         ui_page: UIPage = st.session_state.ui_page
 
+        st.session_state.node_with_fix_button = None
+
         failed_assertions = [
             node.pill
             for node in ui_page.dfg().nodes
@@ -255,7 +276,7 @@ class CheckPage(BuildPage):
             for node in ui_page.dfg().nodes
             if node.filter_messages(Phase.assertions_code, "warning")
         ]
-        if warnings:
+        if False and warnings:
             items = "\n".join([f"* {x}" for x in warnings])
             st.warning(f"**These nodes have check warnings:**\n{items}")
 
@@ -264,7 +285,7 @@ class CheckPage(BuildPage):
         ]
         nodes_with_no_assertions.sort()
 
-        if nodes_with_no_assertions:
+        if False and nodes_with_no_assertions:
             items = "\n".join([f"* {x}" for x in nodes_with_no_assertions])
             st.info(f"**These nodes have no checks:**\n{items}")
 
@@ -295,3 +316,7 @@ class CheckPage(BuildPage):
             for x in node.messages
             if x.phase <= Phase.assertions_checked and x.level == "error"
         ]
+
+    def clear_builder_and_reset_state(self):
+        super().clear_builder_and_reset_state()
+        st.session_state.node_id_with_fix_button = None

@@ -135,12 +135,14 @@ def from_dfg(
                 x
                 for x in node.messages
                 if x.phase in [Phase.assertions_code, Phase.assertions_checked]
+                and x.level == "error"
             ]
         if "unit_tests" in node_parts:
             messages += [
                 x
                 for x in node.messages
                 if x.phase in [Phase.unit_tests_code, Phase.unit_tests_checked]
+                and x.level == "error"
             ]
 
         diagram_node = DiagramNode(

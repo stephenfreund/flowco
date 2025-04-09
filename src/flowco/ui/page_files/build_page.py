@@ -275,7 +275,17 @@ class BuildPage(FlowcoPage):
     def init(self):
         self.get_builder_updates()
 
+    def messages_triggering_global_error_check(self):
+        dfg: DataFlowGraph = st.session_state.ui_page.dfg()
+        error_run_messages = dfg.filter_messages(
+            [x for x in Phase],  #  if x.value <= Phase.run_checked.value],
+            level="error",
+        )
+        return error_run_messages
+
     def global_error_check(self):
+        print("GLOBAL ERROR CHECK")
+
         @st.dialog("Errors", width="large")
         def global_error_fix(error_messages):
             st.write(
@@ -296,11 +306,8 @@ class BuildPage(FlowcoPage):
             for node, message in error_messages:
                 st.error(f"**{node.pill}**: {message.message()}")
 
-        dfg: DataFlowGraph = st.session_state.ui_page.dfg()
-        error_run_messages = dfg.filter_messages(
-            [x for x in Phase],  #  if x.value <= Phase.run_checked.value],
-            level="error",
-        )
+        error_run_messages = self.messages_triggering_global_error_check()
+        print("GLOBAL MESSAGES", len(error_run_messages))
         if error_run_messages:
             global_error_fix(error_run_messages)
 
@@ -330,6 +337,7 @@ class BuildPage(FlowcoPage):
                 time.sleep(0.25)
                 st.rerun()
 
+        print(st.session_state.global_error_check, "X")
         if st.session_state.global_error_check:
             st.session_state.global_error_check = False
             self.global_error_check()

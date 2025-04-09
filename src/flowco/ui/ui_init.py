@@ -5,6 +5,15 @@ from flowco.util.config import AbstractionLevel
 
 css = """
 
+.st-key-edit_node_commands .stColumn {
+    width: fit-content !important;
+    flex: unset !important;
+}
+
+.st-key-node_edit_top .stColumn {
+    width: fit-content !important;
+    flex: unset !important;
+}
 
 
 .stMainBlockContainer {
@@ -454,3 +463,5 @@ def st_init(page_config=True):
         st.session_state.just_created_project = False
 
         st.session_state.make_suggestions = False
+
+        st.session_state.node_id_with_fix_button = None
