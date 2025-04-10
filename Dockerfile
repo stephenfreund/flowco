@@ -36,13 +36,11 @@ RUN pip install -r requirements.txt
 # Copy project files
 COPY . .
 
-RUN pip3 install -e .
-
 # Navigate to mxgraph_component and run `make build`
-# RUN make -C mxgraph_component build
+RUN make -C src/mxgraph_component build
 
 # Install the mxgraph_component package
-# RUN pip3 install ./mxgraph_component/dist/mxgraph_component-0.0.1-py3-none-any.whl
+RUN pip3 install src/mxgraph_component/dist/mxgraph_component-0.0.1-py3-none-any.whl -e .
 
 # Ensure the .streamlit directory exists
 RUN mkdir -p /app/.streamlit

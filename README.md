@@ -9,8 +9,9 @@ However, it can also be run locally by following these instructions.
 ### Configuration
 
 * Use a conda virtual environment or some other virtual environment.
-* Use Python 3.11.  
-* Ensure `dot`, `npm`, `node`, and `make` are on your path.
+* Use Python 3.11. (3.12 or 3.13 should also work.)
+* Ensure `dot` is on your path.
+* Ensure `npm`, `node`, and `make` are on your path to build from scratch.
 
 ### API Key
 
@@ -31,11 +32,19 @@ However, it can also be run locally by following these instructions.
 Clone the repo and install:
 
 ```bash
-make
+pip3 install src/mxgraph_component/prebuilt/mxgraph_component-0.0.1-py3-none-any.whl -e .
 ```
 
-This installs a bunch of normal packages, a custom component for Streamlit, and then flowco as an 
+This installs a bunch of normal packages, a custom component for Streamlit, and then Flowco as an 
 editable package that you can run locally (rather than as the web service).
+
+#### From scratch
+
+To rebuild the graph component from scratch, run:
+
+```bash
+make
+```
 
 ### Running
 
