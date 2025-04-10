@@ -24,9 +24,6 @@ jobs:
       - name: Update pip
         run: python -m pip install --upgrade pip
 
-      - name: Install package
-        run: python -m pip install .
-
       - name: Install in editable mode
         run: python -m pip install -e .
 
