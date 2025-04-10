@@ -43,7 +43,7 @@ You can alternatively install
 a prebuilt wheel:
 
 ```bash
-pip3 install dist/flowco-py3-none-any.whl 
+pip3 install dist/flowco-0.50.0-py3-none-any.whl 
 ```
 
 ### Running
