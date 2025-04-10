@@ -10,8 +10,7 @@ However, it can also be run locally by following these instructions.
 
 * Use a conda virtual environment or some other virtual environment.
 * Use Python 3.11.  
-* Ensure `dot` is on your path.
-* Ensure `npm` and `node` are on your path to build the project from the source.
+* Ensure `dot`, `npm`, `node`, and `make` are on your path.
 
 ### API Key
 
@@ -32,19 +31,11 @@ However, it can also be run locally by following these instructions.
 Clone the repo and install:
 
 ```bash
-pip3 install -e .
+make
 ```
 
-This installs a bunch of normal packages and a custom component for Streamlit.  
-
-#### From a prebuilt wheel
-
-You can alternatively install
-a prebuilt wheel:
-
-```bash
-pip3 install dist/flowco-0.50.0-py3-none-any.whl 
-```
+This installs a bunch of normal packages, a custom component for Streamlit, and then flowco as an 
+editable package that you can run locally (rather than as the web service).
 
 ### Running
 
