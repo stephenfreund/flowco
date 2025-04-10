@@ -47,4 +47,7 @@ mkdir /tmp/example
 flowco /tmp/example
 ```
 
+The first time you run, it may take 15-20 seconds to bring up the web page properly due to a timing issue
+with the libraries.  It should launch more quickly after that.
+
 Use `-v` to turn on logging.
