@@ -82,12 +82,13 @@ devel = [
 hooks = ["hatch_build.Hook"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/mxgraph_component"]
+packages = ["src/mxgraph_component", "src/flowco", "src/cli", "src/llm"]
 include = true
 
 [tool.hatch.build]
 include = [
-  "src/mxgraph_component/**/*.py",
+  "src/flowco/**",
+  "src/mxgraph_component/**",
   "src/mxgraph_component/mxgraph_component/frontend/dist/**",
 ]
 
