@@ -9,7 +9,7 @@ However, it can also be run locally by following these instructions.
 ### Configuration
 
 * Use a conda virtual environment or some other virtual environment.
-* Use Python 3.11. (3.12 or 3.13 should also work.)
+* You **must** use Python 3.11.
 * Ensure `dot` is on your path.
 * Ensure `npm`, `node`, and `make` are on your path to build from scratch.
 
