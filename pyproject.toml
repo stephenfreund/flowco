@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "flowco"
-version = "0.50.0"
+version = "0.54.0"
 authors = [
   { name = "Stephen Freund", email = "sfreund@williams.edu" },
   { name="Emery Berger", email="emery.berger@gmail.com" },
