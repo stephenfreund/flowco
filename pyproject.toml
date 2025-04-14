@@ -71,6 +71,7 @@ Homepage = "https://github.com/stephenfreund/flowco"
 [project.optional-dependencies]
 devel = [
     "wheel",
+    "build",
     "pytest==7.4.0",
     "playwright==1.39.0",
     "requests==2.31.0",
