@@ -39,8 +39,8 @@ COPY . .
 # Navigate to mxgraph_component and run `make build`
 RUN make -C src/flowco/mxgraph_component build
 
-# Install the mxgraph_component package
-# RUN pip3 install src/mxgraph_component/dist/mxgraph_component-0.0.1-py3-none-any.whl -e .
+# Install flowco as an editable package
+RUN pip3 install -e .
 
 # Ensure the .streamlit directory exists
 RUN mkdir -p /app/.streamlit
