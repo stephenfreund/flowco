@@ -3,7 +3,7 @@ messageFormat = "%(message)s"
 level = "error"
 
 [client]
-toolbarMode = "developer"
+toolbarMode = "minimal"
 
 [server]
 enableStaticServing = true

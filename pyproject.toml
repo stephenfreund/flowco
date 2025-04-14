@@ -7,7 +7,10 @@ build-backend = "hatchling.build"
 name = "flowco"
 version = "0.50.0"
 authors = [
-  { name = "Stephen Freund", email = "sfreund@williams.edu" }
+  { name = "Stephen Freund", email = "sfreund@williams.edu" },
+  { name="Emery Berger", email="emery.berger@gmail.com" },
+  { name="Eunice Jun", email="emjun@cs.ucla.edu" },
+  { name="Brooke Simon", email="bsimon2000@g.ucla.edu"}
 ]
 dependencies = [
   "openai>=1.72.0",
@@ -49,7 +52,7 @@ dependencies = [
 
 ]
 
-description = "Yep."
+description = "Flowco a new mixed-initiative system leveraging visual dataflow programming and LLMs to support authoring reliable and robust data analyses."
 readme = "README.md"
 requires-python = ">=3.11"
 classifiers = [
