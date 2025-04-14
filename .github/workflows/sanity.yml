@@ -22,10 +22,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Update pip
-        run: python -m pip install --upgrade pip wheel setuptools
-
-      - name: Build and install mxgraph package
-        run: cd src/mxgraph_component && make install
+        run: python -m pip install --upgrade pip wheel setuptools hatch
   
       - name: Install in editable mode
         run: python -m pip install -e .
@@ -36,4 +33,11 @@ jobs:
       - name: Check calling executables directly
         run: |
           flowco --help
+
+      - name: build wheel
+        run: hatch build -t wheel
+
+      - name: Check help message
+        run: python -m flowco --help
+
 
