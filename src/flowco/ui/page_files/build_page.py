@@ -27,7 +27,8 @@ from flowco import __main__
 from flowco.ui.ui_page import UIPage
 
 from code_editor import code_editor
-from flowthon.flowthon import FlowthonProgram
+
+# from flowthon.flowthon import FlowthonProgram
 
 from flowco.ui.dialogs.node_editor import edit_node
 
@@ -367,38 +368,38 @@ class BuildPage(FlowcoPage):
             ui_page.page().user_edit_graph_description(text)
             st.rerun()
 
-    @st.dialog("Edit as Flowthon program", width="large")
-    def edit_flowthon(self):
-        def doit():
-            updated_source = st.session_state.code_editor["text"]
-            flowthon = FlowthonProgram.from_source(updated_source)
-            ui_page.page().merge_flowthon(flowthon, rebuild=False, interactive=False)
-            st.session_state.force_update = True
+    # @st.dialog("Edit as Flowthon program", width="large")
+    # def edit_flowthon(self):
+    #     def doit():
+    #         updated_source = st.session_state.code_editor["text"]
+    #         flowthon = FlowthonProgram.from_source(updated_source)
+    #         ui_page.page().merge_flowthon(flowthon, rebuild=False, interactive=False)
+    #         st.session_state.force_update = True
 
-        ui_page: UIPage = st.session_state.ui_page
-        source = ui_page.page().to_flowthon().to_source(st_abstraction_level())
+    #     ui_page: UIPage = st.session_state.ui_page
+    #     source = ui_page.page().to_flowthon().to_source(st_abstraction_level())
 
-        if st.button(
-            "Save",
-            on_click=doit,
-            disabled=st.session_state.code_editor is None
-            or st.session_state.code_editor["text"] == source,
-        ):
-            st.rerun()
+    #     if st.button(
+    #         "Save",
+    #         on_click=doit,
+    #         disabled=st.session_state.code_editor is None
+    #         or st.session_state.code_editor["text"] == source,
+    #     ):
+    #         st.rerun()
 
-        code_editor(
-            source,
-            key="code_editor",
-            lang="python",
-            response_mode="debounce",
-            props={
-                "showGutter": True,
-            },
-            options={
-                "wrap": True,
-                "showLineNumbers": True,
-            },
-        )
+    #     code_editor(
+    #         source,
+    #         key="code_editor",
+    #         lang="python",
+    #         response_mode="debounce",
+    #         props={
+    #             "showGutter": True,
+    #         },
+    #         options={
+    #             "wrap": True,
+    #             "showLineNumbers": True,
+    #         },
+    #     )
 
     def global_sidebar(self):
         ui_page: UIPage = st.session_state.ui_page

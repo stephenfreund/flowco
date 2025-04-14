@@ -25,7 +25,7 @@ from flowco.ui.ui_util import (
 )
 import streamlit as st
 
-from mxgraph_component.mxgraph_component import mxgraph_component
+from flowco.mxgraph_component.mxgraph_component import mxgraph_component
 
 from flowco import __main__
 from flowco.ui.ui_page import UIPage
@@ -33,7 +33,8 @@ from flowco.util.config import config
 from flowco.util.costs import inflight, total_cost
 from flowco.util.config import AbstractionLevel
 from flowco.util.output import error, log
-from llm.assistant import AssistantError
+from flowco.llm.assistant import AssistantError
+from flowco.assistant.flowco_assistant import fast_transcription
 
 
 class FlowcoPage:
@@ -257,7 +258,7 @@ class FlowcoPage:
     def ama_voice_input(self, container):
         toggle("ama_responding")
         voice = st.session_state.voice_input
-        transcription = quick_transcription(voice)
+        transcription = fast_transcription(voice)
         self.ama_completion(container, transcription)
 
     def ama_completion(self, container, prompt):

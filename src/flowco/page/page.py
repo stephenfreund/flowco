@@ -21,7 +21,8 @@ from flowco.util.output import error, log, logger
 from flowco.util.text import (
     format_basemodel,
 )
-from flowthon.flowthon import FlowthonNode, FlowthonProgram
+
+# from flowthon.flowthon import FlowthonNode, FlowthonProgram
 
 T = TypeVar("T", bound=Union[BaseModel, str])
 
@@ -363,51 +364,51 @@ class Page(BaseModel, extra="allow"):
 
         return html.format(content=html_content, title=self.file_name)
 
-    @atomic_method
-    def to_flowthon(self) -> FlowthonProgram:
-        dfg = self.dfg
-        dfg = dfg.normalize_ids_to_pills()
+    # @atomic_method
+    # def to_flowthon(self) -> FlowthonProgram:
+    #     dfg = self.dfg
+    #     dfg = dfg.normalize_ids_to_pills()
 
-        # assert all nodes had ids matching pills
-        for node in dfg.nodes:
-            assert node.id == node.pill, f"{node.id} != {node.pill}"
+    #     # assert all nodes had ids matching pills
+    #     for node in dfg.nodes:
+    #         assert node.id == node.pill, f"{node.id} != {node.pill}"
 
-        # assert all edges had ids matching pills
-        for edge in dfg.edges:
-            assert edge.src in dfg.node_ids(), f"{edge.src} not in {dfg.node_ids()}"
-            assert edge.dst in dfg.node_ids(), f"{edge.dst} not in {dfg.node_ids()}"
-            assert (
-                edge.id == f"{edge.src}->{edge.dst}"
-            ), f"{edge.id} != {edge.src}-->{edge.dst}"
+    #     # assert all edges had ids matching pills
+    #     for edge in dfg.edges:
+    #         assert edge.src in dfg.node_ids(), f"{edge.src} not in {dfg.node_ids()}"
+    #         assert edge.dst in dfg.node_ids(), f"{edge.dst} not in {dfg.node_ids()}"
+    #         assert (
+    #             edge.id == f"{edge.src}->{edge.dst}"
+    #         ), f"{edge.id} != {edge.src}-->{edge.dst}"
 
-        nodes = {}
-        for node_id in dfg.topological_sort():
-            node = dfg[node_id]
-            predecessors = [dfg[n].pill for n in node.predecessors]
+    #     nodes = {}
+    #     for node_id in dfg.topological_sort():
+    #         node = dfg[node_id]
+    #         predecessors = [dfg[n].pill for n in node.predecessors]
 
-            nodes[node.pill] = FlowthonNode(
-                pill=node.pill,
-                uses=predecessors,
-                label=node.label,
-                requirements=node.requirements,
-                algorithm=node.algorithm,
-                code=node.code,
-                assertions=node.assertions,
-            )
+    #         nodes[node.pill] = FlowthonNode(
+    #             pill=node.pill,
+    #             uses=predecessors,
+    #             label=node.label,
+    #             requirements=node.requirements,
+    #             algorithm=node.algorithm,
+    #             code=node.code,
+    #             assertions=node.assertions,
+    #         )
 
-        self.update_dfg(dfg)
-        return FlowthonProgram(tables=GlobalTables.from_dfg(dfg), nodes=nodes)
+    #     self.update_dfg(dfg)
+    #     return FlowthonProgram(tables=GlobalTables.from_dfg(dfg), nodes=nodes)
 
-    @atomic_method
-    def merge_flowthon(
-        self, flowthon: FlowthonProgram, rebuild=True, interactive=True
-    ) -> None:
-        with logger("Merging"):
-            build_config = self.base_build_config(repair=True)
-            new_dfg = flowthon.merge(
-                build_config, self.dfg, rebuild=rebuild, interactive=interactive
-            )
-            self.update_dfg(new_dfg)
+    # @atomic_method
+    # def merge_flowthon(
+    #     self, flowthon: FlowthonProgram, rebuild=True, interactive=True
+    # ) -> None:
+    #     with logger("Merging"):
+    #         build_config = self.base_build_config(repair=True)
+    #         new_dfg = flowthon.merge(
+    #             build_config, self.dfg, rebuild=rebuild, interactive=interactive
+    #         )
+    #         self.update_dfg(new_dfg)
 
     @atomic_method
     def user_edit_graph_description(self, description: str) -> None:

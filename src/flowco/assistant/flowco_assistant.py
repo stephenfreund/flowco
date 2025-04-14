@@ -3,8 +3,8 @@ from flowco.assistant.flowco_keys import get_api_key
 from flowco.util.config import config
 from flowco.util.costs import add_cost, decrement_inflight, increment_inflight
 from flowco.util.output import error, log, warn, debug
-from llm.assistant import Assistant, AssistantLogger
-from llm.models import get_model
+from flowco.llm.assistant import Assistant, AssistantLogger
+from flowco.llm.models import get_model
 
 
 class FlowcoLogger(AssistantLogger):

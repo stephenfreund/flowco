@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from flowco.session.session import session
 from flowco.session.session_file_system import fs_read, fs_write
 from flowco.util.output import log
-from llm.assistant import AssistantError
+from flowco.llm.assistant import AssistantError
 
 
 class FlowcoKeys:

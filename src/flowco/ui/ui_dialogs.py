@@ -1,7 +1,7 @@
 import os
 from flowco.assistant.flowco_assistant import test_anthropic_key, test_openai_key
 from flowco.assistant.flowco_keys import get_api_key_status, set_api_key
-from llm import models
+from flowco.llm import models
 from typing import Callable
 import pandas as pd
 import streamlit as st

@@ -11,7 +11,7 @@ from flowco.dataflow.dfg import (
 )
 from flowco.dataflow.phase import Phase
 from flowco.util.output import log
-from llm.assistant import Assistant
+from flowco.llm.assistant import Assistant
 
 
 def extract_type(field_annotation) -> type[Any]:

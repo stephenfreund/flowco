@@ -14,7 +14,7 @@ from flowco.util.config import config
 from flowco.util.output import log
 from pydantic import BaseModel
 
-from llm.assistant import ToolCallResult
+from flowco.llm.assistant import ToolCallResult
 
 
 class VisibleMessage(BaseModel):

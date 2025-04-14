@@ -26,7 +26,7 @@ from flowco.util.text import function_name_to_title
 from flowco.util.output import log, warn, error, buffer_output
 
 from flowco.util.config import config
-from llm.assistant import AssistantError
+from flowco.llm.assistant import AssistantError
 
 
 class BuildUpdate(BaseModel):

@@ -17,7 +17,7 @@ from flowco.builder.build import PassConfig, node_pass
 from flowco.util.config import config
 
 from flowco.dataflow.dfg import DataFlowGraph, NodeKind, Parameter, Node
-from llm.assistant import Assistant
+from flowco.llm.assistant import Assistant
 
 
 @node_pass(

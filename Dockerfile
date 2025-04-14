@@ -58,4 +58,4 @@ RUN sed -i 's/FLOWCO_ENVIRONMENT = "local"/FLOWCO_ENVIRONMENT = "production"/' /
 EXPOSE 80
 
 # Command to run the Streamlit app
-CMD ["streamlit", "run", "src/flowco.py", "--server.port=80", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "src/flowco/flowco.py", "--server.port=80", "--server.address=0.0.0.0"]

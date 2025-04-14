@@ -53,7 +53,7 @@ def main():
         command += ["--quiet"]
     command += [os.path.abspath(args.path)]
 
-    cwd = os.path.join(os.path.dirname(__file__), "../../")
+    cwd = os.path.join(os.path.dirname(__file__))
     subprocess.run(command, env=env, cwd=cwd)
 
 

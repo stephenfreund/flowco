@@ -22,7 +22,7 @@ from flowco.ui.ui_util import (
     visible_phases,
 )
 from flowco.util.config import config
-from llm.assistant import AssistantError
+from flowco.llm.assistant import AssistantError
 
 
 @dataclass

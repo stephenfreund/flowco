@@ -23,7 +23,7 @@ import streamlit as st
 
 from flowco import __main__
 from flowco.ui.ui_page import UIPage
-from llm.assistant import AssistantError
+from flowco.llm.assistant import AssistantError
 
 
 class TestPage(BuildPage):

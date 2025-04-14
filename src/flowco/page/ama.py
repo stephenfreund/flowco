@@ -32,7 +32,7 @@ from flowco.dataflow.dfg_update import (
     update_dataflow_graph,
 )
 from flowco.util.text import strip_ansi
-from llm.assistant import AssistantError, ToolCallResult
+from flowco.llm.assistant import AssistantError, ToolCallResult
 
 
 class VisibleMessage(BaseModel):

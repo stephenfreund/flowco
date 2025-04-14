@@ -1,0 +1,21 @@
+model_list:
+  - model_name: claude-3-7-sonnet
+    litellm_params:
+      model: claude-3-7-sonnet-20250219
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+  - model_name: claude-3-sonnet
+    litellm_params: 
+      model: claude-3-5-sonnet-20241022
+      api_key: "os.environ/ANTHROPIC_API_KEY" 
+  - model_name: claude-3-haiku
+    litellm_params:
+      model: claude-3-5-haiku-20241022
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+
+litellm_settings: # module level litellm settings - https://github.com/BerriAI/litellm/blob/main/litellm/__init__.py
+  modify_params: True
+  enable_json_schema_validation: True
+
+general_settings:
+  max_parallel_requests: 20  # the max parallel requests allowed per deployment 
+  global_max_parallel_requests: 20  # the max parallel requests allowed on the proxy all up 
