@@ -1,6 +1,11 @@
 
 all:
-	pip3 install -e .
+	cd src/mxgraph_component/mxgraph_component/frontend; npm install 
+	cd src/mxgraph_component/mxgraph_component/frontend; npm run build 
+	cd src/mxgraph_component/; python3 setup.py sdist bdist_wheel 
+	pip3 install src/mxgraph_component/dist/mxgraph_component-0.0.1-py3-none-any.whl -e .
+	echo ""
+	echo ""
 	echo ""
 	echo "Make sure dot is installed on your system"
 	echo "If not, install it using 'sudo apt-get install graphviz' or similar"
