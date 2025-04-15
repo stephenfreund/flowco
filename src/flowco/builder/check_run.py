@@ -40,9 +40,9 @@ def check_run(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node
             message = f"**Run** failed, and automatic repair did not fix the problem.  Please fix the error manually or try running again."
 
         log(f"Run didn't work for {node.pill}", e)
-        error_line = strip_ansi("\n".join(str(e).split("\n")[-2:]))
+        error_line = strip_ansi(str(e))
         node = node.error(
-            phase=Phase.run_checked, message=f"{message}\n\nDetails: *{error_line}*"
+            phase=Phase.run_checked, message=f"{message}\n\nDetails:\n```\n{error_line}\n```"
         )
 
         return node
