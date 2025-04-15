@@ -99,6 +99,43 @@ _models = {
         prompt_token_rate=0.15 / 10**6,
         cached_token_rate=0.075 / 10**6,
     ),
+    "gpt-4.1": Model(
+        name="gpt-4.1",
+        use_proxy=False,
+        api_key_name="OPENAI_API_KEY",
+        supports_vision=True,
+        supports_audio=False,
+        supports_temperature=True,
+        supports_prediction=True,
+        completion_token_rate=8 / 10**6,
+        prompt_token_rate=2 / 10**6,
+        cached_token_rate=0.5 / 10**6,
+    ),
+    "gpt-4.1-mini": Model(
+        name="gpt-4.1-mini",
+        use_proxy=False,
+        api_key_name="OPENAI_API_KEY",
+        supports_vision=True,
+        supports_audio=False,
+        supports_temperature=True,
+        supports_prediction=True,
+        completion_token_rate=1.6 / 10**6,
+        prompt_token_rate=0.4 / 10**6,
+        cached_token_rate=0.1 / 10**6,
+    ),
+    "gpt-4.1-nano": Model(
+        name="gpt-4.1-nano",
+        use_proxy=False,
+        api_key_name="OPENAI_API_KEY",
+        supports_vision=True,
+        supports_audio=False,
+        supports_temperature=True,
+        supports_prediction=True,
+        completion_token_rate=0.4 / 10**6,
+        prompt_token_rate=0.1 / 10**6,
+        cached_token_rate=0.025 / 10**6,
+    ),
+
 } | (
     {
         "claude-3-sonnet": Model(
