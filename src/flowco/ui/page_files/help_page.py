@@ -84,7 +84,7 @@ class HelpPage:
             st.write(" ")
             st.markdown("## Tutorial")
 
-            st.link_button("Watch", "https://youtu.be/q0eAJv1vhAQ", type="primary")
+            # st.link_button("Watch", "https://youtu.be/q0eAJv1vhAQ", type="primary")
 
             st.markdown("## FAQ")
             toc = Toc()

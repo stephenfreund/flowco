@@ -9,14 +9,14 @@ However, it can also be run locally by following these instructions.
 ### Configuration
 
 * Use a conda virtual environment or some other virtual environment.
-* You **must** use Python 3.11.
+* Use Python 3.11+.
 * Ensure `dot` is on your path.
 
 ### API Key
 
 > [!IMPORTANT]
 >
-> Flowco currently needs to be connected to an [OpenAI account](https://openai.com/api/). _Your account will need to have a positive balance for this to work_ ([check your balance](https://platform.openai.com/account/usage)). [Get a key here.](https://platform.openai.com/account/api-keys)
+> Flowco needs to be connected to an [OpenAI account](https://openai.com/api/). _Your account will need to have a positive balance for this to work_ ([check your balance](https://platform.openai.com/account/usage)). [Get a key here.](https://platform.openai.com/account/api-keys)
 >
 > Once you have an API key, set it as an environment variable called `OPENAI_API_KEY`.
 >
@@ -50,7 +50,8 @@ mkdir /tmp/example
 flowco /tmp/example
 ```
 
-The first time you run, it may take 15-20 seconds to bring up the web page properly due to a timing issue
-with the libraries.  It should launch more quickly after that.
+The first time you run, it may take 15-20 seconds to bring up the web page.  It should launch more quickly after that. 
+Flowco will intially open a `welcome.flowco` graph.  Follow the instructions in the right-hand panel to get started.  Then proceed through the numbered tutorials to experiment with additional features.
+
 
 Use `-v` to turn on logging.
