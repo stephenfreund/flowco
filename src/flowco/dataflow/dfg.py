@@ -12,7 +12,6 @@ from pydantic import BaseModel, Field
 import base64
 
 from nbformat.v4 import new_markdown_cell, new_code_cell, new_notebook
-from nbformat import NotebookNode
 
 
 from flowco.assistant.flowco_assistant import fast_text_complete
@@ -22,6 +21,7 @@ from flowco.dataflow.extended_type import ExtendedType, schema_to_text
 from flowco.dataflow.function_call import FunctionCall
 from flowco.dataflow.parameter import Parameter
 from flowco.dataflow.phase import Phase
+from flowco.dataflow.preconditions import FunctionPreconditions
 from flowco.dataflow.tests import (
     UnitTest,
 )
@@ -186,7 +186,7 @@ class Node(NodeLike, BaseModel):
         description="The parameters of the function implementing this computation stage.",
     )
 
-    preconditions: Optional[Dict[str, List[str]]] = Field(
+    preconditions: Optional[FunctionPreconditions] = Field(
         default=None,
         description="A map from predecessor to a list of preconditions that must be true for the function to be called.",
     )

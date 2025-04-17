@@ -63,7 +63,7 @@ classifiers = [
 
 [project.scripts]
 flowco = "flowco.__main__:main"
-flowco-cli = "cli.__main__:main"
+flowco-cli = "flowco.cli.__main__:main"
 
 #flowthon = "flowthon.__main__:main"
 

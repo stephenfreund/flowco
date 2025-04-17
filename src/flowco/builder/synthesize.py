@@ -12,6 +12,10 @@ from flowco.builder.graph_completions import (
 )
 from flowco.dataflow.extended_type import ExtendedType, NoneType, schema_to_text
 from flowco.dataflow.phase import Phase
+from flowco.dataflow.preconditions import (
+    FunctionPreconditions,
+    ParameterPreconditions,
+)
 from flowco.util.output import logger, log
 from flowco.builder.build import PassConfig, node_pass
 from flowco.util.config import config
@@ -88,10 +92,12 @@ def requirements_assistant(
     else:
         prompt = "postconditions-for-plot"
 
+    assert node.preconditions is not None, "Preconditions must be defined."
+
     assistant = flowco_assistant("system-prompt")
     prompt_text = config().get_prompt(
         prompt_key=prompt,
-        preconditions=json.dumps(node.preconditions),
+        preconditions=node.preconditions.model_dump_json(indent=2),
         function_return_var=node.function_result_var,
         diff=diff_instructions,
         label=node.label,
@@ -152,9 +158,11 @@ def check_precondition_consistency(node: Node) -> Node:
                 description="Whether the requirements are consistent.",
             )
 
+        assert node.preconditions is not None, "Preconditions must be defined."
+
         assistant = flowco_assistant(
             prompt_key="inconsistent-preconditions",
-            preconditions=json.dumps(node.preconditions),
+            preconditions=node.preconditions.model_dump_json(indent=2),
         )
 
         completion = assistant.model_completion(Warning)
@@ -238,15 +246,23 @@ def summarize_changes(node: Node, phase: Phase, diff_map: Dict[str, List[str]]):
         )
 
 
-def create_preconditions(graph: DataFlowGraph, node: Node) -> Dict[str, List[str]]:
-    preconditions: Dict[str, List[str]] = {}
+def create_preconditions(graph: DataFlowGraph, node: Node) -> FunctionPreconditions:
+    preconditions: List[ParameterPreconditions] = []
     if node.predecessors:
         for pred in node.predecessors:
             req = graph[pred].requirements
             assert req is not None, "Predecessor must have requirements."
-            preconditions[graph[pred].function_result_var] = req
+            preconditions.append(
+                ParameterPreconditions(
+                    name=graph[pred].function_result_var,
+                    type=graph[pred].function_return_type,
+                    preconditions=req,
+                )
+            )
 
-    return preconditions
+    return FunctionPreconditions(
+        parameters=preconditions,
+    )
 
 
 def create_parameters(graph, node: Node) -> List[Parameter]:
@@ -307,7 +323,7 @@ def algorithm_assistant(node, diff_instructions):
 
     assistant = flowco_assistant(
         prompt_key="algorithm",
-        preconditions=json.dumps(node.preconditions),
+        preconditions=node.preconditions.model_dump_json(indent=2),
         postconditions=json.dumps(node.requirements),
         diff=diff_instructions,
     )
@@ -392,9 +408,10 @@ def generate_docstring_for_node(node: Node) -> str:
             ).splitlines()
         )
         # Append preconditions if they exist for this parameter.
-        if param.name in node.preconditions:
+        preconditions = node.preconditions.get(param.name)
+        if preconditions is not None:
             lines.append("        Preconditions:")
-            for condition in node.preconditions[param.name]:
+            for condition in preconditions.preconditions:
                 condition = condition.replace("output", param.name)
                 condition = condition.replace("The result", param.name)
                 condition = condition.replace("the result", param.name)

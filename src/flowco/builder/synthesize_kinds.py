@@ -5,6 +5,7 @@ from flowco.dataflow.phase import Phase
 from flowco.builder.build import PassConfig, node_pass
 
 from flowco.dataflow.dfg import DataFlowGraph, Node, NodeKind
+from flowco.dataflow.preconditions import FunctionPreconditions
 from flowco.page.tables import file_path_to_table_name, table_df
 from flowco.util.config import config
 from flowco.util.output import logger
@@ -33,7 +34,7 @@ def table_requirements(
         print(completion)
         return node.update(
             function_parameters=[],
-            preconditions=dict(),
+            preconditions=FunctionPreconditions(),
             function_return_type=completion,
             requirements=requirements,
             function_computed_value="",

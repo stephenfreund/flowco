@@ -168,6 +168,7 @@ def unit_tests_assistant(node: Node, suggest=False):
     assert node.function_parameters is not None, "No function parameters"
     assert node.function_return_type is not None, "No function return type"
     assert node.requirements is not None, "No requirements"
+    assert node.preconditions is not None, "No preconditions"
 
     parameter_types = {param.name: param.type for param in node.function_parameters}
     parameter_type_str = "\n".join(
@@ -200,7 +201,7 @@ def unit_tests_assistant(node: Node, suggest=False):
         "input_vars": parameter_type_str,
         "call_to_node": call_to_node,
         "input_lines": input_lines,
-        "preconditions": json.dumps(node.preconditions, indent=2),
+        "preconditions": node.preconditions.model_dump_json(indent=2),
         "output_var": node.function_result_var,
         "return_type": node.function_return_type.model_dump_json(indent=2),
         "postconditions": "\n".join([f"* {r}" for r in node.requirements]),

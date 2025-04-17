@@ -135,7 +135,18 @@ _models = {
         prompt_token_rate=0.1 / 10**6,
         cached_token_rate=0.025 / 10**6,
     ),
-
+    "o4-mini": Model(
+        name="o4-mini",
+        use_proxy=False,
+        api_key_name="OPENAI_API_KEY",
+        supports_vision=True,
+        supports_audio=False,
+        supports_temperature=False,
+        supports_prediction=True,
+        completion_token_rate=4.4 / 10**6,
+        prompt_token_rate=1.1 / 10**6,
+        cached_token_rate=0.55 / 10**6,
+    ),
 } | (
     {
         "claude-3-sonnet": Model(

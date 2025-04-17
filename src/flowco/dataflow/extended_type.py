@@ -595,13 +595,14 @@ class SetType(BaseType):
 
 class PDDataFrameType(BaseType):
     """
-    Use this to define a Pandas DataFrame with specific columns and types.
+    Use this to define a Pandas DataFrame with specific columns and types.  The
+    `columns` field contains a list of KeyType objects, each representing the name and type of a column in the DataFrame.
     """
 
     type: Literal["pd.DataFrame"]
     columns: List[KeyType] = Field(
         ...,  # Required field
-        description="A list of key-value pairs where the key is the column name and the value is the type of the elements in each column.",
+        description="List of the column names and types.",
     )
     description: str = Field(
         ..., description="A human-readable description of the type."  # Required field
@@ -637,7 +638,7 @@ class PDDataFrameType(BaseType):
             for col in self.columns:
                 if col.key not in df_columns:
                     raise ValueError(
-                        f"Missing column '{col.key}' in DataFrame with columns {value.columns}"
+                        f"Missing column '{col.key}' in DataFrame with columns {','.join(value.columns)}"
                     )
                 for index, item in enumerate(value[col.key]):
                     try:
@@ -876,9 +877,7 @@ class ExtendedType(BaseModel):
             if len(unique_types) == 1:
                 return element_types[0]
             else:
-                return AnyType(
-                    description=""
-                )
+                return AnyType(description="")
 
         def infer_type(val) -> "TypeRepresentation":
             if val is None:
@@ -900,9 +899,7 @@ class ExtendedType(BaseModel):
                         description="",
                     )
                 except:
-                    return AnyType(
-                        description=""
-                    )
+                    return AnyType(description="")
             elif isinstance(val, set):
                 try:
                     element_type = infer_type_of_elements(val)
@@ -911,9 +908,7 @@ class ExtendedType(BaseModel):
                         description="",
                     )
                 except:
-                    return AnyType(
-                        description=""
-                    )
+                    return AnyType(description="")
             # elif isinstance(val, tuple):
             #     return TupleType(
             #         elements=[infer_type(item) for item in val],
@@ -964,9 +959,7 @@ class ExtendedType(BaseModel):
                 )
             elif isinstance(val, pd.Series):
                 if val.empty:
-                    element = AnyType(
-                        description=""
-                    )
+                    element = AnyType(description="")
                 else:
                     element = infer_type(val.iloc[0])
                 return PDSeriesType(
@@ -975,9 +968,7 @@ class ExtendedType(BaseModel):
                 )
             elif isinstance(val, np.ndarray):
                 if val.size == 0:
-                    element = AnyType(
-                        description=""
-                    )
+                    element = AnyType(description="")
                 else:
                     element = infer_type(val.flat[0])
                 return NumpyNdarrayType(
