@@ -3,8 +3,7 @@
 # Flowco
 ![flowco](https://github.com/user-attachments/assets/9591f546-ef52-4c16-999a-ca9e2a149586)
 
-Flowco is designed to run as a web service.  
-However, it can also be run locally by following these instructions.  
+Flowco is designed to run as a web service but can also be run locally by following the instructions below.  
 
 ### Configuration
 
@@ -33,7 +32,7 @@ With pip:
 pip3 install flowco
 ```
 
-Or clone the repo and install:
+Or clone the repo and install as an editable package.
 ```bash
 pip3 install -e .
 ```
