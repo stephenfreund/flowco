@@ -51,7 +51,9 @@ def check_run(pass_config: PassConfig, graph: DataFlowGraph, node: Node) -> Node
 def _repair_run(
     pass_config: PassConfig, graph: DataFlowGraph, node: Node, max_retries: int
 ) -> Node:
-    assistant = flowco_assistant("repair-system")
+    assistant = flowco_assistant(
+        f"{node.pill}-repair-run",
+        "repair-system")
     retries = 0
     stashed_error = None
 

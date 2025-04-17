@@ -195,7 +195,7 @@ def assertions_assistant(node: Node, suggest=False):
         "requirements": json.dumps(node.assertions or [], indent=2),
     }
 
-    assistant = flowco_assistant(prompt, **substitutions)
+    assistant = flowco_assistant(f"assertions-{node.id}", prompt, **substitutions)
 
     return assistant
 
@@ -248,7 +248,8 @@ def repair_assertions(
 def _repair_assertions(
     pass_config: PassConfig, graph: DataFlowGraph, node: Node, max_retries: int
 ) -> Node:
-    assistant = flowco_assistant("repair-system")
+    assistant = flowco_assistant(
+        f"repair-assertions-{node.id}", prompt_key="repair-assertions")
     retries = 0
     original = None
 

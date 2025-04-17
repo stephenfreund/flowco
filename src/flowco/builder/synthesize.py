@@ -94,7 +94,9 @@ def requirements_assistant(
 
     assert node.preconditions is not None, "Preconditions must be defined."
 
-    assistant = flowco_assistant("system-prompt")
+    assistant = flowco_assistant(
+        f"requirements-{node.pill}",
+        "system-prompt")
     prompt_text = config().get_prompt(
         prompt_key=prompt,
         preconditions=node.preconditions.model_dump_json(indent=2),
@@ -161,6 +163,7 @@ def check_precondition_consistency(node: Node) -> Node:
         assert node.preconditions is not None, "Preconditions must be defined."
 
         assistant = flowco_assistant(
+            f"preconditions-{node.pill}",
             prompt_key="inconsistent-preconditions",
             preconditions=node.preconditions.model_dump_json(indent=2),
         )
@@ -203,6 +206,7 @@ def requirements_when_locked(node: Node) -> Node:
                 )
 
             assistant = flowco_assistant(
+                f"requirements-locked-{node.pill}",
                 prompt_key="locked-requirements-checks",
                 parameters=json.dumps(current_inputs["function_parameters"]),
                 old_parameters=json.dumps(old_inputs["function_parameters"]),
@@ -322,6 +326,7 @@ def algorithm_assistant(node, diff_instructions):
     assert config().x_algorithm_phase, "Algorithm phase must be enabled."
 
     assistant = flowco_assistant(
+        f"algorithm-{node.pill}",
         prompt_key="algorithm",
         preconditions=node.preconditions.model_dump_json(indent=2),
         postconditions=json.dumps(node.requirements),
@@ -490,6 +495,7 @@ def code_assistant(node: Node, diff_instructions):
         prompt = "compile-pydoc-for-plot"
 
     assistant = flowco_assistant(
+        f"compile-{node.pill}",
         prompt_key=prompt,
         signature=node.signature_str(),
         diff=diff_instructions,
@@ -570,6 +576,7 @@ def compile_when_locked(node: Node) -> Node:
                 )
 
             assistant = flowco_assistant(
+                f"compile-locked-{node.pill}",
                 prompt_key="locked-code-checks",
                 old=old_inputs
                 | {"code": node.cache.get_out(Phase.code, node).get("code", None)},

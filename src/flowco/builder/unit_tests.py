@@ -208,7 +208,9 @@ def unit_tests_assistant(node: Node, suggest=False):
         "unit_tests": json.dumps(unit_tests or [], indent=2),
     }
 
-    assistant = flowco_assistant(prompt, **substitutions)
+    assistant = flowco_assistant(
+        f"unit_tests-{node.pill}",
+        prompt, **substitutions)
 
     return assistant
 
@@ -260,7 +262,9 @@ def repair_unit_tests(
 def _repair_unit_tests(
     pass_config: PassConfig, graph: DataFlowGraph, node: Node, max_retries: int
 ) -> Node:
-    assistant = flowco_assistant("repair-system")
+    assistant = flowco_assistant(
+        f"unit_tests-repairer-{node.pill}",
+        "repair-system")
     retries = 0
     original = None
 

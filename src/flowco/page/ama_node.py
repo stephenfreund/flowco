@@ -51,7 +51,9 @@ class AskMeAnythingNode:
                     self.update_node_requirements,
                 ]
 
-        self.assistant = flowco_assistant(prompt_key=prompt)
+        self.assistant = flowco_assistant(
+            f"ama-node",
+            prompt_key=prompt)
         self.assistant.set_functions(functions)
         self.completion_node = None
         self.visible_messages = []

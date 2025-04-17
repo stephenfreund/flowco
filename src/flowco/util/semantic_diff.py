@@ -42,7 +42,9 @@ def semantic_diff(
         ),
     )
 
-    assistant = flowco_assistant(prompt_key="semantic-diff", old=old_str, new=new_str)
+    assistant = flowco_assistant(
+        f"semantic-diff-{old.__class__.__name__}",
+        prompt_key="semantic-diff", old=old_str, new=new_str)
     completion: BaseModel = assistant.model_completion(Diff)
     result = completion.model_dump()
     log("Semantic diff:", result)
@@ -66,7 +68,9 @@ def semantic_diff_strings(key: str, old: str, new: str) -> Dict[str, Any]:
         ),
     )
 
-    assistant = flowco_assistant(prompt_key="semantic-diff", old=old, new=new)
+    assistant = flowco_assistant(
+        f"semantic-diff-{key}",
+        prompt_key="semantic-diff", old=old, new=new)
     completion: BaseModel = assistant.model_completion(Diff)
     result = completion.model_dump()
     log("Semantic diff:", result)

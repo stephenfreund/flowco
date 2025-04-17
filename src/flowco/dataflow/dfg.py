@@ -904,7 +904,9 @@ class DataFlowGraph(GraphLike, BaseModel):
                 Do not use any of the following: {', '.join(exclude_pills)}.
                 """
         )
-        pill = fast_text_complete(prompt)
+        pill = fast_text_complete( 
+            f"pill-generator",
+            prompt)
         if pill is None:
             raise FlowcoError("No pill generated")
         log(f"'{pill}'")

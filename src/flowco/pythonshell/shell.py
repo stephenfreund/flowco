@@ -431,6 +431,7 @@ class PythonShell:
         requirements = [check.requirement for check in qualitative_checks.values()]
 
         assistant = flowco_assistant(
+            f"inspect-output-{node.id}",
             prompt_key="inspect-output",
             requirements=json.dumps(requirements, indent=2),
         )
@@ -524,6 +525,7 @@ class PythonShell:
         requirement = check.requirement
 
         assistant = flowco_assistant(
+            f"inspect-output-unit-test-{node.id}",
             prompt_key="inspect-output",
             requirements=requirement,
         )

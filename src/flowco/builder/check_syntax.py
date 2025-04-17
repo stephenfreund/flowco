@@ -119,7 +119,9 @@ def _check_node_syntax(node: Node) -> None:
 
 
 def _repair_node_syntax(node: Node, max_retries: int) -> Tuple[Node, bool]:
-    assistant = flowco_assistant()
+    assistant = flowco_assistant(
+        f"{node.pill}-repair-syntax",
+    )
 
     original = node.model_copy()
 

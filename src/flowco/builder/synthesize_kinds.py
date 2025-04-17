@@ -23,7 +23,9 @@ def table_requirements(
             f"The result is the dataframe for the `{node.pill}` dataset.",
         ]
 
-        assistant = flowco_assistant("system-prompt")
+        assistant = flowco_assistant(
+            f"table-requirements-{node.pill}",
+            "system-prompt")
         prompt = config().get_prompt(
             "load-table-return-type",
             table=str(df.head()),
