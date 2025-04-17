@@ -19,10 +19,12 @@ from flowco.util.output import debug, error, log, warn
 
 DB_PATH = "responses.db"
 
+
 def _init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("""
+    c.execute(
+        """
         CREATE TABLE IF NOT EXISTS responses (
             id TEXT,
             timestamp REAL,
@@ -30,14 +32,17 @@ def _init_db():
             response_model TEXT,
             messages TEXT
         )
-    """)
+    """
+    )
     conn.commit()
     conn.close()
+
 
 _init_db()
 
 
 # ---- logger ----
+
 
 class FlowcoLogger(AssistantLogger):
     def log(self, message: str):
@@ -64,8 +69,6 @@ class FlowcoLogger(AssistantLogger):
         decrement_inflight()
 
 
-# ---- models & assistant ----
-
 class FlowcoCompletion(BaseModel):
     model: str
     response_model: Dict[str, Any] | None = None
@@ -73,28 +76,30 @@ class FlowcoCompletion(BaseModel):
 
 
 class FlowcoAssistant(Assistant):
-    T = TypeVar("T", bound=BaseModel)
 
     def __init__(self, id: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.id = id
 
     def _dump(self, info: dict) -> None:
-        """Insert one record into the SQLite database."""
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-        c.execute(
-            "INSERT INTO responses (id, timestamp, model, response_model, messages) VALUES (?, ?, ?, ?, ?)",
-            (
-                self.id,
-                info["timestamp"],
-                info["model"],
-                json.dumps(info.get("response_model")),
-                json.dumps(info.get("messages")),
-            ),
-        )
-        conn.commit()
-        conn.close()
+        pass
+        # """Insert one record into the SQLite database."""
+        # conn = sqlite3.connect(DB_PATH)
+        # c = conn.cursor()
+        # c.execute(
+        #     "INSERT INTO responses (id, timestamp, model, response_model, messages) VALUES (?, ?, ?, ?, ?)",
+        #     (
+        #         self.id,
+        #         info["timestamp"],
+        #         info["model"],
+        #         json.dumps(info.get("response_model")),
+        #         json.dumps(info.get("messages")),
+        #     ),
+        # )
+        # conn.commit()
+        # conn.close()
+
+    T = TypeVar("T", bound=BaseModel)
 
     def model_completion(self, response_model: Type[T]) -> T:
         result: T = super().model_completion(response_model)
@@ -107,7 +112,7 @@ class FlowcoAssistant(Assistant):
         self._dump(info)
         return result
 
-    def completion(self) -> str:
+    def completion(self, prediction: str | None = None) -> str:
         result = super().completion()
         info = {
             "model": self.model.name,
@@ -117,8 +122,6 @@ class FlowcoAssistant(Assistant):
         self._dump(info)
         return result
 
-
-# ---- factory functions ----
 
 def flowco_assistant(
     id: str, prompt_key: str | None = None, **prompt_substitutions
@@ -152,7 +155,9 @@ def flowco_assistant_fast(
         id, model.name, api_key=api_key, logger=FlowcoLogger(), temperature=temperature
     )
     if prompt_key:
-        assistant.add_text("user", config().get_prompt(prompt_key, **prompt_substitutions))
+        assistant.add_text(
+            "user", config().get_prompt(prompt_key, **prompt_substitutions)
+        )
     return assistant
 
 
@@ -165,8 +170,6 @@ def fast_text_complete(id: str, prompt: str) -> str:
     assistant.add_text("user", prompt)
     return assistant.completion()
 
-
-# ---- other utilities ----
 
 def fast_transcription(voice):
     api_key = get_api_key("OPENAI_API_KEY")
@@ -183,7 +186,9 @@ def test_openai_key() -> bool:
     try:
         model = get_model("gpt-4o-mini")
         api_key = get_api_key(model.api_key_name)
-        assistant = Assistant(model.name, api_key=api_key, logger=FlowcoLogger(), max_tokens=10)
+        assistant = Assistant(
+            model.name, api_key=api_key, logger=FlowcoLogger(), max_tokens=10
+        )
         assistant.add_text("user", "Say hello")
         assistant.completion()
         return True
@@ -195,7 +200,9 @@ def test_anthropic_key() -> bool:
     try:
         model = get_model("claude-3-haiku")
         api_key = get_api_key(model.api_key_name)
-        assistant = Assistant(model.name, api_key=api_key, logger=FlowcoLogger(), max_tokens=10)
+        assistant = Assistant(
+            model.name, api_key=api_key, logger=FlowcoLogger(), max_tokens=10
+        )
         assistant.add_text("user", "Say hello")
         assistant.completion()
         return True
