@@ -436,11 +436,13 @@ class Node(NodeLike, BaseModel):
         if level is not None:
             return [
                 message
-                for message in self.messages
+                for message in (self.messages or [])
                 if message.phase in phases and message.level == level
             ]
         else:
-            return [message for message in self.messages if message.phase in phases]
+            return [
+                message for message in (self.messages or []) if message.phase in phases
+            ]
 
     def reset(self, reset_requirements=False) -> Node:
         if reset_requirements:
@@ -904,9 +906,7 @@ class DataFlowGraph(GraphLike, BaseModel):
                 Do not use any of the following: {', '.join(exclude_pills)}.
                 """
         )
-        pill = fast_text_complete( 
-            f"pill-generator",
-            prompt)
+        pill = fast_text_complete(f"pill-generator", prompt)
         if pill is None:
             raise FlowcoError("No pill generated")
         log(f"'{pill}'")
@@ -1080,7 +1080,7 @@ class DataFlowGraph(GraphLike, BaseModel):
         return self.update(nodes=new_nodes, version=self.version + 1, groups=[])
 
     def clear_outputs(self) -> "DataFlowGraph":
-        new_nodes = [node.update(result=None, messages=None) for node in self.nodes]
+        new_nodes = [node.update(result=None, messages=[]) for node in self.nodes]
         return self.update(nodes=new_nodes, version=self.version + 1)
 
     def make_driver(self):

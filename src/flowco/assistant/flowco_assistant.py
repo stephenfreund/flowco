@@ -17,28 +17,28 @@ from flowco.util.output import debug, error, log, warn
 
 # ---- single SQLite DB setup ----
 
-DB_PATH = "responses.db"
+# DB_PATH = "responses.db"
 
 
-def _init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute(
-        """
-        CREATE TABLE IF NOT EXISTS responses (
-            id TEXT,
-            timestamp REAL,
-            model TEXT,
-            response_model TEXT,
-            messages TEXT
-        )
-    """
-    )
-    conn.commit()
-    conn.close()
+# def _init_db():
+#     conn = sqlite3.connect(DB_PATH)
+#     c = conn.cursor()
+#     c.execute(
+#         """
+#         CREATE TABLE IF NOT EXISTS responses (
+#             id TEXT,
+#             timestamp REAL,
+#             model TEXT,
+#             response_model TEXT,
+#             messages TEXT
+#         )
+#     """
+#     )
+#     conn.commit()
+#     conn.close()
 
 
-_init_db()
+# _init_db()
 
 
 # ---- logger ----
