@@ -79,7 +79,9 @@ def init_service():
         log(f"Initialized session for {st.session_state.user_email}")
         log(f"  key is {key}")
 
-        st.toast("**Setting Up Account...**")
+        if not fs_exists("welcome.flowco"):
+            st.toast("**Setting Up Account...**")
+            
         new_user = setup_flowco_files()
         if new_user and st.query_params.get("test", None) == "1":
             folder_id = os.environ["GOOGLE_DRIVE_TEST_FOLDER_ID"]

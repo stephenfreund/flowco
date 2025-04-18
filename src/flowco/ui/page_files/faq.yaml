@@ -21,14 +21,14 @@
       answer: |
         The AMA dialog may misinterpret your request.  Click "Undo" to undo the change, then try rephrasing your question.  Starting your request with `Explain why ...` leads to more reliable results in this case.  You can also exlicitly ask AMA to not modify the graph in your request.
 
-- section: "Fixing a Node"
-  questions:
-    - question: How do I fix a node?
-      answer: |
-        To fix a node...
+# - section: "Fixing a Node"
+#   questions:
+#     - question: How do I fix a node?
+#       answer: |
+#         To fix a node...
 
-- section: "Adding Checks"
-  questions:
-    - question: How do I add a check?
-      answer: |
-        To add a check...
+# - section: "Adding Checks"
+#   questions:
+#     - question: How do I add a check?
+#       answer: |
+#         To add a check...

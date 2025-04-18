@@ -43,6 +43,11 @@ def init_service():
         )
         log_timestamp()
 
+        new_user = setup_flowco_files()
+        if new_user and st.query_params.get("test", None) == "1":
+            folder_id = os.environ["GOOGLE_DRIVE_TEST_FOLDER_ID"]
+            copy_from_google_folder(folder_id)
+
         if page_file is not None:
             set_ui_page(UIPage(page_file))
         else:

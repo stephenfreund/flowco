@@ -118,11 +118,9 @@ def run_session(session_id: int, args):
         )
         edit_btn.click()
 
-        time.sleep(5)
-
         # Run/Cancel loop
         for i in range(1, args.iterations + 1):
-            time.sleep(2)
+            time.sleep(5)
             try:
                 try:
                     print(

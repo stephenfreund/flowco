@@ -39,7 +39,7 @@
     "family": "flowco-task",
     "executionRoleArn": "arn:aws:iam::925527669208:role/ecsTaskExecutionRole",
     "networkMode": "awsvpc",
-    "revision": 2,
+    "revision": 3,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -79,13 +79,13 @@
     "requiresCompatibilities": [
         "FARGATE"
     ],
-    "cpu": "1024",
-    "memory": "2048",
+    "cpu": "2048",
+    "memory": "4096",
     "runtimePlatform": {
         "cpuArchitecture": "X86_64",
         "operatingSystemFamily": "LINUX"
     },
-    "registeredAt": "2024-11-29T19:12:23.384Z",
+    "registeredAt": "2025-04-18T14:00:00.000Z",
     "registeredBy": "arn:aws:iam::925527669208:root",
     "tags": []
 }
