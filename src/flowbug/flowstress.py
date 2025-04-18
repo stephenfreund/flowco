@@ -2,6 +2,7 @@
 import time
 import argparse
 import concurrent.futures
+import uuid
 
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
@@ -57,6 +58,7 @@ def run_session(session_id: int, args):
         options = webdriver.ChromeOptions()
         if args.headless:
             options.add_argument("--headless")  # Run in headless mode
+        options.add_argument(f"--user-data-dir=/tmp/{uuid.uuid4()}")
         driver = webdriver.Chrome(
             service=ChromeService(ChromeDriverManager().install()), options=options
         )
