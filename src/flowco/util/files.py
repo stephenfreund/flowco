@@ -1,3 +1,4 @@
+import copy
 import io
 from typing import Dict
 import zipfile
@@ -30,37 +31,41 @@ def get_flowco_files():
 #             fs_write(file, content)
 
 
+def copy_from_google_folder(folder_id: str):
+    # Will fail over if the environment variable is not set.
+    api_key = os.environ["GOOGLE_API_KEY"]
+
+    # Endpoint for listing files in a folder.
+    list_url = f"https://www.googleapis.com/drive/v3/files/"
+    params = {
+        "q": f"'{folder_id}' in parents and trashed=false",
+        "key": api_key,
+        "fields": "files(id, name, mimeType)",  # adjust fields as needed
+    }
+
+    response = requests.get(list_url, params=params)
+    response.raise_for_status()  # Raise an error if the request failed
+    data = response.json()
+
+    with logger("Making default files from Google Drive"):
+        for file in data.get("files", []):
+            log(f"Making {file['name']}")
+            file_id = file["id"]
+            # Build the URL to download file content.
+            download_url = f"https://www.googleapis.com/drive/v3/files/{file_id}"
+            download_params = {"alt": "media", "key": api_key}
+            file_response = requests.get(download_url, params=download_params)
+            file_response.raise_for_status()
+
+            # Assuming the file is text-based.
+            content = file_response.text
+            fs_write(file["name"], content)
+
 def make_default_files():
     try:
-        # Will fail over if the environment variable is not set.
         folder_id = os.environ["GOOGLE_DRIVE_FOLDER_ID"]
-        api_key = os.environ["GOOGLE_API_KEY"]
+        copy_from_google_folder(folder_id)
 
-        # Endpoint for listing files in a folder.
-        list_url = f"https://www.googleapis.com/drive/v3/files/{folder_id}"
-        params = {
-            "q": f"'{folder_id}' in parents and trashed=false",
-            "key": api_key,
-            "fields": "files(id, name, mimeType)",  # adjust fields as needed
-        }
-
-        response = requests.get(list_url, params=params)
-        response.raise_for_status()  # Raise an error if the request failed
-        data = response.json()
-
-        with logger("Making default files from Google Drive"):
-            for file in data.get("files", []):
-                log(f"Making {file['name']}")
-                file_id = file["id"]
-                # Build the URL to download file content.
-                download_url = f"https://www.googleapis.com/drive/v3/files/{file_id}"
-                download_params = {"alt": "media", "key": api_key}
-                file_response = requests.get(download_url, params=download_params)
-                file_response.raise_for_status()
-
-                # Assuming the file is text-based.
-                content = file_response.text
-                fs_write(file["name"], content)
     except Exception as e:
         dir = os.path.join(os.path.dirname(__file__), "initial_files")
         # Fallback to local initial files if Google Drive fails

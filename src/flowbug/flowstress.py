@@ -20,7 +20,7 @@ def parse_args():
         "-url",
         "--url",
         type=str,
-        default="https://go-flow.co",
+        default="https://go-flow.co/?test=1",
         help="URL to test (default: https://go-flow.co)",
     )
     parser.add_argument(
@@ -42,15 +42,21 @@ def parse_args():
         default=5,
         help="Number of times to run the Run/Cancel loop per session (default: 5)",
     )
+    parser.add_argument(
+        "--headless",
+        action="store_true",
+        help="Run Chrome in headless mode (default: False)",
+    )
     args = parser.parse_args()
-    return args.url, args.file, args.n, args.iterations
+    return args
 
 
-def run_session(session_id: int, url: str, file: str, iterations: int):
+def run_session(session_id: int, args):
     print(f"[Session {session_id}] Launching Chrome…")
     try:
         options = webdriver.ChromeOptions()
-        options.add_argument("--headless")  # Run in headless mode
+        if args.headless:
+            options.add_argument("--headless")  # Run in headless mode
         driver = webdriver.Chrome(
             service=ChromeService(ChromeDriverManager().install()), options=options
         )
@@ -58,14 +64,14 @@ def run_session(session_id: int, url: str, file: str, iterations: int):
         print(f"[Session {session_id}] ERROR launching Chrome: {e}")
         return
 
-    wait = WebDriverWait(driver, 10)  # 10s timeout
+    wait = WebDriverWait(driver, 30)
     long_wait = WebDriverWait(driver, 180)  # 3m timeout
 
     try:
-        print(f"[Session {session_id}] Opening URL: {url}")
-        driver.get(url)
+        print(f"[Session {session_id}] Opening URL: {args.url}")
+        driver.get(args.url)
 
-        # Sign in as guest
+        print(f"[Session {session_id}] Signing in as guest")
         login_btn = wait.until(
             EC.element_to_be_clickable(
                 (By.XPATH, "//button[normalize-space()='Sign In As Guest']")
@@ -73,25 +79,30 @@ def run_session(session_id: int, url: str, file: str, iterations: int):
         )
         login_btn.click()
 
-        # Close modal
+        print(f"[Session {session_id}] Closing Welcome dialog")
         close_btn = long_wait.until(
             EC.element_to_be_clickable((By.XPATH, "//button[@aria-label='Close']"))
         )
         close_btn.click()
 
-        # Projects page
         print(f"[Session {session_id}] Navigating to projects_main")
-        driver.get(f"{url}/projects_main")
+        projects_btn = long_wait.until(
+            EC.element_to_be_clickable(
+                (By.XPATH, "//a[contains(normalize-space(), 'Projects')]")
+            )
+        )
+        projects_btn.click()
+
 
         time.sleep(5)
 
         # Select the file
-        print(f"[Session {session_id}] Selecting file: {file}")
+        print(f"[Session {session_id}] Selecting file: {args.file}")
         file_btn = wait.until(
             EC.element_to_be_clickable(
                 (
                     By.XPATH,
-                    f"//div[contains(normalize-space(), '{file.split('.')[0]}')]/ancestor::button",
+                    f"//div[contains(normalize-space(), '{args.file.split('.')[0]}')]/ancestor::button",
                 )
             )
         )
@@ -110,12 +121,12 @@ def run_session(session_id: int, url: str, file: str, iterations: int):
         time.sleep(5)
 
         # Run/Cancel loop
-        for i in range(1, iterations + 1):
+        for i in range(1, args.iterations + 1):
             time.sleep(2)
             try:
                 try:
                     print(
-                        f"[Session {session_id}] Iteration {i}/{iterations} — clicking Run"
+                        f"[Session {session_id}] Iteration {i}/{args.iterations} — clicking Run"
                     )
                     run_btn = wait.until(
                         EC.element_to_be_clickable(
@@ -132,7 +143,7 @@ def run_session(session_id: int, url: str, file: str, iterations: int):
 
                 try:
                     print(
-                        f"[Session {session_id}] Iteration {i}/{iterations} — clicking Cancel"
+                        f"[Session {session_id}] Iteration {i}/{args.iterations} — clicking Cancel"
                     )
                     # Wait for the Cancel button to be clickable
                     cancel_btn = long_wait.until(
@@ -168,7 +179,7 @@ def run_session(session_id: int, url: str, file: str, iterations: int):
                 print(f"[Session {session_id}] Iteration {i}: unexpected error: {ex}")
 
     except Exception as e:
-        print(f"[Session {session_id}] ERROR: {e}")
+        print(f"[Session {session_id}] ERROR: {type(e)} {e}")
 
     finally:
         print(f"[Session {session_id}] Quitting Chrome")
@@ -176,14 +187,15 @@ def run_session(session_id: int, url: str, file: str, iterations: int):
 
 
 def main():
-    url, file, n, iterations = parse_args()
+    args = parse_args()
+    n = args.n
 
     if n <= 1:
-        run_session(1, url, file, iterations)
+        run_session(1, args)
     else:
         with concurrent.futures.ThreadPoolExecutor(max_workers=n) as executer:
             futures = [
-                executer.submit(run_session, sid, url, file, iterations)
+                executer.submit(run_session, sid, args)
                 for sid in range(1, n + 1)
             ]
             concurrent.futures.wait(futures)

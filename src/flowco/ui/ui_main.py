@@ -8,7 +8,7 @@ from flowco.ui.ui_init import st_init
 from flowco.ui.ui_page import UIPage, set_ui_page
 from flowco.ui.ui_st_pages import st_pages
 
-from flowco.util.files import setup_flowco_files
+from flowco.util.files import copy_from_google_folder, setup_flowco_files
 import streamlit as st
 
 from flowco.util.costs import CostTracker
@@ -42,7 +42,7 @@ def init_service():
             keys=KeyEnv(),
         )
         log_timestamp()
-        setup_flowco_files()
+
         if page_file is not None:
             set_ui_page(UIPage(page_file))
         else:

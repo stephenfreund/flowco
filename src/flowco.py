@@ -15,7 +15,7 @@ from flowco.ui.ui_st_pages import st_pages
 
 from flowco.util.config import Config
 from flowco.util.costs import CostTracker
-from flowco.util.files import get_flowco_files, setup_flowco_files
+from flowco.util.files import copy_from_google_folder, get_flowco_files, setup_flowco_files
 from flowco.util.output import Output, log, log_timestamp
 
 
@@ -79,19 +79,17 @@ def init_service():
         log(f"Initialized session for {st.session_state.user_email}")
         log(f"  key is {key}")
 
+        st.toast("**Setting Up Account...**")
         new_user = setup_flowco_files()
+        if new_user and st.query_params.get("test", None) == "1":
+            folder_id = os.environ["GOOGLE_DRIVE_TEST_FOLDER_ID"]
+            copy_from_google_folder(folder_id)
 
         if fs_exists("welcome.flowco"):
             file = "welcome.flowco"
         else:
             file = get_flowco_files()[0]
         set_ui_page(UIPage(file))
-
-        # if os.environ.get("OPENAI_API_KEY", None) is None:
-        #     st.write(
-        #         "No OpenAI API key found. Please set the OPENAI_API_KEY environment variable."
-        #     )
-        #     st.stop()
 
         if new_user:
             splash_screen()
