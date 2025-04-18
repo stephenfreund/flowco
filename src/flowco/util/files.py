@@ -37,7 +37,7 @@ def make_default_files():
         api_key = os.environ["GOOGLE_API_KEY"]
 
         # Endpoint for listing files in a folder.
-        list_url = "https://www.googleapis.com/drive/v3/files"
+        list_url = f"https://www.googleapis.com/drive/v3/files/{folder_id}"
         params = {
             "q": f"'{folder_id}' in parents and trashed=false",
             "key": api_key,
