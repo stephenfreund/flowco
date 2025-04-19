@@ -1,15 +1,18 @@
-
+![flowco-small](https://github.com/user-attachments/assets/d41d0f38-cc08-4585-80d4-aa614ce3d91a)
 
 # Flowco
 by [Emery Berger](https://emeryberger.com), [Stephen Freund](https://www.cs.williams.edu/~freund/index.html), [Eunice Jun](http://eunicemjun.com/), [Brooke Simon](https://www.linkedin.com/in/brooke-alexandra-simon/) (ordered alphabetically)
 
-![flowco-small](https://github.com/user-attachments/assets/d41d0f38-cc08-4585-80d4-aa614ce3d91a)
+[![Flowco](https://img.shields.io/badge/Flowco-Online-brightgreen)](https://go-flow.co)
+[![PyPI Latest Release](https://img.shields.io/pypi/v/flowco.svg)](https://pypi.org/project/flowco/)
+
+Flowco is a system for authoring data analysis workflows with LLM assistance at every stage of the process.
 
 #### Watch Flowco in Action!
 
-| Short Demo    | Tutorial                                                                                  |
-|---------------|----------------------------------------------------------------------------------------------|
-| [![](https://img.youtube.com/vi/qmMeMIrhtPs/0.jpg)](https://www.youtube.com/watch?v=qmMeMIrhtPs) | [![](https://img.youtube.com/vi/q0eAJv1vhAQ/0.jpg)](https://www.youtube.com/watch?v=q0eAJv1vhAQ) |
+| Short Demo | Tutorial |
+|------------|----------|
+| <a href="https://www.youtube.com/watch?v=qmMeMIrhtPs"><img src="https://img.youtube.com/vi/qmMeMIrhtPs/0.jpg" width="200"></a> | <a href="https://www.youtube.com/watch?v=q0eAJv1vhAQ"><img src="https://img.youtube.com/vi/q0eAJv1vhAQ/0.jpg" width="200"></a> |
 
 
 For technical details, see our arXiv paper, [_Flowco: Rethinking Data Analysis in the Age of LLMs_.](https://arxiv.org/abs/2403.16354)
@@ -17,13 +20,14 @@ For technical details, see our arXiv paper, [_Flowco: Rethinking Data Analysis i
 
 # Web Service
 
-You can try Flowco on the web [here](https://go-flow.co).  This web service is intended for demonstration and experimentation only.
-It should scale to a moderate number of
-users, but if it is slow or unresponsive, please try again later or install locally.
+You can try Flowco on the web [here](https://go-flow.co).  
+
+> [!NOTE]
+> This web service is intended for demonstration and experimentation only.
+> It should scale to a moderate number of
+> users, but if it is slow or unresponsive, please try again later or install locally.
 
 # Local Installation
-
-[![PyPI Latest Release](https://img.shields.io/pypi/v/chatdbg.svg)](https://pypi.org/project/chatdbg/)
 
 ### Configuration
 
