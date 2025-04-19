@@ -7,11 +7,10 @@ by [Emery Berger](https://emeryberger.com), [Stephen Freund](https://www.cs.will
 
 #### Watch Flowco in Action!
 
-##### Short Demo
-[![](https://img.youtube.com/vi/qmMeMIrhtPs/0.jpg)](https://www.youtube.com/watch?v=qmMeMIrhtPs)
-
-##### Tutorial
-[![](https://img.youtube.com/vi/q0eAJv1vhAQ/0.jpg)](https://www.youtube.com/watch?v=q0eAJv1vhAQ)
+|----|----|
+| Short Demo | [![](https://img.youtube.com/vi/qmMeMIrhtPs/0.jpg)](https://www.youtube.com/watch?v=qmMeMIrhtPs) |
+| Tutorial | [![](https://img.youtube.com/vi/q0eAJv1vhAQ/0.jpg)](https://www.youtube.com/watch?v=q0eAJv1vhAQ) |
+|||
 
 
 For technical details, see our arXiv paper, [_Flowco: Rethinking Data Analysis in the Age of LLMs_.](https://arxiv.org/abs/2403.16354)
