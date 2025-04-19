@@ -332,7 +332,7 @@ class BuildPage(FlowcoPage):
                 st.session_state.global_error_check = True
                 st.rerun()
             else:
-                time.sleep(1)
+                time.sleep(0.25)
                 st.rerun()
 
         if st.session_state.global_error_check:
