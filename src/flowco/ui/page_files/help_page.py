@@ -87,14 +87,13 @@ class HelpPage:
                     * To select that project, select the **Projects** view in the top-left corner and click on the **welcome** project.
                     * Then switch to the **Edit** view in the top-left corner.
                     * Follow the instructions on the right-hand side of the screen to get started.
-
-                    After working on that project, we recommend following the numbered tutorials to learn more about Flowco.
+                    * After working on that project, we recommend following the numbered tutorials to learn more about Flowco.
 
                     """
                     )
                 )
                 st.write("")
-                st.error(
+                st.info(
                     """
                     **OpenAI API Key:**
                     For the first hour, you can use Flowco without providing an OpenAI API key.  After that, you'll need to provide an API key in Settings to continue using Flowco.
@@ -102,22 +101,37 @@ class HelpPage:
                 )
                 st.write("")
 
-            with st.container(key="help_page_links", border=True):
-                st.write("### Links")
-                cols = st.columns(4)
-                cols[0].link_button(
-                    "Technical Paper", "https://youtu.be/q0eAJv1vhAQ", type="primary"
-                )
-                cols[1].link_button(
-                    "Demo Video", "https://youtu.be/qmMeMIrhtPs", type="primary"
-                )
-                cols[2].link_button(
-                    "Tutorial Video", "https://youtu.be/q0eAJv1vhAQ", type="primary"
+            with st.container(border=True):
+                st.write(
+                    """
+                    ### Watch Flowco in Action!
+                    | Short Demo | Tutorial |
+                    |------------|----------|
+                    | <a href="https://www.youtube.com/watch?v=qmMeMIrhtPs"><img src="https://img.youtube.com/vi/qmMeMIrhtPs/0.jpg" width="200"></a> | <a href="https://www.youtube.com/watch?v=q0eAJv1vhAQ"><img src="https://img.youtube.com/vi/q0eAJv1vhAQ/0.jpg" width="200"></a> |
+
+
+                    For technical details, see our arXiv paper, [_Flowco: Rethinking Data Analysis in the Age of LLMs_.](https://arxiv.org/abs/2403.16354).  More
+                    details are available on [GitHub](https://github.com/stephenfreund/flowco).
+                    """,
+                    unsafe_allow_html=True,
                 )
 
-                cols[3].link_button(
-                    "GitHub", "https://github.com/stephenfreund/flowco", type="primary"
-                )
+            # with st.container(key="help_page_links", border=True):
+            #     st.write("### Links")
+            #     cols = st.columns(4)
+            #     cols[0].link_button(
+            #         "Technical Paper", "https://youtu.be/q0eAJv1vhAQ", type="primary"
+            #     )
+            #     cols[1].link_button(
+            #         "Demo Video", "https://youtu.be/qmMeMIrhtPs", type="primary"
+            #     )
+            #     cols[2].link_button(
+            #         "Tutorial Video", "https://youtu.be/q0eAJv1vhAQ", type="primary"
+            #     )
+
+            #     cols[3].link_button(
+            #         "GitHub", "https://github.com/stephenfreund/flowco", type="primary"
+            #     )
 
             with st.container(border=True):
                 st.markdown("### FAQ")
