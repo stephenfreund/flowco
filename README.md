@@ -3,6 +3,22 @@
 # Flowco
 ![flowco](https://github.com/user-attachments/assets/9591f546-ef52-4c16-999a-ca9e2a149586)
 
+by [Emery Berger](https://emeryberger.com), [Stephen Freund](https://www.cs.williams.edu/~freund/index.html), [Eunice Jun](http://eunicemjun.com/), [Brooke Simon](https://www.linkedin.com/in/brooke-alexandra-simon/) (ordered alphabetically)
+
+#### Watch Flowco in Action!
+
+##### Short Demo
+[![](https://img.youtube.com/vi/qmMeMIrhtPs/0.jpg)](https://www.youtube.com/watch?v=qmMeMIrhtPs)
+
+##### Tutorial
+[![](https://img.youtube.com/vi/q0eAJv1vhAQ/0.jpg)](https://www.youtube.com/watch?v=q0eAJv1vhAQ)
+
+
+For technical details, see our arXiv paper, [_Flowco: Rethinking Data Analysis in the Age of LLMs_.](https://arxiv.org/abs/2403.16354)
+
+
+# Usage
+
 Flowco is designed to run as a web service but can also be run locally by following the instructions below.  
 
 ### Configuration
