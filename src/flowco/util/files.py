@@ -61,21 +61,30 @@ def copy_from_google_folder(folder_id: str):
             content = file_response.text
             fs_write(file["name"], content)
 
-def make_default_files():
-    try:
-        folder_id = os.environ["GOOGLE_DRIVE_FOLDER_ID"]
-        copy_from_google_folder(folder_id)
 
-    except Exception as e:
-        dir = os.path.join(os.path.dirname(__file__), "initial_files")
-        # Fallback to local initial files if Google Drive fails
-        with logger("Making default files from package"):
-            for file in os.listdir(dir):
-                log(f"Making {file} from local initial files")
-                file_path = os.path.join(dir, file)
-                with open(file_path, "r") as f:
-                    content = f.read()
-                    fs_write(file, content)
+def load_from_local():
+    # Load files from the local initial_files directory
+    dir = os.path.join(os.path.dirname(__file__), "initial_files")
+    with logger("Making default files from package"):
+        for file in os.listdir(dir):
+            log(f"Making {file} from local initial files")
+            file_path = os.path.join(dir, file)
+            with open(file_path, "r") as f:
+                content = f.read()
+                fs_write(file, content)
+
+
+def make_default_files():
+    if "GOOGLE_API_KEY" in os.environ:
+        try:
+            folder_id = os.environ["GOOGLE_DRIVE_FOLDER_ID"]
+            copy_from_google_folder(folder_id)
+        except Exception as e:
+            log(e)
+            load_from_local()
+    else:
+        log("No GOOGLE_API_KEY found.  Loading from local initial_files directory.")
+        load_from_local()
 
 
 def setup_flowco_files() -> bool:

@@ -52,12 +52,36 @@ def sign_in(authorization_url: str):
     release = os.getenv("RELEASE_VERSION", "unknown")
     st.write(f"# Flowco {release}!")
 
+    st.write(
+        """
+        Flowco is a system for authoring data analysis workflows with LLM assistance at every stage of the process.
+
+        *Flowco: Rethinking Data Analysis in the Age of LLMs*, Stephen Freund, Brooke Simon, Emery Berger, Eunice Jun, 2025.
+
+        Our Flowco server is intended for demonstration and experimentation and
+        should scale to a moderate number of
+        users, but if it is slow or unresponsive, please try again later or [install
+        locally](https://github.com/stephenfreund/flowco).  
+
+        If you have any questions or suggestions, please [get in touch](https://github.com/stephenfreund/flowco/issues)!
+        """
+    )
+
     with st.container(border=True):
         st.write(
-            "Create an account on the Flowco server associated with your Google email address."
+            """
+            Create an account on the Flowco server associated with your Google email address.
+            """
         )
 
         st.link_button("Sign In With Google", authorization_url, type="primary")
+
+    st.caption(
+        """           
+            **Note:** After the first hour, 
+            you will need to provide an OpenAI API key to continue using Flowco.
+               """
+    )
 
     if st.query_params.get("test", None) == "1":
         with st.container(border=True):

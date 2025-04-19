@@ -15,7 +15,11 @@ from flowco.ui.ui_st_pages import st_pages
 
 from flowco.util.config import Config
 from flowco.util.costs import CostTracker
-from flowco.util.files import copy_from_google_folder, get_flowco_files, setup_flowco_files
+from flowco.util.files import (
+    copy_from_google_folder,
+    get_flowco_files,
+    setup_flowco_files,
+)
 from flowco.util.output import Output, log, log_timestamp
 
 
@@ -81,7 +85,7 @@ def init_service():
 
         if not fs_exists("welcome.flowco"):
             st.toast("**Setting Up Account...**")
-            
+
         new_user = setup_flowco_files()
         if new_user and st.query_params.get("test", None) == "1":
             folder_id = os.environ["GOOGLE_DRIVE_TEST_FOLDER_ID"]

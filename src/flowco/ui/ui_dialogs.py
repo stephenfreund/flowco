@@ -25,6 +25,7 @@ def settings(ui_page: UIPage):
         placeholder="Enter new OpenAI API key",
         # label_visibility="collapsed",
     )
+    st.caption("Your key will be stored on our server and only used by you.")
 
     # anthropic_key = st.text_input(
     #     "Anthropic API Key",
@@ -63,7 +64,9 @@ def settings(ui_page: UIPage):
     if model != None:
         config().model = model
 
-    config().zero_temp = st.toggle("Use zero temperature for LLM", value=config().zero_temp)
+    config().zero_temp = st.toggle(
+        "Use zero temperature for LLM", value=config().zero_temp
+    )
 
     # config().debug = st.toggle("Show llm messages [debugging]", value=config().debug)
 
