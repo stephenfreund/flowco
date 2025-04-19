@@ -17,8 +17,7 @@ For technical details, see our arXiv paper, [_Flowco: Rethinking Data Analysis i
 
 # Web Service
 
-You can try Flowco on the web [here](https://go-flow.co).  
-This web service is intended for demonstration and experimentation only.
+You can try Flowco on the web [here](https://go-flow.co).  This web service is intended for demonstration and experimentation only.
 It should scale to a moderate number of
 users, but if it is slow or unresponsive, please try again later or install locally.
 
