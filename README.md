@@ -3,7 +3,7 @@
 # Flowco
 by [Emery Berger](https://emeryberger.com), [Stephen Freund](https://www.cs.williams.edu/~freund/index.html), [Eunice Jun](http://eunicemjun.com/), [Brooke Simon](https://www.linkedin.com/in/brooke-alexandra-simon/) (ordered alphabetically)
 
-![flowco](https://github.com/user-attachments/assets/9591f546-ef52-4c16-999a-ca9e2a149586)
+![flowco-small](https://github.com/user-attachments/assets/d41d0f38-cc08-4585-80d4-aa614ce3d91a)
 
 #### Watch Flowco in Action!
 
@@ -17,7 +17,10 @@ For technical details, see our arXiv paper, [_Flowco: Rethinking Data Analysis i
 
 # Web Service
 
-Flowco is designed to run as a web service but can also be run locally by following the instructions below.  
+You can try Flowco on the web [here](https://go-flow.co).  
+This web service is intended for demonstration and experimentation only.
+It should scale to a moderate number of
+users, but if it is slow or unresponsive, please try again later or install locally.
 
 # Local Installation
 
