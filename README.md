@@ -15,7 +15,7 @@ Flowco is a system for authoring data analysis workflows with LLM assistance at 
 | <a href="https://www.youtube.com/watch?v=qmMeMIrhtPs"><img src="https://img.youtube.com/vi/qmMeMIrhtPs/0.jpg" width="200"></a> | <a href="https://www.youtube.com/watch?v=q0eAJv1vhAQ"><img src="https://img.youtube.com/vi/q0eAJv1vhAQ/0.jpg" width="200"></a> |
 
 
-For technical details, see our arXiv paper, [_Flowco: Rethinking Data Analysis in the Age of LLMs_.](https://arxiv.org/abs/2403.16354)
+For technical details, see our arXiv paper, [_Flowco: Rethinking Data Analysis in the Age of LLMs_.](https://github.com/user-attachments/files/19820811/flowco-arxiv-submission.pdf).
 
 
 # Web Service
