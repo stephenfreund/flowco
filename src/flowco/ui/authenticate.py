@@ -54,9 +54,7 @@ def sign_in(authorization_url: str):
 
     st.write(
         """
-        Flowco is a system for authoring data analysis workflows with LLM assistance at every stage of the process.
-
-        *Flowco: Rethinking Data Analysis in the Age of LLMs*, Stephen Freund, Brooke Simon, Emery Berger, Eunice Jun, 2025.
+        Flowco is a system for authoring data analysis workflows with LLM assistance at every stage of the process.  See [Flowco on GitHub](https://github.com/stephenfreund/flowco) for more details.
 
         Our Flowco server is intended for demonstration and experimentation and
         should scale to a moderate number of
