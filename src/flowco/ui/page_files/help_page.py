@@ -76,7 +76,8 @@ class HelpPage:
     def main(self):
         with st.container(key="help_page"):
 
-            st.title("")
+            st.write("")
+            st.title("Help")
 
             with st.container(border=True):
                 st.write(
@@ -93,7 +94,7 @@ class HelpPage:
                     )
                 )
                 st.write("")
-                st.info(
+                st.warning(
                     """
                     **OpenAI API Key:**
                     For the first hour, you can use Flowco without providing an OpenAI API key.  After that, you'll need to provide an API key in Settings to continue using Flowco.
