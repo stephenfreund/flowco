@@ -32,7 +32,6 @@ def get_flowco_files():
 
 
 def copy_from_google_folder(folder_id: str):
-    # Will fail over if the environment variable is not set.
     api_key = os.environ["GOOGLE_API_KEY"]
 
     # Endpoint for listing files in a folder.

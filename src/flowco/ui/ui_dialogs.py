@@ -26,7 +26,7 @@ def settings(ui_page: UIPage):
         # label_visibility="collapsed",
     )
     st.caption(
-        "You will not need a key for the first hour.  You can obtain a key [Get a key here.](https://platform.openai.com/account/api-keys).  Your key will be stored on our server and only used by you."
+        "You will not need a key for the first hour.  You can obtain a key [Get a key here](https://platform.openai.com/account/api-keys).  Your key will be stored on our server and will only be used by you."
     )
 
     # anthropic_key = st.text_input(

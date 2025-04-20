@@ -5,13 +5,6 @@ from flowco.util.config import AbstractionLevel
 
 css = """
 
-
-.st-key-help_page_links .stColumn {
-    width: fit-content !important;
-    flex: unset !important;
-}
-
-
 .st-key-edit_node_commands .stColumn {
     width: fit-content !important;
     flex: unset !important;
