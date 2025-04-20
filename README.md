@@ -8,7 +8,7 @@ by [Emery Berger](https://emeryberger.com), [Stephen Freund](https://www.cs.will
 
 Flowco is a system for authoring data analysis workflows with LLM assistance at every stage of the process.  Flowco employs a dataflow programming model that serves as a foundation for reliable LLM-centric programming.
 
-![](https://github.com/stephenfreund/flowco/blob/883937374422ca3f62cb1cf2092c8eedc50e938d/media/geyser.png)
+![](https://github.com/stephenfreund/flowco/raw/main/media/geyser.png)
 
 ## Watch Flowco in Action!
 
