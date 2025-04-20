@@ -64,7 +64,7 @@ def mxgraph_component(
     refresh_phase: int = 0,
     dummy: Optional[str] = None,
     clear=False,
-) -> int:
+) -> Dict[str, Any]:
     """Create a new instance of "maxgraph_component".
 
     Parameters

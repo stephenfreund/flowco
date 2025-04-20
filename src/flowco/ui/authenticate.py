@@ -30,7 +30,7 @@ if "credentials" not in st.session_state:
 
 @dataclass
 class CacheEntry:
-    credentials: Credentials
+    credentials: Credentials | str
     user_email: str
     timestamp: datetime
 

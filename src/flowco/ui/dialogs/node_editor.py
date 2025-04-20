@@ -210,6 +210,9 @@ class NodeEditor:
 
         with r:
             with st.popover("Show Inputs"):
+                assert (
+                    self.node.function_parameters is not None
+                ), "Function parameters must be set"
                 for param in self.node.function_parameters:
                     st.write(f"### {param.name}")
                     extended_type = param.type
@@ -411,6 +414,9 @@ class NodeEditor:
                             icon=":material/check:",
                             disabled=self.pending_ama is not None,
                         ):
+                            assert (
+                                self.node.function_return_type is not None
+                            ), "Function return type must be set"
                             self.pending_ama = PendingAMA(
                                 config().get_prompt(
                                     (

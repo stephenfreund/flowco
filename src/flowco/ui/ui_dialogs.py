@@ -25,7 +25,9 @@ def settings(ui_page: UIPage):
         placeholder="Enter new OpenAI API key",
         # label_visibility="collapsed",
     )
-    st.caption("Your key will be stored on our server and only used by you.")
+    st.caption(
+        "You will not need a key for the first hour.  You can obtain a key [Get a key here.](https://platform.openai.com/account/api-keys).  Your key will be stored on our server and only used by you."
+    )
 
     # anthropic_key = st.text_input(
     #     "Anthropic API Key",
@@ -72,9 +74,9 @@ def settings(ui_page: UIPage):
 
     # config().retries = int(st.number_input("Repair retries", value=config().retries))
 
-    if st.button("Reset Demo Files"):
-        with st.spinner("Resetting demo files"):
-            make_default_files()
+    # if st.button("Reset Demo Files"):
+    #     with st.spinner("Resetting demo files"):
+    #         make_default_files()
 
     # with st.expander("Experimental Features"):
     #     config().x_no_right_panel = st.toggle(
@@ -114,12 +116,11 @@ def settings(ui_page: UIPage):
     # st.divider()
 
     # # Read the commit SHA and build date from environment variables
-    # release = os.getenv("RELEASE_VERSION", "unknown")
-    # commit_sha = os.getenv("COMMIT_SHA", "unknown")[:7]
-    # build_date = os.getenv("BUILD_DATE", "unknown")
+    release = os.getenv("RELEASE_VERSION", "unknown")
+    commit_sha = os.getenv("COMMIT_SHA", "unknown")[:7]
+    build_date = os.getenv("BUILD_DATE", "unknown")
 
-    # st.write(f"Flowco Release {release}, {build_date}")
-    # st.write("[Release Notes](https://github.com/stephenfreund/flowco/releases)")
+    st.caption(f"Flowco Release {release}, {commit_sha}, {build_date}")
 
     # try:
     #     session_info = f"**Session Info:** {st.session_state.user_email}   {session.get('output', Output).prefix}"

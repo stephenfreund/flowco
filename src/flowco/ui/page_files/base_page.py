@@ -381,7 +381,6 @@ class FlowcoPage:
                     label="",
                     icon=":material/settings:",
                     help="Change settings",
-                    disabled=not self.graph_is_editable(),
                 ):
                     settings(ui_page)
 

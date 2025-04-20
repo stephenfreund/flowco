@@ -20,7 +20,7 @@ class FlowcoSession(ABC):
     T = TypeVar("T")
 
     def get(self, key: str, type_: Type[T]) -> T:
-        return cast(type_, self.get_session()[key])
+        return self.get_session()[key]
 
     @abstractmethod
     def get_session(self) -> dict:

@@ -38,39 +38,6 @@ class Toc:
         return f"<li id={key} style='line-height:1.3;'><b>{question}</b><br><br>\n\n{answer}\n\n</li>"
 
 
-# toc = Toc()
-
-# st.title("Table of contents")
-# toc.placeholder()
-
-# toc.title("Title")
-
-# for a in range(10):
-#     st.write("Blabla...")
-
-# toc.header("Header 1")
-
-# for a in range(10):
-#     st.write("Blabla...")
-
-# toc.header("Header 2")
-
-# for a in range(10):
-#     st.write("Blabla...")
-
-# toc.subheader("Subheader 1")
-
-# for a in range(10):
-#     st.write("Blabla...")
-
-# toc.subheader("Subheader 2")
-
-# for a in range(10):
-#     st.write("Blabla...")
-
-# toc.generate()
-
-
 class HelpPage:
 
     def main(self):
@@ -115,23 +82,6 @@ class HelpPage:
                     """,
                     unsafe_allow_html=True,
                 )
-
-            # with st.container(key="help_page_links", border=True):
-            #     st.write("### Links")
-            #     cols = st.columns(4)
-            #     cols[0].link_button(
-            #         "Technical Paper", "https://youtu.be/q0eAJv1vhAQ", type="primary"
-            #     )
-            #     cols[1].link_button(
-            #         "Demo Video", "https://youtu.be/qmMeMIrhtPs", type="primary"
-            #     )
-            #     cols[2].link_button(
-            #         "Tutorial Video", "https://youtu.be/q0eAJv1vhAQ", type="primary"
-            #     )
-
-            #     cols[3].link_button(
-            #         "GitHub", "https://github.com/stephenfreund/flowco", type="primary"
-            #     )
 
             with st.container(border=True):
                 st.markdown("### FAQ")
