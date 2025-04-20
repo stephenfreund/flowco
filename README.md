@@ -1,41 +1,42 @@
-![flowco-small](https://github.com/user-attachments/assets/d41d0f38-cc08-4585-80d4-aa614ce3d91a)
+![flowco-small](https://github.com/user-attachments/assets/2438f025-a026-4bf3-94a9-3a64a44a0025)
 
-# Flowco
+# Flowco 
 by [Emery Berger](https://emeryberger.com), [Stephen Freund](https://www.cs.williams.edu/~freund/index.html), [Eunice Jun](http://eunicemjun.com/), [Brooke Simon](https://www.linkedin.com/in/brooke-alexandra-simon/) (ordered alphabetically)
 
 [![Flowco](https://img.shields.io/badge/Flowco-Online-brightgreen)](https://go-flow.co)
 [![PyPI Latest Release](https://img.shields.io/pypi/v/flowco.svg)](https://pypi.org/project/flowco/)
 
-Flowco is a system for authoring data analysis workflows with LLM assistance at every stage of the process.
+Flowco is a system for authoring data analysis workflows with LLM assistance at every stage of the process.  Flowco employs a dataflow programming model that serves as a foundation for reliable LLM-centric programming.
 
-#### Watch Flowco in Action!
+![geyser](https://github.com/user-attachments/assets/d6746526-5aa6-48f7-93f9-7f7deee27e24)
 
-| Short Demo | Tutorial |
-|------------|----------|
-| <a href="https://www.youtube.com/watch?v=qmMeMIrhtPs"><img src="https://img.youtube.com/vi/qmMeMIrhtPs/0.jpg" width="200"></a> | <a href="https://www.youtube.com/watch?v=q0eAJv1vhAQ"><img src="https://img.youtube.com/vi/q0eAJv1vhAQ/0.jpg" width="200"></a> |
+## Watch Flowco in Action!
+
+| Demo Video | Tutorial Video | Exploratoration | Multiverse Analysis | Logistic Regression |
+|------------|----------|----------|--|--|
+| <a href="https://www.youtube.com/watch?v=qmMeMIrhtPs"><img src="https://img.youtube.com/vi/qmMeMIrhtPs/0.jpg" width="1200"></a> | <a href="https://www.youtube.com/watch?v=q0eAJv1vhAQ"><img src="https://img.youtube.com/vi/q0eAJv1vhAQ/0.jpg" width="1200"></a> |  <img width="798" alt="finch-3" src="https://github.com/user-attachments/assets/da6d78ad-1d31-42d2-a61a-3ddbc316afd9" /> |  <img width="1202" alt="mortgage-wide" src="https://github.com/user-attachments/assets/9c216a1a-5cc6-4140-ae1e-aa6df77f8bbd" /> |  <img width="1077" alt="logistic-full" src="https://github.com/user-attachments/assets/202f9d9d-c331-4817-af3a-90f59c334c91" /> |
 
 
-For technical details, see our arXiv paper, [_Flowco: Rethinking Data Analysis in the Age of LLMs_.](https://github.com/user-attachments/files/19820811/flowco-arxiv-submission.pdf).
+For technical details, see our arXiv paper, [_Flowco: Rethinking Data Analysis in the Age of LLMs_](https://github.com/user-attachments/files/19820811/flowco-arxiv-submission.pdf).
 
-
-# Web Service
+## Web Service
 
 You can try Flowco on the web [here](https://go-flow.co).  
 
 > [!NOTE]
 > This web service is intended for demonstration and experimentation only.
-> It should scale to a moderate number of
+> It should scale to a modest number of
 > users, but if it is slow or unresponsive, please try again later or install locally.
 
-# Local Installation
+## Local Installation
 
-### Configuration
+#### Configuration
 
 * Use a conda virtual environment or some other virtual environment.
 * Use Python 3.11+.
-* Ensure `dot` is on your path.
+* Ensure [`dot`](https://graphviz.org/) is on your path.
 
-### API Key
+#### OpenAI API Key
 
 > [!IMPORTANT]
 >
@@ -47,16 +48,16 @@ You can try Flowco on the web [here](https://go-flow.co).
 > export OPENAI_API_KEY=<your-api-key>
 > ```
 
-### Installing
+#### Installing
 
-### Latest release
+##### From Pypi [Recommended]
 
 With pip:
 ```bash
 pip3 install flowco
 ```
 
-#### From the source
+##### From Source
 
 Or clone the repo and install as an editable package.
 ```bash
@@ -65,7 +66,7 @@ pip3 install -e .
 This installs a bunch of normal packages, a custom component for Streamlit, and then Flowco as an 
 editable package that you can run locally (rather than as the web service).
 
-### Running
+#### Running
 
 On the command line, run `flowco`, passing it the directory in which to store its files.  That directory
 should already exist:
