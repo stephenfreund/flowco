@@ -78,7 +78,7 @@ class HelpPage:
                     | <a href="https://www.youtube.com/watch?v=qmMeMIrhtPs"><img src="https://img.youtube.com/vi/qmMeMIrhtPs/0.jpg" width="200"></a> | <a href="https://www.youtube.com/watch?v=q0eAJv1vhAQ"><img src="https://img.youtube.com/vi/q0eAJv1vhAQ/0.jpg" width="200"></a> |
 
 
-                    For technical details, see our arXiv paper, [_Flowco: Rethinking Data Analysis in the Age of LLMs_](https://github.com/stephenfreund/flowco/blob/85df8c7eb1c6021dcbde1333900674e5a3f882b7/media/flowco-arxiv-submission.pdf) and [GitHub](https://github.com/stephenfreund/flowco).
+                    For technical details, see our arXiv paper, [_Flowco: Rethinking Data Analysis in the Age of LLMs_](https://arxiv.org/abs/2504.14038) and [GitHub](https://github.com/stephenfreund/flowco).
                     """,
                     unsafe_allow_html=True,
                 )
