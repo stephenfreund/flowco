@@ -36,7 +36,7 @@ class SessionFileSystem:
         print(root_path)
 
         while True:
-            path = f"{base}{uuid.uuid4().hex[:8]}/"
+            path = f"{root_path}{base}{uuid.uuid4().hex[:8]}/"
             try:
                 fs.makedirs(path, exist_ok=False)
                 return path

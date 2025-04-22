@@ -58,7 +58,7 @@ def run_session(session_id: int, args):
         options = webdriver.ChromeOptions()
         if args.headless:
             options.add_argument("--headless")  # Run in headless mode
-        options.add_argument(f"--user-data-dir=/tmp/{uuid.uuid4()}")
+        options.add_argument(f"--user-data-dir=/tmp/{uuid.uuid4()}/")
         driver = webdriver.Chrome(
             service=ChromeService(ChromeDriverManager().install()), options=options
         )
@@ -66,7 +66,7 @@ def run_session(session_id: int, args):
         print(f"[Session {session_id}] ERROR launching Chrome: {e}")
         return
 
-    wait = WebDriverWait(driver, 30)
+    wait = WebDriverWait(driver, 60)
     long_wait = WebDriverWait(driver, 180)  # 3m timeout
 
     try:
