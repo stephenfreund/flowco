@@ -9,6 +9,7 @@ from flowco.dataflow.phase import Phase
 from flowco.ui.page_files.build_page import BuildPage
 from flowco.ui.page_files.check_page import CheckPage
 from flowco.ui.page_files.help_page import HelpPage
+from flowco.ui.page_files.nb_page import NBPage
 from flowco.ui.page_files.projects_page import ProjectsPage
 from flowco.ui.page_files.test_page import TestPage
 from flowco.util.output import error
@@ -17,33 +18,30 @@ from flowco.util.output import error
 def st_pages():
     def build_main():
         st.session_state.current_page = "build"
-        # st.session_state.image_cache.clear()
-        # st.session_state.selected_node = "<<<<<"
         BuildPage().main()
 
     def check_main():
         st.session_state.current_page = "check"
-        # st.session_state.image_cache.clear()
-        # st.session_state.selected_node = "<<<<<"
         CheckPage().main()
 
     def test_main():
         st.session_state.current_page = "test"
-        # st.session_state.image_cache.clear()
-        # st.session_state.selected_node = "<<<<<"
         TestPage().main()
 
     def projects_main():
         st.session_state.current_page = "projects"
-        # st.session_state.image_cache.clear()
         st.session_state.selected_node = "<<<<<"
         ProjectsPage().main()
 
     def help_main():
         st.session_state.current_page = "help"
-        # st.session_state.image_cache.clear()
         st.session_state.selected_node = "<<<<<"
         HelpPage().main()
+
+    def nb_main():
+        st.session_state.current_page = "nb"
+        st.session_state.selected_node = "<<<<<"
+        NBPage().main()
 
     dfg = st.session_state.ui_page.dfg()
     warn_run_messages = dfg.filter_messages(
@@ -104,7 +102,7 @@ def st_pages():
                 help_main,
                 title="Help",
             ),
-            # st.Page(test_main, title="Test"),
+            st.Page(nb_main, title="Flowbook"),
         ]
     else:
         if st.session_state.current_page == "build":
@@ -118,6 +116,10 @@ def st_pages():
         elif st.session_state.current_page == "test":
             pages = [
                 st.Page(test_main, title="Test"),
+            ]
+        elif st.session_state.current_page == "FlowBook":
+            pages = [
+                st.Page(nb_main, title="FlowBook"),
             ]
         else:
             assert (

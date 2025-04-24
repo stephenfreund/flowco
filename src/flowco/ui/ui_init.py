@@ -139,7 +139,14 @@ header {
     max-width: initial;
 }
 
-.stMain:has(.st-key-help_page) {
+.stMain:has(.st-key-help_page)
+ {
+    padding:2rem;
+    overflow: auto;
+}
+
+.stMain:has(.st-key-nb_page)
+ {
     padding:2rem;
     overflow: auto;
 }
@@ -280,12 +287,6 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
 
 }
 
-.st-key-ama_input,
-.st-key-ama_input_node {
-    width: calc(200% - 48px);
-    min-width: 400px;
-} 
-
 .st-key-voice_input *,
 .st-key-voice_input_node * {
     height: 2.5rem !important;
@@ -314,17 +315,26 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
     width: 90% !important;
 }
 
+.stMainBlockContainer {
+    background-color: #F0F2F6;
+}
+
+.stMainBlockContainer:has(.st-key-nb_page)
+ {
+    font-size: 0.75rem !important;
+    background-color: #FFFFFF !important;
+    column-gap: 0rem !important;
+    row-gap: 0.4rem !important;
+}
+
 .stMainBlockContainer * {
-    gap: 0.4rem !important;
+    row-gap: 0.4rem !important;
 }
 
 .st-key-help_page {
     background-color: #FFFFFF !important;
 }
 
-.stMainBlockContainer {
-    background-color: #F0F2F6;
-}
 
 .st-key-right-panel {
     height: calc(100vh - 75px) !important;
@@ -395,6 +405,7 @@ div .st-key-node_colors * {
 .st-key-node_shapes img {
     max-height: 144px;
 }
+
 
 
 """

@@ -180,6 +180,32 @@ def phase_for_last_shown_part() -> Phase:
         return Phase.clean
 
 
+def report_bug():
+    @st.dialog("Report Bug", width="small")
+    def download_files():
+
+        text = st.text_input(
+            "Bug",
+            placeholder="Enter a description of the issue",
+        )
+
+        if text:
+            with st.spinner("Creating ZIP file..."):
+                file_name, zip_data = zip_bug(text)
+
+            st.write("Saved on server.  Click below to download bug files locally.")
+
+            if st.download_button(
+                label=":material/download:",
+                data=zip_data,
+                file_name=file_name,  # with timestamp
+                help="Download the project and log",
+            ):
+                st.rerun()
+
+    download_files()
+
+
 def zip_bug(description):
     ui_page = st.session_state.ui_page
     flowco_name = ui_page.page().file_name

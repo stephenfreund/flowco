@@ -1,0 +1,337 @@
+from time import sleep
+import re
+import textwrap
+
+import code
+from code_editor import code_editor
+from flowco.page.ama import AskMeAnything, VisibleMessage
+from flowco.ui.authenticate import sign_out
+import numpy as np
+import pandas as pd
+
+
+from flowco.dataflow import dfg_update
+from flowco.dataflow.dfg import Node
+from flowco.page.output import OutputType
+from flowco.ui.ui_dialogs import settings
+from flowco.ui.ui_util import (
+    report_bug,
+    toggle,
+)
+import streamlit as st
+
+
+from flowco import __main__
+from flowco.ui.ui_page import UIPage
+from flowco.util.config import config
+from flowco.util.costs import inflight, total_cost
+from flowco.util.output import error
+from flowco.llm.assistant import AssistantError
+from flowco.assistant.flowco_assistant import fast_transcription
+
+
+class NBPage:
+
+    def sidebar(self, node: Node | None = None):
+        with st.container(key="masthead"):
+            self.masthead()
+            # self.button_bar()
+
+        try:
+            self.show_ama()
+        except AssistantError as e:
+            error(e)
+            st.error(e.message)
+
+    def masthead(self, node: Node | None = None):
+        if node is None:
+            ui_page: UIPage = st.session_state.ui_page
+            st.title(ui_page.page().file_name)
+            st.caption(
+                f"Total cost: {total_cost():.2f} USD &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        {':gray[:material/bigtop_updates:]' * inflight()}"
+            )
+
+
+    def write_ama_message(self, message: VisibleMessage):
+        with st.chat_message(message.role):
+            if not message.is_error:
+                st.markdown(message.content, unsafe_allow_html=True)
+            else:
+                st.error(message.content)
+
+    def show_ama(self):
+        page = st.session_state.ui_page.page()
+        if st.session_state.ama is None or st.session_state.ama.page != page:
+            st.session_state.ama = AskMeAnything(page)
+
+        with st.container():
+            height = 400 if not config().x_no_right_panel else 200
+            container = st.container(height=height, border=True, key="chat_container")
+            with container:
+                for message in st.session_state.ama.messages():
+                    self.write_ama_message(message)
+
+            if st.audio_input(
+                "Record a voice message",
+                label_visibility="collapsed",
+                key="voice_input",
+                on_change=lambda: self.ama_voice_input(container),
+                disabled=not self.graph_is_editable(),
+            ):
+                st.rerun()
+
+            with st.container(key="ama_columns"):
+                if prompt := st.chat_input(
+                    "Ask Me Anything!",
+                    key="ama_input",
+                    on_submit=lambda: toggle("ama_responding"),
+                    disabled=not self.graph_is_editable(),
+                ):
+                    self.ama_completion(container, prompt)
+
+            if st.session_state.pending_ama:
+                prompt = st.session_state.pending_ama
+                st.session_state.pending_ama = None
+                self.ama_completion(container, prompt)
+
+    def ama_voice_input(self, container):
+        toggle("ama_responding")
+        voice = st.session_state.voice_input
+        transcription = fast_transcription(voice)
+        self.ama_completion(container, transcription)
+
+    def ama_completion(self, container, prompt):
+        page = st.session_state.ui_page.page()
+        dfg = page.dfg
+        ama: AskMeAnything = st.session_state.ama
+        with container:
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            empty = st.empty()
+            try:
+                with empty.chat_message("assistant"):
+                    response = st.write_stream(
+                        ama.complete(prompt, st.session_state.selected_node)
+                    )
+            except Exception as e:
+                error(e)
+            finally:
+                # self.write_ama_message(ama.last_message())
+                st.session_state.ama_responding = False
+                if dfg != page.dfg:
+                    st.session_state.force_update = True
+                    self.auto_update()
+                st.rerun()  # TODO: This could be in a callback!  But should be okay...
+
+    def show_output(self, node: Node):
+        if node is not None and node.result is not None:
+            if (
+                node.result.result is not None
+                and node.function_return_type is not None
+                and not node.function_return_type.is_None_type()
+            ):
+                value = node.result.result.to_value()
+                if type(value) in [np.ndarray, list, pd.Series]:
+                    value = pd.DataFrame(value)
+                if type(value) == pd.DataFrame:
+                    st.dataframe(value, hide_index=True, height=200, use_container_width=False)
+                elif type(value) == dict:
+                    for k, v in list(value.items())[0:10]:
+                        st.write(f"**{k}**:")
+                        if type(v) in [np.ndarray, list, pd.Series]:
+                            v = pd.DataFrame(v)
+                        if type(v) == pd.DataFrame:
+                            st.dataframe(v, hide_index=True, height=200, use_container_width=None)
+                        elif type(v) == dict:
+                            st.json(v)
+                        elif type(v) == str:
+                            if v.startswith("{" or v.startswith("[")):
+                                st.json(v)
+                            else:
+                                st.code(v)
+                        else:
+                            st.code(v)
+                    if len(value) > 10:
+                        st.write(f"And {len(value)-10} more...")
+                elif type(value) == str:
+                    if value.startswith("{" or value.startswith("[")):
+                        st.json(value)
+                    else:
+                        st.code(value)
+                else:
+                    st.code(value)
+            elif node.result.output is not None:
+                output = node.result.output
+                if output is not None:
+                    if output.output_type == OutputType.text:
+                        st.text(f"```{output.data}\n```")
+                    elif output.output_type == OutputType.image:
+                        base64encoded = output.data.split(",", maxsplit=1)
+                        image_data = base64encoded[0] + ";base64," + base64encoded[1]
+                        st.image(image_data)
+
+    def graph_is_editable(self) -> bool:
+        return True
+
+    def bottom_bar(self):
+        ui_page: UIPage = st.session_state.ui_page
+        with st.container(key="bottom_bar"):
+            cols = st.columns(3)
+            with cols[0]:
+                if st.button(
+                    label="",
+                    icon=":material/settings:",
+                    help="Change settings",
+                ):
+                    settings(ui_page)
+
+            with cols[1]:
+                if st.button(
+                    label="Report Bug", icon=":material/bug_report:", key="report_bug"
+                ):
+                    report_bug()
+
+            with cols[2]:
+                if st.button(
+                    label="Logout",
+                    icon=":material/logout:",
+                    help=f"Sign out {st.session_state.user_email if 'user_email' in st.session_state else ''}",
+                ):
+                    sign_out()
+                    st.rerun()
+
+
+    def update_ui_page(self, update: dfg_update.mxDiagramUpdate):
+        ui_page: UIPage = st.session_state.ui_page
+
+        new_dfg = dfg_update.update_dataflow_graph(ui_page.dfg(), update)
+
+        if new_dfg != ui_page.dfg():
+            ui_page.update_dfg(new_dfg)
+
+    def init(self):
+        pass
+
+    def fini(self):
+        pass
+
+
+    def extract_body(self, code: str) -> str:
+        lines = code.splitlines()
+
+        # 1. Extract imports (everything before the first 'def ')
+        def_idx = next(i for i, L in enumerate(lines) if L.strip().startswith("def "))
+        imports = "\n".join(lines[:def_idx])
+
+        # 2. Skip a potentially multi-line signature
+        paren_depth = 0
+        sig_count = 0
+        for L in lines[def_idx:]:
+            sig_count += 1
+            paren_depth += L.count("(") - L.count(")")
+            if paren_depth == 0 and L.strip().endswith(":"):
+                break
+
+        body_lines = lines[def_idx + sig_count:]
+
+        # 3. Remove any triple-quoted docstring
+        filtered = []
+        in_doc = False
+        doc_delim = None
+        for L in body_lines:
+            s = L.strip()
+            if not in_doc and (s.startswith('"""') or s.startswith("'''")):
+                in_doc = True
+                doc_delim = s[:3]
+                if s.endswith(doc_delim) and len(s) > 3:
+                    in_doc = False
+                continue
+            if in_doc:
+                if s.endswith(doc_delim):
+                    in_doc = False
+                continue
+            filtered.append(L)
+
+        # 4. Replace 'return' in the last indented line with '<func_name> ='
+        func_name = re.match(r'def\s+(\w+)', lines[def_idx]).group(1)
+        if filtered and filtered[-1].strip().startswith("return "):
+            filtered[-1] = filtered[-1].replace("return", f"{func_name} =", 1)
+
+        # 5. Dedent results
+        dedented_imports = textwrap.dedent(imports).strip()
+        dedented_body = textwrap.dedent("\n".join(filtered)).rstrip()
+
+        return (dedented_imports + "\n" + dedented_body).strip()
+
+
+    def nb(self):
+        st.write("")
+        st.write("")
+        st.write("")
+        st.write("")
+        st.write("")
+        st.write("")
+
+        # response = code_editor(
+        #     value,
+        #     lang=language,
+        #     key=f"editor_{title}",
+        #     height=height,
+        #     allow_reset=True,
+        #     response_mode=["blur", "debounce"],  # type: ignore
+        #     props=props,
+        #     options=options,
+        #     info=info_bar,
+        #     buttons=buttons,
+        #     focus=focus,
+        # )
+
+
+        @st.fragment()
+        def cell(node: Node):
+            id = node.id
+            l,r = st.columns(2, vertical_alignment="bottom")
+            # l.markdown(f"**{node.function_result_var}**")
+            with l:
+                result = code_editor(node.function_result_var, lang="text", response_mode=["blur", "debounce"], key=f"result_{id}")
+                print(id, "var", result)
+            current = st.session_state[f"pill_{id}"] if f"pill_{id}" in st.session_state else [ "Requirements" ]
+            s = r.segmented_control("Mode", ["Requirements", "Code", "Checks", "Tests"], key=f"mode_{id}", default=current, selection_mode="multi",
+                                    on_change=lambda: st.session_state.update({"pill_" + id: st.session_state[f"mode_{id}"]}),
+                                    label_visibility="collapsed")
+            # with st.container(key=f"node_{id}", border=True):
+            if "Requirements" in s:
+                result = code_editor("\n* ".join(node.requirements or []), lang="markdown",  response_mode=["blur", "debounce"], key=f"requirements_{id}")
+                print(id, "req", result)
+            if "Code" in s:
+                result = code_editor(self.extract_body("\n".join(node.code or [])), lang="python",  response_mode=["blur", "debounce"], key=f"code_{id}")
+                print(id, "code", result)
+
+            if st.button("Beep", key=f"beep_{id}"):
+                with st.spinner("Beeping..."):
+                    x = []
+                    while len(x) < 100_000:
+                        x = x + [1]
+
+            self.show_output(node)
+
+        dfg = st.session_state.ui_page.dfg()
+        for node_id in dfg.topological_sort():
+            node = dfg.get_node(node_id)
+            if node is not None:
+                cell(node)
+
+    def main(self):
+
+        self.init()
+
+        with st.container(key="nb_page"):
+            self.nb()
+
+        with st.sidebar:
+            self.sidebar()
+            st.divider()
+            self.bottom_bar()
+
+        self.fini()
