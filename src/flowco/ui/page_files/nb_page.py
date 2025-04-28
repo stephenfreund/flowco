@@ -35,24 +35,20 @@ from flowco.assistant.flowco_assistant import fast_transcription
 
 class NBPage(BuildPage):
 
-    # def sidebar(self, node: Node | None = None):
-    #     with st.container(key="masthead"):
-    #         self.masthead()
-    #         self.button_bar()
+    def sidebar(self, node: Node | None = None):
+        with st.container(key="masthead"):
+            self.masthead()
+            self.button_bar()
 
-    #     try:
-    #         self.show_ama()
-    #     except AssistantError as e:
-    #         error(e)
-    #         st.error(e.message)
-
-    # def masthead(self, node: Node | None = None):
-    #     if node is None:
-    #         ui_page: UIPage = st.session_state.ui_page
-    #         st.title(ui_page.page().file_name)
-    #         st.caption(
-    #             f"Total cost: {total_cost():.2f} USD &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        {':gray[:material/bigtop_updates:]' * inflight()}"
-    #         )
+        try:
+            tabs = st.tabs(["AMA", "Graph"])
+            with tabs[0]:
+                self.show_ama()
+            with tabs[1]:
+                self.right_panel()
+        except AssistantError as e:
+            error(e)
+            st.error(e.message)
 
     def scroll_to(self, element_id):
         import streamlit.components.v1
@@ -67,6 +63,9 @@ class NBPage(BuildPage):
             height=0,
             width=0,
         )
+
+    def masthead(self, node=None):
+        super().masthead(node)
 
     # def button_bar(self):
     #     dfg = st.session_state.ui_page.dfg()
@@ -385,6 +384,7 @@ class NBPage(BuildPage):
 
         self.init()
 
+        cols = st.columns([4, 1], gap="small")
         with st.container(key="nb_page"):
             self.nb()
 
@@ -394,6 +394,65 @@ class NBPage(BuildPage):
             self.bottom_bar()
 
         self.fini()
+
+    def right_panel(self):
+        import streamlit as st
+        from streamlit_flow import streamlit_flow
+        from streamlit_flow.elements import StreamlitFlowNode, StreamlitFlowEdge
+        from streamlit_flow.state import StreamlitFlowState
+
+        dfg = st.session_state.ui_page.dfg()
+        nodes = [
+            StreamlitFlowNode(
+                pos=(0, 0),
+                data={
+                    "content": node.pill,
+                },
+                id=node.id,
+            )
+            for node in [
+                dfg[node_id]
+                for node_id in st.session_state.ui_page.dfg().topological_sort()
+            ]
+        ]
+
+        edges = [
+            StreamlitFlowEdge(
+                id = edge.id,
+                source=edge.src,
+                target=edge.dst,
+                marker_end="arrow",
+            )
+            for edge in dfg.edges
+        ]
+
+        static_flow_state = StreamlitFlowState(
+            nodes,
+            edges,
+        )
+        if (
+            "static_flow_state" not in st.session_state
+        ):
+            st.session_state.static_flow_state = static_flow_state
+
+        from streamlit_flow.layouts import TreeLayout
+
+        flow_state = streamlit_flow(
+            "static_flow",
+            st.session_state.static_flow_state,
+            # fit_view=True,
+            show_minimap=False,
+            show_controls=False,
+            pan_on_drag=False,
+            allow_zoom=False,
+            get_node_on_click=True,
+            layout=TreeLayout(direction="down"),
+        )
+        st.session_state.static_flow_state = flow_state
+        if flow_state.selected_id != st.session_state.selected_node:
+            st.session_state.selected_node = flow_state.selected_id
+            pill = dfg.get_node(flow_state.selected_id).pill
+            self.scroll_to(pill.lower())
 
         # current = (
         #     st.session_state[f"pill_{id}"]
