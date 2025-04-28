@@ -4,6 +4,7 @@ import textwrap
 
 import code
 from code_editor import code_editor
+from flowco.dataflow.extended_type import schema_to_text
 from flowco.page.ama import AskMeAnything, VisibleMessage
 from flowco.ui.authenticate import sign_out
 import numpy as np
@@ -21,6 +22,7 @@ from flowco.ui.ui_util import (
 )
 import streamlit as st
 
+from streamlit_extras.stylable_container import stylable_container
 
 from flowco import __main__
 from flowco.ui.ui_page import UIPage
@@ -236,7 +238,8 @@ class NBPage(BuildPage):
     #         ui_page.update_dfg(new_dfg)
 
     def init(self):
-        pass
+        if "selected_node" not in st.session_state:
+            st.session_state.selected_node = None
 
     def fini(self):
         pass
@@ -300,48 +303,82 @@ class NBPage(BuildPage):
         @st.fragment()
         def cell(node: Node):
             id = node.id
-            l, r = st.columns(2, vertical_alignment="bottom")
-            with l:
-                st.markdown(f"##### {node.pill}")
-            req = "\n".join(["* " + x for x in node.requirements or []])
-            code = "\n".join(node.code or [])
-            full = f"""\
+            with st.container(key=f"cell_{id}", border=True):
+                l, r = st.columns(2, vertical_alignment="bottom")
+                with l:
+                    st.markdown(f"##### {node.pill}")
+                req = "\n".join(["* " + x for x in node.requirements or []])
+                code = "\n".join(node.code or [])
+                full = f"""\
 {node.label}
 ---
 {req}
 ---
 {code}
 """
-            x = code_editor(
-                full,
-                lang="python",
-                response_mode=["blur", "debounce", "select"],
-                key=f"full_{id}",
-            )
-            if x is not None and x["type"] in ["change"]:
-                try:
-                    label, requirements, code = x["text"].split("---")
-                    ui_page.update_dfg(
-                        ui_page.dfg().update_node(
-                            id,
-                            label=label.strip(),
-                            requirements=[
-                                x.lstrip("* ").strip()
-                                for x in (requirements or "").splitlines()
-                            ],
-                            code=[x.strip() for x in (code or "").splitlines()],
+                x = code_editor(
+                    full,
+                    lang="python",
+                    response_mode=["blur", "debounce", "select"],
+                    key=f"full_{id}",
+                )
+                if x is not None and x["type"] == "selection":
+                    old_node = st.session_state.selected_node
+                    st.session_state.selected_node = node.id
+                if x is not None and x["type"] in ["change"]:
+                    try:
+                        label, requirements, code = x["text"].split("---")
+                        ui_page.update_dfg(
+                            ui_page.dfg().update_node(
+                                id,
+                                label=label.strip(),
+                                requirements=[
+                                    x.lstrip("* ").strip()
+                                    for x in (requirements or "").splitlines()
+                                ],
+                                code=[x.strip() for x in (code or "").splitlines()],
+                            )
                         )
-                    )
-                except Exception as e:
-                    st.error(e)
+                    except Exception as e:
+                        st.error(e)
 
-            self.show_output(node)
+                cols = st.columns(2)
+                with cols[1]:
+                    if node.function_return_type is not None:
+                        function_return_type = node.function_return_type
+                        if function_return_type is not None:
+                            if not function_return_type.is_None_type():
+                                st.caption(f"{function_return_type.description}")
+                            st.code(schema_to_text(function_return_type.type_schema()))
+                with cols[0]:
+                    self.show_output(node)
+
+                if st.session_state.selected_node == node.id:
+                    st.html(
+                        f"""
+                            <style>
+                            div:has(>div>div.st-key-cell_{id}) {{
+                                background-color: #ffAAAA;
+                            }}  
+                            </style>
+                            """
+                    )
+                else:
+                    st.html(
+                        f"""
+                            <style>
+                            div:has(>div>div.st-key-cell_{id}) {{
+                                background-color: #FFFFFF;
+                            }}  
+                            </style>
+                            """
+                    )
 
         dfg = st.session_state.ui_page.dfg()
         for node_id in dfg.topological_sort():
             node = dfg.get_node(node_id)
             if node is not None:
-                st.divider()
+                # st.divider()
                 cell(node)
 
     def main(self):
