@@ -2,6 +2,11 @@ from typing import List, Optional
 from flowco.dataflow.extended_type import schema_to_text
 import uuid
 
+from streamlit_flow import streamlit_flow
+from streamlit_flow.elements import StreamlitFlowNode, StreamlitFlowEdge
+from streamlit_flow.state import StreamlitFlowState
+from streamlit_flow.layouts import TreeLayout, RadialLayout, LayeredLayout
+
 from flowco.page.ama import AskMeAnything, VisibleMessage
 from flowco.page.page import Page
 from flowco.ui import ui_help
@@ -16,6 +21,7 @@ from flowco.dataflow.phase import Phase
 from flowco.page.output import OutputType
 from flowco.ui.dialogs.node_creator import new_node_dialog
 from flowco.ui.dialogs.node_editor import edit_node
+from flowco.ui.flow_diagram import from_dfg
 from flowco.ui.ui_dialogs import settings
 from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_util import (
@@ -513,45 +519,65 @@ class FlowcoPage:
                 ).model_dump()
                 # log("mx_diagram size", len(json.dumps(diagram)))
 
-                result = mxgraph_component(
-                    key=st.session_state.nonce,
-                    diagram=diagram,
-                    editable=self.graph_is_editable(),
-                    selected_node=selected_node,
-                    zoom=st.session_state.zoom,
-                    dummy=uuid.uuid4().hex if force_update else None,
-                    refresh_phase=self.refresh_phase().value,
-                    clear=st.session_state.clear_graph,
-                )
+                dfg = st.session_state.ui_page.dfg()
+                if (
+                    "curr_state" not in st.session_state
+                    or st.session_state.curr_state["dfg"] != dfg
+                ):
+                    st.session_state.curr_state = {
+                        "dfg": dfg,
+                        "flow": from_dfg(dfg, self.node_parts_for_diagram()),
+                    }
 
-                if not st.session_state.force_update:
-                    original_dfg = st.session_state.ui_page.dfg()
-                    self.update_ui_page(
-                        dfg_update.mxDiagramUpdate.model_validate_json(
-                            result["diagram"]
-                        )
-                    )
-                    self.edit_new_nodes(original_dfg)
+                st.session_state.curr_state = {
+                    "dfg": dfg,
+                    "flow": streamlit_flow(
+                        "example_flow",
+                        st.session_state.curr_state["flow"],
+                        layout=LayeredLayout(direction="down"),
+                        fit_view=True,
+                        height=1400,
+                        enable_node_menu=True,
+                        enable_edge_menu=True,
+                        enable_pane_menu=True,
+                        get_edge_on_click=True,
+                        get_node_on_click=True,
+                        show_minimap=True,
+                        hide_watermark=True,
+                        allow_new_edges=True,
+                        min_zoom=0.1,
+                    ),
+                }
 
-                st.session_state.force_update = False
-                st.session_state.clear_graph = False
-                st.session_state.zoom = None
-                if result["command"] == "edit":
-                    if (
-                        st.session_state.last_sequence_number
-                        != result["sequence_number"]
-                    ):
-                        st.session_state.last_sequence_number = result[
-                            "sequence_number"
-                        ]
-                        self.prepare_node_for_edit(result["selected_node"])
-                elif result["command"] == "create":
-                    log("create", result)
-                else:
-                    if selected_node == "<<<<<":
-                        st.session_state.selected_node = None
-                    else:
-                        st.session_state.selected_node = result["selected_node"]
+                # result =
+                # if not st.session_state.force_update:
+                #     original_dfg = st.session_state.ui_page.dfg()
+                #     self.update_ui_page(
+                #         dfg_update.mxDiagramUpdate.model_validate_json(
+                #             result["diagram"]
+                #         )
+                #     )
+                #     self.edit_new_nodes(original_dfg)
+
+                # st.session_state.force_update = False
+                # st.session_state.clear_graph = False
+                # st.session_state.zoom = None
+                # if result["command"] == "edit":
+                #     if (
+                #         st.session_state.last_sequence_number
+                #         != result["sequence_number"]
+                #     ):
+                #         st.session_state.last_sequence_number = result[
+                #             "sequence_number"
+                #         ]
+                #         self.prepare_node_for_edit(result["selected_node"])
+                # elif result["command"] == "create":
+                #     log("create", result)
+                # else:
+                #     if selected_node == "<<<<<":
+                #         st.session_state.selected_node = None
+                #     else:
+                #         st.session_state.selected_node = result["selected_node"]
 
             if right:
                 with right:
