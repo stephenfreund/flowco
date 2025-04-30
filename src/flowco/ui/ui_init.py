@@ -5,6 +5,10 @@ from flowco.util.config import AbstractionLevel
 
 css = """
 
+.ace_editor {
+  line-height: 0.65rem !important;
+}
+
 .st-key-edit_node_commands .stColumn {
     width: fit-content !important;
     flex: unset !important;

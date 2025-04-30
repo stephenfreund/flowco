@@ -310,9 +310,9 @@ class NBPage(BuildPage):
                 code = "\n".join(node.code or [])
                 full = f"""\
 {node.label}
----
+---------------------------------------------------
 {req}
----
+---------------------------------------------------
 {code}
 """
                 x = code_editor(
