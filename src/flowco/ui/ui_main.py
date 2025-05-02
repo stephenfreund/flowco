@@ -43,6 +43,7 @@ def init_service():
         )
         log_timestamp()
 
+        st.session_state.user_email = "local"
         new_user = setup_flowco_files()
         if new_user and st.query_params.get("test", None) == "1":
             folder_id = os.environ["GOOGLE_DRIVE_TEST_FOLDER_ID"]
@@ -75,10 +76,6 @@ except Exception as e:
     print(traceback.format_exc())
     st.error(e)
     st.exception(e)
-    # try:
-    #     zip_bug(f"""{str(e)}\n{traceback.format_exc()}""")
-    # except Exception as e2:
-    #     print("Error zipping bug report", e2)
     print("Restarting Session Components...")
     config, args = parse_args()
     if os.path.isdir(args.page):

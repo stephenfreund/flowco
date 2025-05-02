@@ -1,15 +1,10 @@
-from typing import List, Optional
+from typing import List
 from flowco.dataflow.extended_type import schema_to_text
-import uuid
 
 from streamlit_flow import streamlit_flow
-from streamlit_flow.elements import StreamlitFlowNode, StreamlitFlowEdge
-from streamlit_flow.state import StreamlitFlowState
-from streamlit_flow.layouts import TreeLayout, RadialLayout, LayeredLayout
+from streamlit_flow.layouts import LayeredLayout
 
 from flowco.page.ama import AskMeAnything, VisibleMessage
-from flowco.page.page import Page
-from flowco.ui import ui_help
 from flowco.ui.authenticate import sign_out
 import numpy as np
 import pandas as pd
@@ -21,7 +16,7 @@ from flowco.dataflow.phase import Phase
 from flowco.page.output import OutputType
 from flowco.ui.dialogs.node_creator import new_node_dialog
 from flowco.ui.dialogs.node_editor import edit_node
-from flowco.ui.flow_diagram import from_dfg
+from flowco.ui.flow_diagram import FlowcoFlowState
 from flowco.ui.ui_dialogs import settings
 from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_util import (
@@ -31,7 +26,6 @@ from flowco.ui.ui_util import (
 )
 import streamlit as st
 
-from flowco.mxgraph_component.mxgraph_component import mxgraph_component
 
 from flowco import __main__
 from flowco.ui.ui_page import UIPage
@@ -519,35 +513,51 @@ class FlowcoPage:
                 ).model_dump()
                 # log("mx_diagram size", len(json.dumps(diagram)))
 
+                page = st.session_state.ui_page._page
                 dfg = st.session_state.ui_page.dfg()
                 if (
                     "curr_state" not in st.session_state
-                    or st.session_state.curr_state["dfg"] != dfg
+                    or st.session_state.curr_state is None
+                    or st.session_state.curr_state.dfg != dfg
                 ):
-                    st.session_state.curr_state = {
-                        "dfg": dfg,
-                        "flow": from_dfg(dfg, self.node_parts_for_diagram()),
-                    }
+                    print("NEW")
+                    st.session_state.curr_state = FlowcoFlowState(
+                        dfg, self.node_parts_for_diagram()
+                    )
+                    new = True
+                else:
+                    print("OLD")
+                    st.session_state.curr_state.serve_images()
+                    new = False
 
-                st.session_state.curr_state = {
-                    "dfg": dfg,
-                    "flow": streamlit_flow(
-                        "example_flow",
-                        st.session_state.curr_state["flow"],
-                        layout=LayeredLayout(direction="down"),
-                        fit_view=True,
-                        height=1400,
-                        enable_node_menu=True,
-                        enable_edge_menu=True,
-                        enable_pane_menu=True,
-                        get_edge_on_click=True,
-                        get_node_on_click=True,
-                        show_minimap=True,
-                        hide_watermark=True,
-                        allow_new_edges=True,
-                        min_zoom=0.1,
-                    ),
-                }
+                flowco_flow = st.session_state.curr_state
+                new_state = streamlit_flow(
+                    "example_flow",
+                    flowco_flow.state(),
+                    # layout=LayeredLayout(direction="down"),
+                    # fit_view=True,
+                    height=1400,
+                    enable_node_menu=True,
+                    enable_edge_menu=True,
+                    enable_pane_menu=True,
+                    get_edge_on_click=True,
+                    get_node_on_click=True,
+                    show_minimap=True,
+                    hide_watermark=True,
+                    allow_new_edges=True,
+                    min_zoom=0.1,
+                )
+                print(page.file_name, st.session_state.ui_page._page.file_name)
+                dfg = st.session_state.ui_page.dfg()
+                if (
+                    not new
+                    and new_state is not None
+                    and page == st.session_state.ui_page._page
+                ):
+                    flowco_flow.set_state(new_state)
+                    flowco_flow.update_dfg()
+                    if flowco_flow.dfg != dfg:
+                        st.session_state.ui_page.update_dfg(flowco_flow.dfg)
 
                 # result =
                 # if not st.session_state.force_update:
