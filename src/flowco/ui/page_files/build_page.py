@@ -132,28 +132,29 @@ class BuildPage(FlowcoPage):
                             unsafe_allow_html=True,
                         )
                     with cols[6]:
-                        if st.button(
+                        st.button(
                             label="",
                             icon=":material/network_node:",
                             help="Layout the diagram",
                             disabled=not self.graph_is_editable(),
-                        ):
-                            ui_page = st.session_state.ui_page
-                            with ui_page.page():
-                                dfg = ui_page.dfg()
-                                dfg = dfg.update(
-                                    nodes=[
-                                        x.update(
-                                            geometry=Geometry(
-                                                x=0, y=0, width=0, height=0
-                                            )
-                                        )
-                                        for x in dfg.nodes
-                                    ]
-                                )
-                                ui_page.update_dfg(dfg)
-                            st.session_state.force_update = True
-                            st.rerun()
+                            on_click=lambda: set_session_state("layout_graph", True),
+                        )
+                        # ui_page = st.session_state.ui_page
+                        # with ui_page.page():
+                        #     dfg = ui_page.dfg()
+                        #     dfg = dfg.update(
+                        #         nodes=[
+                        #             x.update(
+                        #                 geometry=Geometry(
+                        #                     x=0, y=0, width=0, height=0
+                        #                 )
+                        #             )
+                        #             for x in dfg.nodes
+                        #         ]
+                        #     )
+                        #     ui_page.update_dfg(dfg)
+                        # st.session_state.force_update = True
+                        # st.session_state.layout_graph = True
                     with cols[7]:
                         if st.button(
                             label="",

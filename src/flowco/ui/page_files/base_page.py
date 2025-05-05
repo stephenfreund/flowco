@@ -1,8 +1,9 @@
+from streamlit_flow.state import StreamlitFlowState
 from typing import List
 from flowco.dataflow.extended_type import schema_to_text
 
 from streamlit_flow import streamlit_flow
-from streamlit_flow.layouts import LayeredLayout
+from streamlit_flow.layouts import LayeredLayout, ManualLayout
 
 from flowco.page.ama import AskMeAnything, VisibleMessage
 from flowco.ui.authenticate import sign_out
@@ -16,8 +17,8 @@ from flowco.dataflow.phase import Phase
 from flowco.page.output import OutputType
 from flowco.ui.dialogs.node_creator import new_node_dialog
 from flowco.ui.dialogs.node_editor import edit_node
-from flowco.ui.flow_diagram import FlowcoFlowState
-from flowco.ui.ui_dialogs import settings
+from flowco.ui.flow_diagram import diff_state, update_dfg, update_state
+from flowco.ui.ui_dialogs import inspect_node, settings
 from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_util import (
     show_code,
@@ -485,113 +486,71 @@ class FlowcoPage:
 
         self.init()
 
-        # Could be <<<<<< or node id...
-        selected_node = st.session_state.selected_node
+        if config().x_no_right_panel:
+            left, right = st.container(), None
+        else:
+            left, right = self.main_columns()
 
-        if st.session_state.ui_page is not None:
+        with left:
 
-            if config().x_no_right_panel:
-                left, right = st.container(), None
-            else:
-                left, right = self.main_columns()
+            force_update = st.session_state.force_update
+            st.session_state.force_update = False
 
-            with left:
+            curr_page, curr_dfg, curr_state = st.session_state.flow_state
+            ui_page = st.session_state.ui_page
+            dfg = ui_page.dfg()
 
-                force_update = st.session_state.force_update
+            if curr_page != ui_page._page or curr_dfg != dfg or force_update:
+                curr_state = StreamlitFlowState([], [])
+                st.session_state.flow_state = (ui_page._page, dfg, curr_state)
 
-                if force_update:
-                    st.session_state.image_cache.clear()
+            changed = update_state(
+                curr_state,
+                dfg,
+                self.node_parts_for_diagram(),
+                selected_id=curr_state.selected_id,
+            )
+            new_state, command = streamlit_flow(
+                "example_flow",
+                curr_state,
+                layout=ManualLayout(),
+                fit_view=False,
+                height=1000,
+                enable_node_menu=True,
+                enable_edge_menu=True,
+                enable_pane_menu=True,
+                get_edge_on_click=True,
+                get_node_on_click=True,
+                show_minimap=True,
+                hide_watermark=True,
+                allow_new_edges=True,
+                min_zoom=0.1,
+            )
+            st.session_state.flow_state = (ui_page._page, dfg, new_state)
+            # selected_nodes = [node.id for node in new_state.nodes if node.selected]
+            # new_state.selected_id = selected_nodes[0] if selected_nodes else None
+            # st.session_state.selected_node = new_state.selected_id
 
-                cache = (
-                    st.session_state.image_cache
-                    if not config().x_no_image_cache
-                    else None
-                )
+            curr_page, curr_dfg, curr_state = st.session_state.flow_state
 
-                diagram = st.session_state.ui_page.dfg_as_mx_diagram(
-                    cache, self.node_parts_for_diagram()
-                ).model_dump()
-                # log("mx_diagram size", len(json.dumps(diagram)))
+            ui_page = st.session_state.ui_page
+            dfg = ui_page.dfg()
 
-                page = st.session_state.ui_page._page
-                dfg = st.session_state.ui_page.dfg()
-                if (
-                    "curr_state" not in st.session_state
-                    or st.session_state.curr_state is None
-                    or st.session_state.curr_state.dfg != dfg
-                ):
-                    print("NEW")
-                    st.session_state.curr_state = FlowcoFlowState(
-                        dfg, self.node_parts_for_diagram()
-                    )
-                    new = True
-                else:
-                    print("OLD")
-                    st.session_state.curr_state.serve_images()
-                    new = False
+            new_dfg = update_dfg(new_state, dfg)
+            if new_dfg != dfg:
+                ui_page.update_dfg(dfg)
 
-                flowco_flow = st.session_state.curr_state
-                new_state = streamlit_flow(
-                    "example_flow",
-                    flowco_flow.state(),
-                    # layout=LayeredLayout(direction="down"),
-                    # fit_view=True,
-                    height=1400,
-                    enable_node_menu=True,
-                    enable_edge_menu=True,
-                    enable_pane_menu=True,
-                    get_edge_on_click=True,
-                    get_node_on_click=True,
-                    show_minimap=True,
-                    hide_watermark=True,
-                    allow_new_edges=True,
-                    min_zoom=0.1,
-                )
-                print(page.file_name, st.session_state.ui_page._page.file_name)
-                dfg = st.session_state.ui_page.dfg()
-                if (
-                    not new
-                    and new_state is not None
-                    and page == st.session_state.ui_page._page
-                ):
-                    flowco_flow.set_state(new_state)
-                    flowco_flow.update_dfg()
-                    if flowco_flow.dfg != dfg:
-                        st.session_state.ui_page.update_dfg(flowco_flow.dfg)
+            if command:
+                old_dfg = dfg
+                dfg = self.do_command(dfg, command["command"], command["id"])
+                ui_page.update_dfg(dfg)
+                if dfg != old_dfg:
+                    print("BORP")
+                    st.rerun()
 
-                # result =
-                # if not st.session_state.force_update:
-                #     original_dfg = st.session_state.ui_page.dfg()
-                #     self.update_ui_page(
-                #         dfg_update.mxDiagramUpdate.model_validate_json(
-                #             result["diagram"]
-                #         )
-                #     )
-                #     self.edit_new_nodes(original_dfg)
-
-                # st.session_state.force_update = False
-                # st.session_state.clear_graph = False
-                # st.session_state.zoom = None
-                # if result["command"] == "edit":
-                #     if (
-                #         st.session_state.last_sequence_number
-                #         != result["sequence_number"]
-                #     ):
-                #         st.session_state.last_sequence_number = result[
-                #             "sequence_number"
-                #         ]
-                #         self.prepare_node_for_edit(result["selected_node"])
-                # elif result["command"] == "create":
-                #     log("create", result)
-                # else:
-                #     if selected_node == "<<<<<":
-                #         st.session_state.selected_node = None
-                #     else:
-                #         st.session_state.selected_node = result["selected_node"]
-
-            if right:
-                with right:
-                    self.right_panel()
+        if right:
+            with right:
+                self.right_panel()
 
         with st.sidebar:
             self.sidebar()
@@ -599,3 +558,23 @@ class FlowcoPage:
             self.bottom_bar()
 
         self.fini()
+        print("borp2")
+        # st.session_state.flow_state = (ui_page._page, dfg, new_state)
+
+    def do_command(self, dfg, command, node_id):
+        node = dfg.get_node(node_id)
+        if command == "edit":
+            edit_node(node.id)
+        elif command == "inspect":
+            inspect_node(node)
+        elif command == "lock":
+            dfg = dfg.with_node(node.update(is_locked=True, phase=Phase.clean))
+        elif command == "unlock":
+            dfg = dfg.with_node(node.update(is_locked=False, phase=Phase.clean))
+        elif command == "show":
+            dfg = dfg.with_node(node.update(force_show_output=True))
+        elif command == "hide":
+            dfg = dfg.with_node(node.update(force_show_output=False))
+        else:
+            error("Unknown command", command)
+        return dfg

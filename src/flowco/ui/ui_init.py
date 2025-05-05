@@ -17,7 +17,7 @@ css = """
 
 
 .stMainBlockContainer {
-    padding: 0rem;
+    padding: 54px 0rem 0rem 0rem;
     max-width: unset !important;
 }
 .stSidebar {
@@ -128,7 +128,7 @@ header {
 }
 
 .stMain {
-    padding-top: 0rem;
+/*    padding-top: 0rem; */
     padding-left: 0rem;
     padding-right: 0rem;
     padding-bottom: 0rem;
@@ -435,6 +435,8 @@ def st_init(page_config=True):
 
         st.session_state.pending_ama = None
 
+        st.session_state.flow_state = (None, None, None)
+        st.session_state.layout_graph = False
         st.session_state.force_update = False
         st.session_state.clear_graph = False
         st.session_state.zoom = None

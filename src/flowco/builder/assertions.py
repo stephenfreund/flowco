@@ -249,7 +249,8 @@ def _repair_assertions(
     pass_config: PassConfig, graph: DataFlowGraph, node: Node, max_retries: int
 ) -> Node:
     assistant = flowco_assistant(
-        f"repair-assertions-{node.id}", prompt_key="repair-assertions")
+        f"repair-assertions-{node.id}", prompt_key="repair-node-assertions"
+    )
     retries = 0
     original = None
 

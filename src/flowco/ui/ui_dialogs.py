@@ -1,4 +1,6 @@
 import os
+
+import numpy as np
 from flowco.assistant.flowco_assistant import test_anthropic_key, test_openai_key
 from flowco.assistant.flowco_keys import get_api_key_status, set_api_key
 from flowco.llm import models
@@ -6,6 +8,7 @@ from typing import Callable
 import pandas as pd
 import streamlit as st
 from flowco.dataflow.dfg import Node
+from flowco.page.output import OutputType
 from flowco.session.session import session
 from flowco.ui.authenticate import cache
 from flowco.ui.ui_page import UIPage
@@ -159,5 +162,59 @@ def show_file(self, file_name: str):
 def confirm(message: str, on_confirm: Callable[[], None]):
     st.write(message)
     if st.button("OK"):
+        print("Boopppp")
         on_confirm()
         st.rerun()
+    print("Boop")
+
+
+def inspect_node(node: Node):
+    @st.dialog(node.pill, width="large")
+    def show_node(node: Node):
+        if node is not None and node.result is not None:
+            if (
+                node.result.result is not None
+                and node.function_return_type is not None
+                and not node.function_return_type.is_None_type()
+            ):
+                value = node.result.result.to_value()
+                if type(value) in [np.ndarray, list, pd.Series]:
+                    value = pd.DataFrame(value)
+                if type(value) == pd.DataFrame:
+                    st.dataframe(value, hide_index=True, height=400)
+                elif type(value) == dict:
+                    for k, v in list(value.items())[0:10]:
+                        st.write(f"**{k}**:")
+                        if type(v) in [np.ndarray, list, pd.Series]:
+                            v = pd.DataFrame(v)
+                        if type(v) == pd.DataFrame:
+                            st.dataframe(v, hide_index=True, height=200)
+                        elif type(v) == dict:
+                            st.json(v)
+                        elif type(v) == str:
+                            if v.startswith("{" or v.startswith("[")):
+                                st.json(v)
+                            else:
+                                st.code(v)
+                        else:
+                            st.code(v)
+                    if len(value) > 10:
+                        st.write(f"And {len(value)-10} more...")
+                elif type(value) == str:
+                    if value.startswith("{" or value.startswith("[")):
+                        st.json(value)
+                    else:
+                        st.code(value)
+                else:
+                    st.code(value)
+            elif node.result.output is not None:
+                output = node.result.output
+                if output is not None:
+                    if output.output_type == OutputType.text:
+                        st.text(f"```{output.data}\n```")
+                    elif output.output_type == OutputType.image:
+                        base64encoded = output.data.split(",", maxsplit=1)
+                        image_data = base64encoded[0] + ";base64," + base64encoded[1]
+                        st.image(image_data)
+
+    show_node(node)
