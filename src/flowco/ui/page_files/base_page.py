@@ -1,3 +1,5 @@
+from uuid import uuid4
+from flowco.util.text import pill_to_function_name, pill_to_result_var_name
 from streamlit_flow.state import StreamlitFlowState
 from typing import List
 from flowco.dataflow.extended_type import schema_to_text
@@ -12,7 +14,7 @@ import pandas as pd
 
 
 from flowco.dataflow import dfg_update
-from flowco.dataflow.dfg import Node, NodeKind, NodeMessage
+from flowco.dataflow.dfg import Geometry, Node, NodeKind, NodeMessage
 from flowco.dataflow.phase import Phase
 from flowco.page.output import OutputType
 from flowco.ui.dialogs.node_creator import new_node_dialog
@@ -55,64 +57,85 @@ class FlowcoPage:
     def second_bar(self):
 
         def fix():
-            if "al" not in st.session_state or st.session_state.al is None:
-                st.session_state.abstraction_level = "Requirements"
+            if st.session_state.show_code:
+                st.session_state.abstraction_level = AbstractionLevel.code
             else:
-                st.session_state.abstraction_level = st.session_state.al
-                st.session_state.force_update = True
+                st.session_state.abstraction_level = AbstractionLevel.spec
+            st.session_state.force_update = True
 
         with st.container():
-            with st.container(key="zoom_button_bar"):
-                c1, spacer, c2, c3, c4 = st.columns(5, vertical_alignment="bottom")
-                with c1.container(key="controls"):
-                    st.session_state.abstraction_level = st.segmented_control(
-                        "Abstraction Level",
-                        (
-                            AbstractionLevel
-                            if config().x_algorithm_phase
-                            else [AbstractionLevel.spec, AbstractionLevel.code]
-                        ),
-                        key="al",
-                        default=st.session_state.abstraction_level,
-                        on_change=fix,
-                        disabled=not self.graph_is_editable(),
-                    )
+            st.toggle(
+                "Show Code",
+                value=show_code(),
+                key="show_code",
+                on_change=fix,
+                disabled=not self.graph_is_editable(),
+            )
 
-                def zoom(cmd):
-                    log("Zoom", cmd)
-                    st.session_state.zoom = cmd
-                    st.session_state.force_update = True
+            # st.session_state.abstraction_level = st.segmented_control(
+            #     "Abstraction Level",
+            #     (
+            #         AbstractionLevel
+            #         if config().x_algorithm_phase
+            #         else [AbstractionLevel.spec, AbstractionLevel.code]
+            #     ),
+            #     key="al",
+            #     default=st.session_state.abstraction_level,
+            #     on_change=fix,
+            #     disabled=not self.graph_is_editable(),
+            # )
 
-                spacer.write(
-                    "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
-                    unsafe_allow_html=True,
-                )
+        # with st.container(key="zoom_button_bar"):
+        #     c1, spacer, c2, c3, c4 = st.columns(5, vertical_alignment="bottom")
+        #     with c1.container(key="controls"):
+        #         st.session_state.abstraction_level = st.segmented_control(
+        #             "Abstraction Level",
+        #             (
+        #                 AbstractionLevel
+        #                 if config().x_algorithm_phase
+        #                 else [AbstractionLevel.spec, AbstractionLevel.code]
+        #             ),
+        #             key="al",
+        #             default=st.session_state.abstraction_level,
+        #             on_change=fix,
+        #             disabled=not self.graph_is_editable(),
+        #         )
 
-                c2.button(
-                    label="",
-                    icon=":material/zoom_in:",
-                    key="zoom_in",
-                    disabled=not self.graph_is_editable(),
-                    on_click=lambda cmd: zoom(cmd),
-                    args=("in",),
-                    help="Zoom in",
-                )
-                c3.button(
-                    label="",
-                    icon=":material/zoom_out:",
-                    disabled=not self.graph_is_editable(),
-                    on_click=lambda cmd: zoom(cmd),
-                    args=("out",),
-                    help="Zoom out",
-                )
-                c4.button(
-                    label="",
-                    icon=":material/zoom_out_map:",
-                    disabled=not self.graph_is_editable(),
-                    on_click=lambda cmd: zoom(cmd),
-                    args=("reset",),
-                    help="Reset zoom",
-                )
+        #     def zoom(cmd):
+        #         log("Zoom", cmd)
+        #         st.session_state.zoom = cmd
+        #         st.session_state.force_update = True
+
+        #     spacer.write(
+        #         "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
+        #         unsafe_allow_html=True,
+        #     )
+
+        #     c2.button(
+        #         label="",
+        #         icon=":material/zoom_in:",
+        #         key="zoom_in",
+        #         disabled=not self.graph_is_editable(),
+        #         on_click=lambda cmd: zoom(cmd),
+        #         args=("in",),
+        #         help="Zoom in",
+        #     )
+        #     c3.button(
+        #         label="",
+        #         icon=":material/zoom_out:",
+        #         disabled=not self.graph_is_editable(),
+        #         on_click=lambda cmd: zoom(cmd),
+        #         args=("out",),
+        #         help="Zoom out",
+        #     )
+        #     c4.button(
+        #         label="",
+        #         icon=":material/zoom_out_map:",
+        #         disabled=not self.graph_is_editable(),
+        #         on_click=lambda cmd: zoom(cmd),
+        #         args=("reset",),
+        #         help="Reset zoom",
+        #     )
 
     def right_panel(self):
 
@@ -451,6 +474,9 @@ class FlowcoPage:
     def prepare_node_for_edit(self, node_id: str):
         edit_node(node_id)
 
+    def run(self, node_id: str):
+        pass
+
     def refresh_phase(self) -> Phase:
         level = st_abstraction_level()
         if level == "Requirements":
@@ -492,24 +518,17 @@ class FlowcoPage:
             left, right = self.main_columns()
 
         with left:
-
-            force_update = st.session_state.force_update
-            st.session_state.force_update = False
-
-            curr_page, curr_dfg, curr_state = st.session_state.flow_state
+            curr_state = st.session_state.flow_state
             ui_page = st.session_state.ui_page
             dfg = ui_page.dfg()
 
-            if curr_page != ui_page._page or curr_dfg != dfg or force_update:
-                curr_state = StreamlitFlowState([], [])
-                st.session_state.flow_state = (ui_page._page, dfg, curr_state)
-
-            changed = update_state(
+            change = update_state(
                 curr_state,
                 dfg,
                 self.node_parts_for_diagram(),
                 selected_id=curr_state.selected_id,
             )
+
             new_state, command = streamlit_flow(
                 "example_flow",
                 curr_state,
@@ -526,27 +545,29 @@ class FlowcoPage:
                 allow_new_edges=True,
                 min_zoom=0.1,
             )
-            st.session_state.flow_state = (ui_page._page, dfg, new_state)
-            # selected_nodes = [node.id for node in new_state.nodes if node.selected]
-            # new_state.selected_id = selected_nodes[0] if selected_nodes else None
-            # st.session_state.selected_node = new_state.selected_id
-
-            curr_page, curr_dfg, curr_state = st.session_state.flow_state
-
             ui_page = st.session_state.ui_page
             dfg = ui_page.dfg()
 
-            new_dfg = update_dfg(new_state, dfg)
-            if new_dfg != dfg:
-                ui_page.update_dfg(dfg)
+            if st.session_state.last_state_update != new_state.timestamp:
 
-            if command:
-                old_dfg = dfg
-                dfg = self.do_command(dfg, command["command"], command["id"])
-                ui_page.update_dfg(dfg)
-                if dfg != old_dfg:
-                    print("BORP")
-                    st.rerun()
+                selected_nodes = [node.id for node in new_state.nodes if node.selected]
+                new_state.selected_id = selected_nodes[0] if selected_nodes else None
+                st.session_state.selected_node = new_state.selected_id
+
+                st.session_state.flow_state = new_state
+                st.session_state.last_state_update = new_state.timestamp
+
+                if diff_state(curr_state, new_state):
+                    new_dfg = update_dfg(new_state, dfg)
+                    ui_page.update_dfg(new_dfg)
+                    if not command and dfg != new_dfg:
+                        st.session_state.force_update = True
+                        st.rerun()
+
+                if command:
+                    st.session_state.last_state_update = new_state.timestamp
+                    old_dfg = dfg
+                    self.do_command(dfg, command)
 
         if right:
             with right:
@@ -558,23 +579,52 @@ class FlowcoPage:
             self.bottom_bar()
 
         self.fini()
-        print("borp2")
-        # st.session_state.flow_state = (ui_page._page, dfg, new_state)
 
-    def do_command(self, dfg, command, node_id):
-        node = dfg.get_node(node_id)
-        if command == "edit":
-            edit_node(node.id)
-        elif command == "inspect":
-            inspect_node(node)
-        elif command == "lock":
-            dfg = dfg.with_node(node.update(is_locked=True, phase=Phase.clean))
-        elif command == "unlock":
-            dfg = dfg.with_node(node.update(is_locked=False, phase=Phase.clean))
-        elif command == "show":
-            dfg = dfg.with_node(node.update(force_show_output=True))
-        elif command == "hide":
-            dfg = dfg.with_node(node.update(force_show_output=False))
+    def do_command(self, dfg, command_dict):
+        original_dfg = dfg
+        command = command_dict["command"]
+        count = 0
+        while f"Step-{count}" in dfg.node_ids():
+            count += 1
+        pill = f"Step-{count}"
+        if command == "new_node":
+            new_node = Node(
+                id=f"Step-{count}",
+                kind=NodeKind.compute,
+                pill=pill,
+                label="",
+                geometry=Geometry(
+                    x=command_dict["position"]["x"],
+                    y=command_dict["position"]["y"],
+                    width=160,
+                    height=80,
+                ),
+                predecessors=[],
+                function_name=pill_to_function_name(pill),
+                function_result_var=pill_to_result_var_name(pill),
+            )
+            dfg = dfg.with_new_node(new_node)
+            st.session_state.ui_page.update_dfg(dfg)
+            new_node_dialog(new_node)
         else:
-            error("Unknown command", command)
-        return dfg
+            node_id = command_dict["id"]
+            node = dfg.get_node(node_id)
+            if command == "edit":
+                self.prepare_node_for_edit(node.id)
+            elif command == "run":
+                self.run(node.id)
+            elif command == "inspect":
+                inspect_node(node)
+            elif command == "lock":
+                dfg = dfg.with_node(node.update(is_locked=True, phase=Phase.clean))
+            elif command == "unlock":
+                dfg = dfg.with_node(node.update(is_locked=False, phase=Phase.clean))
+            elif command == "show":
+                dfg = dfg.with_node(node.update(force_show_output=True))
+            elif command == "hide":
+                dfg = dfg.with_node(node.update(force_show_output=False))
+            else:
+                error("Unknown command", command)
+            st.session_state.ui_page.update_dfg(dfg)
+            if original_dfg != dfg:
+                st.rerun()

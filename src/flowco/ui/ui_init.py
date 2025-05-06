@@ -1,3 +1,4 @@
+from streamlit_flow.state import StreamlitFlowState
 import streamlit as st
 
 from flowco.ui.mx_diagram import UIImageCache
@@ -435,7 +436,9 @@ def st_init(page_config=True):
 
         st.session_state.pending_ama = None
 
-        st.session_state.flow_state = (None, None, None)
+        st.session_state.flow_state = StreamlitFlowState([], [], None)
+        st.session_state.last_state_update = None
+
         st.session_state.layout_graph = False
         st.session_state.force_update = False
         st.session_state.clear_graph = False
