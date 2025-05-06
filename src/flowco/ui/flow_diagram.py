@@ -170,7 +170,7 @@ def update_state(
     new_state_output_nodes = []
     new_state_output_edges = []
     for node in dfg.nodes:
-        if node.result is not None:
+        if node.result is not None and node.force_show_output:
             state_output_node = next(
                 (n for n in state.nodes if n.id == "output-" + node.id), None
             )
