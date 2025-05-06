@@ -188,6 +188,7 @@ def update_state(
                     StreamlitFlowEdge(
                         id="output-edge-" + node.id,
                         source=node.id,
+                        source_handle="output",
                         target="output-" + node.id,
                         marker_end={
                             "type": "arrowclosed",
@@ -200,6 +201,7 @@ def update_state(
                             "strokeWidth": 1.5,
                             "strokeDasharray": "5,5",
                         },
+                        type="smoothstep",
                     )
                 )
 
@@ -466,6 +468,7 @@ def flow_output(node: Node) -> Tuple[StreamlitFlowNode, StreamlitFlowEdge] | Non
                 id="output-edge-" + node.id,
                 source=node.id,
                 target=flow_node.id,
+                source_handle="output",
                 marker_end={
                     "type": "arrowclosed",
                     "color": "#660000",
@@ -477,6 +480,7 @@ def flow_output(node: Node) -> Tuple[StreamlitFlowNode, StreamlitFlowEdge] | Non
                     "strokeWidth": 1.5,
                     "strokeDasharray": "5,5",
                 },
+                type="smoothstep",
             )
             return flow_node, flow_edge
 
