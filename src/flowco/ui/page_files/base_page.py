@@ -606,6 +606,13 @@ class FlowcoPage:
             dfg = dfg.with_new_node(new_node)
             st.session_state.ui_page.update_dfg(dfg)
             new_node_dialog(new_node)
+        elif command == "sketch":
+            dataURL = command_dict["dataUrl"]
+            ama: AskMeAnything = st.session_state.ama
+            ama.assistant.add_text("user", "Here is a marked up version of the diagram")
+            ama.assistant.add_image("user", dataURL)
+            st.session_state.pending_ama = "Change the diagram to match this sketch"
+
         else:
             node_id = command_dict["id"]
             node = dfg.get_node(node_id)
