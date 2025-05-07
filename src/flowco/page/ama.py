@@ -326,7 +326,7 @@ class AskMeAnything:
                 geometry=geometry,
                 output_geometry=output_geometry,
                 is_locked=False,
-                force_show_output=False,
+                force_show_output=True,
             )
         }
         edge_updates = {

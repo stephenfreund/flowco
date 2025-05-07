@@ -281,11 +281,11 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
 
 }
 
-.st-key-ama_input,
-.st-key-ama_input_node {
-    width: calc(200% - 48px);
-    min-width: 400px;
-} 
+# .st-key-ama_input,
+# .st-key-ama_input_node {
+#     width: calc(200% - 48px);
+#     min-width: 400px;
+# } 
 
 .st-key-voice_input *,
 .st-key-voice_input_node * {
