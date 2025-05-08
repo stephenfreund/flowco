@@ -590,6 +590,8 @@ class AskMeAnything:
         )
 
         dfg = update_dataflow_graph(dfg, dfg_update)
+        self.page.update_dfg(dfg)
+
         return ToolCallResult(
             user_message=f"**:blue[I removed node {node.pill}]**", content=None
         )
