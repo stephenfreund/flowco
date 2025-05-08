@@ -551,6 +551,8 @@ class AskMeAnything:
                 user_message=f"**:red[Node {id} does not exist]**", content=None
             )
 
+        dfg = dfg.with_node(node).reduce_phases_to_below_target(node.id, Phase.clean)
+
         node = dfg[id]
 
         dfg = dfg.with_node(node).reduce_phases_to_below_target(node.id, Phase.clean)
