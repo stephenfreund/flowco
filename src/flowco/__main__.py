@@ -1,5 +1,6 @@
 import subprocess
 import os
+import sys
 
 from flowco.util.errors import FlowcoError
 
@@ -30,8 +31,13 @@ def main():
 
     args = command_line().parse_args()
 
+    if not os.path.exists(args.path):
+        print(f"Error: Path `{args.path} does not exist")
+        sys.exit(1)
+
     if os.environ.get("OPENAI_API_KEY", None) is None:
-        raise FlowcoError("You must set the OPENAI_API_KEY environment variable")
+        print("Error: You must set the OPENAI_API_KEY environment variable")
+        sys.exit(1)
 
     ui_path = os.path.join(os.path.dirname(__file__), "ui")
 

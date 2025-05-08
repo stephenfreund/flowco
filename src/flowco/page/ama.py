@@ -328,7 +328,7 @@ class AskMeAnything:
                 geometry=geometry,
                 output_geometry=output_geometry,
                 is_locked=False,
-                force_show_output=False,
+                force_show_output=True,
             )
         }
         edge_updates = {
@@ -553,6 +553,8 @@ class AskMeAnything:
                 user_message=f"**:red[Node {id} does not exist]**", content=None
             )
 
+        dfg = dfg.with_node(node).reduce_phases_to_below_target(node.id, Phase.clean)
+
         node = dfg[id]
         dfg_update = mxDiagramUpdate(
             version=dfg.version,
@@ -588,7 +590,6 @@ class AskMeAnything:
         )
 
         dfg = update_dataflow_graph(dfg, dfg_update)
-        dfg = dfg.with_node(node).reduce_phases_to_below_target(node.id, Phase.clean)
         return ToolCallResult(
             user_message=f"**:blue[I removed node {node.pill}]**", content=None
         )
