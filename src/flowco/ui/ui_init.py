@@ -6,6 +6,27 @@ from flowco.util.config import AbstractionLevel
 
 css = """
 
+
+
+.st-key-right-panel img {
+/*    max-width: 200px !important; */
+}
+
+.st-key-right_panel_width {
+    padding-right: 0rem !important;
+    padding-left: 0rem !important;
+}
+.st-key-right_panel_width * {
+    line-height: 0.5;
+    min-height: 0rem;
+    padding: 0.1rem;
+    border:none;
+}
+
+.st-key-right-panel-size-button .stButton * {
+    font-size: 16px !important;
+}
+
 .st-key-edit_node_commands .stColumn {
     width: fit-content !important;
     flex: unset !important;
@@ -329,10 +350,10 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
 
 .st-key-right-panel {
     height: calc(100vh - 75px) !important;
-    margin-top: 2.25rem;
     padding: 0rem;
     padding-top: 0.5rem !important;
     background-color: #F0F2F6 !important;
+    overflow-y: scroll !important;
 }
 
 
@@ -352,21 +373,6 @@ div:has(> div > .st-key-right-panel) {
 }
 
 
-.st-key-right-panel img {
-/*    max-width: 200px !important; */
-}
-
-.st-key-right_panel_width {
-    padding-right: 0rem !important;
-    padding-left: 0rem !important;
-}
-.st-key-right_panel_width * {
-    line-height: 0.5;
-    min-height: 0rem;
-    padding: 0.1rem;
-    border:none;
-}
-
 .st-key-node_header .stColumn {
     width: fit-content !important;
     flex: unset !important;
@@ -376,9 +382,6 @@ div:has(> div > .st-key-right-panel) {
     font-size: 12px !important;
 }
 
-.st-key-right-panel-size-button .stButton * {
-    font-size: 16px !important;
-}
 
 .st-key-lock button[data-testid="stBaseButton-segmented_control"],
 .st-key-lock button[data-testid="stBaseButton-segmented_controlActive"] {
