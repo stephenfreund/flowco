@@ -137,12 +137,14 @@ def oauth_authenticate():
             st.session_state.auth_state = "initial"
 
         environment = st.secrets["FLOWCO_ENVIRONMENT"]
+        print("Environment:", environment)
         google_client_config = st.secrets["google_client_secrets"]
 
         if environment == "production":
             redirect_uri = google_client_config["redirect_uris"][1]  # Production URI
         else:
             redirect_uri = google_client_config["redirect_uris"][0]  # Localhost URI
+        print("Redirect URI:", redirect_uri)
 
         client_config = {
             "web": google_client_config,
