@@ -50,7 +50,7 @@ COPY .streamlit/secrets.toml /app/.streamlit/secrets.toml
 COPY .streamlit/config.toml /app/.streamlit/config.toml
 
 # Modify the environment setting in secrets.toml
-RUN sed -i 's/FLOWCO_ENVIRONMENT = "local"/FLOWCO_ENVIRONMENT = "production"/' /app/.streamlit/secrets.toml
+RUN sed -i 's/FLOWCO_ENVIRONMENT="local"/FLOWCO_ENVIRONMENT="production"/' /app/.streamlit/secrets.toml
 
 # Expose the port Streamlit runs on
 EXPOSE 80
