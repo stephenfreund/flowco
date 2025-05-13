@@ -544,6 +544,7 @@ class FlowcoPage:
                 hide_watermark=True,
                 allow_new_edges=True,
                 min_zoom=0.1,
+                disabled=not self.graph_is_editable()
             )
             ui_page = st.session_state.ui_page
             dfg = ui_page.dfg()

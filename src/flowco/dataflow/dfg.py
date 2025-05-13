@@ -1396,3 +1396,10 @@ def dataflow_graph_to_nb(dfg: DataFlowGraph) -> str:
         )
 
     return nbformat.writes(nb)
+
+
+if __name__ == "__main__":
+    import json
+    schema = DataFlowGraph.model_json_schema() 
+    with open("dfg_schema.json", "w") as f: 
+        f.write(json.dumps(schema, indent=2))        
