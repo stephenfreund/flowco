@@ -523,12 +523,35 @@ class FlowcoPage:
             ui_page = st.session_state.ui_page
             dfg = ui_page.dfg()
 
+            # if st.session_state.layout_graph:
+            #     ui_page = st.session_state.ui_page
+            #     with ui_page.page():
+            #         log("Layout the diagram")
+            #         dfg = ui_page.dfg()
+            #         dfg = dfg.update(
+            #             nodes=[
+            #                 x.update(
+            #                     geometry=Geometry(
+            #                         x=0,
+            #                         y=0,
+            #                         width=x.geometry.width,
+            #                         height=x.geometry.height,
+            #                     )
+            #                 )
+            #                 for x in dfg.nodes
+            #             ]
+            #         )
+            #         ui_page.update_dfg(dfg)
+
             change = update_state(
                 curr_state,
                 dfg,
                 self.node_parts_for_diagram(),
                 selected_id=curr_state.selected_id,
+                reset_pos=st.session_state.layout_graph,
             )
+            st.session_state.layout_graph = False
+            print(curr_state)
 
             new_state, command = streamlit_flow(
                 "example_flow",
