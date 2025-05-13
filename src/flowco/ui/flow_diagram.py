@@ -64,14 +64,36 @@ _phase_colors = [
 ]
 
 
-def update_state_node(node: Node, state_node: StreamlitFlowNode, node_parts: List[str]):
+def update_state_node(
+    node: Node,
+    state_node: StreamlitFlowNode,
+    node_parts: List[str],
+    pos: Tuple[float, float] = (0, 0),
+):
+
+    print(pos)
+
     color = _phase_colors[node.phase.value]
     md = node.to_markdown(node_parts)
     html = md_to_html(md)
 
+    messages = [x for x in node.messages if x.phase <= Phase.run_checked]
+    if "assertions" in node_parts:
+        messages += [
+            x
+            for x in node.messages
+            if x.phase in [Phase.assertions_code, Phase.assertions_checked]
+        ]
+    if "unit_tests" in node_parts:
+        messages += [
+            x
+            for x in node.messages
+            if x.phase in [Phase.unit_tests_code, Phase.unit_tests_checked]
+        ]
+
     # Update the state node with the current node properties
     state_node.node_type = _types.get(node.kind, "default")
-    state_node.pos = (node.geometry.x, node.geometry.y)
+    state_node.position = {"x": pos[0], "y": pos[1]}
     state_node.width = node.geometry.width
     state_node.height = node.geometry.height
 
@@ -83,6 +105,7 @@ def update_state_node(node: Node, state_node: StreamlitFlowNode, node_parts: Lis
         "blinkText": node.build_status,
         "html": html,
         "editable": phase_for_last_shown_part() <= node.phase,
+        "has_messages": len(messages) > 0,
     }
 
     state_node.style = _styles.get(node.kind, {}) | {
@@ -92,7 +115,9 @@ def update_state_node(node: Node, state_node: StreamlitFlowNode, node_parts: Lis
     }
 
 
-def new_state_node(node: Node, node_parts) -> StreamlitFlowNode:
+def new_state_node(
+    node: Node, node_parts, pos: Tuple[float, float] = (0, 0)
+) -> StreamlitFlowNode:
     color = _phase_colors[node.phase.value]
     md = node.to_markdown(node_parts)
     html = md_to_html(md)
@@ -100,7 +125,7 @@ def new_state_node(node: Node, node_parts) -> StreamlitFlowNode:
     return StreamlitFlowNode(
         id=node.id,
         node_type=_types.get(node.kind, "default"),
-        pos=(node.geometry.x, node.geometry.y),
+        pos=pos,
         width=node.geometry.width,
         height=node.geometry.height,
         selectable=True,
@@ -115,6 +140,7 @@ def new_state_node(node: Node, node_parts) -> StreamlitFlowNode:
             "blinkText": node.build_status,
             "html": html,
             "editable": phase_for_last_shown_part() <= node.phase,
+            "has_messages": False,
         },
         style=(
             _styles.get(node.kind, {})
@@ -132,16 +158,21 @@ def update_state(
     dfg: DataFlowGraph,
     node_parts: List[str],
     selected_id: str | None = None,
+    reset_pos: bool = False,
 ):
 
     new_state_nodes = []
     for node in dfg.nodes:
         state_node = next((n for n in state.nodes if n.id == node.id), None)
+        if not reset_pos:
+            pos = (node.geometry.x, node.geometry.y)
+        else:
+            pos = (0, 0)
         if state_node is not None:
-            update_state_node(node, state_node, node_parts)
+            update_state_node(node, state_node, node_parts, pos)
             new_state_nodes.append(state_node)
         else:
-            new_state_nodes.append(new_state_node(node, node_parts))
+            new_state_nodes.append(new_state_node(node, node_parts, pos))
 
     new_state_edges = []
     for edge in dfg.edges:
@@ -170,7 +201,7 @@ def update_state(
     new_state_output_nodes = []
     new_state_output_edges = []
     for node in dfg.nodes:
-        if node.result is not None and node.force_show_output:
+        if node.result is not None:
             state_output_node = next(
                 (n for n in state.nodes if n.id == "output-" + node.id), None
             )

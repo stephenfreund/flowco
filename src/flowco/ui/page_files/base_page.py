@@ -63,7 +63,8 @@ class FlowcoPage:
                 st.session_state.abstraction_level = AbstractionLevel.spec
             st.session_state.force_update = True
 
-        with st.container():
+        with st.container(key="show_code_bar"):
+            st.write("")
             st.toggle(
                 "Show Code",
                 value=show_code(),
@@ -178,35 +179,35 @@ class FlowcoPage:
     def node_header(self, node):
         ui_page: UIPage = st.session_state.ui_page
         with st.container(key="node_header"):
-            with st.container(key="lock"):
-                left, right = st.columns([1, 8], vertical_alignment="bottom")
-                with left:
-                    pressed = st.segmented_control(
-                        ":material/lock:",
-                        [":material/lock:"],
-                        default=[":material/lock:"] if node.is_locked else None,
-                        label_visibility="collapsed",
-                        disabled=not self.graph_is_editable(),
-                    )
-                    if pressed and not node.is_locked:
-                        dfg = ui_page.dfg()
-                        ui_page.update_dfg(
-                            dfg.with_node(dfg[node.id].update(is_locked=True))
-                        )
-                        st.session_state.force_update = True
-                        st.rerun()
-                    elif not pressed and node.is_locked:
-                        dfg = ui_page.dfg()
-                        ui_page.update_dfg(
-                            dfg.with_node(
-                                dfg[node.id].update(is_locked=False, phase=Phase.clean)
-                            )
-                        )
-                        st.session_state.force_update = True
-                        st.rerun()
+            # with st.container(key="lock"):
+            # left, right = st.columns([1, 8], vertical_alignment="bottom")
+            # with left:
+            #     pressed = st.segmented_control(
+            #         ":material/lock:",
+            #         [":material/lock:"],
+            #         default=[":material/lock:"] if node.is_locked else None,
+            #         label_visibility="collapsed",
+            #         disabled=not self.graph_is_editable(),
+            #     )
+            #     if pressed and not node.is_locked:
+            #         dfg = ui_page.dfg()
+            #         ui_page.update_dfg(
+            #             dfg.with_node(dfg[node.id].update(is_locked=True))
+            #         )
+            #         st.session_state.force_update = True
+            #         st.rerun()
+            #     elif not pressed and node.is_locked:
+            #         dfg = ui_page.dfg()
+            #         ui_page.update_dfg(
+            #             dfg.with_node(
+            #                 dfg[node.id].update(is_locked=False, phase=Phase.clean)
+            #             )
+            #         )
+            #         st.session_state.force_update = True
+            #         st.rerun()
 
-                with right:
-                    st.subheader(node.pill)
+            # with right:
+            st.subheader(node.pill)
             st.caption(f"Status: {node.phase}")
 
     def masthead(self, node: Node | None = None):
@@ -522,12 +523,35 @@ class FlowcoPage:
             ui_page = st.session_state.ui_page
             dfg = ui_page.dfg()
 
+            # if st.session_state.layout_graph:
+            #     ui_page = st.session_state.ui_page
+            #     with ui_page.page():
+            #         log("Layout the diagram")
+            #         dfg = ui_page.dfg()
+            #         dfg = dfg.update(
+            #             nodes=[
+            #                 x.update(
+            #                     geometry=Geometry(
+            #                         x=0,
+            #                         y=0,
+            #                         width=x.geometry.width,
+            #                         height=x.geometry.height,
+            #                     )
+            #                 )
+            #                 for x in dfg.nodes
+            #             ]
+            #         )
+            #         ui_page.update_dfg(dfg)
+
             change = update_state(
                 curr_state,
                 dfg,
                 self.node_parts_for_diagram(),
                 selected_id=curr_state.selected_id,
+                reset_pos=st.session_state.layout_graph,
             )
+            st.session_state.layout_graph = False
+            print(curr_state)
 
             new_state, command = streamlit_flow(
                 "example_flow",
