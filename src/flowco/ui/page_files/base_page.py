@@ -523,32 +523,13 @@ class FlowcoPage:
             ui_page = st.session_state.ui_page
             dfg = ui_page.dfg()
 
-            # if st.session_state.layout_graph:
-            #     ui_page = st.session_state.ui_page
-            #     with ui_page.page():
-            #         log("Layout the diagram")
-            #         dfg = ui_page.dfg()
-            #         dfg = dfg.update(
-            #             nodes=[
-            #                 x.update(
-            #                     geometry=Geometry(
-            #                         x=0,
-            #                         y=0,
-            #                         width=x.geometry.width,
-            #                         height=x.geometry.height,
-            #                     )
-            #                 )
-            #                 for x in dfg.nodes
-            #             ]
-            #         )
-            #         ui_page.update_dfg(dfg)
+            print(dfg.node_ids())
 
             change = update_state(
                 curr_state,
                 dfg,
                 self.node_parts_for_diagram(),
                 selected_id=curr_state.selected_id,
-                reset_pos=st.session_state.layout_graph,
             )
             st.session_state.layout_graph = False
 
@@ -567,7 +548,7 @@ class FlowcoPage:
                 hide_watermark=True,
                 allow_new_edges=True,
                 min_zoom=0.1,
-                disabled=not self.graph_is_editable()
+                # disabled=not self.graph_is_editable(),
             )
             ui_page = st.session_state.ui_page
             dfg = ui_page.dfg()
@@ -582,15 +563,17 @@ class FlowcoPage:
                 st.session_state.last_state_update = new_state.timestamp
 
                 if diff_state(curr_state, new_state):
-                    new_dfg = update_dfg(new_state, dfg)
-                    ui_page.update_dfg(new_dfg)
-                    if not command and dfg != new_dfg:
-                        st.session_state.force_update = True
-                        st.rerun()
+                    try:
+                        new_dfg = update_dfg(new_state, dfg)
+                        ui_page.update_dfg(new_dfg)
+                        if not command and dfg != new_dfg:
+                            st.session_state.force_update = True
+                            st.rerun()
+                    except Exception as e:
+                        error(e)
 
                 if command:
                     st.session_state.last_state_update = new_state.timestamp
-                    old_dfg = dfg
                     self.do_command(dfg, command)
 
         if right:

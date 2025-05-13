@@ -68,10 +68,7 @@ def update_state_node(
     node: Node,
     state_node: StreamlitFlowNode,
     node_parts: List[str],
-    pos: Tuple[float, float] = (0, 0),
 ):
-
-    print(pos)
 
     color = _phase_colors[node.phase.value]
     md = node.to_markdown(node_parts)
@@ -93,7 +90,7 @@ def update_state_node(
 
     # Update the state node with the current node properties
     state_node.node_type = _types.get(node.kind, "default")
-    state_node.position = {"x": pos[0], "y": pos[1]}
+    state_node.position = {"x": node.geometry.x, "y": node.geometry.y}
     state_node.width = node.geometry.width
     state_node.height = node.geometry.height
 
@@ -115,9 +112,7 @@ def update_state_node(
     }
 
 
-def new_state_node(
-    node: Node, node_parts, pos: Tuple[float, float] = (0, 0)
-) -> StreamlitFlowNode:
+def new_state_node(node: Node, node_parts) -> StreamlitFlowNode:
     color = _phase_colors[node.phase.value]
     md = node.to_markdown(node_parts)
     html = md_to_html(md)
@@ -125,7 +120,7 @@ def new_state_node(
     return StreamlitFlowNode(
         id=node.id,
         node_type=_types.get(node.kind, "default"),
-        pos=pos,
+        pos=(node.geometry.x, node.geometry.y),
         width=node.geometry.width,
         height=node.geometry.height,
         selectable=True,
@@ -158,24 +153,22 @@ def update_state(
     dfg: DataFlowGraph,
     node_parts: List[str],
     selected_id: str | None = None,
-    reset_pos: bool = False,
 ):
 
+    print(dfg.node_ids())
     new_state_nodes = []
     for node in dfg.nodes:
+
         state_node = next((n for n in state.nodes if n.id == node.id), None)
-        if not reset_pos:
-            pos = (node.geometry.x, node.geometry.y)
-        else:
-            pos = (0, 0)
         if state_node is not None:
-            update_state_node(node, state_node, node_parts, pos)
+            update_state_node(node, state_node, node_parts)
             new_state_nodes.append(state_node)
         else:
-            new_state_nodes.append(new_state_node(node, node_parts, pos))
+            new_state_nodes.append(new_state_node(node, node_parts))
 
     new_state_edges = []
     for edge in dfg.edges:
+        print(edge)
         state_edge = next((e for e in state.edges if e.id == edge.id), None)
         if state_edge is not None:
             state_edge.source = edge.src
@@ -203,18 +196,30 @@ def update_state(
     for node in dfg.nodes:
         if node.result is not None and node.force_show_output:
             state_output_node = next(
-                (n for n in state.nodes if n is not None and n.id == "output-" + node.id), None
+                (
+                    n
+                    for n in state.nodes
+                    if n is not None and n.id == "output-" + node.id
+                ),
+                None,
             )
             if state_output_node is not None:
                 update_state_output_node(node, state_output_node)
                 new_state_output_nodes.append(state_output_node)
-
-                state_output_edge = next(
-                    (e for e in state.edges if e is not None and e.id == "output-edge-" + node.id), None
-                )
-                new_state_output_edges.append(state_output_edge)
             else:
                 new_state_output_nodes.append(new_state_output_node(node))
+
+            state_output_edge = next(
+                (
+                    e
+                    for e in state.edges
+                    if e is not None and e.id == "output-edge-" + node.id
+                ),
+                None,
+            )
+            if state_output_edge is not None:
+                new_state_output_edges.append(state_output_edge)
+            else:
                 new_state_output_edges.append(
                     StreamlitFlowEdge(
                         id="output-edge-" + node.id,
@@ -236,6 +241,8 @@ def update_state(
                     )
                 )
 
+    print("NEW", new_state_edges)
+
     old_state_nodes = state.nodes
     old_state_edges = state.edges
 
@@ -243,6 +250,8 @@ def update_state(
     state.edges = new_state_edges + new_state_output_edges
 
     changed = old_state_nodes != new_state_nodes or old_state_edges != new_state_edges
+
+    print(state)
 
     return changed
 

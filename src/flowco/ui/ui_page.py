@@ -86,5 +86,6 @@ def set_ui_page(ui_page: UIPage | None):
         with logger("closing current page"):
             page = st.session_state.ui_page.page()
     st.session_state.ui_page = ui_page
+    print("X", ui_page.dfg().node_ids())
     st.session_state.image_cache.clear()
     # st.rerun()
