@@ -69,6 +69,20 @@ def update_state_node(node: Node, state_node: StreamlitFlowNode, node_parts: Lis
     md = node.to_markdown(node_parts)
     html = md_to_html(md)
 
+    messages = [x for x in node.messages if x.phase <= Phase.run_checked]
+    if "assertions" in node_parts:
+        messages += [
+            x
+            for x in node.messages
+            if x.phase in [Phase.assertions_code, Phase.assertions_checked]
+        ]
+    if "unit_tests" in node_parts:
+        messages += [
+            x
+            for x in node.messages
+            if x.phase in [Phase.unit_tests_code, Phase.unit_tests_checked]
+        ]
+
     # Update the state node with the current node properties
     state_node.node_type = _types.get(node.kind, "default")
     state_node.pos = (node.geometry.x, node.geometry.y)
@@ -83,6 +97,7 @@ def update_state_node(node: Node, state_node: StreamlitFlowNode, node_parts: Lis
         "blinkText": node.build_status,
         "html": html,
         "editable": phase_for_last_shown_part() <= node.phase,
+        "messages": messages,
     }
 
     state_node.style = _styles.get(node.kind, {}) | {
@@ -115,6 +130,7 @@ def new_state_node(node: Node, node_parts) -> StreamlitFlowNode:
             "blinkText": node.build_status,
             "html": html,
             "editable": phase_for_last_shown_part() <= node.phase,
+            "messages": [],
         },
         style=(
             _styles.get(node.kind, {})
