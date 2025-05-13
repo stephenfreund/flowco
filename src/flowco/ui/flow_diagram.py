@@ -201,16 +201,16 @@ def update_state(
     new_state_output_nodes = []
     new_state_output_edges = []
     for node in dfg.nodes:
-        if node.result is not None:
+        if node.result is not None and node.force_show_output:
             state_output_node = next(
-                (n for n in state.nodes if n.id == "output-" + node.id), None
+                (n for n in state.nodes if n is not None and n.id == "output-" + node.id), None
             )
             if state_output_node is not None:
                 update_state_output_node(node, state_output_node)
                 new_state_output_nodes.append(state_output_node)
 
                 state_output_edge = next(
-                    (e for e in state.edges if e.id == "output-edge-" + node.id), None
+                    (e for e in state.edges if e is not None and e.id == "output-edge-" + node.id), None
                 )
                 new_state_output_edges.append(state_output_edge)
             else:
@@ -320,7 +320,6 @@ def update_dfg(state: StreamlitFlowState, dfg: DataFlowGraph):
         else:
             dfg = dfg.lower_phase_with_successors(dfg_edge.src, Phase.clean)
 
-    print(new_edges)
     dfg = dfg.update(nodes=new_nodes, edges=list(new_edges))
 
     return dfg

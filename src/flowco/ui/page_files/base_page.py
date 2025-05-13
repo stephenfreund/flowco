@@ -551,7 +551,6 @@ class FlowcoPage:
                 reset_pos=st.session_state.layout_graph,
             )
             st.session_state.layout_graph = False
-            print(curr_state)
 
             new_state, command = streamlit_flow(
                 "example_flow",
@@ -641,6 +640,7 @@ class FlowcoPage:
         else:
             node_id = command_dict["id"]
             node = dfg.get_node(node_id)
+            print("COMMAND", command, node_id)
             if command == "edit":
                 self.prepare_node_for_edit(node.id)
             elif command == "run":
