@@ -548,7 +548,6 @@ class FlowcoPage:
                 min_zoom=0.1,
                 disabled=not self.graph_is_editable(),
             )
-            print("****************", new_state)
             ui_page = st.session_state.ui_page
             dfg = ui_page.dfg()
 
