@@ -11,6 +11,7 @@ class Task:
     def complete(self):
         pass
 
+
 class BackgroundTaskRunner:
     def __init__(self):
         self.task_queue = queue.Queue[Task]()

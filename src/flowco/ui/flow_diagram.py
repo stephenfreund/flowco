@@ -33,7 +33,7 @@ _styles = {
         "textAlign": "center",
     },
     NodeKind.plot: {
-        "borderRadius": "5px",
+        "borderRadius": "0px",
         "boxShadow": "inset 0 0 0 1px white, inset 0 0 0 2px black,inset 0 0 0 3px white, inset 0 0 0 4px black",
         "display": "flex",
         "justifyContent": "center",
@@ -155,7 +155,6 @@ def update_state(
     selected_id: str | None = None,
 ):
 
-    print(dfg.node_ids())
     new_state_nodes = []
     for node in dfg.nodes:
 
@@ -168,7 +167,6 @@ def update_state(
 
     new_state_edges = []
     for edge in dfg.edges:
-        print(edge)
         state_edge = next((e for e in state.edges if e.id == edge.id), None)
         if state_edge is not None:
             state_edge.source = edge.src
@@ -241,8 +239,6 @@ def update_state(
                     )
                 )
 
-    print("NEW", new_state_edges)
-
     old_state_nodes = state.nodes
     old_state_edges = state.edges
 
@@ -250,8 +246,6 @@ def update_state(
     state.edges = new_state_edges + new_state_output_edges
 
     changed = old_state_nodes != new_state_nodes or old_state_edges != new_state_edges
-
-    print(state)
 
     return changed
 
@@ -377,7 +371,7 @@ def serve_image(image_url, image_id):
     url = runtime.get_instance().media_file_mgr.add(
         image, mimetype, "1", image_id, is_for_static_download=True
     )
-    print(f"{image_id} -> {url}")
+    # print(f"{image_id} -> {url}")
     caching.save_media_data(image, mimetype, image_id)
     host = st.context.url.split("/")[2]
     return f"http://{host}{url}"
@@ -546,29 +540,29 @@ def diff_state(state1: StreamlitFlowState, state2: StreamlitFlowState) -> bool:
     #     print("DIFF TIMESTAMP", state1.timestamp, state2.timestamp)
     #     return True
     if len(state1.nodes) != len(state2.nodes):
-        print("DIFF NODES", len(state1.nodes), len(state2.nodes))
+        # print("DIFF NODES", len(state1.nodes), len(state2.nodes))
         return True
     if len(state1.edges) != len(state2.edges):
-        print("DIFF EDGES", len(state1.edges), len(state2.edges))
+        # print("DIFF EDGES", len(state1.edges), len(state2.edges))
         return True
     for node1, node2 in zip(state1.nodes, state2.nodes):
         if node1.id != node2.id:
-            print("DIFF ID", node1.id, node2.id)
+            # print("DIFF ID", node1.id, node2.id)
             return True
         if node1.position != node2.position:
-            print("DIFF POSITION", node1.position, node2.position)
+            # print("DIFF POSITION", node1.position, node2.position)
             return True
         if node1.style != node2.style:
-            print("DIFF STYLE", node1.style, node2.style)
+            # print("DIFF STYLE", node1.style, node2.style)
             return True
     for edge1, edge2 in zip(state1.edges, state2.edges):
         if edge1.id != edge2.id:
-            print("DIFF EDGE ID", edge1.id, edge2.id)
+            # print("DIFF EDGE ID", edge1.id, edge2.id)
             return True
         if edge1.source != edge2.source:
-            print("DIFF EDGE SOURCE", edge1.source, edge2.source)
+            # print("DIFF EDGE SOURCE", edge1.source, edge2.source)
             return True
         if edge1.target != edge2.target:
-            print("DIFF EDGE TARGET", edge1.target, edge2.target)
+            # print("DIFF EDGE TARGET", edge1.target, edge2.target)
             return True
     return False

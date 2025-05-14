@@ -72,7 +72,7 @@ class BuildPage(FlowcoPage):
         with st.container():
             with st.container(key="button_bar"):
                 if st.session_state.builder is None:
-                    cols = st.columns(8)
+                    cols = st.columns(7)
                     with cols[0]:
                         if st.session_state.builder is None:
                             run_button = self.run_button()
@@ -131,31 +131,31 @@ class BuildPage(FlowcoPage):
                             "<span>&nbsp;&nbsp;&nbsp;&nbsp;</span>",
                             unsafe_allow_html=True,
                         )
-                    with cols[6]:
-                        st.button(
-                            label="",
-                            icon=":material/network_node:",
-                            help="Layout the diagram",
-                            disabled=not self.graph_is_editable(),
-                            on_click=lambda: set_session_state("layout_graph", True),
-                        )
-                        # ui_page = st.session_state.ui_page
-                        # with ui_page.page():
-                        #     dfg = ui_page.dfg()
-                        #     dfg = dfg.update(
-                        #         nodes=[
-                        #             x.update(
-                        #                 geometry=Geometry(
-                        #                     x=0, y=0, width=0, height=0
-                        #                 )
-                        #             )
-                        #             for x in dfg.nodes
-                        #         ]
-                        #     )
-                        #     ui_page.update_dfg(dfg)
+                    # with cols[6]:
+                    #     st.button(
+                    #         label="",
+                    #         icon=":material/network_node:",
+                    #         help="Layout the diagram",
+                    #         disabled=not self.graph_is_editable(),
+                    #         on_click=lambda: set_session_state("layout_graph", True),
+                    #     )
+                    # ui_page = st.session_state.ui_page
+                    # with ui_page.page():
+                    #     dfg = ui_page.dfg()
+                    #     dfg = dfg.update(
+                    #         nodes=[
+                    #             x.update(
+                    #                 geometry=Geometry(
+                    #                     x=0, y=0, width=0, height=0
+                    #                 )
+                    #             )
+                    #             for x in dfg.nodes
+                    #         ]
+                    #     )
+                    #     ui_page.update_dfg(dfg)
                     # st.session_state.force_update = True
                     # st.session_state.layout_graph = True
-                    with cols[7]:
+                    with cols[6]:
                         if st.button(
                             label="",
                             icon=":material/cancel_presentation:",

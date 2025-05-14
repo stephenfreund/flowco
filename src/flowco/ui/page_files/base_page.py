@@ -523,8 +523,6 @@ class FlowcoPage:
             ui_page = st.session_state.ui_page
             dfg = ui_page.dfg()
 
-            print(dfg.node_ids())
-
             change = update_state(
                 curr_state,
                 dfg,
@@ -534,7 +532,7 @@ class FlowcoPage:
             st.session_state.layout_graph = False
 
             new_state, command = streamlit_flow(
-                "example_flow",
+                ui_page._page.file_name,
                 curr_state,
                 layout=ManualLayout(),
                 fit_view=False,
@@ -548,7 +546,7 @@ class FlowcoPage:
                 hide_watermark=True,
                 allow_new_edges=True,
                 min_zoom=0.1,
-                # disabled=not self.graph_is_editable(),
+                disabled=not self.graph_is_editable(),
             )
             ui_page = st.session_state.ui_page
             dfg = ui_page.dfg()
@@ -623,7 +621,6 @@ class FlowcoPage:
         else:
             node_id = command_dict["id"]
             node = dfg.get_node(node_id)
-            print("COMMAND", command, node_id)
             if command == "edit":
                 self.prepare_node_for_edit(node.id)
             elif command == "run":
