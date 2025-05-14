@@ -28,7 +28,7 @@ dependencies = [
   "pyyaml>=6.0",
   "types-PyYAML>=6.0",
   "jsonmerge>=1.9.2",
-  "streamlit==1.41.1",
+  "streamlit>=1.45.0",
   "deepdiff>=7.0.1",
   "streamlit_extras>=0.4.7",
   "graphviz",
