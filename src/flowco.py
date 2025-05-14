@@ -10,8 +10,6 @@ from flowco.pythonshell.shells import PythonShells
 from flowco.session.session_file_system import SessionFileSystem, fs_exists
 from flowco.ui.ui_init import st_init
 from flowco.ui.authenticate import authenticate
-from flowco.ui.ui_page import UIPage, set_ui_page
-from flowco.ui.ui_st_pages import st_pages
 
 from flowco.util.config import Config
 from flowco.util.costs import CostTracker
@@ -91,6 +89,11 @@ def init_service():
             folder_id = os.environ["GOOGLE_DRIVE_TEST_FOLDER_ID"]
             copy_from_google_folder(folder_id)
 
+        if "ui_version" not in st.session_state:
+            st.session_state.ui_version = 1
+
+        from flowco.ui.ui_page import UIPage, set_ui_page
+
         if fs_exists("welcome.flowco"):
             file = "welcome.flowco"
         else:
@@ -111,5 +114,8 @@ if st.session_state.user_email is None:
         authenticate()
 
 init_service()
+
+from flowco.ui.ui_st_pages import st_pages
+
 pg = st_pages()
 pg.run()

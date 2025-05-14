@@ -16,5 +16,10 @@ def parse_args() -> Tuple[Config, Namespace]:
         default=None,
         type=str,
     )
+    parser.add_argument(
+        "--v2",
+        action="store_true",
+        help="Use version 2 of the UI",
+    )
     args = parser.parse_args(sys.argv[1:])
     return config, args

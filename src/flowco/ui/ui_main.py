@@ -5,8 +5,6 @@ from flowco.pythonshell.shells import PythonShells
 from flowco.session.session_file_system import SessionFileSystem
 from flowco.ui.ui_args import parse_args
 from flowco.ui.ui_init import st_init
-from flowco.ui.ui_page import UIPage, set_ui_page
-from flowco.ui.ui_st_pages import st_pages
 
 from flowco.util.files import copy_from_google_folder, setup_flowco_files
 import streamlit as st
@@ -49,6 +47,14 @@ def init_service():
             folder_id = os.environ["GOOGLE_DRIVE_TEST_FOLDER_ID"]
             copy_from_google_folder(folder_id)
 
+        if args.v2:
+            st.session_state.ui_version = 2
+        else:
+            st.session_state.ui_version = 1
+
+        # do after processing command line args
+        from flowco.ui.ui_page import UIPage, set_ui_page
+
         if page_file is not None:
             set_ui_page(UIPage(page_file))
         else:
@@ -69,6 +75,8 @@ def init_service():
 try:
     st_init()
     init_service()
+    from flowco.ui.ui_st_pages import st_pages
+
     pg = st_pages()
     pg.run()
 except Exception as e:

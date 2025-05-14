@@ -40,7 +40,8 @@ dependencies = [
   "nbformat",
   "pydantic",
   "streamlit_code_editor",
-
+  "flowco-streamlit-flow",
+    
   # for the generated code...
   "pandas",
   "seaborn",

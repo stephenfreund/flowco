@@ -162,10 +162,8 @@ def show_file(self, file_name: str):
 def confirm(message: str, on_confirm: Callable[[], None]):
     st.write(message)
     if st.button("OK"):
-        print("Boopppp")
         on_confirm()
         st.rerun()
-    print("Boop")
 
 
 def inspect_node(node: Node):
