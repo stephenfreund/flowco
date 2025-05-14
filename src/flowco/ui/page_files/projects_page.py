@@ -63,6 +63,7 @@ class ProjectsPage(FlowcoPage):
             self.upload_file()
         elif st.session_state.project_name is not None:
             project_name = st.session_state.project_name + ".flowco"
+            print("Loading project", project_name)
             set_ui_page(UIPage(project_name))
             st.session_state.selected_node = "<<<<<"
             st.session_state.clear_graph = True

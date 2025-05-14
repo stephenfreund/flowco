@@ -84,9 +84,7 @@ class AskMeAnything:
 
     def reset(self):
         """Reset internals"""
-        self.assistant = flowco_assistant(
-            "ama-assistant",
-            prompt_key="ama_general")
+        self.assistant = flowco_assistant("ama-assistant", prompt_key="ama_general")
         self.shell = None
         self.completion_dfg = None
 
@@ -556,6 +554,9 @@ class AskMeAnything:
         dfg = dfg.with_node(node).reduce_phases_to_below_target(node.id, Phase.clean)
 
         node = dfg[id]
+
+        dfg = dfg.with_node(node).reduce_phases_to_below_target(node.id, Phase.clean)
+
         dfg_update = mxDiagramUpdate(
             version=dfg.version,
             nodes={
@@ -659,8 +660,8 @@ class AskMeAnything:
 
     def classify_question(self, question: str) -> str:
         assistant = flowco_assistant_fast(
-            "ama-classifier",
-            prompt_key="classify_ama_prompt")
+            "ama-classifier", prompt_key="classify_ama_prompt"
+        )
 
         for message in self.visible_messages[-4:]:
             assistant.add_content_parts(

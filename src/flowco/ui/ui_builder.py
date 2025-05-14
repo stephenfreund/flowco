@@ -51,7 +51,14 @@ class Builder:
 
         p = builder.passes_by_target[target_phase]
         if force:
-            page.clean(phase=p.required_phase())
+            if node_ids is None:
+                page.clean(phase=p.required_phase())
+            elif isinstance(node_ids, str):
+                page.clean(node_ids, phase=p.required_phase())
+            else:
+                for node_id in node_ids:
+                    page.clean(node_id, phase=p.required_phase())
+
         build_config = page.base_build_config(repair=repair)
 
         verb = (

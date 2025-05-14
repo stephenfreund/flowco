@@ -18,6 +18,9 @@ def command_line():
         "-d", "--dev", action="store_true", help="Run in development mode"
     )
     parser.add_argument(
+        "-v2", "--v2", action="store_true", help="Use version 2 of the UI"
+    )
+    parser.add_argument(
         "path",
         nargs="?",
         default=".",
@@ -57,6 +60,8 @@ def main():
 
     if not args.verbose:
         command += ["--quiet"]
+    if args.v2:
+        command += ["--v2"]
     command += [os.path.abspath(args.path)]
 
     cwd = os.path.join(os.path.dirname(__file__))

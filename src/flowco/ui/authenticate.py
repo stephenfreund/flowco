@@ -81,6 +81,9 @@ def sign_in(authorization_url: str):
                """
     )
 
+    if st.query_params.get("version", None) == "2":
+        st.session_state.ui_version = 2
+
     if st.query_params.get("test", None) == "1":
         with st.container(border=True):
             st.write("Create an anonymous, temporary account for the current session.")

@@ -87,4 +87,3 @@ def set_ui_page(ui_page: UIPage | None):
             page = st.session_state.ui_page.page()
     st.session_state.ui_page = ui_page
     st.session_state.image_cache.clear()
-    # st.rerun()
