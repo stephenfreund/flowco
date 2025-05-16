@@ -112,6 +112,17 @@ def settings(ui_page: UIPage):
 
     st.divider()
 
+    st.toggle(
+        "Enable New Diagram Editor",
+        value=st.session_state.ui_version == 2,
+        key="ui_version_toggle",
+        on_change=lambda: st.session_state.update(
+            {"ui_version": 2 if st.session_state.ui_version_toggle else 1}
+        ),
+    )
+
+    st.divider()
+
     if st.button("Done"):
         st.session_state.selected_node = None
         st.rerun()

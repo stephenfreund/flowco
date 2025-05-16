@@ -6,38 +6,49 @@ import streamlit as st
 
 # from flowco.ui.page_files.ama_page import AMAPage
 from flowco.dataflow.phase import Phase
-from flowco.ui.page_files.build_page import BuildPage
-from flowco.ui.page_files.check_page import CheckPage
 from flowco.ui.page_files.help_page import HelpPage
-from flowco.ui.page_files.projects_page import ProjectsPage
-from flowco.ui.page_files.test_page import TestPage
+from flowco.ui.page_files.v1.build_page import BuildPage as BuildPageV1
+from flowco.ui.page_files.v1.check_page import CheckPage as CheckPageV1
+from flowco.ui.page_files.v1.projects_page import ProjectsPage as ProjectsPageV1
+from flowco.ui.page_files.v1.test_page import TestPage as TestPageV1
+
+from flowco.ui.page_files.v2.build_page import BuildPage as BuildPageV2
+from flowco.ui.page_files.v2.check_page import CheckPage as CheckPageV2
+from flowco.ui.page_files.v2.projects_page import ProjectsPage as ProjectsPageV2
+from flowco.ui.page_files.v2.test_page import TestPage as TestPageV2
+
+
 from flowco.util.output import error
 
 
 def st_pages():
+
+    def version():
+        return st.session_state.get("ui_version", 1)
+
     def build_main():
         st.session_state.current_page = "build"
         # st.session_state.image_cache.clear()
         # st.session_state.selected_node = "<<<<<"
-        BuildPage().main()
+        (BuildPageV1() if version() == 1 else BuildPageV2()).main()
 
     def check_main():
         st.session_state.current_page = "check"
         # st.session_state.image_cache.clear()
         # st.session_state.selected_node = "<<<<<"
-        CheckPage().main()
+        (CheckPageV1() if version() == 1 else CheckPageV2()).main()
 
     def test_main():
         st.session_state.current_page = "test"
         # st.session_state.image_cache.clear()
         # st.session_state.selected_node = "<<<<<"
-        TestPage().main()
+        (TestPageV1() if version() == 1 else TestPageV2()).main()
 
     def projects_main():
         st.session_state.current_page = "projects"
         # st.session_state.image_cache.clear()
         st.session_state.selected_node = "<<<<<"
-        ProjectsPage().main()
+        (ProjectsPageV1() if version() == 1 else ProjectsPageV2()).main()
 
     def help_main():
         st.session_state.current_page = "help"
