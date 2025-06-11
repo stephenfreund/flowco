@@ -545,6 +545,9 @@ def diff_state(state1: StreamlitFlowState, state2: StreamlitFlowState) -> bool:
     if len(state1.edges) != len(state2.edges):
         # print("DIFF EDGES", len(state1.edges), len(state2.edges))
         return True
+    if state1.selected_id != state2.selected_id:
+        # print("DIFF SELECTED ID", state1.selected_id, state2.selected_id)
+        return True
     for node1, node2 in zip(state1.nodes, state2.nodes):
         if node1.id != node2.id:
             # print("DIFF ID", node1.id, node2.id)
