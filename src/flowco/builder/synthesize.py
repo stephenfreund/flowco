@@ -393,7 +393,14 @@ def generate_docstring_for_node(node: Node) -> str:
     lines.append("")
     lines.append("This function has the following behavior:")
     for requirement in node.requirements:
+        
         modified_requirement = requirement.replace(
+            f"the `{node.function_result_var}`", "the result"
+        )
+        modified_requirement = modified_requirement.replace(
+            f"The `{node.function_result_var}`", "The result"
+        )
+        modified_requirement = modified_requirement.replace(
             f"`{node.function_result_var}`", "the result"
         )
         if modified_requirement.startswith("- "):
