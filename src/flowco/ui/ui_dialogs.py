@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-from flowco.assistant.flowco_assistant import test_openai_key
+from flowco.assistant.flowco_assistant import test_openai_key, test_anthropic_key
 from flowco.assistant.flowco_keys import set_api_key
 from flowco.llm import models
 from typing import Callable
@@ -17,42 +17,38 @@ from flowco.ui.ui_rerun import st_rerun
 @st.dialog("Settings", width="large")
 def settings(ui_page: UIPage):
 
-    # with st.expander("API Keys"):
-    openai_key = st.text_input(
-        f"OpenAI API Key",
-        value="",
-        placeholder="Enter new OpenAI API key",
-        # label_visibility="collapsed",
-    )
     st.caption(
-        "You will not need a key for the first hour.  You can obtain a key [Get a key here](https://platform.openai.com/account/api-keys).  Your key will be stored on our server and will only be used by you."
+        "You will have free access to a valid OpenAI API key for the first hour.  You can obtain an OpenAI API key [here](https://platform.openai.com/account/api-keys) or an Anthropic API key [here](https://console.anthropic.com/api-keys).  Your key will be stored on our server and will only be used by you."
     )
 
-    # anthropic_key = st.text_input(
-    #     "Anthropic API Key",
-    #     value="",
-    #     placeholder="Enter new Anthropic API key",
-    #     label_visibility="collapsed",
-    # )
+    if test_openai_key():
+        openai_status = ":green[Valid]"
+    else:
+        openai_status = ":red[Invalid]"
+
+    openai_key = st.text_input(
+        "OpenAI API Key: " + openai_status,
+        value="",
+        placeholder="Enter new OpenAI API key",
+    )
 
     if openai_key:
         set_api_key("OPENAI_API_KEY", openai_key)
-        # if anthropic_key:
-        #     set_api_key("ANTHROPIC_API_KEY", anthropic_key)
 
-    if st.button("Check OpenAI API Key Status"):
-        if test_openai_key():
-            st.success("OpenAI API key is valid")
-        else:
-            st.error("OpenAI API key is invalid")
 
-            # if test_anthropic_key():
-            #     st.success("Anthropic key is valid")
-            # else:
-            #     st.error("Anthropic key is invalid")
+    if test_anthropic_key():
+        anthropic_status = ":green[Valid]"
+    else:
+        anthropic_status = ":red[Invalid]"
 
-            # st.write(get_api_key_status("OPENAI_API_KEY"))
-            # st.write(get_api_key_status("ANTHROPIC_API_KEY"))
+    anthropic_key = st.text_input(
+        "Anthropic API Key: " + anthropic_status,
+        value="",
+        placeholder="Enter new Anthropic API key",
+    )
+
+    if anthropic_key:
+        set_api_key("ANTHROPIC_API_KEY", anthropic_key)
 
     supported_models = models.supported_models()
     current_model = (
