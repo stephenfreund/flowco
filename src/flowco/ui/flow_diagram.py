@@ -241,11 +241,17 @@ def update_state(
 
     old_state_nodes = state.nodes
     old_state_edges = state.edges
+    old_state_selected_id = state.selected_id
 
     state.nodes = new_state_nodes + new_state_output_nodes
     state.edges = new_state_edges + new_state_output_edges
+    state.selected_id = selected_id
 
-    changed = old_state_nodes != new_state_nodes or old_state_edges != new_state_edges
+    changed = (
+        old_state_nodes != new_state_nodes
+        or old_state_edges != new_state_edges
+        or old_state_selected_id != selected_id
+    )
 
     return changed
 

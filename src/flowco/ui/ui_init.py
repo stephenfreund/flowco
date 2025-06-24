@@ -43,8 +43,8 @@ css = """
     max-width: unset !important;
 }
 .stSidebar {
-    min-width: 350px;
-    width: 350px;
+    min-width: 355px;
+    width: 355px;
     max-width:1000px;
 }
 
@@ -159,6 +159,7 @@ header {
     overflow: hidden;
     min-width: auto;
     max-width: initial;
+    background-color: #F0F2F6 !important;
 }
 
 .stMain:has(.st-key-help_page) {
@@ -349,7 +350,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
 }
 
 .st-key-right-panel {
-    height: calc(100vh - 75px) !important;
+    height: calc(100vh - 125px) !important;
     padding: 0rem;
     padding-top: 0.5rem !important;
     background-color: #F0F2F6 !important;

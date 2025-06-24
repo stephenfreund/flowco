@@ -1,21 +1,17 @@
 import os
 
 import numpy as np
-from flowco.assistant.flowco_assistant import test_anthropic_key, test_openai_key
-from flowco.assistant.flowco_keys import get_api_key_status, set_api_key
+from flowco.assistant.flowco_assistant import test_openai_key
+from flowco.assistant.flowco_keys import set_api_key
 from flowco.llm import models
 from typing import Callable
 import pandas as pd
 import streamlit as st
 from flowco.dataflow.dfg import Node
 from flowco.page.output import OutputType
-from flowco.session.session import session
-from flowco.ui.authenticate import cache
 from flowco.ui.ui_page import UIPage
 from flowco.util.config import config
-from flowco.util.config import AbstractionLevel
-from flowco.util.files import make_default_files
-from flowco.util.output import Output
+from flowco.ui.ui_rerun import st_rerun
 
 
 @st.dialog("Settings", width="large")
@@ -125,7 +121,7 @@ def settings(ui_page: UIPage):
 
     if st.button("Done"):
         st.session_state.selected_node = None
-        st.rerun()
+        st_rerun()
 
     # st.divider()
 
@@ -174,7 +170,7 @@ def confirm(message: str, on_confirm: Callable[[], None]):
     st.write(message)
     if st.button("OK"):
         on_confirm()
-        st.rerun()
+        st_rerun()
 
 
 def inspect_node(node: Node):

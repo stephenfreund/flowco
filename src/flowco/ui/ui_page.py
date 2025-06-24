@@ -11,6 +11,7 @@ from flowco.ui.mx_diagram import MxDiagram, UIImageCache
 from flowco.dataflow.dfg import DataFlowGraph, Node
 from flowco.util.config import config
 from flowco.util.output import logger
+from flowco.ui.ui_rerun import st_rerun
 
 
 def load_ui_page(file_name: str):
@@ -73,7 +74,7 @@ class UIPage(PageListener):
         self._page.undo()
         st.session_state.clear_graph = True
         st.session_state.force_update = True
-        # st.rerun()
+        # st_rerun()
 
     def redo(self):
         self._page.redo()

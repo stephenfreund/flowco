@@ -2,17 +2,14 @@ from dataclasses import dataclass
 import textwrap
 from typing import List, Literal
 import streamlit as st
-from flowco.dataflow.dfg import DataFlowGraph, Geometry, Node, NodeMessage
+from flowco.dataflow.dfg import DataFlowGraph, Node, NodeMessage
 from flowco.dataflow.phase import Phase
-from flowco.page.ama import AskMeAnything, VisibleMessage
-from flowco.ui.dialogs.data_files import data_files_dialog
-from flowco.ui.ui_page import st_abstraction_level
 from flowco.ui.ui_page import UIPage
 from flowco.ui.ui_util import phase_for_last_shown_part, set_session_state
-from flowco.util.config import AbstractionLevel, config
-from flowco.util.costs import inflight
-from flowco.util.output import debug, error, log
+from flowco.util.output import debug
 from flowco.ui.page_files.v2.base_page import FlowcoPage
+
+from flowco.ui.ui_rerun import st_rerun
 
 import queue
 import time
@@ -26,7 +23,6 @@ import streamlit as st
 from flowco import __main__
 from flowco.ui.ui_page import UIPage
 
-from code_editor import code_editor
 
 # from flowthon.flowthon import FlowthonProgram
 
@@ -164,7 +160,7 @@ class BuildPage(FlowcoPage):
                         ):
                             st.session_state.ui_page.page().clear_outputs()
                             st.session_state.force_update = True
-                            st.rerun()
+                            st_rerun()
                 else:
                     run_button = self.stop_button()
                     st.button(
@@ -305,7 +301,7 @@ class BuildPage(FlowcoPage):
                 prompt = f"For each error, identify the root cause, working backwards from the node with the error if necessary.  Make minimal changes to the graph and nodes to fix each error.\n{errors_as_string}\n"
 
                 st.session_state.pending_ama = prompt
-                st.rerun()
+                st_rerun()
 
             for node, message in error_messages:
                 st.error(f"**{node.pill}**: {message.message()}")
@@ -326,7 +322,7 @@ class BuildPage(FlowcoPage):
                 passes_key=button.passes_key,
             )
             st.session_state.force_update = True
-            st.rerun()
+            st_rerun()
 
         builder: Builder = st.session_state.builder
         debug(f"Builder is alive: {builder is not None and builder.is_alive()}")
@@ -335,10 +331,10 @@ class BuildPage(FlowcoPage):
                 self.get_builder_updates()
                 self.clear_builder_and_reset_state()
                 st.session_state.global_error_check = True
-                st.rerun()
+                st_rerun()
             else:
                 time.sleep(0.25)
-                st.rerun()
+                st_rerun()
 
         if st.session_state.global_error_check:
             st.session_state.global_error_check = False
@@ -371,7 +367,7 @@ class BuildPage(FlowcoPage):
         )
         if st.button("Ok"):
             ui_page.page().user_edit_graph_description(text)
-            st.rerun()
+            st_rerun()
 
     # @st.dialog("Edit as Flowthon program", width="large")
     # def edit_flowthon(self):
@@ -390,7 +386,7 @@ class BuildPage(FlowcoPage):
     #         disabled=st.session_state.code_editor is None
     #         or st.session_state.code_editor["text"] == source,
     #     ):
-    #         st.rerun()
+    #         st_rerun()
 
     #     code_editor(
     #         source,
@@ -483,14 +479,9 @@ class BuildPage(FlowcoPage):
                 textwrap.dedent(
                     """\
                 ###### Graph Operations
-                * **Scroll canvas:** Drag around canvas
-                * **Select node:** Click on it
-                * **Create node:** Shift-click on canvas
-                * **Move node:** Click on it and drag
-                * **Edit node:** Hover over node and press pencil
-                * **Delete node:** Hover over node and press trash can
-                * **Add edge:** Hover over node and drag from the (+) icon to the other node
-                * **Add edge and node:** Hover over node and drag from the (+) icon to the other node
-                * **Delete edge:** Hover over edge and press trash can"""
+                * **Right-click on canvas** to create node
+                * **Right-click on node** to edit, delete, or run
+                * **Right-click on edge** to delete
+                """
                 )
             )

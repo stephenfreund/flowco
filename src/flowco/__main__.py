@@ -53,7 +53,7 @@ def main():
         "streamlit",
         "run",
         "--logger.level",
-        "error",
+        "error" if not args.verbose else "debug",
         f"{ui_path}/ui_main.py",
         "--",
     ]

@@ -7,6 +7,7 @@ from flowco.page.page import Page
 from flowco.page.tables import file_path_to_table_name, table_df
 from flowco.session.session_file_system import fs_glob, fs_write
 from flowco.ui.ui_page import UIPage
+from flowco.ui.ui_rerun import st_rerun
 
 
 @st.dialog("New Node", width="large")
@@ -48,7 +49,7 @@ def new_node_dialog(node):
             ui_page.update_dfg(ui_page.dfg().with_node(new_node))
             st.session_state.force_update = True
             st.session_state
-            st.rerun()
+            st_rerun()
 
     else:
 
@@ -80,4 +81,4 @@ def new_node_dialog(node):
                 ui_page.update_dfg(ui_page.dfg().with_node(new_node))
                 st.session_state.force_update = True
                 st.session_state
-                st.rerun()
+                st_rerun()

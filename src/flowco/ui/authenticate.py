@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass
 
 from flowco.session import session_file_system
+from flowco.ui.ui_rerun import st_rerun
 
 
 # Constants
@@ -194,7 +195,7 @@ def oauth_authenticate():
                 )
 
                 st.query_params.clear()  # Clear the query parameters after use
-                st.rerun()
+                st_rerun()
             else:
                 return None
 
@@ -255,4 +256,4 @@ def guest_signin():
         user_email=st.session_state.user_email,
         timestamp=datetime.now(),
     )
-    st.rerun()
+    st_rerun()

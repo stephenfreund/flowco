@@ -1,4 +1,3 @@
-from ast import Global
 from io import StringIO
 from flowco.dataflow.dfg import Node, dataflow_graph_to_nb
 from flowco.page.page import Page
@@ -19,6 +18,7 @@ from flowco.ui.ui_dialogs import confirm
 from flowco.ui.ui_page import set_ui_page
 from flowco.ui.ui_page import UIPage
 from flowco.util.files import create_zip_in_memory
+from flowco.ui.ui_rerun import st_rerun
 
 
 class ProjectsPage(FlowcoPage):
@@ -39,7 +39,7 @@ class ProjectsPage(FlowcoPage):
         if name and name not in self.get_project_names():
             st.session_state.just_created_project = True
             self.add_project(name)
-            st.rerun()
+            st_rerun()
 
     @st.dialog("New project", width="large")
     def dup_project(self):
@@ -54,7 +54,7 @@ class ProjectsPage(FlowcoPage):
             st.session_state.selected_node = "<<<<<"
             st.session_state.clear_graph = True
             st.session_state.force_update = True
-            st.rerun()
+            st_rerun()
 
     def select(self):
         if st.session_state.project_name == ":material/add:":
@@ -70,7 +70,7 @@ class ProjectsPage(FlowcoPage):
             st.session_state.force_update = True
         else:
             st.session_state.project_name = self.get_current_project_name()
-        # st.rerun()
+        # st_rerun()
 
     def delete_project(self):
         file = st.session_state.ui_page.page().file_name
@@ -79,12 +79,12 @@ class ProjectsPage(FlowcoPage):
         st.session_state.selected_node = None
         st.session_state.force_update = True
         st.session_state.clear_graph = True
-        st.rerun()
+        st_rerun()
 
     def reset_project(self):
         st.session_state.ui_page.page().reset()
         st.session_state.force_update = True
-        st.rerun()
+        st_rerun()
 
     def add_project(self, name: str):
         if not name.endswith(".flowco"):
@@ -94,7 +94,7 @@ class ProjectsPage(FlowcoPage):
         st.session_state.selected_node = "<<<<<"
         st.session_state.force_update = True
         st.session_state.clear_graph = True
-        # st.rerun()
+        # st_rerun()
 
     def sidebar(self, node: Node | None = None):
         names = self.get_project_names()
@@ -193,7 +193,7 @@ class ProjectsPage(FlowcoPage):
             file_name=f"flowco_files.zip",
             help="Download the project",
         ):
-            st.rerun()
+            st_rerun()
 
     @st.dialog("Upload Project", width="large")
     def upload_file(self):
@@ -211,4 +211,4 @@ class ProjectsPage(FlowcoPage):
                 st.session_state.selected_node = "<<<<<"
                 st.session_state.force_update = True
                 st.session_state.clear_graph = True
-                st.rerun()  # hack -- this is in a callback, so technically a no op.
+                st_rerun()  # hack -- this is in a callback, so technically a no op.

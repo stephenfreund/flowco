@@ -49,4 +49,4 @@
 
 #                 if dfg != page.dfg:
 #                     st.session_state.force_update = True
-#                     st.rerun()
+#                     st_rerun()

@@ -38,6 +38,7 @@ from flowco.util.config import AbstractionLevel
 from flowco.util.output import error, log
 from flowco.llm.assistant import AssistantError
 from flowco.assistant.flowco_assistant import fast_transcription
+from flowco.ui.ui_rerun import st_rerun
 
 
 class FlowcoPage:
@@ -157,7 +158,7 @@ class FlowcoPage:
         st.write("")
         st.write("")
         st.write("")
-        with st.container(key="right-panel", border=True):
+        with st.container(key="right-panel", border=False):
             symbol = (
                 ":material/chevron_right:"
                 if st.session_state.wide_right_panel
@@ -168,7 +169,7 @@ class FlowcoPage:
                     st.session_state.wide_right_panel = (
                         not st.session_state.wide_right_panel
                     )
-                    st.rerun()
+                    st_rerun()
             if node is None:
                 self.global_sidebar()
             else:
@@ -195,7 +196,7 @@ class FlowcoPage:
             #             dfg.with_node(dfg[node.id].update(is_locked=True))
             #         )
             #         st.session_state.force_update = True
-            #         st.rerun()
+            #         st_rerun()
             #     elif not pressed and node.is_locked:
             #         dfg = ui_page.dfg()
             #         ui_page.update_dfg(
@@ -204,7 +205,7 @@ class FlowcoPage:
             #             )
             #         )
             #         st.session_state.force_update = True
-            #         st.rerun()
+            #         st_rerun()
 
             # with right:
             st.subheader(node.pill)
@@ -264,7 +265,7 @@ class FlowcoPage:
                 on_change=lambda: self.ama_voice_input(container),
                 disabled=not self.graph_is_editable(),
             ):
-                st.rerun()
+                st_rerun()
 
             with st.container(key="ama_columns"):
                 if prompt := st.chat_input(
@@ -308,7 +309,7 @@ class FlowcoPage:
                 if dfg != page.dfg:
                     st.session_state.force_update = True
                     self.auto_update()
-                st.rerun()  # TODO: This could be in a callback!  But should be okay...
+                st_rerun()  # TODO: This could be in a callback!  But should be okay...
 
     def auto_update(self):
         pass
@@ -422,7 +423,7 @@ class FlowcoPage:
                     help=f"Sign out {st.session_state.user_email if 'user_email' in st.session_state else ''}",
                 ):
                     sign_out()
-                    st.rerun()
+                    st_rerun()
 
     def report_bug(self):
         @st.dialog("Report Bug", width="small")
@@ -445,7 +446,7 @@ class FlowcoPage:
                     file_name=file_name,  # with timestamp
                     help="Download the project and log",
                 ):
-                    st.rerun()
+                    st_rerun()
 
         download_files()
 
@@ -522,7 +523,6 @@ class FlowcoPage:
             curr_state = st.session_state.flow_state
             ui_page = st.session_state.ui_page
             dfg = ui_page.dfg()
-
             change = update_state(
                 curr_state,
                 dfg,
@@ -569,7 +569,7 @@ class FlowcoPage:
                         ui_page.update_dfg(new_dfg)
                         if not command and dfg != new_dfg:
                             st.session_state.force_update = True
-                            st.rerun()
+                            st_rerun()
                     except Exception as e:
                         error(e)
 
@@ -642,4 +642,4 @@ class FlowcoPage:
                 error("Unknown command", command)
             st.session_state.ui_page.update_dfg(dfg)
             if original_dfg != dfg:
-                st.rerun()
+                st_rerun()

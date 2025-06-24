@@ -13,6 +13,7 @@ from flowco.util.costs import CostTracker
 from flowco.util.output import Output, error, log_timestamp
 
 from flowco.session.session import StreamlitSession
+from flowco.ui.ui_rerun import st_rerun
 
 
 def init_service():
@@ -98,4 +99,4 @@ except Exception as e:
         filesystem=SessionFileSystem(f"file://{page_path}"),
         keys=KeyEnv(),
     )
-    st.rerun()  # Restart the Streamlit app to reset the session state
+    st_rerun()  # Restart the Streamlit app to reset the session state
