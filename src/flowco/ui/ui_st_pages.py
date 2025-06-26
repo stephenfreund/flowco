@@ -135,5 +135,5 @@ def st_pages():
                 False
             ), f"Builder running from bad page {st.session_state.current_page}"
 
-    pg = st.navigation(pages, position="top")
+    pg = st.navigation(pages, position="top" if version() == 2 else "sidebar")
     return pg

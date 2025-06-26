@@ -4,7 +4,16 @@ import streamlit as st
 from flowco.ui.mx_diagram import UIImageCache
 from flowco.util.config import AbstractionLevel
 
-css = """
+css_v1 = """
+
+[data-testid="stSidebarHeader"] {
+    padding: 0rem;
+    height: 0rem;
+}
+
+"""
+
+css_v2 = """
 
 [data-testid="stSidebarHeader"] {
     padding: 0rem;
@@ -12,6 +21,11 @@ css = """
     height: 0rem;
 }
 
+"""
+
+css = css_v1 if "ui_version" not in st.session_state or st.session_state.ui_version == 1 else css_v2
+
+css += """
 .st-key-right-panel img {
 /*    max-width: 200px !important; */
 }
@@ -47,8 +61,8 @@ css = """
     max-width: unset !important;
 }
 .stSidebar {
-    min-width: 355px;
-    width: 355px;
+    min-width: 365px;
+    width: 365px;
     max-width:1000px;
 }
 
@@ -64,10 +78,6 @@ css = """
 
 [data-testid="stLogoSpacer"] {
     height: 1rem;
-}
-
-[data-testid="stSidebarHeader"] {
-    padding: 0rem;
 }
 
 [data-testid="stSidebarNav"] * {
