@@ -1,3 +1,4 @@
+import os
 import datetime
 import json
 import sqlite3
@@ -187,7 +188,7 @@ def test_openai_key() -> bool:
         model = get_model("gpt-4o-mini")
         api_key = get_api_key(model.api_key_name)
         assistant = Assistant(
-            model.name, api_key=api_key, logger=FlowcoLogger(), max_tokens=10
+            model.name, api_key=api_key, logger=FlowcoLogger(), max_tokens=30
         )
         assistant.add_text("user", "Say hello")
         assistant.completion()
@@ -198,13 +199,16 @@ def test_openai_key() -> bool:
 
 def test_anthropic_key() -> bool:
     try:
+        print(os.environ["ANTHROPIC_API_KEY"])
         model = get_model("claude-3-haiku")
         api_key = get_api_key(model.api_key_name)
         assistant = Assistant(
-            model.name, api_key=api_key, logger=FlowcoLogger(), max_tokens=10
+            model.name, api_key=api_key, logger=FlowcoLogger(), max_tokens=30
         )
         assistant.add_text("user", "Say hello")
-        assistant.completion()
+        x = assistant.completion()
+        print(x)
         return True
-    except Exception:
+    except Exception as e:
+        error(e)
         return False

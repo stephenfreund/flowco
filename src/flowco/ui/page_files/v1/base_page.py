@@ -374,6 +374,16 @@ class FlowcoPage:
     def bottom_bar(self):
         ui_page: UIPage = st.session_state.ui_page
         with st.container(key="bottom_bar"):
+            st.toggle(
+                "Use UI Version 2",
+                value=st.session_state.ui_version == 2,
+                key="ui_version_toggle",
+                on_change=lambda: st.session_state.update(
+                    {"ui_version": 2 if st.session_state.ui_version_toggle else 1}
+                ),
+                help="The new version includes an improved diagram editor with simpler interactions, but it is less tested.  Turn off if you experience issues (and report them!).",
+            )
+
             cols = st.columns(3)
             with cols[0]:
                 if st.button(

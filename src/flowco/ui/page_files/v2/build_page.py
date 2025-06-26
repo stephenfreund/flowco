@@ -23,9 +23,6 @@ import streamlit as st
 from flowco import __main__
 from flowco.ui.ui_page import UIPage
 
-
-# from flowthon.flowthon import FlowthonProgram
-
 from flowco.ui.dialogs.node_editor import edit_node
 
 
@@ -101,6 +98,10 @@ class BuildPage(FlowcoPage):
                         )
 
                     with cols[3]:
+                        def undo():
+                            st.session_state.ui_page.undo()
+                            st.session_state.force_update = True
+                            
                         st.button(
                             label="",
                             icon=":material/undo:",
@@ -108,10 +109,14 @@ class BuildPage(FlowcoPage):
                                 not self.graph_is_editable()
                                 or not st.session_state.ui_page.can_undo()
                             ),
-                            on_click=lambda: st.session_state.ui_page.undo(),
+                            on_click=undo,
                             help="Undo the last change",
                         )
                     with cols[4]:
+                        def redo():
+                            st.session_state.ui_page.redo()
+                            st.session_state.force_update = True
+
                         st.button(
                             label="",
                             icon=":material/redo:",
@@ -119,7 +124,7 @@ class BuildPage(FlowcoPage):
                                 not self.graph_is_editable()
                                 or not st.session_state.ui_page.can_redo()
                             ),
-                            on_click=lambda: st.session_state.ui_page.redo(),
+                            on_click=redo,
                             help="Redo the last change",
                         )
                     with cols[5]:
@@ -127,40 +132,17 @@ class BuildPage(FlowcoPage):
                             "<span>&nbsp;&nbsp;&nbsp;&nbsp;</span>",
                             unsafe_allow_html=True,
                         )
-                    # with cols[6]:
-                    #     st.button(
-                    #         label="",
-                    #         icon=":material/network_node:",
-                    #         help="Layout the diagram",
-                    #         disabled=not self.graph_is_editable(),
-                    #         on_click=lambda: set_session_state("layout_graph", True),
-                    #     )
-                    # ui_page = st.session_state.ui_page
-                    # with ui_page.page():
-                    #     dfg = ui_page.dfg()
-                    #     dfg = dfg.update(
-                    #         nodes=[
-                    #             x.update(
-                    #                 geometry=Geometry(
-                    #                     x=0, y=0, width=0, height=0
-                    #                 )
-                    #             )
-                    #             for x in dfg.nodes
-                    #         ]
-                    #     )
-                    #     ui_page.update_dfg(dfg)
-                    # st.session_state.force_update = True
-                    # st.session_state.layout_graph = True
                     with cols[6]:
-                        if st.button(
+                        def clear_outputs():
+                            st.session_state.ui_page.page().clear_outputs()
+                            st.session_state.force_update = True
+                        st.button(
                             label="",
                             icon=":material/cancel_presentation:",
                             help="Clear all node outputs",
                             disabled=not self.graph_is_editable(),
-                        ):
-                            st.session_state.ui_page.page().clear_outputs()
-                            st.session_state.force_update = True
-                            st_rerun()
+                            on_click=clear_outputs,
+                        )
                 else:
                     run_button = self.stop_button()
                     st.button(
@@ -245,13 +227,6 @@ class BuildPage(FlowcoPage):
                     dfg = build_update.new_graph
                     ui_page.update_dfg(dfg)
                     builder.update_done()
-                    # if build_update.updated_node is not None:
-                    #     text = self.new_node_to_message(build_update.updated_node)
-                    #     if text:
-                    #         st.session_state.ama.add_visible_message(
-                    #             VisibleMessage(role="assistant", content=text)
-                    #         )
-
                 except queue.Empty:
                     continue
 
@@ -479,6 +454,7 @@ class BuildPage(FlowcoPage):
                 textwrap.dedent(
                     """\
                 ###### Graph Operations
+                * **Shift-click on node** to view details
                 * **Right-click on canvas** to create node
                 * **Right-click on node** to edit, delete, or run
                 * **Right-click on edge** to delete

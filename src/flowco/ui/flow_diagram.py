@@ -564,6 +564,9 @@ def diff_state(state1: StreamlitFlowState, state2: StreamlitFlowState) -> bool:
         if node1.style != node2.style:
             # print("DIFF STYLE", node1.style, node2.style)
             return True
+        if node1.data != node2.data:
+            # print("DIFF DATA", node1.data, node2.data)
+            return True
     for edge1, edge2 in zip(state1.edges, state2.edges):
         if edge1.id != edge2.id:
             # print("DIFF EDGE ID", edge1.id, edge2.id)
@@ -574,4 +577,7 @@ def diff_state(state1: StreamlitFlowState, state2: StreamlitFlowState) -> bool:
         if edge1.target != edge2.target:
             # print("DIFF EDGE TARGET", edge1.target, edge2.target)
             return True
+    if state1.viewport != state2.viewport:
+        # print("DIFF VIEWPORT", state1.viewport, state2.viewport)
+        return True
     return False

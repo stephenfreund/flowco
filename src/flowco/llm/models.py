@@ -39,18 +39,6 @@ class Model:
 
 
 _models = {
-    # "o1": Model(
-    #     name="o1",
-    #     use_proxy=False,
-    #     api_key_name="OPENAI_API_KEY",
-    #     supports_vision=True,
-    #     supports_audio=False,
-    #     supports_temperature=True,
-    #     supports_prediction=False,
-    #     completion_token_rate=60 / 10**6,
-    #     prompt_token_rate=15 / 10**6,
-    #     cached_token_rate=7.5 / 10**6,
-    # ),
     "gpt-4o": Model(
         name="gpt-4o-2024-11-20",
         use_proxy=False,
@@ -63,18 +51,6 @@ _models = {
         prompt_token_rate=2.50 / 10**6,
         cached_token_rate=1.25 / 10**6,
     ),
-    # "gpt-4.5": Model(
-    #     name="gpt-4.5-preview",
-    #     use_proxy=False,
-    #     api_key_name="OPENAI_API_KEY",
-    #     supports_vision=True,
-    #     supports_audio=False,
-    #     supports_temperature=True,
-    #     supports_prediction=True,
-    #     completion_token_rate=150 / 10**6,
-    #     prompt_token_rate=75 / 10**6,
-    #     cached_token_rate=35 / 10**6,
-    # ),
     "gpt-4o-mini": Model(
         name="gpt-4o-mini",
         use_proxy=False,
@@ -111,18 +87,6 @@ _models = {
         prompt_token_rate=0.4 / 10**6,
         cached_token_rate=0.1 / 10**6,
     ),
-    "gpt-4.1-nano": Model(
-        name="gpt-4.1-nano",
-        use_proxy=False,
-        api_key_name="OPENAI_API_KEY",
-        supports_vision=True,
-        supports_audio=False,
-        supports_temperature=True,
-        supports_prediction=True,
-        completion_token_rate=0.4 / 10**6,
-        prompt_token_rate=0.1 / 10**6,
-        cached_token_rate=0.025 / 10**6,
-    ),
     "o3-mini": Model(
         name="o3-mini",
         use_proxy=False,
@@ -145,21 +109,33 @@ _models = {
         supports_prediction=True,
         completion_token_rate=4.4 / 10**6,
         prompt_token_rate=1.1 / 10**6,
-        cached_token_rate=0.55 / 10**6,
+        cached_token_rate=0.275 / 10**6,
     ),
 } | (
     {
-        "claude-3-sonnet": Model(
-            name="claude-3-sonnet",
+        "claude-opus-4": Model(
+            name="claude-opus-4",
             use_proxy=True,
-            api_key_name="ANTHROPIC_API_KEY",
             supports_vision=True,
+            api_key_name="ANTHROPIC_API_KEY",
+            supports_audio=False,
+            supports_temperature=False,
+            supports_prediction=False,
+            completion_token_rate=75 / 10**6,
+            prompt_token_rate=15 / 10**6,
+            cached_token_rate=1.5 / 10**6,
+        ),
+        "claude-sonnet-4": Model(
+            name="claude-sonnet-4",
+            use_proxy=True,
+            supports_vision=True,
+            api_key_name="ANTHROPIC_API_KEY",
             supports_audio=False,
             supports_temperature=False,
             supports_prediction=False,
             completion_token_rate=15 / 10**6,
             prompt_token_rate=3 / 10**6,
-            cached_token_rate=3 / 10**6,
+            cached_token_rate=0.3 / 10**6,
         ),
         "claude-3-7-sonnet": Model(
             name="claude-3-7-sonnet",
@@ -171,7 +147,7 @@ _models = {
             supports_prediction=False,
             completion_token_rate=15 / 10**6,
             prompt_token_rate=3 / 10**6,
-            cached_token_rate=3 / 10**6,
+            cached_token_rate=0.3 / 10**6,
         ),
         "claude-3-haiku": Model(
             name="claude-3-haiku",
@@ -181,9 +157,9 @@ _models = {
             supports_audio=False,
             supports_temperature=False,
             supports_prediction=False,
-            completion_token_rate=15 / 10**6,
-            prompt_token_rate=3 / 10**6,
-            cached_token_rate=3 / 10**6,
+            completion_token_rate=4 / 10**6,
+            prompt_token_rate=0.8 / 10**6,
+            cached_token_rate=0.08 / 10**6,
         ),
     }
     if "ANTHROPIC_API_KEY" in os.environ

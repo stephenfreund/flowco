@@ -74,71 +74,6 @@ class FlowcoPage:
                 disabled=not self.graph_is_editable(),
             )
 
-            # st.session_state.abstraction_level = st.segmented_control(
-            #     "Abstraction Level",
-            #     (
-            #         AbstractionLevel
-            #         if config().x_algorithm_phase
-            #         else [AbstractionLevel.spec, AbstractionLevel.code]
-            #     ),
-            #     key="al",
-            #     default=st.session_state.abstraction_level,
-            #     on_change=fix,
-            #     disabled=not self.graph_is_editable(),
-            # )
-
-        # with st.container(key="zoom_button_bar"):
-        #     c1, spacer, c2, c3, c4 = st.columns(5, vertical_alignment="bottom")
-        #     with c1.container(key="controls"):
-        #         st.session_state.abstraction_level = st.segmented_control(
-        #             "Abstraction Level",
-        #             (
-        #                 AbstractionLevel
-        #                 if config().x_algorithm_phase
-        #                 else [AbstractionLevel.spec, AbstractionLevel.code]
-        #             ),
-        #             key="al",
-        #             default=st.session_state.abstraction_level,
-        #             on_change=fix,
-        #             disabled=not self.graph_is_editable(),
-        #         )
-
-        #     def zoom(cmd):
-        #         log("Zoom", cmd)
-        #         st.session_state.zoom = cmd
-        #         st.session_state.force_update = True
-
-        #     spacer.write(
-        #         "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>",
-        #         unsafe_allow_html=True,
-        #     )
-
-        #     c2.button(
-        #         label="",
-        #         icon=":material/zoom_in:",
-        #         key="zoom_in",
-        #         disabled=not self.graph_is_editable(),
-        #         on_click=lambda cmd: zoom(cmd),
-        #         args=("in",),
-        #         help="Zoom in",
-        #     )
-        #     c3.button(
-        #         label="",
-        #         icon=":material/zoom_out:",
-        #         disabled=not self.graph_is_editable(),
-        #         on_click=lambda cmd: zoom(cmd),
-        #         args=("out",),
-        #         help="Zoom out",
-        #     )
-        #     c4.button(
-        #         label="",
-        #         icon=":material/zoom_out_map:",
-        #         disabled=not self.graph_is_editable(),
-        #         on_click=lambda cmd: zoom(cmd),
-        #         args=("reset",),
-        #         help="Reset zoom",
-        #     )
-
     def right_panel(self):
 
         ui_page: UIPage = st.session_state.ui_page
@@ -180,34 +115,6 @@ class FlowcoPage:
     def node_header(self, node):
         ui_page: UIPage = st.session_state.ui_page
         with st.container(key="node_header"):
-            # with st.container(key="lock"):
-            # left, right = st.columns([1, 8], vertical_alignment="bottom")
-            # with left:
-            #     pressed = st.segmented_control(
-            #         ":material/lock:",
-            #         [":material/lock:"],
-            #         default=[":material/lock:"] if node.is_locked else None,
-            #         label_visibility="collapsed",
-            #         disabled=not self.graph_is_editable(),
-            #     )
-            #     if pressed and not node.is_locked:
-            #         dfg = ui_page.dfg()
-            #         ui_page.update_dfg(
-            #             dfg.with_node(dfg[node.id].update(is_locked=True))
-            #         )
-            #         st.session_state.force_update = True
-            #         st_rerun()
-            #     elif not pressed and node.is_locked:
-            #         dfg = ui_page.dfg()
-            #         ui_page.update_dfg(
-            #             dfg.with_node(
-            #                 dfg[node.id].update(is_locked=False, phase=Phase.clean)
-            #             )
-            #         )
-            #         st.session_state.force_update = True
-            #         st_rerun()
-
-            # with right:
             st.subheader(node.pill)
             st.caption(f"Status: {node.phase}")
 
@@ -401,6 +308,16 @@ class FlowcoPage:
     def bottom_bar(self):
         ui_page: UIPage = st.session_state.ui_page
         with st.container(key="bottom_bar"):
+            st.toggle(
+                "Use UI Version 2",
+                value=st.session_state.ui_version == 2,
+                key="ui_version_toggle",
+                on_change=lambda: st.session_state.update(
+                    {"ui_version": 2 if st.session_state.ui_version_toggle else 1}
+                ),
+                help="The new version includes an improved diagram editor with simpler interactions, but it is less tested.  Turn off if you experience issues (and report them!).",
+            )
+
             cols = st.columns(3)
             with cols[0]:
                 if st.button(
@@ -530,7 +447,7 @@ class FlowcoPage:
                 selected_id=curr_state.selected_id,
             )
             st.session_state.layout_graph = False
-
+            force_update = st.session_state.force_update
             new_state, command = streamlit_flow(
                 ui_page._page.file_name,
                 curr_state,
@@ -547,20 +464,22 @@ class FlowcoPage:
                 allow_new_edges=True,
                 min_zoom=0.1,
                 disabled=not self.graph_is_editable(),
+                force_update=force_update,
             )
+            st.session_state.force_update = False
             ui_page = st.session_state.ui_page
             dfg = ui_page.dfg()
 
-            if st.session_state.last_state_update != new_state.timestamp:
-                if diff_state(curr_state, new_state):
-                    selected_nodes = [
-                        node.id for node in new_state.nodes if node.selected
-                    ]
-                    new_state.selected_id = (
-                        selected_nodes[0] if selected_nodes else None
-                    )
-                    st.session_state.selected_node = new_state.selected_id
+            selected_nodes = [
+                node.id for node in new_state.nodes if node.selected
+            ]
+            new_state.selected_id = (
+                selected_nodes[0] if selected_nodes else None
+            )
+            st.session_state.selected_node = new_state.selected_id
 
+            if st.session_state.last_state_update != new_state.timestamp and not force_update:
+                if diff_state(curr_state, new_state):
                     st.session_state.flow_state = new_state
                     st.session_state.last_state_update = new_state.timestamp
 

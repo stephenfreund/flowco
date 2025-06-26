@@ -230,11 +230,15 @@ class Assistant:
             self.client = openai.Client(api_key=api_key)
 
     proxy_lock = threading.Lock()
+    proxy_process: subprocess.Popen | None = None
 
     def start_proxy(self, api_key: str) -> None:
         with Assistant.proxy_lock:
             import socket
 
+            if self.proxy_process:
+                self.logger.log("Proxy model already running")
+                return
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 if s.connect_ex(("localhost", proxy_port)) != 0:
                     self.logger.log("Starting proxy model")
@@ -247,7 +251,16 @@ class Assistant:
                         ),
                         env=env,
                     )
-                    sleep(3)  # wait for the proxy to start
+                    sleep(5)  # wait for the proxy to start
+                    Assistant.proxy_process = p
+
+    @staticmethod
+    def stop_proxy() -> None:
+        with Assistant.proxy_lock:
+            if Assistant.proxy_process:
+                Assistant.proxy_process.terminate()
+                Assistant.proxy_process.wait(timeout=5)
+                Assistant.proxy_process = None
 
     def append(self, message: ChatCompletionMessageParam) -> None:
         self.messages.append(message)
@@ -483,7 +496,7 @@ class Assistant:
                     # stop or do tool calls
                     assert choice.finish_reason in [
                         "stop",
-                        "tool_calls",
+                        "tool_calls", 
                     ], f"Unexpected finish reason: {choice.finish_reason}"
                     if choice.finish_reason == "stop":
                         break
