@@ -101,3 +101,8 @@ class HelpPage:
                     st.markdown(f"<ul>{''.join(entries)}</ul>", unsafe_allow_html=True)
 
                 # toc.generate()
+        with st.sidebar:
+            st.write("")
+            st.image("static/flowco.png")
+            
+        

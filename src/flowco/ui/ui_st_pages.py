@@ -135,5 +135,5 @@ def st_pages():
                 False
             ), f"Builder running from bad page {st.session_state.current_page}"
 
-    pg = st.navigation(pages)
+    pg = st.navigation(pages, position="top")
     return pg

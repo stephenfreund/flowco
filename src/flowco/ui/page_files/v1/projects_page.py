@@ -112,7 +112,7 @@ class ProjectsPage(FlowcoPage):
         )
 
         if current is not None:
-            st.write(f"# {current}.flowco")
+            # st.write(f"# {current}.flowco")
 
             st.info("Select **Edit** above to modify or run the diagram.")
 

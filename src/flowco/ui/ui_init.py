@@ -6,7 +6,11 @@ from flowco.util.config import AbstractionLevel
 
 css = """
 
-
+[data-testid="stSidebarHeader"] {
+    padding: 0rem;
+    margin: 0rem;
+    height: 0rem;
+}
 
 .st-key-right-panel img {
 /*    max-width: 200px !important; */
@@ -164,6 +168,8 @@ header {
 
 .stMain:has(.st-key-help_page) {
     padding:2rem;
+    margin: 0rem;
+    background-color: white !important;
     overflow: auto;
 }
 
@@ -346,7 +352,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > .st-key-chat_contain
 }
 
 .stMainBlockContainer {
-    background-color: #F0F2F6;
+    // background-color: #F0F2F6;
 }
 
 .st-key-right-panel {
