@@ -30,6 +30,6 @@ pandas
 seaborn
 matplotlib
 numpy
-scipy
+scipy<=1.15.3
 scikit-learn
 statsmodels
