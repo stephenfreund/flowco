@@ -215,8 +215,10 @@ class FlowcoPage:
         if node is None:
             ui_page: UIPage = st.session_state.ui_page
             st.title(ui_page.page().file_name)
+
+            model = config().model
             st.caption(
-                f"Total cost: {total_cost():.2f} USD &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        {':gray[:material/bigtop_updates:]' * inflight()}"
+                f"Model: {model} &#8226; Total cost: {total_cost():.2f} USD &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        {':gray[:material/bigtop_updates:]' * inflight()}"
             )
 
     def filter_messages(self, node: Node) -> List[NodeMessage]:
