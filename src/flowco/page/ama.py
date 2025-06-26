@@ -671,12 +671,17 @@ class AskMeAnything:
                 ),
             )
         assistant.add_text("user", f"Classify this prompt:\n```\n{question}\n```\n")
-        return str(assistant.model_completion(QuestionKind).kind)
+        try:
+            result = assistant.model_completion(QuestionKind)
+            answer = str(result.kind)
+        except Exception as e:
+            error(e)
+            answer = "Explain"
+        return answer
 
     def complete(self, prompt: str, selected_node: str | None = None) -> Iterable[str]:
         try:
             kind = self.classify_question(prompt)
-
             with logger(f"AMA: {kind}"):
                 if kind == "Explain":
                     yield from self._complete(

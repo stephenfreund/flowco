@@ -439,64 +439,69 @@ class FlowcoPage:
             left, right = self.main_columns()
 
         with left:
-            curr_state = st.session_state.flow_state
-            ui_page = st.session_state.ui_page
-            dfg = ui_page.dfg()
-            change = update_state(
-                curr_state,
-                dfg,
-                self.node_parts_for_diagram(),
-                selected_id=curr_state.selected_id,
-            )
-            st.session_state.layout_graph = False
-            force_update = st.session_state.force_update
-            new_state, command = streamlit_flow(
-                ui_page._page.file_name,
-                curr_state,
-                layout=ManualLayout(),
-                fit_view=False,
-                height=1000,
-                enable_node_menu=True,
-                enable_edge_menu=True,
-                enable_pane_menu=True,
-                get_edge_on_click=True,
-                get_node_on_click=True,
-                show_minimap=True,
-                hide_watermark=True,
-                allow_new_edges=True,
-                min_zoom=0.1,
-                disabled=not self.graph_is_editable(),
-                force_update=force_update,
-            )
-            st.session_state.force_update = False
-            ui_page = st.session_state.ui_page
-            dfg = ui_page.dfg()
+            if self.graph_is_editable():
 
-            selected_nodes = [
-                node.id for node in new_state.nodes if node.selected
-            ]
-            new_state.selected_id = (
-                selected_nodes[0] if selected_nodes else None
-            )
-            st.session_state.selected_node = new_state.selected_id
+                curr_state = st.session_state.flow_state
+                ui_page = st.session_state.ui_page
+                dfg = ui_page.dfg()
+                change = update_state(
+                    curr_state,
+                    dfg,
+                    self.node_parts_for_diagram(),
+                    selected_id=curr_state.selected_id,
+                )
+                st.session_state.layout_graph = False
+                force_update = st.session_state.force_update
+                new_state, command = streamlit_flow(
+                    ui_page._page.file_name,
+                    curr_state,
+                    layout=ManualLayout(),
+                    fit_view=False,
+                    height=1000,
+                    enable_node_menu=True,
+                    enable_edge_menu=True,
+                    enable_pane_menu=True,
+                    get_edge_on_click=True,
+                    get_node_on_click=True,
+                    show_minimap=True,
+                    hide_watermark=True,
+                    allow_new_edges=True,
+                    min_zoom=0.1,
+                    disabled=not self.graph_is_editable(),
+                    force_update=force_update,
+                )
+                try:
+                    st.session_state.force_update = False
+                    ui_page = st.session_state.ui_page
+                    dfg = ui_page.dfg()
 
-            if st.session_state.last_state_update != new_state.timestamp and not force_update:
-                if diff_state(curr_state, new_state):
-                    st.session_state.flow_state = new_state
-                    st.session_state.last_state_update = new_state.timestamp
+                    selected_nodes = [
+                        node.id for node in new_state.nodes if node.selected
+                    ]
+                    new_state.selected_id = (
+                        selected_nodes[0] if selected_nodes else None
+                    )
+                    st.session_state.selected_node = new_state.selected_id
 
-                    try:
-                        new_dfg = update_dfg(new_state, dfg)
-                        ui_page.update_dfg(new_dfg)
-                        if not command and dfg != new_dfg:
-                            st.session_state.force_update = True
-                            st_rerun()
-                    except Exception as e:
-                        error(e)
+                    if st.session_state.last_state_update != new_state.timestamp and not force_update:
+                        if diff_state(curr_state, new_state):
+                            st.session_state.flow_state = new_state
+                            st.session_state.last_state_update = new_state.timestamp
 
-                if command:
-                    st.session_state.last_state_update = new_state.timestamp
-                    self.do_command(dfg, command)
+                            try:
+                                new_dfg = update_dfg(new_state, dfg)
+                                ui_page.update_dfg(new_dfg)
+                                if not command and dfg != new_dfg:
+                                    st.session_state.force_update = True
+                                    st_rerun()
+                            except Exception as e:
+                                error(e)
+
+                        if command:
+                            st.session_state.last_state_update = new_state.timestamp
+                            self.do_command(dfg, command)
+                except Exception as e:
+                    error(e)
 
         with st.sidebar:
             self.sidebar()
