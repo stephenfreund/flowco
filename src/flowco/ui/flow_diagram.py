@@ -380,7 +380,7 @@ def serve_image(image_url, image_id):
     # print(f"{image_id} -> {url}")
     caching.save_media_data(image, mimetype, image_id)
     host = st.context.url.split("/")[2]
-    return f"http://{host}{url}"
+    return f"https://{host}{url}"
 
 
 # def serve_images():
