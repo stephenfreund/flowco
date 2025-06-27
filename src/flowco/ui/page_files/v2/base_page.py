@@ -439,7 +439,7 @@ class FlowcoPage:
             left, right = self.main_columns()
 
         with left:
-            if self.graph_is_editable():
+            if not st.session_state.ama_responding:
 
                 curr_state = st.session_state.flow_state
                 ui_page = st.session_state.ui_page
