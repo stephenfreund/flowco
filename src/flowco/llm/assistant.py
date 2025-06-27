@@ -149,15 +149,15 @@ class NthCompletion:
 class AssistantError(Exception):
     messages = {
         openai.APIConnectionError: "Issue connecting to the LLM.  Try again.",
-        openai.APITimeoutError: "LLM request timed out.",
+        openai.APITimeoutError: "LLM request timed out.  Try again.",
         openai.AuthenticationError: "Your API key or token was invalid, expired, or revoked.  Add a valid API key under Settings.  For OpenAI, you can find your API key at https://platform.openai.com/account/api-keys.",
-        openai.BadRequestError: "Internal error.  Bad Request.  Please click the 'Report Bug' button.",
-        openai.ConflictError: "Internal error.  Conflict Error.  Please click the 'Report Bug' button.",
-        openai.InternalServerError: "LLM Server error.  Try again.",
-        openai.NotFoundError: "Internal Error.  Requested resource does not exist.  Please click the 'Report Bug' button.",
-        openai.PermissionDeniedError: "Internal Error.  You don't have access to the requested resource. Please click the 'Report Bug' button.",
-        openai.RateLimitError: "You have hit your LLM rate limit.",
-        openai.UnprocessableEntityError: "The request was well-formed but was unable to be followed due to semantic errors.",
+        openai.BadRequestError: "Internal error.  Bad Request.  Please click the 'Report Bug' button, and refresh the browser tab to try again.",
+        openai.ConflictError: "Internal error.  Conflict Error.  Please click the 'Report Bug' button, and refresh the browser tab to try again.",
+        openai.InternalServerError: "LLM Server error.  Try again.  Please click the 'Report Bug' button, and refresh the browser tab to try again.",
+        openai.NotFoundError: "Internal Error.  Requested resource does not exist.  Please click the 'Report Bug' button, and refresh the browser tab to try again.",
+        openai.PermissionDeniedError: "Internal Error.  You don't have access to the requested resource. Please click the 'Report Bug' button, and refresh the browser tab to try again.",
+        openai.RateLimitError: "You have hit your LLM rate limit.  Please click the 'Report Bug' button, and refresh the browser tab to try again.",
+        openai.UnprocessableEntityError: "The request was well-formed but was unable to be followed due to semantic errors.  Please click the 'Report Bug' button, and refresh the browser tab to try again.",
     }
 
     def __init__(self, message: str) -> None:

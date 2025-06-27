@@ -131,7 +131,7 @@ class FlowcoPage:
         st.write("")
         st.write("")
         st.write("")
-        with st.container(key="right-panel", border=True):
+        with st.container(key="right-panel"):
             symbol = (
                 ":material/chevron_right:"
                 if st.session_state.wide_right_panel

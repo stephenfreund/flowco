@@ -8,7 +8,6 @@ css_v1 = """
 
 [data-testid="stSidebarHeader"] {
     padding: 0rem;
-    height: 0rem;
 }
 
 """
