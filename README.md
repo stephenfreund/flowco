@@ -10,14 +10,19 @@ Flowco is a system for authoring data analysis workflows with LLM assistance at 
 
 ![](https://github.com/stephenfreund/flowco/raw/main/media/geyser.png)
 
+For technical details, see our arXiv paper, [_Flowco: Rethinking Data Analysis in the Age of LLMs_](https://arxiv.org/abs/2504.14038).
+
 ## Watch Flowco in Action!
 
-| Demo Video | Tutorial Video | Exploratoration | Multiverse Analysis | Logistic Regression |
-|------------|----------|----------|--|--|
-| <a href="https://www.youtube.com/watch?v=qmMeMIrhtPs"><img src="https://img.youtube.com/vi/qmMeMIrhtPs/0.jpg" width="1200"></a> | <a href="https://www.youtube.com/watch?v=q0eAJv1vhAQ"><img src="https://img.youtube.com/vi/q0eAJv1vhAQ/0.jpg" width="1200"></a> |  <img alt="finch-3" src="https://github.com/stephenfreund/flowco//raw/main/media/finch.png" /> |  <img  alt="mortgage-wide" src="https://github.com/stephenfreund/flowco/raw/main/media/multiverse.png" /> |  <img alt="logistic-full" src="https://github.com/stephenfreund/flowco/raw/main//media/logistic.png" /> |
+| Demo Video | Tutorial Video |
+|------------|----------|
+| <a href="https://www.youtube.com/watch?v=qmMeMIrhtPs"><img src="https://img.youtube.com/vi/qmMeMIrhtPs/0.jpg" width="300"></a> | <a href="https://www.youtube.com/watch?v=q0eAJv1vhAQ"><img src="https://img.youtube.com/vi/q0eAJv1vhAQ/0.jpg" width="300"></a> |
 
+## Example Diagrams
 
-For technical details, see our arXiv paper, [_Flowco: Rethinking Data Analysis in the Age of LLMs_](https://arxiv.org/abs/2504.14038).
+| Exploratoration | Multiverse Analysis | Logistic Regression |
+| ----------|--|--|
+|  <img alt="finch-3" src="https://github.com/stephenfreund/flowco//raw/main/media/finch.png" width="300" /> |  <img  alt="mortgage-wide" src="https://github.com/stephenfreund/flowco/raw/main/media/multiverse.png" width="300" /> |  <img alt="logistic-full" src="https://github.com/stephenfreund/flowco/raw/main//media/logistic.png" width="300" /> |
 
 ## Web Service
 
