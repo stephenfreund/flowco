@@ -20,7 +20,7 @@ For technical details, see our arXiv paper, [_Flowco: Rethinking Data Analysis i
 
 ## Example Diagrams
 
-| Exploratoration | Multiverse Analysis | Logistic Regression |
+| Exploratory Data Analysis | Multiverse Analysis | Logistic Regression |
 | ----------|--|--|
 |  <img alt="finch-3" src="https://github.com/stephenfreund/flowco//raw/main/media/finch.png" width="300" /> |  <img  alt="mortgage-wide" src="https://github.com/stephenfreund/flowco/raw/main/media/multiverse.png" width="300" /> |  <img alt="logistic-full" src="https://github.com/stephenfreund/flowco/raw/main//media/logistic.png" width="300" /> |
 
