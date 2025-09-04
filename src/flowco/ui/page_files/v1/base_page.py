@@ -492,6 +492,13 @@ class FlowcoPage:
                 new_node_dialog(node)
                 return
 
+    def check_empty(self):
+        if len(st.session_state.ui_page.dfg().nodes) == 0:
+            st.markdown("")
+            st.success(
+                "To add your first node, select the **Edit** tab, and then shift-click on the canvas."
+            )
+
     def main(self):
 
         self.init()
@@ -507,6 +514,8 @@ class FlowcoPage:
                 left, right = self.main_columns()
 
             with left:
+
+                self.check_empty()
 
                 force_update = st.session_state.force_update
 
