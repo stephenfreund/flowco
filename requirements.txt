@@ -21,7 +21,7 @@ graphviz
 s3fs
 requests
 fsspec
-google-auth-oauthlib
+google-auth-oauthlib<1.2.0
 markdown
 nbformat
 pydantic
