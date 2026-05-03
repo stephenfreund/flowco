@@ -1,0 +1,75 @@
+name: Deploy to AWS Lightsail
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Decode and write secrets.toml
+        run: |
+          mkdir -p .streamlit
+          echo "${{ secrets.SECRETS_TOML_BASE64 }}" | base64 --decode > .streamlit/secrets.toml
+
+      - name: Install lightsailctl
+        run: |
+          sudo curl -L "https://s3.us-west-2.amazonaws.com/lightsailctl/latest/linux-amd64/lightsailctl" \
+            -o /usr/local/bin/lightsailctl
+          sudo chmod +x /usr/local/bin/lightsailctl
+
+      - name: Build Docker image
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          docker build --platform linux/amd64 \
+            --build-arg COMMIT_SHA=${{ github.sha }} \
+            --build-arg BUILD_DATE=$BUILD_DATE \
+            --build-arg RELEASE_VERSION=${{ github.event.release.tag_name }} \
+            -t flowco:$IMAGE_TAG .
+
+      - name: Push image to Lightsail
+        id: push
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          aws lightsail push-container-image \
+            --service-name flowco \
+            --label app \
+            --image flowco:$IMAGE_TAG
+          # Lightsail rewrites the image to a ref like ":flowco.app.<n>". Grab the newest one.
+          REF=$(aws lightsail get-container-images \
+            --service-name flowco \
+            --query 'containerImages | sort_by(@, &createdAt) | [-1].image' \
+            --output text)
+          echo "image=$REF" >> "$GITHUB_OUTPUT"
+
+      - name: Create container service deployment
+        run: |
+          aws lightsail create-container-service-deployment \
+            --service-name flowco \
+            --containers "{
+              \"app\": {
+                \"image\": \"${{ steps.push.outputs.image }}\",
+                \"ports\": {\"80\": \"HTTP\"}
+              }
+            }" \
+            --public-endpoint '{
+              "containerName": "app",
+              "containerPort": 80,
+              "healthCheck": {"path": "/", "successCodes": "200-499"}
+            }'
