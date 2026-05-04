@@ -6,9 +6,11 @@ name: Deploy to AWS ECS
 #       - aws  # Trigger deployment on push to the aws branch
 
 on:
-  release:
-    types: [published]
-  workflow_dispatch:  # Allows manual triggering from the GitHub Actions UI
+  # Release-triggered deploy is disabled — Lightsail (deploy-lightsail.yml) is
+  # the active production target. Re-enable this trigger if rolling back to Fargate.
+  # release:
+  #   types: [published]
+  workflow_dispatch:  # Manual-only — used for rollback to Fargate.
 
 jobs:
   build-and-deploy:
